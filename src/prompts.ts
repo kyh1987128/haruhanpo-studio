@@ -2,6 +2,13 @@
 
 interface PromptParams {
   brand: string;
+  companyName?: string;        // 회사 상호명
+  businessType?: string;        // 사업자 유형
+  location?: string;            // 지역
+  targetGender?: string;        // 타겟 성별
+  contact?: string;             // 연락처
+  website?: string;             // 웹사이트
+  sns?: string;                 // SNS 계정
   keywords: string;
   tone: string;
   targetAge: string;
@@ -10,11 +17,20 @@ interface PromptParams {
 }
 
 export function getBlogPrompt(params: PromptParams): string {
+  const additionalInfo = [];
+  if (params.companyName) additionalInfo.push(`회사명: ${params.companyName}`);
+  if (params.businessType) additionalInfo.push(`사업자 유형: ${params.businessType}`);
+  if (params.location) additionalInfo.push(`지역: ${params.location}`);
+  if (params.targetGender) additionalInfo.push(`타겟 성별: ${params.targetGender}`);
+  if (params.contact) additionalInfo.push(`연락처: ${params.contact}`);
+  if (params.website) additionalInfo.push(`웹사이트: ${params.website}`);
+  if (params.sns) additionalInfo.push(`SNS 계정: ${params.sns}`);
+  
   return `당신은 SEO 전문가이자 네이버 블로그 최적화 전문 작가입니다. 아래 정보를 바탕으로 네이버 검색 상위 노출을 위한 블로그 포스팅을 작성해주세요.
 
 📌 입력 정보
 브랜드명: ${params.brand}
-핵심 키워드: ${params.keywords}
+${additionalInfo.length > 0 ? additionalInfo.join('\n') + '\n' : ''}핵심 키워드: ${params.keywords}
 톤앤매너: ${params.tone}
 타겟 연령대: ${params.targetAge}
 산업 분야: ${params.industry}
@@ -136,11 +152,18 @@ export function getBlogPrompt(params: PromptParams): string {
 }
 
 export function getInstagramPrompt(params: PromptParams): string {
+  const additionalInfo = [];
+  if (params.companyName) additionalInfo.push(`회사명: ${params.companyName}`);
+  if (params.businessType) additionalInfo.push(`사업자 유형: ${params.businessType}`);
+  if (params.location) additionalInfo.push(`지역: ${params.location}`);
+  if (params.targetGender) additionalInfo.push(`타겟 성별: ${params.targetGender}`);
+  if (params.sns) additionalInfo.push(`SNS 계정: ${params.sns}`);
+  
   return `당신은 인스타그램 마케팅 전문가이자 바이럴 콘텐츠 크리에이터입니다. 아래 정보를 바탕으로 높은 참여율을 유도하는 인스타그램 포스팅을 작성해주세요.
 
 📌 입력 정보
 브랜드명: ${params.brand}
-핵심 키워드: ${params.keywords}
+${additionalInfo.length > 0 ? additionalInfo.join('\n') + '\n' : ''}핵심 키워드: ${params.keywords}
 톤앤매너: ${params.tone}
 타겟 연령대: ${params.targetAge}
 산업 분야: ${params.industry}
@@ -267,11 +290,16 @@ export function getInstagramPrompt(params: PromptParams): string {
 }
 
 export function getThreadsPrompt(params: PromptParams): string {
+  const additionalInfo = [];
+  if (params.companyName) additionalInfo.push(`회사명: ${params.companyName}`);
+  if (params.location) additionalInfo.push(`지역: ${params.location}`);
+  if (params.targetGender) additionalInfo.push(`타겟 성별: ${params.targetGender}`);
+  
   return `당신은 스레드(Threads) 콘텐츠 전문가입니다. 짧고 임팩트 있는 텍스트 중심 콘텐츠로 빠른 인게이지먼트를 유도하세요.
 
 📌 입력 정보
 브랜드명: ${params.brand}
-핵심 키워드: ${params.keywords}
+${additionalInfo.length > 0 ? additionalInfo.join('\n') + '\n' : ''}핵심 키워드: ${params.keywords}
 톤앤매너: ${params.tone}
 타겟 연령대: ${params.targetAge}
 산업 분야: ${params.industry}
@@ -359,11 +387,17 @@ export function getThreadsPrompt(params: PromptParams): string {
 }
 
 export function getYouTubePrompt(params: PromptParams): string {
+  const additionalInfo = [];
+  if (params.companyName) additionalInfo.push(`회사명: ${params.companyName}`);
+  if (params.location) additionalInfo.push(`지역: ${params.location}`);
+  if (params.targetGender) additionalInfo.push(`타겟 성별: ${params.targetGender}`);
+  if (params.website) additionalInfo.push(`웹사이트: ${params.website}`);
+  
   return `당신은 유튜브 숏폼 전문 크리에이터이자 영상 마케팅 전문가입니다. 60초 이내 숏폼 영상용 완벽한 스크립트와 메타데이터를 작성하세요.
 
 📌 입력 정보
 브랜드명: ${params.brand}
-핵심 키워드: ${params.keywords}
+${additionalInfo.length > 0 ? additionalInfo.join('\n') + '\n' : ''}핵심 키워드: ${params.keywords}
 톤앤매너: ${params.tone}
 타겟 연령대: ${params.targetAge}
 산업 분야: ${params.industry}
