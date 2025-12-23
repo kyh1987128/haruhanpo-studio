@@ -45,20 +45,61 @@ export const htmlTemplate = `
         position: relative;
         display: inline-block;
       }
-      .remove-image {
+      .image-preview img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+      .remove-image-btn {
         position: absolute;
-        top: -8px;
-        right: -8px;
+        top: 4px;
+        right: 4px;
         background: #ef4444;
         color: white;
+        border: none;
         border-radius: 50%;
-        width: 24px;
-        height: 24px;
+        width: 28px;
+        height: 28px;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
         font-size: 14px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      }
+      .edit-image-btn {
+        position: absolute;
+        bottom: 4px;
+        right: 4px;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 4px 8px;
+        font-size: 12px;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      }
+      .image-name {
+        position: absolute;
+        bottom: 4px;
+        left: 4px;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 11px;
+        max-width: calc(100% - 60px);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .modal {
+        display: none;
+      }
+      .modal.flex {
+        display: flex;
       }
     </style>
 </head>
@@ -89,16 +130,19 @@ export const htmlTemplate = `
                 원하는 플랫폼만 선택하여 AI 콘텐츠 생성 ✨
             </p>
             
-            <!-- 프로필 & 히스토리 버튼 -->
-            <div class="flex justify-center space-x-4 mt-6">
-                <button id="saveProfile" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+            <!-- 프로필 & 히스토리 & 템플릿 버튼 -->
+            <div class="flex justify-center space-x-3 mt-6 flex-wrap">
+                <button id="saveProfileBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
                     <i class="fas fa-save mr-2"></i><span data-i18n="saveProfile">프로필 저장</span>
                 </button>
-                <button id="loadProfile" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                <button id="loadProfileBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                     <i class="fas fa-folder-open mr-2"></i><span data-i18n="loadProfile">프로필 불러오기</span>
                 </button>
-                <button id="viewHistory" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                <button id="historyBtn" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
                     <i class="fas fa-history mr-2"></i><span data-i18n="viewHistory">히스토리</span>
+                </button>
+                <button id="templateBtn" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition">
+                    <i class="fas fa-file-alt mr-2"></i><span data-i18n="templates">템플릿</span>
                 </button>
             </div>
         </div>
@@ -125,7 +169,7 @@ export const htmlTemplate = `
                             <span class="text-gray-500"> 또는 드래그앤드롭</span>
                         </p>
                     </div>
-                    <div id="imagePreview" class="mt-4 grid grid-cols-5 gap-3"></div>
+                    <div id="imagePreviewContainer" class="mt-4 grid grid-cols-5 gap-3"></div>
                 </div>
 
                 <!-- 기본 정보 -->
@@ -295,6 +339,19 @@ export const htmlTemplate = `
                     </div>
                 </div>
 
+                <!-- AI 모델 선택 -->
+                <div>
+                    <label class="block mb-2 font-semibold text-gray-700">
+                        <i class="fas fa-robot mr-2"></i>AI 모델 선택
+                    </label>
+                    <select id="aiModel" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                        <option value="gpt-4o" selected>GPT-4o (추천 - 최고 품질, 중간 속도)</option>
+                        <option value="gpt-4-turbo">GPT-4 Turbo (높은 품질, 느린 속도)</option>
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo (빠른 속도, 저렴한 비용)</option>
+                    </select>
+                    <p id="aiModelDesc" class="text-sm text-gray-500 mt-1">GPT-4o: 최고 품질, 중간 속도</p>
+                </div>
+
                 <!-- 플랫폼 선택 -->
                 <div>
                     <label class="block mb-3 font-semibold text-gray-700">
@@ -317,6 +374,42 @@ export const htmlTemplate = `
                             <input type="checkbox" name="platform" value="youtube" class="w-5 h-5 text-purple-600">
                             <span class="font-medium">🎬 유튜브 숏폼</span>
                         </label>
+                    </div>
+                </div>
+
+                <!-- 배치 생성 모드 -->
+                <div class="border-t-2 pt-6">
+                    <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
+                        <h3 class="font-bold text-lg mb-3 text-blue-800">
+                            <i class="fas fa-file-csv mr-2"></i>배치 생성 모드 (CSV 업로드)
+                        </h3>
+                        <p class="text-sm text-gray-600 mb-4">
+                            여러 브랜드를 한 번에 처리하려면 CSV 파일을 업로드하세요. <br>
+                            CSV 형식: brand,keywords,tone,targetAge,industry,companyName,location 등
+                        </p>
+                        <div class="flex items-center gap-4">
+                            <input
+                                type="file"
+                                accept=".csv"
+                                id="csvInput"
+                                class="hidden"
+                            />
+                            <button
+                                type="button"
+                                onclick="document.getElementById('csvInput').click()"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                            >
+                                <i class="fas fa-upload mr-2"></i>CSV 파일 선택
+                            </button>
+                            <span id="csvFileName" class="text-sm text-gray-600">선택된 파일 없음</span>
+                        </div>
+                        <button
+                            type="button"
+                            id="batchGenerateBtn"
+                            class="w-full mt-4 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-cyan-700 transition shadow-lg"
+                        >
+                            <i class="fas fa-layer-group mr-2"></i>배치 생성 시작
+                        </button>
                     </div>
                 </div>
 
@@ -373,10 +466,70 @@ export const htmlTemplate = `
                 <div id="historyList" class="space-y-3"></div>
             </div>
         </div>
+
+        <!-- 템플릿 관리 모달 -->
+        <div id="templateModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-3xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800">
+                        <i class="fas fa-file-alt mr-2"></i>템플릿 관리
+                    </h3>
+                    <button onclick="closeModal('templateModal')" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                </div>
+                <div id="templateList" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <!-- 이미지 편집 모달 -->
+        <div id="imageEditorModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800">
+                        <i class="fas fa-image mr-2"></i>이미지 편집
+                    </h3>
+                    <button onclick="closeImageEditor()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                </div>
+
+                <div class="mb-6">
+                    <canvas id="editCanvas" class="max-w-full border-2 border-gray-300 rounded-lg"></canvas>
+                </div>
+
+                <div class="flex flex-wrap gap-3 mb-6">
+                    <button onclick="applyImageFilter('grayscale')" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+                        <i class="fas fa-adjust mr-2"></i>흑백
+                    </button>
+                    <button onclick="applyImageFilter('brightness')" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition">
+                        <i class="fas fa-sun mr-2"></i>밝게
+                    </button>
+                    <button onclick="applyImageFilter('contrast')" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                        <i class="fas fa-circle-half-stroke mr-2"></i>대비
+                    </button>
+                    <button onclick="compressImage()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                        <i class="fas fa-compress mr-2"></i>압축 (70%)
+                    </button>
+                </div>
+
+                <div class="flex gap-3 justify-end">
+                    <button onclick="closeImageEditor()" class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+                        <i class="fas fa-times mr-2"></i>취소
+                    </button>
+                    <button onclick="saveEditedImage()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                        <i class="fas fa-save mr-2"></i>저장
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 배치 결과 표시 영역 -->
+        <div id="batchResults" class="hidden mt-8"></div>
     </div>
 
     <script src="/static/i18n.js"></script>
-    <script src="/static/app-enhanced.js"></script>
+    <script src="/static/app-v3.js"></script>
 </body>
 </html>
 `;

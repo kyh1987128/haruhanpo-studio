@@ -17,6 +17,186 @@ app.use('/api/*', cors());
 // 정적 파일 서빙
 app.use('/static/*', serveStatic({ root: './public' }));
 
+// API 라우트: 템플릿 저장 (LocalStorage 사용, 프론트엔드에서 관리)
+app.post('/api/templates/save', async (c) => {
+  // 실제로는 프론트엔드 LocalStorage에서 관리하므로 이 API는 참고용
+  return c.json({ success: true, message: 'Template management is handled on client-side' });
+});
+
+// API 라우트: 배치 생성 (CSV 업로드)
+app.post('/api/generate/batch', async (c) => {
+  try {
+    const body = await c.req.json();
+    const {
+      batchData, // [{brand, keywords, tone, ...}, {...}, ...]
+      images, // base64 이미지 배열 (공통)
+      platforms,
+      aiModel = 'gpt-4o',
+    } = body;
+
+    if (!batchData || !Array.isArray(batchData) || batchData.length === 0) {
+      return c.json(
+        { success: false, error: '배치 데이터가 없습니다.' },
+        400
+      );
+    }
+
+    const apiKey = c.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      return c.json(
+        { success: false, error: 'OpenAI API 키가 설정되지 않았습니다.' },
+        500
+      );
+    }
+
+    const openai = new OpenAI({ apiKey });
+
+    // 이미지 분석 (공통)
+    let combinedImageDescription = '';
+    if (images && images.length > 0) {
+      const imageAnalyses = await Promise.all(
+        images.map(async (imageBase64: string, index: number) => {
+          try {
+            const analysis = await openai.chat.completions.create({
+              model: 'gpt-4o',
+              messages: [
+                {
+                  role: 'user',
+                  content: [
+                    {
+                      type: 'text',
+                      text: `이미지 ${index + 1}을 상세히 분석해주세요. 주요 피사체, 색상 톤, 분위기, 구도, 감정을 300-500자로 설명해주세요.`,
+                    },
+                    {
+                      type: 'image_url',
+                      image_url: { url: imageBase64 },
+                    },
+                  ],
+                },
+              ],
+              max_tokens: 1000,
+            });
+            return {
+              index: index + 1,
+              description: analysis.choices[0].message.content || '이미지 분석 실패',
+            };
+          } catch (error: any) {
+            return {
+              index: index + 1,
+              description: `이미지 ${index + 1} 분석 중 오류 발생`,
+            };
+          }
+        })
+      );
+
+      combinedImageDescription = imageAnalyses
+        .map((img) => `[이미지 ${img.index}]\n${img.description}`)
+        .join('\n\n');
+    }
+
+    // 각 브랜드별 콘텐츠 생성
+    const batchResults = await Promise.all(
+      batchData.map(async (brandData: any, index: number) => {
+        try {
+          const {
+            brand,
+            companyName,
+            businessType,
+            location,
+            targetGender,
+            contact,
+            website,
+            sns,
+            keywords,
+            tone,
+            targetAge,
+            industry,
+          } = brandData;
+
+          const promptParams = {
+            brand,
+            companyName,
+            businessType,
+            location,
+            targetGender,
+            contact,
+            website,
+            sns,
+            keywords,
+            tone,
+            targetAge,
+            industry,
+            imageDescription: combinedImageDescription,
+          };
+
+          const generationTasks = [];
+
+          if (platforms.includes('blog')) {
+            generationTasks.push(
+              generateContent(openai, 'blog', getBlogPrompt(promptParams), aiModel)
+            );
+          }
+
+          if (platforms.includes('instagram')) {
+            generationTasks.push(
+              generateContent(openai, 'instagram', getInstagramPrompt(promptParams), aiModel)
+            );
+          }
+
+          if (platforms.includes('threads')) {
+            generationTasks.push(
+              generateContent(openai, 'threads', getThreadsPrompt(promptParams), aiModel)
+            );
+          }
+
+          if (platforms.includes('youtube')) {
+            generationTasks.push(
+              generateContent(openai, 'youtube', getYouTubePrompt(promptParams), aiModel)
+            );
+          }
+
+          const results = await Promise.all(generationTasks);
+
+          const data: Record<string, string> = {};
+          results.forEach(({ platform, content }) => {
+            data[platform] = content;
+          });
+
+          return {
+            success: true,
+            brand: brand,
+            data,
+            index: index + 1,
+          };
+        } catch (error: any) {
+          return {
+            success: false,
+            brand: brandData.brand || `브랜드 ${index + 1}`,
+            error: error.message,
+            index: index + 1,
+          };
+        }
+      })
+    );
+
+    return c.json({
+      success: true,
+      results: batchResults,
+      totalCount: batchData.length,
+      imageCount: images?.length || 0,
+    });
+  } catch (error: any) {
+    console.error('배치 생성 오류:', error);
+    return c.json(
+      {
+        success: false,
+        error: error.message || '배치 생성 중 오류가 발생했습니다.',
+      },
+      500
+    );
+  }
+});
+
 // API 라우트: 이미지 분석 및 콘텐츠 생성
 app.post('/api/generate', async (c) => {
   try {
@@ -36,6 +216,7 @@ app.post('/api/generate', async (c) => {
       industry,
       images, // base64 이미지 배열
       platforms, // ['blog', 'instagram', 'threads', 'youtube']
+      aiModel = 'gpt-4o', // AI 모델 선택 (기본값: gpt-4o)
     } = body;
 
     // 입력 검증
@@ -163,25 +344,25 @@ app.post('/api/generate', async (c) => {
 
     if (platforms.includes('blog')) {
       generationTasks.push(
-        generateContent(openai, 'blog', getBlogPrompt(promptParams))
+        generateContent(openai, 'blog', getBlogPrompt(promptParams), aiModel)
       );
     }
 
     if (platforms.includes('instagram')) {
       generationTasks.push(
-        generateContent(openai, 'instagram', getInstagramPrompt(promptParams))
+        generateContent(openai, 'instagram', getInstagramPrompt(promptParams), aiModel)
       );
     }
 
     if (platforms.includes('threads')) {
       generationTasks.push(
-        generateContent(openai, 'threads', getThreadsPrompt(promptParams))
+        generateContent(openai, 'threads', getThreadsPrompt(promptParams), aiModel)
       );
     }
 
     if (platforms.includes('youtube')) {
       generationTasks.push(
-        generateContent(openai, 'youtube', getYouTubePrompt(promptParams))
+        generateContent(openai, 'youtube', getYouTubePrompt(promptParams), aiModel)
       );
     }
 
@@ -218,11 +399,12 @@ app.post('/api/generate', async (c) => {
 async function generateContent(
   openai: OpenAI,
   platform: string,
-  prompt: string
+  prompt: string,
+  aiModel: string = 'gpt-4o'
 ): Promise<{ platform: string; content: string }> {
   try {
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: aiModel,
       messages: [
         {
           role: 'system',
