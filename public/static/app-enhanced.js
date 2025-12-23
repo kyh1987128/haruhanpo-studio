@@ -3,12 +3,15 @@ let selectedImages = [];
 let resultData = {};
 let savedProfiles = [];
 let contentHistory = [];
+let exchangeRate = 1300; // 기본 환율 (USD to KRW)
 
 // LocalStorage 키
 const STORAGE_KEYS = {
   PROFILES: 'content_generator_profiles',
   HISTORY: 'content_generator_history',
-  CURRENT_PROFILE: 'content_generator_current_profile'
+  CURRENT_PROFILE: 'content_generator_current_profile',
+  EXCHANGE_RATE: 'exchange_rate',
+  EXCHANGE_RATE_TIME: 'exchange_rate_time'
 };
 
 // 비용 계산 상수
@@ -25,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeApp();
   loadSavedProfiles();
   loadContentHistory();
+  fetchExchangeRate();
 });
 
 function initializeApp() {
@@ -137,7 +141,40 @@ function removeImage(index) {
   updateCostEstimate();
 }
 
-// 비용 예상 계산
+// 환율 가져오기
+async function fetchExchangeRate() {
+  try {
+    // 캐시된 환율 확인 (24시간 유효)
+    const cachedRate = localStorage.getItem(STORAGE_KEYS.EXCHANGE_RATE);
+    const cachedTime = localStorage.getItem(STORAGE_KEYS.EXCHANGE_RATE_TIME);
+    
+    if (cachedRate && cachedTime) {
+      const hoursSinceCache = (Date.now() - parseInt(cachedTime)) / (1000 * 60 * 60);
+      if (hoursSinceCache < 24) {
+        exchangeRate = parseFloat(cachedRate);
+        updateCostEstimate();
+        return;
+      }
+    }
+    
+    // 무료 환율 API 호출 (exchangerate-api.com)
+    const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+    const data = await response.json();
+    
+    if (data && data.rates && data.rates.KRW) {
+      exchangeRate = data.rates.KRW;
+      localStorage.setItem(STORAGE_KEYS.EXCHANGE_RATE, exchangeRate.toString());
+      localStorage.setItem(STORAGE_KEYS.EXCHANGE_RATE_TIME, Date.now().toString());
+      updateCostEstimate();
+    }
+  } catch (error) {
+    console.error('환율 가져오기 실패:', error);
+    // 기본 환율 사용 (1300원)
+    exchangeRate = 1300;
+  }
+}
+
+// 비용 예상 계산 (개선됨: 달러 + 원화 표시)
 function updateCostEstimate() {
   const imageCount = selectedImages.length || 0;
   const platformCheckboxes = document.querySelectorAll('input[name="platform"]:checked');
@@ -149,20 +186,36 @@ function updateCostEstimate() {
     totalCost += COSTS[platform.toUpperCase()] || 0;
   });
 
+  const totalCostKRW = totalCost * exchangeRate;
+
   const costDisplay = document.getElementById('costEstimate');
   if (costDisplay) {
     costDisplay.innerHTML = `
-      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div class="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-xl p-5">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm text-gray-600">
-              <i class="fas fa-calculator mr-2"></i>예상 비용
+            <p class="text-sm font-medium text-gray-600 mb-1">
+              <i class="fas fa-calculator mr-2"></i>${window.i18n ? window.i18n.t('estimatedCost') : '예상 비용'}
             </p>
-            <p class="text-2xl font-bold text-blue-600">$${totalCost.toFixed(2)}</p>
+            <div class="space-y-1">
+              <p class="text-3xl font-bold text-blue-600">$${totalCost.toFixed(2)}</p>
+              <p class="text-xl font-semibold text-purple-600">≈ ₩${totalCostKRW.toLocaleString('ko-KR', {maximumFractionDigits: 0})}</p>
+            </div>
+            <p class="text-xs text-gray-500 mt-2">
+              환율: $1 = ₩${exchangeRate.toLocaleString('ko-KR', {maximumFractionDigits: 2})}
+            </p>
           </div>
-          <div class="text-right text-sm text-gray-500">
-            <p>이미지: ${imageCount}장 × $${COSTS.IMAGE_ANALYSIS}</p>
-            <p>플랫폼: ${platforms.length}개</p>
+          <div class="text-right text-sm text-gray-600">
+            <div class="space-y-2">
+              <div class="bg-white rounded-lg px-3 py-2">
+                <p class="text-xs text-gray-500">${window.i18n ? window.i18n.t('images') : '이미지'}</p>
+                <p class="font-semibold">${imageCount}장 × $${COSTS.IMAGE_ANALYSIS}</p>
+              </div>
+              <div class="bg-white rounded-lg px-3 py-2">
+                <p class="text-xs text-gray-500">${window.i18n ? window.i18n.t('platforms') : '플랫폼'}</p>
+                <p class="font-semibold">${platforms.length}개</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -560,8 +613,8 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// 토스트 메시지
-function showToast(message, type = 'info') {
+// 토스트 메시지 (다국어 지원)
+function showToast(messageKey, type = 'info', isRawMessage = false) {
   const colors = {
     success: 'bg-green-500',
     error: 'bg-red-500',
@@ -570,7 +623,9 @@ function showToast(message, type = 'info') {
 
   const toast = document.createElement('div');
   toast.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in`;
-  toast.textContent = message;
+  
+  // i18n 사용 가능하면 번역, 아니면 원본 메시지 사용
+  toast.textContent = isRawMessage ? messageKey : (window.i18n ? window.i18n.t(messageKey) : messageKey);
   
   document.body.appendChild(toast);
   

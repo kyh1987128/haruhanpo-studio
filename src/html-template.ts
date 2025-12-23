@@ -66,23 +66,39 @@ export const htmlTemplate = `
     <div class="container mx-auto px-4 py-8 max-w-6xl">
         <!-- 헤더 -->
         <div class="text-center mb-8">
-            <h1 class="text-5xl font-bold mb-3 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <!-- 언어 선택 -->
+            <div class="flex justify-end mb-4 space-x-2">
+                <button onclick="window.i18n.changeLanguage('ko')" class="px-3 py-1 rounded hover:bg-purple-100 transition" title="한국어">
+                    🇰🇷
+                </button>
+                <button onclick="window.i18n.changeLanguage('en')" class="px-3 py-1 rounded hover:bg-purple-100 transition" title="English">
+                    🇺🇸
+                </button>
+                <button onclick="window.i18n.changeLanguage('ja')" class="px-3 py-1 rounded hover:bg-purple-100 transition" title="日本語">
+                    🇯🇵
+                </button>
+                <button onclick="window.i18n.changeLanguage('zh')" class="px-3 py-1 rounded hover:bg-purple-100 transition" title="中文">
+                    🇨🇳
+                </button>
+            </div>
+            
+            <h1 class="text-5xl font-bold mb-3 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent" data-i18n="title">
                 멀티 플랫폼 콘텐츠 자동 생성기
             </h1>
-            <p class="text-gray-600 text-lg">
+            <p class="text-gray-600 text-lg" data-i18n="subtitle">
                 원하는 플랫폼만 선택하여 AI 콘텐츠 생성 ✨
             </p>
             
             <!-- 프로필 & 히스토리 버튼 -->
             <div class="flex justify-center space-x-4 mt-6">
                 <button id="saveProfile" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
-                    <i class="fas fa-save mr-2"></i>프로필 저장
+                    <i class="fas fa-save mr-2"></i><span data-i18n="saveProfile">프로필 저장</span>
                 </button>
                 <button id="loadProfile" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                    <i class="fas fa-folder-open mr-2"></i>프로필 불러오기
+                    <i class="fas fa-folder-open mr-2"></i><span data-i18n="loadProfile">프로필 불러오기</span>
                 </button>
                 <button id="viewHistory" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
-                    <i class="fas fa-history mr-2"></i>히스토리
+                    <i class="fas fa-history mr-2"></i><span data-i18n="viewHistory">히스토리</span>
                 </button>
             </div>
         </div>
@@ -359,6 +375,7 @@ export const htmlTemplate = `
         </div>
     </div>
 
+    <script src="/static/i18n.js"></script>
     <script src="/static/app-enhanced.js"></script>
 </body>
 </html>
