@@ -726,6 +726,94 @@ function updateCostEstimate() {
 }
 
 // ===================================
+// 키워드 자동 추천
+// ===================================
+async function suggestKeywords() {
+  if (selectedImages.length === 0) {
+    showToast('❌ 먼저 이미지를 업로드해주세요', 'error');
+    return;
+  }
+  
+  const brand = document.getElementById('brand').value.trim();
+  const industry = document.getElementById('industry').value;
+  
+  if (!brand) {
+    showToast('⚠️ 브랜드명을 먼저 입력하면 더 정확한 키워드를 추천받을 수 있습니다', 'warning');
+  }
+  
+  // 로딩 표시
+  const btn = event.target.closest('button');
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 분석 중...';
+  
+  try {
+    const response = await fetch('/api/suggest-keywords', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        images: selectedImages.slice(0, 3).map(img => img.base64), // 최대 3장
+        brand: brand || '',
+        industry: industry
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success && result.keywords) {
+      displayKeywordSuggestions(result.keywords);
+      showToast('✨ 키워드 추천 완료!', 'success');
+    } else {
+      showToast('❌ ' + (result.error || '키워드 추천 실패'), 'error');
+    }
+  } catch (error) {
+    console.error('키워드 추천 오류:', error);
+    showToast('❌ 네트워크 오류가 발생했습니다', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHTML;
+  }
+}
+
+function displayKeywordSuggestions(keywords) {
+  const container = document.getElementById('keywordSuggestions');
+  const list = document.getElementById('suggestedKeywordsList');
+  
+  list.innerHTML = keywords.map(keyword => `
+    <button
+      type="button"
+      onclick="addKeyword('${keyword.replace(/'/g, "\\'")}')"
+      class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200 transition text-sm"
+    >
+      + ${keyword}
+    </button>
+  `).join('');
+  
+  container.classList.remove('hidden');
+}
+
+function addKeyword(keyword) {
+  const input = document.getElementById('keywords');
+  const currentKeywords = input.value.trim();
+  
+  // 이미 있는 키워드인지 확인
+  const keywordList = currentKeywords.split(',').map(k => k.trim()).filter(k => k);
+  if (keywordList.includes(keyword)) {
+    showToast('⚠️ 이미 추가된 키워드입니다', 'warning');
+    return;
+  }
+  
+  // 키워드 추가
+  if (currentKeywords) {
+    input.value = currentKeywords + ', ' + keyword;
+  } else {
+    input.value = keyword;
+  }
+  
+  showToast(`✅ "${keyword}" 추가됨`, 'success');
+}
+
+// ===================================
 // 콘텐츠 생성
 // ===================================
 async function handleGenerate() {
@@ -1032,16 +1120,62 @@ function displayResults(data, platforms) {
       <div class="bg-gray-50 rounded-lg p-6">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-xl font-bold text-gray-800">${platformNames[platform]}</h3>
-          <button
-            onclick="copyToClipboard('${platform}')"
-            class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold flex items-center gap-2"
-          >
-            <i class="fas fa-copy"></i>
-            📋 복사하기
-          </button>
+          <div class="flex gap-2">
+            <button
+              onclick="editContent('${platform}')"
+              class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-semibold flex items-center gap-2"
+              title="콘텐츠 수정하기"
+            >
+              <i class="fas fa-edit"></i>
+              수정
+            </button>
+            <button
+              onclick="downloadAsText('${platform}')"
+              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold flex items-center gap-2"
+              title="텍스트 파일로 다운로드"
+            >
+              <i class="fas fa-download"></i>
+              TXT
+            </button>
+            <button
+              onclick="downloadAsWord('${platform}')"
+              class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-semibold flex items-center gap-2"
+              title="Word 문서로 다운로드"
+            >
+              <i class="fas fa-file-word"></i>
+              DOC
+            </button>
+            <button
+              onclick="copyToClipboard('${platform}')"
+              class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold flex items-center gap-2"
+            >
+              <i class="fas fa-copy"></i>
+              복사
+            </button>
+          </div>
         </div>
-        <div class="result-content bg-white p-6 rounded-lg whitespace-pre-wrap border border-gray-200">
+        <div id="content-display-${platform}" class="result-content bg-white p-6 rounded-lg whitespace-pre-wrap border border-gray-200">
           ${formatContent(data[platform])}
+        </div>
+        <textarea
+          id="content-editor-${platform}"
+          class="hidden w-full p-6 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-mono"
+          rows="20"
+          style="white-space: pre-wrap; font-family: 'Malgun Gothic', monospace;"
+        >${data[platform]}</textarea>
+        <div id="editor-actions-${platform}" class="hidden mt-3 flex gap-2 justify-end">
+          <button
+            onclick="cancelEdit('${platform}')"
+            class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+          >
+            ✖ 취소
+          </button>
+          <button
+            onclick="saveEdit('${platform}')"
+            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold"
+          >
+            ✓ 저장
+          </button>
         </div>
       </div>
     </div>
@@ -1093,6 +1227,265 @@ function copyToClipboard(platform) {
     console.error('복사 실패:', err);
     showToast('❌ 복사에 실패했습니다', 'error');
   });
+}
+
+// ===================================
+// 콘텐츠 수정 에디터
+// ===================================
+function editContent(platform) {
+  const display = document.getElementById(`content-display-${platform}`);
+  const editor = document.getElementById(`content-editor-${platform}`);
+  const actions = document.getElementById(`editor-actions-${platform}`);
+  
+  display.classList.add('hidden');
+  editor.classList.remove('hidden');
+  actions.classList.remove('hidden');
+  
+  // textarea 높이 자동 조절
+  editor.style.height = 'auto';
+  editor.style.height = editor.scrollHeight + 'px';
+  
+  editor.focus();
+  showToast('✏️ 수정 모드 활성화', 'info');
+}
+
+function cancelEdit(platform) {
+  const display = document.getElementById(`content-display-${platform}`);
+  const editor = document.getElementById(`content-editor-${platform}`);
+  const actions = document.getElementById(`editor-actions-${platform}`);
+  
+  // 원본 복구
+  editor.value = resultData[platform];
+  
+  display.classList.remove('hidden');
+  editor.classList.add('hidden');
+  actions.classList.add('hidden');
+  
+  showToast('↩️ 수정 취소', 'info');
+}
+
+function saveEdit(platform) {
+  const display = document.getElementById(`content-display-${platform}`);
+  const editor = document.getElementById(`content-editor-${platform}`);
+  const actions = document.getElementById(`editor-actions-${platform}`);
+  
+  const newContent = editor.value;
+  
+  if (!newContent.trim()) {
+    showToast('❌ 내용이 비어있습니다', 'error');
+    return;
+  }
+  
+  // resultData 업데이트
+  resultData[platform] = newContent;
+  
+  // 디스플레이 업데이트
+  display.innerHTML = formatContent(newContent);
+  
+  display.classList.remove('hidden');
+  editor.classList.add('hidden');
+  actions.classList.add('hidden');
+  
+  showToast('✅ 수정 내용이 저장되었습니다', 'success');
+}
+
+// ===================================
+// 다운로드 기능
+// ===================================
+function downloadAsText(platform) {
+  const content = resultData[platform];
+  if (!content) {
+    showToast('❌ 다운로드할 내용이 없습니다', 'error');
+    return;
+  }
+  
+  const platformNames = {
+    blog: '네이버블로그',
+    instagram: '인스타그램',
+    threads: '스레드',
+    youtube: '유튜브숏폼'
+  };
+  
+  const brand = document.getElementById('brand').value.trim() || 'content';
+  const date = new Date().toISOString().split('T')[0];
+  const filename = `${brand}_${platformNames[platform]}_${date}.txt`;
+  
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  showToast('✅ 텍스트 파일 다운로드 완료!', 'success');
+}
+
+function downloadAsWord(platform) {
+  const content = resultData[platform];
+  if (!content) {
+    showToast('❌ 다운로드할 내용이 없습니다', 'error');
+    return;
+  }
+  
+  const platformNames = {
+    blog: '네이버블로그',
+    instagram: '인스타그램',
+    threads: '스레드',
+    youtube: '유튜브숏폼'
+  };
+  
+  const brand = document.getElementById('brand').value.trim() || 'content';
+  const date = new Date().toISOString().split('T')[0];
+  const filename = `${brand}_${platformNames[platform]}_${date}.doc`;
+  
+  // HTML 형식으로 변환 (Word가 읽을 수 있는 형식)
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>${platformNames[platform]} - ${brand}</title>
+      <style>
+        body { 
+          font-family: 'Malgun Gothic', sans-serif; 
+          line-height: 1.8; 
+          padding: 40px;
+          max-width: 800px;
+          margin: 0 auto;
+        }
+        h1 { 
+          color: #333; 
+          border-bottom: 3px solid #667eea;
+          padding-bottom: 10px;
+        }
+        pre { 
+          white-space: pre-wrap; 
+          word-wrap: break-word;
+          font-family: 'Malgun Gothic', sans-serif;
+          background: #f5f5f5;
+          padding: 20px;
+          border-radius: 8px;
+          line-height: 1.8;
+        }
+      </style>
+    </head>
+    <body>
+      <h1>${platformNames[platform]} 콘텐츠</h1>
+      <p><strong>브랜드:</strong> ${brand}</p>
+      <p><strong>생성일:</strong> ${date}</p>
+      <hr>
+      <pre>${content}</pre>
+    </body>
+    </html>
+  `;
+  
+  const blob = new Blob(['\ufeff', htmlContent], { 
+    type: 'application/msword;charset=utf-8' 
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  showToast('✅ Word 문서 다운로드 완료!', 'success');
+}
+
+function downloadAllAsExcel() {
+  if (!resultData || Object.keys(resultData).length === 0) {
+    showToast('❌ 다운로드할 내용이 없습니다', 'error');
+    return;
+  }
+  
+  const brand = document.getElementById('brand').value.trim() || 'content';
+  const date = new Date().toISOString().split('T')[0];
+  const filename = `${brand}_전체콘텐츠_${date}.xls`;
+  
+  const platformNames = {
+    blog: '네이버블로그',
+    instagram: '인스타그램',
+    threads: '스레드',
+    youtube: '유튜브숏폼'
+  };
+  
+  // HTML 테이블 형식으로 변환 (Excel이 읽을 수 있는 형식)
+  let tableRows = '';
+  for (const [platform, content] of Object.entries(resultData)) {
+    const escapedContent = content
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/\n/g, '<br>');
+    
+    tableRows += `
+      <tr>
+        <td style="vertical-align: top; font-weight: bold; background: #f0f0f0;">${platformNames[platform]}</td>
+        <td style="vertical-align: top; white-space: pre-wrap;">${escapedContent}</td>
+      </tr>
+    `;
+  }
+  
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        table { 
+          border-collapse: collapse; 
+          width: 100%; 
+          font-family: 'Malgun Gothic', sans-serif;
+        }
+        th, td { 
+          border: 1px solid #ddd; 
+          padding: 12px; 
+          text-align: left;
+        }
+        th { 
+          background-color: #667eea; 
+          color: white;
+          font-weight: bold;
+        }
+      </style>
+    </head>
+    <body>
+      <h2>${brand} - 콘텐츠 전체 목록</h2>
+      <p>생성일: ${date}</p>
+      <table>
+        <thead>
+          <tr>
+            <th width="150">플랫폼</th>
+            <th>콘텐츠</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `;
+  
+  const blob = new Blob(['\ufeff', htmlContent], { 
+    type: 'application/vnd.ms-excel;charset=utf-8' 
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  showToast('✅ Excel 파일 다운로드 완료!', 'success');
 }
 
 // ===================================
@@ -1396,6 +1789,88 @@ function deleteProfile(id) {
   showToast('✅ 프로필이 삭제되었습니다', 'success');
 }
 
+function exportProfiles() {
+  if (savedProfiles.length === 0) {
+    showToast('❌ 내보낼 프로필이 없습니다', 'error');
+    return;
+  }
+  
+  const date = new Date().toISOString().split('T')[0];
+  const filename = `프로필_백업_${date}.json`;
+  
+  const exportData = {
+    version: '1.0',
+    exportDate: new Date().toISOString(),
+    profiles: savedProfiles
+  };
+  
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
+    type: 'application/json;charset=utf-8' 
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  showToast(`✅ 프로필 ${savedProfiles.length}개 내보내기 완료!`, 'success');
+}
+
+function importProfiles(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const importData = JSON.parse(e.target.result);
+      
+      // 버전 체크 및 데이터 검증
+      if (!importData.profiles || !Array.isArray(importData.profiles)) {
+        showToast('❌ 올바른 프로필 파일이 아닙니다', 'error');
+        return;
+      }
+      
+      // 중복 체크 (브랜드명 기준)
+      const existingBrands = new Set(savedProfiles.map(p => p.brand));
+      const newProfiles = importData.profiles.filter(p => !existingBrands.has(p.brand));
+      const duplicates = importData.profiles.length - newProfiles.length;
+      
+      if (newProfiles.length === 0) {
+        showToast('⚠️ 모든 프로필이 이미 존재합니다', 'warning');
+        return;
+      }
+      
+      // ID 재생성 (충돌 방지)
+      newProfiles.forEach(profile => {
+        profile.id = Date.now() + Math.random();
+      });
+      
+      // 기존 프로필에 추가
+      savedProfiles = [...savedProfiles, ...newProfiles];
+      localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(savedProfiles));
+      
+      openLoadProfileModal();
+      
+      let message = `✅ ${newProfiles.length}개 프로필 가져오기 완료!`;
+      if (duplicates > 0) {
+        message += ` (${duplicates}개 중복 제외)`;
+      }
+      showToast(message, 'success');
+      
+    } catch (error) {
+      console.error('프로필 가져오기 오류:', error);
+      showToast('❌ 파일을 읽을 수 없습니다', 'error');
+    }
+  };
+  
+  reader.readAsText(file);
+  event.target.value = ''; // 같은 파일 재선택 가능하도록
+}
+
 // ===================================
 // 히스토리 관리
 // ===================================
@@ -1415,6 +1890,7 @@ function saveToHistory(formData, results) {
   const historyItem = {
     id: Date.now(),
     brand: formData.brand,
+    keywords: formData.keywords,
     platforms: formData.platforms,
     results: results,
     createdAt: new Date().toISOString()
@@ -1430,40 +1906,180 @@ function saveToHistory(formData, results) {
 
 function openHistoryModal() {
   const modal = document.getElementById('historyModal');
-  const historyList = document.getElementById('historyList');
   
-  if (contentHistory.length === 0) {
-    historyList.innerHTML = '<p class="text-gray-500 text-center py-8">생성 히스토리가 없습니다</p>';
-  } else {
-    historyList.innerHTML = contentHistory.map(item => `
-      <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
-        <div class="flex justify-between items-start mb-2">
-          <div>
-            <h4 class="font-bold text-gray-800">${item.brand}</h4>
-            <p class="text-sm text-gray-600">${item.platforms.join(', ')}</p>
-          </div>
-          <div class="space-x-2">
-            <button
-              onclick="viewHistory(${item.id})"
-              class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm"
-            >
-              보기
-            </button>
-            <button
-              onclick="deleteHistory(${item.id})"
-              class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition text-sm"
-            >
-              삭제
-            </button>
-          </div>
-        </div>
-        <p class="text-xs text-gray-500">${new Date(item.createdAt).toLocaleString()}</p>
-      </div>
-    `).join('');
-  }
+  // 검색/필터 초기화
+  document.getElementById('historySearch').value = '';
+  document.querySelectorAll('.history-platform-filter').forEach(cb => cb.checked = true);
+  document.getElementById('historySortOrder').value = 'newest';
+  
+  filterHistory(); // 초기 렌더링
   
   modal.classList.remove('hidden');
   modal.style.display = 'flex';
+}
+
+function filterHistory() {
+  const historyList = document.getElementById('historyList');
+  const searchTerm = document.getElementById('historySearch').value.toLowerCase();
+  const selectedPlatforms = Array.from(document.querySelectorAll('.history-platform-filter:checked'))
+    .map(cb => cb.value);
+  const sortOrder = document.getElementById('historySortOrder').value;
+  
+  if (contentHistory.length === 0) {
+    historyList.innerHTML = '<p class="text-gray-500 text-center py-8">생성 히스토리가 없습니다</p>';
+    return;
+  }
+  
+  // 필터링
+  let filtered = contentHistory.filter(item => {
+    // 검색어 필터
+    const matchesSearch = !searchTerm || 
+      item.brand.toLowerCase().includes(searchTerm) ||
+      (item.keywords && item.keywords.toLowerCase().includes(searchTerm));
+    
+    // 플랫폼 필터
+    const matchesPlatform = selectedPlatforms.length === 0 ||
+      item.platforms.some(p => selectedPlatforms.includes(p));
+    
+    return matchesSearch && matchesPlatform;
+  });
+  
+  // 정렬
+  filtered.sort((a, b) => {
+    if (sortOrder === 'newest') {
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    } else if (sortOrder === 'oldest') {
+      return new Date(a.createdAt) - new Date(b.createdAt);
+    } else if (sortOrder === 'brand') {
+      return a.brand.localeCompare(b.brand);
+    }
+    return 0;
+  });
+  
+  // 렌더링
+  if (filtered.length === 0) {
+    historyList.innerHTML = '<p class="text-gray-500 text-center py-8">검색 결과가 없습니다</p>';
+    return;
+  }
+  
+  const platformNames = {
+    blog: '📝 블로그',
+    instagram: '📸 인스타',
+    threads: '🧵 스레드',
+    youtube: '🎬 유튜브'
+  };
+  
+  historyList.innerHTML = filtered.map(item => `
+    <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
+      <div class="flex justify-between items-start mb-2">
+        <div class="flex-1">
+          <h4 class="font-bold text-gray-800 text-lg">${item.brand}</h4>
+          <div class="flex flex-wrap gap-1 mt-1">
+            ${item.platforms.map(p => `<span class="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded">${platformNames[p]}</span>`).join('')}
+          </div>
+          ${item.keywords ? `<p class="text-sm text-gray-600 mt-1">키워드: ${item.keywords}</p>` : ''}
+        </div>
+        <div class="flex gap-2 ml-4">
+          <button
+            onclick="viewHistory(${item.id})"
+            class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm whitespace-nowrap"
+          >
+            👁 보기
+          </button>
+          <button
+            onclick="deleteHistory(${item.id})"
+            class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition text-sm whitespace-nowrap"
+          >
+            🗑 삭제
+          </button>
+        </div>
+      </div>
+      <p class="text-xs text-gray-500">
+        <i class="fas fa-clock mr-1"></i>${new Date(item.createdAt).toLocaleString()}
+      </p>
+    </div>
+  `).join('');
+}
+
+function exportHistoryAsExcel() {
+  if (contentHistory.length === 0) {
+    showToast('❌ 내보낼 히스토리가 없습니다', 'error');
+    return;
+  }
+  
+  const date = new Date().toISOString().split('T')[0];
+  const filename = `콘텐츠생성_히스토리_${date}.xls`;
+  
+  const platformNames = {
+    blog: '네이버블로그',
+    instagram: '인스타그램',
+    threads: '스레드',
+    youtube: '유튜브숏폼'
+  };
+  
+  // HTML 테이블 형식
+  let tableRows = contentHistory.map(item => {
+    const platformsText = item.platforms.map(p => platformNames[p]).join(', ');
+    const contentSummary = Object.entries(item.results)
+      .map(([platform, content]) => `[${platformNames[platform]}]\n${content.substring(0, 100)}...`)
+      .join('\n\n');
+    
+    return `
+      <tr>
+        <td>${new Date(item.createdAt).toLocaleString()}</td>
+        <td>${item.brand}</td>
+        <td>${item.keywords || ''}</td>
+        <td>${platformsText}</td>
+        <td style="white-space: pre-wrap;">${contentSummary}</td>
+      </tr>
+    `;
+  }).join('');
+  
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        table { border-collapse: collapse; width: 100%; font-family: 'Malgun Gothic', sans-serif; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }
+        th { background-color: #667eea; color: white; font-weight: bold; }
+      </style>
+    </head>
+    <body>
+      <h2>콘텐츠 생성 히스토리</h2>
+      <p>내보낸 날짜: ${date}</p>
+      <table>
+        <thead>
+          <tr>
+            <th width="150">생성일시</th>
+            <th width="120">브랜드명</th>
+            <th width="150">키워드</th>
+            <th width="120">플랫폼</th>
+            <th>콘텐츠 미리보기</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `;
+  
+  const blob = new Blob(['\ufeff', htmlContent], { 
+    type: 'application/vnd.ms-excel;charset=utf-8' 
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  showToast('✅ 히스토리 Excel 내보내기 완료!', 'success');
 }
 
 function viewHistory(id) {

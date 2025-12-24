@@ -23,6 +23,100 @@ app.post('/api/templates/save', async (c) => {
   return c.json({ success: true, message: 'Template management is handled on client-side' });
 });
 
+// API 라우트: 키워드 자동 추천
+app.post('/api/suggest-keywords', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { images, brand, industry } = body;
+
+    if (!images || images.length === 0) {
+      return c.json(
+        { success: false, error: '이미지가 필요합니다.' },
+        400
+      );
+    }
+
+    const apiKey = c.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      return c.json(
+        { success: false, error: 'OpenAI API 키가 설정되지 않았습니다.' },
+        500
+      );
+    }
+
+    const openai = new OpenAI({ apiKey });
+
+    // 이미지 분석 후 키워드 추출
+    const imageContent = images.map((img: string, idx: number) => ({
+      type: 'image_url' as const,
+      image_url: { url: img }
+    }));
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: '당신은 마케팅 키워드 전문가입니다. 이미지를 분석하여 SEO 최적화된 핵심 키워드를 추천하세요.'
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: `다음 이미지를 분석하여 마케팅에 효과적인 핵심 키워드 10개를 추천해주세요.
+
+${brand ? `브랜드: ${brand}` : ''}
+${industry ? `산업분야: ${industry}` : ''}
+
+요구사항:
+- 이미지에 실제로 보이는 것을 기반으로 추천
+- SEO에 효과적인 키워드
+- 한글로 작성
+- 2-4단어 조합 가능
+- JSON 배열로만 응답: ["키워드1", "키워드2", ...]
+
+예시: ["스킨케어", "보습크림", "민감성피부", "수분공급", "천연성분"]`
+            },
+            ...imageContent
+          ]
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 500
+    });
+
+    const content = response.choices[0].message.content || '[]';
+    
+    // JSON 파싱 (코드블록 제거)
+    let keywords = [];
+    try {
+      const cleaned = content.replace(/```json\n?|\n?```/g, '').trim();
+      keywords = JSON.parse(cleaned);
+    } catch (e) {
+      // 파싱 실패 시 줄바꿈으로 분리 시도
+      keywords = content.split('\n')
+        .map(line => line.trim().replace(/^[-*•]\s*/, '').replace(/^["']|["']$/g, ''))
+        .filter(k => k && k.length > 1 && k.length < 30)
+        .slice(0, 10);
+    }
+
+    console.log('추천 키워드:', keywords);
+
+    return c.json({
+      success: true,
+      keywords: keywords
+    });
+
+  } catch (error: any) {
+    console.error('키워드 추천 오류:', error);
+    return c.json(
+      { success: false, error: error.message || '키워드 추천 중 오류가 발생했습니다.' },
+      500
+    );
+  }
+});
+
 // API 라우트: 배치 생성 (CSV 업로드)
 app.post('/api/generate/batch', async (c) => {
   try {

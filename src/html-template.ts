@@ -316,8 +316,17 @@ export const htmlTemplate = `
 
                 <!-- 키워드 -->
                 <div>
-                    <label class="block mb-2 font-semibold text-gray-700">
-                        <i class="fas fa-key mr-2"></i>핵심 키워드 <span class="text-red-500">*</span>
+                    <label class="block mb-2 font-semibold text-gray-700 flex justify-between items-center">
+                        <span><i class="fas fa-key mr-2"></i>핵심 키워드 <span class="text-red-500">*</span></span>
+                        <button
+                            type="button"
+                            onclick="suggestKeywords()"
+                            class="px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm rounded-lg hover:from-purple-600 hover:to-pink-600 transition flex items-center gap-1"
+                            title="이미지 기반 키워드 자동 추천"
+                        >
+                            <i class="fas fa-magic"></i>
+                            AI 추천
+                        </button>
                     </label>
                     <input
                         type="text"
@@ -326,6 +335,10 @@ export const htmlTemplate = `
                         placeholder="예: 스킨케어, 보습, 민감성피부 (쉼표로 구분)"
                         required
                     />
+                    <div id="keywordSuggestions" class="mt-2 hidden">
+                        <p class="text-sm text-gray-600 mb-2">✨ 추천 키워드 (클릭하여 추가):</p>
+                        <div id="suggestedKeywordsList" class="flex flex-wrap gap-2"></div>
+                    </div>
                 </div>
 
                 <!-- 톤앤매너, 연령대, 산업 -->
@@ -523,7 +536,17 @@ export const htmlTemplate = `
 
         <!-- 결과 표시 -->
         <div id="resultArea" class="hidden bg-white rounded-2xl shadow-xl p-8">
-            <h2 class="text-2xl font-bold mb-6 text-gray-800">생성 결과</h2>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">생성 결과</h2>
+                <button
+                    onclick="downloadAllAsExcel()"
+                    class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold flex items-center gap-2"
+                    title="전체 플랫폼 콘텐츠를 Excel로 다운로드"
+                >
+                    <i class="fas fa-file-excel"></i>
+                    📊 전체 Excel 다운로드
+                </button>
+            </div>
             
             <div id="tabButtons" class="flex space-x-2 mb-6 overflow-x-auto"></div>
             <div id="tabContents"></div>
@@ -531,27 +554,104 @@ export const htmlTemplate = `
 
         <!-- 프로필 모달 -->
         <div id="profileModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col">
                 <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-2xl font-bold text-gray-800">저장된 프로필</h3>
+                    <h3 class="text-2xl font-bold text-gray-800">
+                        <i class="fas fa-user-circle mr-2"></i>저장된 프로필
+                    </h3>
                     <button onclick="closeModal('profileModal')" class="text-gray-500 hover:text-gray-700">
                         <i class="fas fa-times text-2xl"></i>
                     </button>
                 </div>
-                <div id="profileList" class="space-y-3"></div>
+                
+                <!-- 가져오기/내보내기 버튼 -->
+                <div class="mb-4 flex gap-2">
+                    <button
+                        onclick="exportProfiles()"
+                        class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                    >
+                        <i class="fas fa-download"></i>
+                        프로필 내보내기 (JSON)
+                    </button>
+                    <label class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fas fa-upload"></i>
+                        프로필 가져오기 (JSON)
+                        <input
+                            type="file"
+                            accept=".json"
+                            onchange="importProfiles(event)"
+                            class="hidden"
+                        />
+                    </label>
+                </div>
+                
+                <div id="profileList" class="space-y-3 overflow-y-auto flex-1"></div>
             </div>
         </div>
 
         <!-- 히스토리 모달 -->
         <div id="historyModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-4xl w-full mx-4 max-h-[85vh] overflow-hidden flex flex-col">
                 <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-2xl font-bold text-gray-800">생성 히스토리</h3>
+                    <h3 class="text-2xl font-bold text-gray-800">
+                        <i class="fas fa-history mr-2"></i>생성 히스토리
+                    </h3>
                     <button onclick="closeModal('historyModal')" class="text-gray-500 hover:text-gray-700">
                         <i class="fas fa-times text-2xl"></i>
                     </button>
                 </div>
-                <div id="historyList" class="space-y-3"></div>
+                
+                <!-- 검색 & 필터 -->
+                <div class="mb-4 space-y-3">
+                    <div class="flex gap-3">
+                        <div class="flex-1">
+                            <input
+                                type="text"
+                                id="historySearch"
+                                placeholder="🔍 브랜드명, 키워드로 검색..."
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                                oninput="filterHistory()"
+                            />
+                        </div>
+                        <button
+                            onclick="exportHistoryAsExcel()"
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
+                            title="전체 히스토리를 Excel로 내보내기"
+                        >
+                            <i class="fas fa-file-excel"></i>
+                            Excel 내보내기
+                        </button>
+                    </div>
+                    
+                    <div class="flex gap-2 items-center">
+                        <span class="text-sm text-gray-600 font-semibold">플랫폼:</span>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" value="blog" checked onchange="filterHistory()" class="history-platform-filter">
+                            <span class="text-sm">블로그</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" value="instagram" checked onchange="filterHistory()" class="history-platform-filter">
+                            <span class="text-sm">인스타</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" value="threads" checked onchange="filterHistory()" class="history-platform-filter">
+                            <span class="text-sm">스레드</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" value="youtube" checked onchange="filterHistory()" class="history-platform-filter">
+                            <span class="text-sm">유튜브</span>
+                        </label>
+                        <span class="mx-2 text-gray-300">|</span>
+                        <span class="text-sm text-gray-600 font-semibold">정렬:</span>
+                        <select id="historySortOrder" onchange="filterHistory()" class="text-sm px-2 py-1 border border-gray-300 rounded">
+                            <option value="newest">최신순</option>
+                            <option value="oldest">오래된순</option>
+                            <option value="brand">브랜드명순</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="historyList" class="space-y-3 overflow-y-auto flex-1"></div>
             </div>
         </div>
 
