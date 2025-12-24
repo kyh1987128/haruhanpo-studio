@@ -751,6 +751,12 @@ async function handleGenerate() {
 
   const platforms = Array.from(platformCheckboxes).map((cb) => cb.value);
 
+  // 웹사이트 URL 자동 보정 (http:// 없으면 추가)
+  let website = document.getElementById('website')?.value.trim() || '';
+  if (website && !website.startsWith('http://') && !website.startsWith('https://')) {
+    website = 'https://' + website;
+  }
+
   const formData = {
     brand,
     companyName: document.getElementById('companyName')?.value.trim() || '',
@@ -758,7 +764,7 @@ async function handleGenerate() {
     location: document.getElementById('location')?.value.trim() || '',
     targetGender: document.getElementById('targetGender')?.value || '',
     contact: document.getElementById('contact')?.value.trim() || '',
-    website: document.getElementById('website')?.value.trim() || '',
+    website: website,
     sns: document.getElementById('sns')?.value.trim() || '',
     keywords,
     tone: document.getElementById('tone')?.value || '친근한',

@@ -295,10 +295,10 @@ export const htmlTemplate = `
                             <i class="fas fa-globe mr-2"></i>웹사이트
                         </label>
                         <input
-                            type="url"
+                            type="text"
                             id="website"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                            placeholder="예: https://www.example.com"
+                            placeholder="예: www.example.com (http:// 자동 추가됨)"
                         />
                     </div>
                     <div>
