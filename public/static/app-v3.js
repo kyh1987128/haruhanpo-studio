@@ -45,7 +45,7 @@ async function initializeApp() {
   loadProfiles();
   loadHistory();
   loadTemplates();
-  loadAIModel();
+  // loadAIModel(); // AI 모델 선택 제거 (GPT-4o 고정)
   await fetchExchangeRate();
   setupEventListeners();
   updateCostEstimate();
@@ -81,17 +81,7 @@ function setupEventListeners() {
     generateBtn.addEventListener('click', handleGenerate);
   }
 
-  // 배치 생성 버튼
-  const batchGenerateBtn = document.getElementById('batchGenerateBtn');
-  if (batchGenerateBtn) {
-    batchGenerateBtn.addEventListener('click', handleBatchGenerate);
-  }
-
-  // CSV 업로드
-  const csvInput = document.getElementById('csvInput');
-  if (csvInput) {
-    csvInput.addEventListener('change', handleCSVUpload);
-  }
+  // 배치 생성 제거됨
 
   // 프로필 관리
   const saveProfileBtn = document.getElementById('saveProfileBtn');
@@ -117,11 +107,8 @@ function setupEventListeners() {
     templateBtn.addEventListener('click', openTemplateModal);
   }
 
-  // AI 모델 선택
-  const aiModelSelect = document.getElementById('aiModel');
-  if (aiModelSelect) {
-    aiModelSelect.addEventListener('change', handleAIModelChange);
-  }
+  // AI 모델 선택 (GPT-4o 고정)
+  // aiModel 드롭다운 제거됨
 
   // 플랫폼 선택 변경 시 비용 재계산
   const platformCheckboxes = document.querySelectorAll('input[name="platform"]');
@@ -376,13 +363,16 @@ function updateCostEstimate() {
 
   if (imageCount === 0 || platformCount === 0) {
     document.getElementById('costEstimate').innerHTML = `
-      <p style="color: #999; text-align: center; padding: 1rem;">
-        ${t('select_images_platforms') || '이미지와 플랫폼을 선택하면 예상 비용이 표시됩니다.'}
-      </p>
+      <div style="padding: 1.5rem; text-align: center;">
+        <p style="color: #999; margin-bottom: 0.5rem;">
+          ${t('select_images_platforms') || '이미지와 플랫폼을 선택하면 예상 비용이 표시됩니다.'}
+        </p>
+      </div>
     `;
     return;
   }
 
+  // 비용 계산
   const imageCost = imageCount * COSTS.IMAGE_ANALYSIS;
   let platformCost = 0;
 
@@ -394,23 +384,51 @@ function updateCostEstimate() {
   const totalCostUSD = imageCost + platformCost;
   const totalCostKRW = Math.round(totalCostUSD * EXCHANGE_RATE);
 
+  // 예상 소요 시간 계산
+  // 이미지 분석: 이미지당 3초 (병렬 처리로 최대 5초)
+  // 콘텐츠 생성: 플랫폼당 10초 (병렬 처리로 최대 15초)
+  const imageAnalysisTime = Math.min(imageCount * 3, 5);
+  const contentGenerationTime = Math.min(platformCount * 10, 15);
+  const totalTimeSeconds = imageAnalysisTime + contentGenerationTime;
+  const totalTimeMinutes = Math.ceil(totalTimeSeconds / 60);
+
   document.getElementById('costEstimate').innerHTML = `
-    <div style="padding: 1rem;">
-      <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-        <span>${t('image_analysis') || '이미지 분석'} (${imageCount}${t('sheets') || '장'}):</span>
-        <span>$${imageCost.toFixed(2)} / ₩${Math.round(imageCost * EXCHANGE_RATE)}</span>
+    <div style="padding: 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white;">
+      <h3 style="font-size: 1.2rem; font-weight: bold; margin-bottom: 1rem; text-align: center;">
+        💰 예상 비용 및 소요 시간
+      </h3>
+      
+      <div style="background: rgba(255,255,255,0.15); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+          <span>📸 이미지 분석 (${imageCount}장):</span>
+          <span style="font-weight: 600;">$${imageCost.toFixed(2)} / ₩${Math.round(imageCost * EXCHANGE_RATE)}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span>✨ 콘텐츠 생성 (${platformCount}개):</span>
+          <span style="font-weight: 600;">$${platformCost.toFixed(2)} / ₩${Math.round(platformCost * EXCHANGE_RATE)}</span>
+        </div>
       </div>
-      <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-        <span>${t('content_generation') || '콘텐츠 생성'} (${platformCount}${t('platforms') || '개'}):</span>
-        <span>$${platformCost.toFixed(2)} / ₩${Math.round(platformCost * EXCHANGE_RATE)}</span>
+      
+      <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; font-size: 1.3rem; font-weight: bold;">
+          <span>💵 총 예상 비용:</span>
+          <span>$${totalCostUSD.toFixed(2)}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 1.5rem; font-weight: bold; margin-top: 0.5rem;">
+          <span>💴 총 예상 비용:</span>
+          <span>₩${totalCostKRW.toLocaleString()}</span>
+        </div>
       </div>
-      <hr style="border: none; border-top: 1px solid #ddd; margin: 0.75rem 0;">
-      <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem;">
-        <span>${t('total') || '총 예상 비용'}:</span>
-        <span style="color: #2563eb;">$${totalCostUSD.toFixed(2)} / ₩${totalCostKRW}</span>
+      
+      <div style="background: rgba(255,255,255,0.15); padding: 1rem; border-radius: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 1.1rem;">⏱️ 예상 소요 시간:</span>
+          <span style="font-size: 1.3rem; font-weight: bold;">${totalTimeSeconds}초 (약 ${totalTimeMinutes}분)</span>
+        </div>
       </div>
-      <p style="font-size: 0.85rem; color: #666; margin-top: 0.5rem; text-align: right;">
-        ${t('exchange_rate') || '환율'}: $1 = ₩${EXCHANGE_RATE.toFixed(0)}
+      
+      <p style="font-size: 0.85rem; opacity: 0.9; margin-top: 1rem; text-align: center;">
+        환율: $1 = ₩${EXCHANGE_RATE.toFixed(0)} | 모델: GPT-4o
       </p>
     </div>
   `;
@@ -457,7 +475,7 @@ async function handleGenerate() {
     industry: document.getElementById('industry')?.value || 'lifestyle',
     images: selectedImages.map((img) => img.base64),
     platforms,
-    aiModel: document.getElementById('aiModel')?.value || 'gpt-4o',
+    aiModel: 'gpt-4o', // GPT-4o 고정
   };
 
   // 로딩 상태
@@ -990,32 +1008,9 @@ function deleteTemplate(id) {
 }
 
 // ===================================
-// AI 모델 선택
+// AI 모델 선택 (제거됨 - GPT-4o 고정)
 // ===================================
-function loadAIModel() {
-  const saved = localStorage.getItem(STORAGE_KEYS.AI_MODEL);
-  const select = document.getElementById('aiModel');
-  if (saved && select) {
-    select.value = saved;
-  }
-}
-
-function handleAIModelChange(e) {
-  const model = e.target.value;
-  localStorage.setItem(STORAGE_KEYS.AI_MODEL, model);
-  
-  // 모델별 비용 안내
-  const costs = {
-    'gpt-4o': t('gpt4o_desc') || 'GPT-4o: 최고 품질, 중간 속도',
-    'gpt-4-turbo': t('gpt4_desc') || 'GPT-4: 높은 품질, 느린 속도',
-    'gpt-3.5-turbo': t('gpt35_desc') || 'GPT-3.5: 빠른 속도, 저렴한 비용',
-  };
-
-  const desc = document.getElementById('aiModelDesc');
-  if (desc) {
-    desc.textContent = costs[model] || '';
-  }
-}
+// AI 모델은 GPT-4o로 고정됨
 
 // ===================================
 // 다국어 지원 함수

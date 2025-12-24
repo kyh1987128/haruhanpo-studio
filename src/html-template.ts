@@ -4,7 +4,7 @@ export const htmlTemplate = `
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>멀티 플랫폼 콘텐츠 자동 생성기</title>
+    <title>콘텐츠잇다 AI Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -115,19 +115,13 @@ export const htmlTemplate = `
                 <button onclick="window.i18n.changeLanguage('en')" class="px-3 py-1 rounded hover:bg-purple-100 transition" title="English">
                     🇺🇸
                 </button>
-                <button onclick="window.i18n.changeLanguage('ja')" class="px-3 py-1 rounded hover:bg-purple-100 transition" title="日本語">
-                    🇯🇵
-                </button>
-                <button onclick="window.i18n.changeLanguage('zh')" class="px-3 py-1 rounded hover:bg-purple-100 transition" title="中文">
-                    🇨🇳
-                </button>
             </div>
             
             <h1 class="text-5xl font-bold mb-3 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent" data-i18n="title">
-                멀티 플랫폼 콘텐츠 자동 생성기
+                콘텐츠잇다 AI Studio
             </h1>
             <p class="text-gray-600 text-lg" data-i18n="subtitle">
-                원하는 플랫폼만 선택하여 AI 콘텐츠 생성 ✨
+                이미지로 4개 플랫폼 콘텐츠 자동 생성 🔒 내부 전용
             </p>
             
             <!-- 프로필 & 히스토리 & 템플릿 버튼 -->
@@ -339,19 +333,6 @@ export const htmlTemplate = `
                     </div>
                 </div>
 
-                <!-- AI 모델 선택 -->
-                <div>
-                    <label class="block mb-2 font-semibold text-gray-700">
-                        <i class="fas fa-robot mr-2"></i>AI 모델 선택
-                    </label>
-                    <select id="aiModel" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
-                        <option value="gpt-4o" selected>GPT-4o (추천 - 최고 품질, 중간 속도)</option>
-                        <option value="gpt-4-turbo">GPT-4 Turbo (높은 품질, 느린 속도)</option>
-                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo (빠른 속도, 저렴한 비용)</option>
-                    </select>
-                    <p id="aiModelDesc" class="text-sm text-gray-500 mt-1">GPT-4o: 최고 품질, 중간 속도</p>
-                </div>
-
                 <!-- 플랫폼 선택 -->
                 <div>
                     <label class="block mb-3 font-semibold text-gray-700">
@@ -377,41 +358,7 @@ export const htmlTemplate = `
                     </div>
                 </div>
 
-                <!-- 배치 생성 모드 -->
-                <div class="border-t-2 pt-6">
-                    <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
-                        <h3 class="font-bold text-lg mb-3 text-blue-800">
-                            <i class="fas fa-file-csv mr-2"></i>배치 생성 모드 (CSV 업로드)
-                        </h3>
-                        <p class="text-sm text-gray-600 mb-4">
-                            여러 브랜드를 한 번에 처리하려면 CSV 파일을 업로드하세요. <br>
-                            CSV 형식: brand,keywords,tone,targetAge,industry,companyName,location 등
-                        </p>
-                        <div class="flex items-center gap-4">
-                            <input
-                                type="file"
-                                accept=".csv"
-                                id="csvInput"
-                                class="hidden"
-                            />
-                            <button
-                                type="button"
-                                onclick="document.getElementById('csvInput').click()"
-                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                            >
-                                <i class="fas fa-upload mr-2"></i>CSV 파일 선택
-                            </button>
-                            <span id="csvFileName" class="text-sm text-gray-600">선택된 파일 없음</span>
-                        </div>
-                        <button
-                            type="button"
-                            id="batchGenerateBtn"
-                            class="w-full mt-4 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-cyan-700 transition shadow-lg"
-                        >
-                            <i class="fas fa-layer-group mr-2"></i>배치 생성 시작
-                        </button>
-                    </div>
-                </div>
+
 
                 <!-- 비용 예상 -->
                 <div id="costEstimate"></div>
