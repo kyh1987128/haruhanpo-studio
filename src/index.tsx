@@ -218,6 +218,7 @@ app.post('/api/generate', async (c) => {
       platforms, // ['blog', 'instagram', 'threads', 'youtube']
       aiModel = 'gpt-4o', // AI 모델 선택 (기본값: gpt-4o)
       apiKey, // 클라이언트에서 전달받은 API 키
+      forceGenerate = false, // 검증 우회 플래그
     } = body;
 
     // 입력 검증
@@ -322,7 +323,83 @@ app.post('/api/generate', async (c) => {
       .map((img) => `[이미지 ${img.index}]\n${img.description}`)
       .join('\n\n');
 
-    console.log('이미지 분석 완료. 콘텐츠 생성 시작...');
+    console.log('이미지 분석 완료. 일치성 검증 시작...');
+
+    // 2단계: 이미지와 사용자 입력 정보의 일치성 검증 (forceGenerate가 false일 때만)
+    if (!forceGenerate) {
+      try {
+      const validationResponse = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: '당신은 이미지 분석과 사용자 입력 정보의 연관성을 판단하는 전문가입니다.',
+          },
+          {
+            role: 'user',
+            content: `다음 이미지 분석 결과와 사용자 입력 정보가 서로 일치하는지 검증해주세요.
+
+📸 이미지 분석 결과:
+${combinedImageDescription}
+
+📝 사용자 입력 정보:
+- 브랜드명/서비스명: ${brand}
+- 핵심 키워드: ${keywords}
+- 산업 분야: ${industry}
+- 톤앤매너: ${tone}
+- 타겟 연령대: ${targetAge}
+
+아래 JSON 형식으로만 응답하세요:
+{
+  "isMatch": true 또는 false,
+  "confidence": 0-100 사이의 숫자 (일치 확신도),
+  "reason": "불일치 이유 (한글, 100자 이내)",
+  "imageSummary": "이미지 주요 내용 요약 (한글, 50자 이내)",
+  "userInputSummary": "사용자 입력 요약 (한글, 50자 이내)",
+  "recommendation": "사용자에게 제안할 조치 (한글, 100자 이내)"
+}
+
+판단 기준:
+- confidence 70 이상: 일치 (isMatch: true)
+- confidence 70 미만: 불일치 (isMatch: false)
+- 이미지 내용과 브랜드/키워드/산업분야가 명확히 다른 경우 불일치
+- 약간의 차이는 허용 (예: 카페 이미지 + 레스토랑 키워드 → 일치 가능)`,
+          },
+        ],
+        temperature: 0.3,
+        max_tokens: 500,
+      });
+
+      const validationText = validationResponse.choices[0].message.content || '{}';
+      const validation = JSON.parse(validationText);
+
+        console.log('검증 결과:', validation);
+
+        // 불일치 감지 시 경고 반환
+        if (!validation.isMatch || validation.confidence < 70) {
+          return c.json({
+            success: false,
+            requireConfirmation: true,
+            validation: {
+              isMatch: validation.isMatch,
+              confidence: validation.confidence,
+              reason: validation.reason,
+              imageSummary: validation.imageSummary,
+              userInputSummary: validation.userInputSummary,
+              recommendation: validation.recommendation,
+            },
+            message: '이미지와 입력 정보가 일치하지 않습니다.',
+          });
+        }
+      } catch (error: any) {
+        console.error('검증 오류:', error.message);
+        // 검증 실패 시 경고 없이 진행 (서비스 중단 방지)
+      }
+    } else {
+      console.log('검증 우회 (사용자가 강제 진행 선택)');
+    }
+
+    console.log('검증 통과. 콘텐츠 생성 시작...');
 
     // 2단계: 선택된 플랫폼만 콘텐츠 생성 (병렬 처리)
     const promptParams = {

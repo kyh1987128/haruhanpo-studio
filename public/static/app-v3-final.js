@@ -784,6 +784,13 @@ async function handleGenerate() {
 
     const result = await response.json();
 
+    // 검증 실패 시 확인 모달 표시
+    if (result.requireConfirmation && result.validation) {
+      hideLoadingOverlay();
+      showValidationModal(result.validation, formData);
+      return;
+    }
+
     if (result.success) {
       hideLoadingOverlay();
       resultData = result.data;
@@ -860,6 +867,68 @@ function hideLoadingOverlay() {
     progressPercent.textContent = '0%';
     document.getElementById('loadingMessage').textContent = '이미지 분석 중...';
   }, 500);
+}
+
+// ===================================
+// 검증 모달 (이미지-내용 불일치)
+// ===================================
+let pendingFormData = null;
+
+function showValidationModal(validation, formData) {
+  pendingFormData = formData;
+  
+  const modal = document.getElementById('validationModal');
+  document.getElementById('validationReason').textContent = validation.reason || '상세 정보 없음';
+  document.getElementById('validationImageSummary').textContent = validation.imageSummary || '분석 결과 없음';
+  document.getElementById('validationUserInputSummary').textContent = validation.userInputSummary || '입력 정보 없음';
+  document.getElementById('validationRecommendation').textContent = validation.recommendation || '이미지를 변경하거나 입력 정보를 수정해주세요.';
+  document.getElementById('validationConfidence').textContent = `${validation.confidence || 0}% (기준: 70% 이상)`;
+  
+  modal.classList.remove('hidden');
+}
+
+function closeValidationModal() {
+  const modal = document.getElementById('validationModal');
+  modal.classList.add('hidden');
+  pendingFormData = null;
+}
+
+async function forceGenerate() {
+  if (!pendingFormData) {
+    showToast('❌ 생성할 데이터가 없습니다', 'error');
+    return;
+  }
+  
+  closeValidationModal();
+  showLoadingOverlay();
+  
+  // 검증 우회 플래그 추가
+  const formDataWithForce = { ...pendingFormData, forceGenerate: true };
+  
+  try {
+    const response = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formDataWithForce),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      hideLoadingOverlay();
+      resultData = result.data;
+      displayResults(result.data, result.generatedPlatforms);
+      saveToHistory(formDataWithForce, result.data);
+      showToast('✅ 콘텐츠 생성 완료!', 'success');
+    } else {
+      hideLoadingOverlay();
+      showErrorModal(result.error || '알 수 없는 오류가 발생했습니다');
+    }
+  } catch (error) {
+    console.error('생성 오류:', error);
+    hideLoadingOverlay();
+    showErrorModal('네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.');
+  }
 }
 
 // ===================================

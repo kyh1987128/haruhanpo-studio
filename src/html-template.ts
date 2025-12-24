@@ -465,6 +465,53 @@ export const htmlTemplate = `
             </div>
         </div>
 
+        <!-- 검증 모달 (이미지-내용 불일치) -->
+        <div id="validationModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl mx-4">
+                <div class="text-center mb-6">
+                    <div class="text-6xl mb-4">⚠️</div>
+                    <h3 class="text-2xl font-bold text-yellow-600 mb-2">이미지와 입력 정보 불일치</h3>
+                    <p class="text-gray-700 mb-4">업로드된 이미지와 입력하신 정보가 일치하지 않는 것으로 확인되었습니다.</p>
+                    
+                    <div class="bg-red-50 border-l-4 border-red-400 p-4 text-left mb-4">
+                        <p class="font-semibold text-red-800 mb-2">🔍 불일치 내용:</p>
+                        <p class="text-sm text-red-700" id="validationReason"></p>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 text-left">
+                            <p class="font-semibold text-blue-800 mb-2">📸 이미지 내용:</p>
+                            <p class="text-sm text-blue-700" id="validationImageSummary"></p>
+                        </div>
+                        <div class="bg-green-50 border-l-4 border-green-400 p-4 text-left">
+                            <p class="font-semibold text-green-800 mb-2">📝 입력 정보:</p>
+                            <p class="text-sm text-green-700" id="validationUserInputSummary"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 text-left">
+                        <p class="font-semibold text-yellow-800 mb-2">💡 권장 조치:</p>
+                        <p class="text-sm text-yellow-700" id="validationRecommendation"></p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg text-left mt-4">
+                        <p class="text-sm text-gray-600">
+                            <strong>일치도:</strong> <span id="validationConfidence" class="font-bold text-red-600"></span>
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3">
+                    <button onclick="closeValidationModal()" class="flex-1 px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+                        ⬅️ 수정하기
+                    </button>
+                    <button onclick="forceGenerate()" class="flex-1 px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-semibold">
+                        ⚠️ 무시하고 진행
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- 결과 표시 -->
         <div id="resultArea" class="hidden bg-white rounded-2xl shadow-xl p-8">
             <h2 class="text-2xl font-bold mb-6 text-gray-800">생성 결과</h2>
