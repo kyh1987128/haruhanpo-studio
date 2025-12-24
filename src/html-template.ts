@@ -535,7 +535,7 @@ export const htmlTemplate = `
         </div>
 
         <!-- 결과 표시 -->
-        <div id="resultArea" class="hidden bg-white rounded-2xl shadow-xl p-8">
+        <div id="resultArea" class="hidden bg-white rounded-2xl shadow-xl p-8 mb-24">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold text-gray-800">생성 결과</h2>
                 <button
@@ -550,6 +550,35 @@ export const htmlTemplate = `
             
             <div id="tabButtons" class="flex space-x-2 mb-6 overflow-x-auto"></div>
             <div id="tabContents"></div>
+        </div>
+        
+        <!-- 플로팅 액션 바 -->
+        <div id="floatingActionBar" class="hidden fixed bottom-0 left-0 right-0 bg-gradient-to-r from-purple-600 to-pink-600 shadow-2xl z-40">
+            <div class="max-w-6xl mx-auto px-4 py-4">
+                <div class="flex justify-center items-center gap-3">
+                    <button
+                        onclick="scrollToTop()"
+                        class="px-6 py-3 bg-white text-purple-600 rounded-lg hover:bg-gray-100 transition font-semibold flex items-center gap-2 shadow-lg"
+                    >
+                        <i class="fas fa-home"></i>
+                        🏠 처음으로
+                    </button>
+                    <button
+                        onclick="quickRegenerate()"
+                        class="px-6 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition font-semibold flex items-center gap-2 shadow-lg"
+                    >
+                        <i class="fas fa-redo"></i>
+                        🔄 이 설정으로 다시 생성
+                    </button>
+                    <button
+                        onclick="copyAndNew()"
+                        class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition font-semibold flex items-center gap-2 shadow-lg"
+                    >
+                        <i class="fas fa-copy"></i>
+                        📋 복사해서 새로 만들기
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- 프로필 모달 -->

@@ -726,6 +726,90 @@ function updateCostEstimate() {
 }
 
 // ===================================
+// 플로팅 액션 바
+// ===================================
+function showFloatingActionBar() {
+  const floatingBar = document.getElementById('floatingActionBar');
+  if (floatingBar) {
+    floatingBar.classList.remove('hidden');
+  }
+}
+
+function hideFloatingActionBar() {
+  const floatingBar = document.getElementById('floatingActionBar');
+  if (floatingBar) {
+    floatingBar.classList.add('hidden');
+  }
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  showToast('📍 입력 폼으로 이동합니다', 'info');
+}
+
+function quickRegenerate() {
+  if (!lastFormData) {
+    showToast('❌ 이전 생성 데이터가 없습니다', 'error');
+    return;
+  }
+  
+  if (!confirm('동일한 설정으로 콘텐츠를 다시 생성하시겠습니까?')) {
+    return;
+  }
+  
+  // 결과 영역과 플로팅 바 숨기기
+  document.getElementById('resultArea').classList.add('hidden');
+  hideFloatingActionBar();
+  
+  // 맨 위로 스크롤
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  
+  // 잠시 대기 후 생성 시작
+  setTimeout(() => {
+    handleGenerate();
+  }, 500);
+}
+
+function copyAndNew() {
+  if (!lastFormData) {
+    showToast('❌ 복사할 데이터가 없습니다', 'error');
+    return;
+  }
+  
+  // 결과 영역과 플로팅 바 숨기기
+  document.getElementById('resultArea').classList.add('hidden');
+  hideFloatingActionBar();
+  
+  // 맨 위로 스크롤
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  
+  // 입력값 복사 (이미지 제외)
+  document.getElementById('brand').value = lastFormData.brand || '';
+  document.getElementById('companyName').value = lastFormData.companyName || '';
+  document.getElementById('businessType').value = lastFormData.businessType || '';
+  document.getElementById('location').value = lastFormData.location || '';
+  document.getElementById('targetGender').value = lastFormData.targetGender || '';
+  document.getElementById('contact').value = lastFormData.contact || '';
+  document.getElementById('website').value = lastFormData.website || '';
+  document.getElementById('sns').value = lastFormData.sns || '';
+  document.getElementById('keywords').value = lastFormData.keywords || '';
+  document.getElementById('tone').value = lastFormData.tone || '친근한';
+  document.getElementById('targetAge').value = lastFormData.targetAge || '20대';
+  document.getElementById('industry').value = lastFormData.industry || '라이프스타일';
+  
+  // 플랫폼 체크박스 복사
+  document.querySelectorAll('input[name="platform"]').forEach(cb => {
+    cb.checked = lastFormData.platforms.includes(cb.value);
+  });
+  
+  // 이미지는 초기화
+  selectedImages = [];
+  document.getElementById('imagePreviewContainer').innerHTML = '';
+  
+  showToast('✅ 설정을 복사했습니다. 새 이미지를 업로드하세요!', 'success');
+}
+
+// ===================================
 // 키워드 자동 추천
 // ===================================
 async function suggestKeywords() {
@@ -1183,6 +1267,9 @@ function displayResults(data, platforms) {
   
   resultArea.classList.remove('hidden');
   resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  
+  // 플로팅 액션 바 표시
+  showFloatingActionBar();
 }
 
 function formatContent(content) {
