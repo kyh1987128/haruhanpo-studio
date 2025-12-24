@@ -812,7 +812,7 @@ function copyAndNew() {
 // ===================================
 // 키워드 자동 추천
 // ===================================
-async function suggestKeywords() {
+async function suggestKeywords(event) {
   if (selectedImages.length === 0) {
     showToast('❌ 먼저 이미지를 업로드해주세요', 'error');
     return;
@@ -826,7 +826,7 @@ async function suggestKeywords() {
   }
   
   // 로딩 표시
-  const btn = event.target.closest('button');
+  const btn = event ? event.target.closest('button') : document.querySelector('button[onclick*="suggestKeywords"]');
   const originalHTML = btn.innerHTML;
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 분석 중...';

@@ -320,7 +320,7 @@ export const htmlTemplate = `
                         <span><i class="fas fa-key mr-2"></i>핵심 키워드 <span class="text-red-500">*</span></span>
                         <button
                             type="button"
-                            onclick="suggestKeywords()"
+                            onclick="suggestKeywords(event)"
                             class="px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm rounded-lg hover:from-purple-600 hover:to-pink-600 transition flex items-center gap-1"
                             title="이미지 기반 키워드 자동 추천"
                         >
