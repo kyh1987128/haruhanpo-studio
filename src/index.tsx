@@ -217,6 +217,7 @@ app.post('/api/generate', async (c) => {
       images, // base64 이미지 배열
       platforms, // ['blog', 'instagram', 'threads', 'youtube']
       aiModel = 'gpt-4o', // AI 모델 선택 (기본값: gpt-4o)
+      apiKey, // 클라이언트에서 전달받은 API 키
     } = body;
 
     // 입력 검증
@@ -250,20 +251,20 @@ app.post('/api/generate', async (c) => {
       );
     }
 
-    // OpenAI API 키 확인
-    const apiKey = c.env.OPENAI_API_KEY;
-    if (!apiKey) {
+    // OpenAI API 키 확인 (클라이언트 제공 우선, 환경변수 fallback)
+    const finalApiKey = apiKey || c.env.OPENAI_API_KEY;
+    if (!finalApiKey) {
       return c.json(
         {
           success: false,
-          error: 'OpenAI API 키가 설정되지 않았습니다. .dev.vars 파일에 OPENAI_API_KEY를 추가해주세요.',
+          error: 'OpenAI API 키가 필요합니다. API 키를 설정해주세요.',
         },
-        500
+        400
       );
     }
 
     const openai = new OpenAI({
-      apiKey: apiKey,
+      apiKey: finalApiKey,
     });
 
     // 1단계: 모든 이미지 상세 분석

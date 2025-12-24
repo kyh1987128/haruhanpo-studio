@@ -101,6 +101,40 @@ export const htmlTemplate = `
       .modal.flex {
         display: flex;
       }
+      /* 토스트 메시지 */
+      .toast {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: #10b981;
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideIn 0.3s ease-out;
+        z-index: 9999;
+        font-weight: 600;
+      }
+      @keyframes slideIn {
+        from {
+          transform: translateX(400px);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+      @keyframes slideOut {
+        from {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateX(400px);
+          opacity: 0;
+        }
+      }
     </style>
 </head>
 <body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen">
@@ -141,6 +175,39 @@ export const htmlTemplate = `
             </div>
         </div>
 
+        <!-- API 키 입력 섹션 -->
+        <div id="apiKeySection" class="bg-white rounded-2xl shadow-xl p-8 mb-8" style="display: none;">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                    🔑 OpenAI API 키 설정
+                </h2>
+                <p class="text-gray-600 text-sm">
+                    API 키는 브라우저에만 저장되며 외부로 전송되지 않습니다. <br>
+                    OpenAI 계정에서 API 키를 발급받으세요: <a href="https://platform.openai.com/api-keys" target="_blank" class="text-blue-600 hover:underline">platform.openai.com/api-keys</a>
+                </p>
+            </div>
+            <div class="max-w-2xl mx-auto">
+                <div class="flex gap-3">
+                    <input
+                        type="password"
+                        id="apiKeyInput"
+                        class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        placeholder="sk-proj-..."
+                    />
+                    <button
+                        type="button"
+                        id="saveApiKeyBtn"
+                        class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold"
+                    >
+                        저장
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">
+                    💡 Tip: API 키는 "sk-proj-"로 시작합니다
+                </p>
+            </div>
+        </div>
+
         <!-- 입력 폼 -->
         <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
             <form id="contentForm" class="space-y-6">
@@ -170,13 +237,13 @@ export const htmlTemplate = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block mb-2 font-semibold text-gray-700">
-                            <i class="fas fa-tag mr-2"></i>브랜드명 <span class="text-red-500">*</span>
+                            <i class="fas fa-tag mr-2"></i>브랜드명 / 서비스명 / 상품명 <span class="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
                             id="brand"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                            placeholder="예: 올리브영"
+                            placeholder="예: 올리브영 / 스킨케어 라인 / 수분크림"
                             required
                         />
                     </div>
@@ -301,9 +368,14 @@ export const htmlTemplate = `
                             <i class="fas fa-palette mr-2"></i>톤앤매너
                         </label>
                         <select id="tone" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
-                            <option value="캐주얼">캐주얼</option>
+                            <option value="친근한">친근한</option>
                             <option value="전문가">전문가</option>
                             <option value="감성">감성</option>
+                            <option value="유머러스">유머러스</option>
+                            <option value="신뢰감">신뢰감</option>
+                            <option value="트렌디">트렌디</option>
+                            <option value="고급스러운">고급스러운</option>
+                            <option value="실용적">실용적</option>
                         </select>
                     </div>
                     <div>
@@ -325,10 +397,20 @@ export const htmlTemplate = `
                         <select id="industry" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
                             <option value="뷰티">뷰티</option>
                             <option value="패션">패션</option>
-                            <option value="F&B">F&B</option>
-                            <option value="IT">IT/테크</option>
+                            <option value="F&B">F&B (식음료)</option>
+                            <option value="IT/테크">IT/테크</option>
                             <option value="헬스케어">헬스케어</option>
                             <option value="라이프스타일" selected>라이프스타일</option>
+                            <option value="교육">교육</option>
+                            <option value="의료">의료</option>
+                            <option value="부동산">부동산</option>
+                            <option value="금융">금융</option>
+                            <option value="법률">법률</option>
+                            <option value="여행">여행/관광</option>
+                            <option value="반려동물">반려동물</option>
+                            <option value="자동차">자동차</option>
+                            <option value="가전">가전/전자</option>
+                            <option value="스포츠">스포츠/레저</option>
                         </select>
                     </div>
                 </div>
@@ -360,12 +442,12 @@ export const htmlTemplate = `
 
 
 
-                <!-- 비용 예상 -->
-                <div id="costEstimate"></div>
+                <!-- 비용 예상 (버튼 바로 위) -->
+                <div id="costEstimate" class="mb-6"></div>
 
                 <button
                     type="submit"
-                    id="submitBtn"
+                    id="generateBtn"
                     class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-4 px-6 rounded-lg hover:from-purple-700 hover:to-blue-700 transition shadow-lg text-lg"
                 >
                     🎯 콘텐츠 생성하기
@@ -373,11 +455,47 @@ export const htmlTemplate = `
             </form>
         </div>
 
-        <!-- 로딩 상태 -->
-        <div id="loadingState" class="hidden bg-white rounded-2xl shadow-xl p-12 text-center mb-8">
-            <div class="loading-spinner mx-auto mb-4"></div>
-            <p class="text-gray-600 text-lg font-medium">콘텐츠 생성 중...</p>
-            <p class="text-gray-500 text-sm mt-2">(약 30-60초 소요)</p>
+        <!-- 전체 화면 로딩 오버레이 -->
+        <div id="loadingOverlay" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+            <div class="bg-white rounded-2xl shadow-2xl p-12 text-center max-w-md mx-4">
+                <div class="loading-spinner mx-auto mb-6"></div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-3">콘텐츠 생성 중...</h3>
+                <div class="mb-4">
+                    <div class="text-4xl font-bold text-purple-600" id="progressPercent">0%</div>
+                    <div class="w-full bg-gray-200 rounded-full h-3 mt-3">
+                        <div id="progressBar" class="bg-gradient-to-r from-purple-600 to-blue-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+                <p class="text-gray-600" id="loadingMessage">이미지 분석 중...</p>
+                <p class="text-gray-500 text-sm mt-2">예상 소요 시간: <span id="estimatedTime">30초</span></p>
+            </div>
+        </div>
+
+        <!-- 에러 모달 -->
+        <div id="errorModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg mx-4">
+                <div class="text-center mb-6">
+                    <div class="text-6xl mb-4">❌</div>
+                    <h3 class="text-2xl font-bold text-red-600 mb-2">오류 발생</h3>
+                    <p class="text-gray-700 mb-4" id="errorMessage">콘텐츠 생성 중 오류가 발생했습니다.</p>
+                    <div class="bg-gray-50 border-l-4 border-yellow-400 p-4 text-left">
+                        <p class="font-semibold text-gray-800 mb-2">💡 해결 방법:</p>
+                        <ul class="text-sm text-gray-600 space-y-1" id="errorSolutions">
+                            <li>• OpenAI API 키가 올바른지 확인하세요</li>
+                            <li>• API 사용 한도를 확인하세요</li>
+                            <li>• 잠시 후 다시 시도해주세요</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closeErrorModal()" class="flex-1 px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+                        닫기
+                    </button>
+                    <button onclick="retryGeneration()" class="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold">
+                        🔄 재시도
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- 결과 표시 -->
@@ -475,8 +593,11 @@ export const htmlTemplate = `
         <div id="batchResults" class="hidden mt-8"></div>
     </div>
 
+    <!-- 토스트 메시지 컨테이너 -->
+    <div id="toastContainer"></div>
+
     <script src="/static/i18n.js"></script>
-    <script src="/static/app-v3.js"></script>
+    <script src="/static/app-v3-enhanced.js"></script>
 </body>
 </html>
 `;
