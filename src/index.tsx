@@ -251,15 +251,15 @@ app.post('/api/generate', async (c) => {
       );
     }
 
-    // OpenAI API 키 확인 (클라이언트 제공 우선, 환경변수 fallback)
-    const finalApiKey = apiKey || c.env.OPENAI_API_KEY;
+    // OpenAI API 키 확인 (환경변수에서만 읽기)
+    const finalApiKey = c.env.OPENAI_API_KEY;
     if (!finalApiKey) {
       return c.json(
         {
           success: false,
-          error: 'OpenAI API 키가 필요합니다. API 키를 설정해주세요.',
+          error: 'OpenAI API 키가 서버에 설정되지 않았습니다. 관리자에게 문의하세요.',
         },
-        400
+        500
       );
     }
 

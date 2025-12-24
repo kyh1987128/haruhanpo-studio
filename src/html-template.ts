@@ -175,39 +175,6 @@ export const htmlTemplate = `
             </div>
         </div>
 
-        <!-- API 키 입력 섹션 -->
-        <div id="apiKeySection" class="bg-white rounded-2xl shadow-xl p-8 mb-8" style="display: none;">
-            <div class="text-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">
-                    🔑 OpenAI API 키 설정
-                </h2>
-                <p class="text-gray-600 text-sm">
-                    API 키는 브라우저에만 저장되며 외부로 전송되지 않습니다. <br>
-                    OpenAI 계정에서 API 키를 발급받으세요: <a href="https://platform.openai.com/api-keys" target="_blank" class="text-blue-600 hover:underline">platform.openai.com/api-keys</a>
-                </p>
-            </div>
-            <div class="max-w-2xl mx-auto">
-                <div class="flex gap-3">
-                    <input
-                        type="password"
-                        id="apiKeyInput"
-                        class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        placeholder="sk-proj-..."
-                    />
-                    <button
-                        type="button"
-                        id="saveApiKeyBtn"
-                        class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold"
-                    >
-                        저장
-                    </button>
-                </div>
-                <p class="text-xs text-gray-500 mt-2">
-                    💡 Tip: API 키는 "sk-proj-"로 시작합니다
-                </p>
-            </div>
-        </div>
-
         <!-- 입력 폼 -->
         <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
             <form id="contentForm" class="space-y-6">
@@ -597,7 +564,7 @@ export const htmlTemplate = `
     <div id="toastContainer"></div>
 
     <script src="/static/i18n.js"></script>
-    <script src="/static/app-v3-enhanced.js"></script>
+    <script src="/static/app-v3-final.js"></script>
 </body>
 </html>
 `;
