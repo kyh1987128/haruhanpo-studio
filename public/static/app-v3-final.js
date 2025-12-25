@@ -4,7 +4,8 @@
 // ===================================
 
 // 전역 변수
-let selectedImages = [];
+let selectedImages = []; // 더 이상 사용 안 함 (개별 콘텐츠로 변경)
+let contentBlocks = {}; // { 0: { images: [], keywords: '', topic: '', description: '' }, 1: {...}, ... }
 let resultData = {};
 let savedProfiles = [];
 let contentHistory = [];
@@ -354,11 +355,11 @@ async function initializeApp() {
   // 이벤트 리스너
   setupEventListeners();
   
+  // 초기 콘텐츠 블록 생성 (1개)
+  generateContentBlocks();
+  
   // 비용 초기화
   updateCostEstimate();
-  
-  // 배치 계산 초기화
-  updateBatchCalculation();
   
   // 다국어 초기화
   if (typeof window.i18n !== 'undefined' && typeof window.i18n.init === 'function') {
@@ -658,36 +659,43 @@ async function fetchExchangeRate() {
 }
 
 function updateCostEstimate() {
-  const imageCount = selectedImages.length;
+  // 개별 콘텐츠 블록의 총 이미지 수 계산
+  let totalImageCount = 0;
+  const contentCount = Object.keys(contentBlocks).length;
+  
+  Object.values(contentBlocks).forEach(block => {
+    totalImageCount += (block.images || []).length;
+  });
+  
   const platformCheckboxes = document.querySelectorAll('input[name="platform"]:checked');
   const platformCount = platformCheckboxes.length;
 
-  if (imageCount === 0 || platformCount === 0) {
+  if (totalImageCount === 0 || platformCount === 0 || contentCount === 0) {
     document.getElementById('costEstimate').innerHTML = `
       <div style="padding: 1.5rem; text-align: center; background: #f9fafb; border-radius: 12px; border: 2px dashed #d1d5db;">
         <p style="color: #6b7280; margin: 0;">
-          📊 이미지와 플랫폼을 선택하면 예상 비용이 표시됩니다
+          📊 콘텐츠별 이미지와 플랫폼을 선택하면 예상 비용이 표시됩니다
         </p>
       </div>
     `;
     return;
   }
 
-  // 비용 계산
-  const imageCost = imageCount * COSTS.IMAGE_ANALYSIS;
+  // 비용 계산: 총 이미지 분석 비용 + (콘텐츠 수 × 플랫폼별 생성 비용)
+  const imageCost = totalImageCount * COSTS.IMAGE_ANALYSIS;
   let platformCost = 0;
 
   platformCheckboxes.forEach((checkbox) => {
     const platform = checkbox.value;
-    platformCost += COSTS[platform.toUpperCase()] || 0;
+    platformCost += (COSTS[platform.toUpperCase()] || 0) * contentCount;
   });
 
   const totalCostUSD = imageCost + platformCost;
   const totalCostKRW = Math.round(totalCostUSD * EXCHANGE_RATE);
 
   // 예상 소요 시간 계산
-  const imageAnalysisTime = Math.min(imageCount * 3, 5);
-  const contentGenerationTime = Math.min(platformCount * 10, 15);
+  const imageAnalysisTime = Math.min(totalImageCount * 3, 5);
+  const contentGenerationTime = Math.min(contentCount * platformCount * 10, 30);
   const totalTimeSeconds = imageAnalysisTime + contentGenerationTime;
   const totalTimeMinutes = Math.ceil(totalTimeSeconds / 60);
 
@@ -699,11 +707,11 @@ function updateCostEstimate() {
       
       <div style="background: rgba(255,255,255,0.15); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
-          <span>📸 이미지 분석 (${imageCount}장):</span>
+          <span>📸 이미지 분석 (${totalImageCount}장):</span>
           <span style="font-weight: 600;">$${imageCost.toFixed(2)} / ₩${Math.round(imageCost * EXCHANGE_RATE).toLocaleString()}</span>
         </div>
         <div style="display: flex; justify-content: space-between;">
-          <span>✨ 콘텐츠 생성 (${platformCount}개):</span>
+          <span>✨ 콘텐츠 생성 (${contentCount}개 × ${platformCount}개 플랫폼):</span>
           <span style="font-weight: 600;">$${platformCost.toFixed(2)} / ₩${Math.round(platformCost * EXCHANGE_RATE).toLocaleString()}</span>
         </div>
       </div>
@@ -844,7 +852,277 @@ function toggleBatchContentInputs() {
   }
 }
 
+// ===================================
+// 개별 콘텐츠 블록 생성 (NEW)
+// ===================================
+function generateContentBlocks() {
+  const contentCountSelect = document.getElementById('contentCount');
+  const container = document.getElementById('contentBlocksContainer');
+  
+  if (!contentCountSelect || !container) return;
+  
+  const contentCount = parseInt(contentCountSelect.value) || 1;
+  
+  // 기존 데이터 보존 (이미 입력한 내용 유지)
+  const existingData = { ...contentBlocks };
+  contentBlocks = {};
+  
+  let html = '';
+  
+  for (let i = 0; i < contentCount; i++) {
+    // 기존 데이터 복원
+    if (existingData[i]) {
+      contentBlocks[i] = existingData[i];
+    } else {
+      contentBlocks[i] = { images: [], keywords: '', topic: '', description: '' };
+    }
+    
+    const existingImages = contentBlocks[i].images || [];
+    
+    html += `
+      <div class="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl p-6">
+        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+          <span class="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center mr-3">
+            ${i + 1}
+          </span>
+          콘텐츠 #${i + 1}
+        </h3>
+        
+        <!-- 이미지 업로드 -->
+        <div class="mb-4">
+          <label class="block mb-2 font-semibold text-gray-700">
+            <i class="fas fa-image mr-2"></i>이미지 업로드 (최대 10장)
+          </label>
+          <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition cursor-pointer bg-white" 
+               onclick="document.getElementById('imageInput_${i}').click()">
+            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              id="imageInput_${i}"
+              class="hidden"
+              onchange="handleContentImageUpload(${i})"
+            />
+            <p class="text-gray-600 text-sm">
+              <span class="text-purple-600 font-semibold">클릭하여 이미지 선택</span>
+              <span class="text-gray-500"> (${existingImages.length}/10장)</span>
+            </p>
+          </div>
+          <div id="imagePreview_${i}" class="mt-3 grid grid-cols-5 gap-2"></div>
+        </div>
+        
+        <!-- 키워드 + AI 추천 -->
+        <div class="mb-4">
+          <label class="block mb-2 font-semibold text-gray-700 flex justify-between items-center">
+            <span><i class="fas fa-key mr-2"></i>핵심 키워드 <span class="text-red-500">*</span></span>
+            <button
+              type="button"
+              onclick="suggestKeywordsForContent(${i}, event)"
+              class="px-3 py-1.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm rounded-lg hover:from-purple-600 hover:to-pink-600 transition flex items-center gap-1"
+              title="이 콘텐츠의 이미지로 AI 키워드 추천"
+            >
+              <i class="fas fa-magic"></i>
+              AI 추천
+            </button>
+          </label>
+          <input
+            type="text"
+            id="keyword_${i}"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+            placeholder="예: 수분크림, 보습, 겨울케어"
+            value="${contentBlocks[i].keywords || ''}"
+            onchange="updateContentData(${i}, 'keywords', this.value)"
+          />
+        </div>
+        
+        <!-- 주제 -->
+        <div class="mb-4">
+          <label class="block mb-2 font-semibold text-gray-700">
+            <i class="fas fa-lightbulb mr-2"></i>주제/내용 (1줄 설명)
+          </label>
+          <input
+            type="text"
+            id="topic_${i}"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+            placeholder="예: 겨울철 건조한 피부를 위한 수분크림"
+            value="${contentBlocks[i].topic || ''}"
+            onchange="updateContentData(${i}, 'topic', this.value)"
+          />
+        </div>
+        
+        <!-- 추가 설명 -->
+        <div>
+          <label class="block mb-2 font-semibold text-gray-700">
+            <i class="fas fa-comment-dots mr-2"></i>추가 설명 (선택)
+          </label>
+          <textarea
+            id="description_${i}"
+            rows="2"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 resize-none"
+            placeholder="예: 건조한 겨울 날씨에 피부를 촉촉하게 유지하는 방법을 소개합니다"
+            onchange="updateContentData(${i}, 'description', this.value)"
+          >${contentBlocks[i].description || ''}</textarea>
+        </div>
+      </div>
+    `;
+  }
+  
+  container.innerHTML = html;
+  
+  // 기존 이미지 미리보기 복원
+  for (let i = 0; i < contentCount; i++) {
+    if (contentBlocks[i].images && contentBlocks[i].images.length > 0) {
+      renderImagePreview(i);
+    }
+  }
+  
+  // 비용 계산 업데이트
+  updateCostEstimate();
+}
+
+// 콘텐츠 데이터 업데이트
+function updateContentData(index, field, value) {
+  if (!contentBlocks[index]) {
+    contentBlocks[index] = { images: [], keywords: '', topic: '', description: '' };
+  }
+  contentBlocks[index][field] = value;
+}
+
+// 개별 콘텐츠 이미지 업로드 처리
+function handleContentImageUpload(index) {
+  const input = document.getElementById(`imageInput_${index}`);
+  const files = Array.from(input.files);
+  
+  if (!contentBlocks[index]) {
+    contentBlocks[index] = { images: [], keywords: '', topic: '', description: '' };
+  }
+  
+  const currentImages = contentBlocks[index].images || [];
+  const availableSlots = 10 - currentImages.length;
+  
+  if (files.length > availableSlots) {
+    showToast(`⚠️ 최대 10장까지 업로드할 수 있습니다. (현재: ${currentImages.length}장)`, 'warning');
+    return;
+  }
+  
+  // 파일을 base64로 변환
+  let processedCount = 0;
+  files.forEach((file, idx) => {
+    if (file.size > 10 * 1024 * 1024) {
+      showToast(`❌ ${file.name}은(는) 10MB를 초과합니다`, 'error');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      contentBlocks[index].images.push({
+        base64: e.target.result,
+        name: file.name,
+        size: file.size
+      });
+      
+      processedCount++;
+      if (processedCount === files.length) {
+        renderImagePreview(index);
+        updateCostEstimate();
+        showToast(`✅ ${files.length}장 업로드 완료`, 'success');
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// 이미지 미리보기 렌더링
+function renderImagePreview(index) {
+  const container = document.getElementById(`imagePreview_${index}`);
+  if (!container || !contentBlocks[index]) return;
+  
+  const images = contentBlocks[index].images || [];
+  
+  container.innerHTML = images.map((img, imgIdx) => `
+    <div class="relative group">
+      <img src="${img.base64}" class="w-full h-20 object-cover rounded-lg border-2 border-gray-200" />
+      <button
+        type="button"
+        onclick="removeContentImage(${index}, ${imgIdx})"
+        class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+      >
+        ×
+      </button>
+    </div>
+  `).join('');
+  
+  // 업로드 카운트 업데이트
+  const uploadArea = document.getElementById(`imageInput_${index}`)?.parentElement;
+  if (uploadArea) {
+    const countSpan = uploadArea.querySelector('.text-gray-500');
+    if (countSpan) {
+      countSpan.innerHTML = ` (${images.length}/10장)`;
+    }
+  }
+}
+
+// 이미지 삭제
+function removeContentImage(contentIndex, imageIndex) {
+  if (!contentBlocks[contentIndex]) return;
+  
+  contentBlocks[contentIndex].images.splice(imageIndex, 1);
+  renderImagePreview(contentIndex);
+  updateCostEstimate();
+  showToast('🗑️ 이미지 삭제 완료', 'success');
+}
+
+// 개별 콘텐츠 AI 키워드 추천
+async function suggestKeywordsForContent(index, event) {
+  event.preventDefault();
+  event.stopPropagation();
+  
+  if (!contentBlocks[index] || !contentBlocks[index].images || contentBlocks[index].images.length === 0) {
+    showToast('❌ 먼저 이미지를 업로드해주세요', 'error');
+    return;
+  }
+  
+  const brand = document.getElementById('brand')?.value.trim() || '';
+  const industry = document.getElementById('industry')?.value || '';
+  
+  const btn = event.target.closest('button');
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 분석 중...';
+  
+  try {
+    const response = await fetch('/api/suggest-keywords', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        images: contentBlocks[index].images.slice(0, 3).map(img => img.base64),
+        brand: brand,
+        industry: industry
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success && result.keywords) {
+      const keywordsStr = result.keywords.join(', ');
+      document.getElementById(`keyword_${index}`).value = keywordsStr;
+      updateContentData(index, 'keywords', keywordsStr);
+      showToast('✨ 키워드 추천 완료!', 'success');
+    } else {
+      showToast('❌ ' + (result.error || '키워드 추천 실패'), 'error');
+    }
+  } catch (error) {
+    console.error('키워드 추천 오류:', error);
+    showToast('❌ 네트워크 오류가 발생했습니다', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHTML;
+  }
+}
+
 function generateBatchContentInputs() {
+  // 더 이상 사용 안 함 (generateContentBlocks로 대체)
   const contentCountSelect = document.getElementById('contentCount');
   const container = document.getElementById('batchContentInputs');
   
@@ -1005,60 +1283,70 @@ function addKeyword(keyword) {
 // 콘텐츠 생성
 // ===================================
 async function handleGenerate() {
-  // 입력값 수집
+  // 기본 정보 수집
   const brand = document.getElementById('brand').value.trim();
-  const keywords = document.getElementById('keywords').value.trim();
-
-  if (!brand || !keywords) {
-    showToast('❌ 브랜드명과 핵심 키워드는 필수입니다', 'error');
+  
+  if (!brand) {
+    showToast('❌ 브랜드명은 필수입니다', 'error');
     return;
   }
 
-  if (selectedImages.length === 0) {
-    showToast('❌ 최소 1장의 이미지를 업로드해주세요', 'error');
-    return;
-  }
-
+  // 플랫폼 선택 확인
   const platformCheckboxes = document.querySelectorAll('input[name="platform"]:checked');
   if (platformCheckboxes.length === 0) {
     showToast('❌ 최소 1개 플랫폼을 선택해주세요', 'error');
     return;
   }
-
   const platforms = Array.from(platformCheckboxes).map((cb) => cb.value);
   
-  // 배치 생성 설정 확인
-  const contentCountSelect = document.getElementById('contentCount');
-  const customContentCountInput = document.getElementById('customContentCount');
-  const imagesPerContent = parseInt(document.getElementById('imagesPerContent').value);
-  
-  let contentCount = 1;
-  if (contentCountSelect.value === 'custom') {
-    contentCount = parseInt(customContentCountInput.value) || 1;
-  } else {
-    contentCount = parseInt(contentCountSelect.value);
+  // 콘텐츠 블록 검증
+  const contentCount = Object.keys(contentBlocks).length;
+  if (contentCount === 0) {
+    showToast('❌ 생성할 콘텐츠가 없습니다', 'error');
+    return;
   }
   
-  const requiredImages = contentCount * imagesPerContent;
-  
-  // 이미지 부족 체크
-  if (selectedImages.length < requiredImages) {
-    showToast(`❌ 이미지가 부족합니다. ${requiredImages}장이 필요하지만 ${selectedImages.length}장만 업로드되었습니다`, 'error');
-    return;
+  // 각 콘텐츠 블록 검증
+  for (let i = 0; i < contentCount; i++) {
+    if (!contentBlocks[i]) {
+      showToast(`❌ 콘텐츠 #${i + 1} 정보가 없습니다`, 'error');
+      return;
+    }
+    
+    if (!contentBlocks[i].images || contentBlocks[i].images.length === 0) {
+      showToast(`❌ 콘텐츠 #${i + 1}에 최소 1장의 이미지를 업로드해주세요`, 'error');
+      return;
+    }
+    
+    if (!contentBlocks[i].keywords || contentBlocks[i].keywords.trim() === '') {
+      showToast(`❌ 콘텐츠 #${i + 1}의 키워드를 입력해주세요`, 'error');
+      return;
+    }
   }
   
   // 배치 생성 실행
   if (contentCount > 1) {
-    await handleBatchGenerate(contentCount, imagesPerContent, platforms);
+    await handleNewBatchGenerate(contentCount, platforms);
     return;
   }
   
-  // 단일 생성 (기존 로직)
+  // 단일 생성
 
-  // 웹사이트 URL 자동 보정 (http:// 없으면 추가)
+  // 단일 콘텐츠 생성 (contentBlocks[0] 사용)
+  const content = contentBlocks[0];
+  
   let website = document.getElementById('website')?.value.trim() || '';
   if (website && !website.startsWith('http://') && !website.startsWith('https://')) {
     website = 'https://' + website;
+  }
+  
+  // 키워드에 주제와 설명 추가
+  let enhancedKeywords = content.keywords;
+  if (content.topic) {
+    enhancedKeywords += ` (주제: ${content.topic})`;
+  }
+  if (content.description) {
+    enhancedKeywords += ` (${content.description})`;
   }
 
   const formData = {
@@ -1070,11 +1358,11 @@ async function handleGenerate() {
     contact: document.getElementById('contact')?.value.trim() || '',
     website: website,
     sns: document.getElementById('sns')?.value.trim() || '',
-    keywords,
+    keywords: enhancedKeywords,
     tone: document.getElementById('tone')?.value || '친근한',
     targetAge: document.getElementById('targetAge')?.value || '20대',
     industry: document.getElementById('industry')?.value || '라이프스타일',
-    images: selectedImages.map((img) => img.base64),
+    images: content.images.map((img) => img.base64),
     platforms,
     aiModel: 'gpt-4o',
   };
@@ -1119,7 +1407,105 @@ async function handleGenerate() {
 }
 
 // ===================================
-// 배치 생성
+// 새로운 배치 생성 (개별 콘텐츠 블록 기반)
+// ===================================
+async function handleNewBatchGenerate(contentCount, platforms) {
+  const brand = document.getElementById('brand').value.trim();
+  const companyName = document.getElementById('companyName')?.value.trim() || '';
+  const businessType = document.getElementById('businessType')?.value.trim() || '';
+  const location = document.getElementById('location')?.value.trim() || '';
+  const targetGender = document.getElementById('targetGender')?.value || '';
+  const contact = document.getElementById('contact')?.value.trim() || '';
+  let website = document.getElementById('website')?.value.trim() || '';
+  if (website && !website.startsWith('http://') && !website.startsWith('https://')) {
+    website = 'https://' + website;
+  }
+  const sns = document.getElementById('sns')?.value.trim() || '';
+  const tone = document.getElementById('tone')?.value || '친근한';
+  const targetAge = document.getElementById('targetAge')?.value || '20대';
+  const industry = document.getElementById('industry')?.value || '라이프스타일';
+  
+  // 배치 생성 시작
+  showBatchLoadingOverlay(contentCount);
+  
+  const allResults = [];
+  const errors = [];
+  
+  for (let i = 0; i < contentCount; i++) {
+    const content = contentBlocks[i];
+    
+    if (!content) {
+      errors.push({ index: i, error: '콘텐츠 정보 없음' });
+      continue;
+    }
+    
+    // 키워드에 주제와 설명 추가
+    let enhancedKeywords = content.keywords;
+    if (content.topic) {
+      enhancedKeywords += ` (주제: ${content.topic})`;
+    }
+    if (content.description) {
+      enhancedKeywords += ` (${content.description})`;
+    }
+    
+    updateBatchProgress(i + 1, contentCount, `콘텐츠 #${i + 1} 생성 중... (${content.keywords})`);
+    
+    const formData = {
+      brand,
+      companyName,
+      businessType,
+      location,
+      targetGender,
+      contact,
+      website,
+      sns,
+      keywords: enhancedKeywords,
+      tone,
+      targetAge,
+      industry,
+      images: content.images.map((img) => img.base64),
+      platforms,
+      aiModel: 'gpt-4o',
+    };
+    
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        allResults.push({
+          contentIndex: i,
+          data: result.data,
+          platforms: result.generatedPlatforms,
+          keywords: content.keywords
+        });
+      } else {
+        errors.push({ index: i, error: result.error || '알 수 없는 오류' });
+      }
+    } catch (error) {
+      console.error(`콘텐츠 #${i + 1} 생성 오류:`, error);
+      errors.push({ index: i, error: error.message });
+    }
+  }
+  
+  // 배치 생성 완료
+  hideBatchLoadingOverlay();
+  displayBatchResults(allResults, errors, contentCount);
+  
+  if (allResults.length > 0) {
+    showToast(`✅ 배치 생성 완료! (성공: ${allResults.length}개, 실패: ${errors.length}개)`, 'success');
+  } else {
+    showToast('❌ 모든 콘텐츠 생성에 실패했습니다', 'error');
+  }
+}
+
+// ===================================
+// 구 배치 생성 (더 이상 사용 안 함)
 // ===================================
 async function handleBatchGenerate(contentCount, imagesPerContent, platforms) {
   const brand = document.getElementById('brand').value.trim();

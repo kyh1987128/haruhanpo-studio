@@ -178,124 +178,6 @@ export const htmlTemplate = `
         <!-- 입력 폼 -->
         <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
             <form id="contentForm" class="space-y-6">
-                <!-- 이미지 업로드 -->
-                <div>
-                    <label class="block mb-2 font-semibold text-gray-700">
-                        <i class="fas fa-image mr-2"></i>이미지 업로드 (최대 100장, 총 200MB)
-                    </label>
-                    <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 transition cursor-pointer" id="uploadArea">
-                        <i class="fas fa-cloud-upload-alt text-6xl text-gray-400 mb-4"></i>
-                        <input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            id="imageInput"
-                            class="hidden"
-                        />
-                        <p class="text-gray-600">
-                            <span class="text-purple-600 font-semibold hover:underline">클릭하여 이미지 선택</span>
-                            <span class="text-gray-500"> 또는 드래그앤드롭</span>
-                        </p>
-                        <p class="text-sm text-gray-500 mt-2">
-                            💡 배치 생성: 여러 콘텐츠를 한번에 만들 수 있습니다
-                        </p>
-                    </div>
-                    <div id="imagePreviewContainer" class="mt-4 grid grid-cols-5 gap-3"></div>
-                </div>
-
-                <!-- 배치 생성 설정 -->
-                <div id="batchSettings" class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 border border-purple-200">
-                    <h3 class="text-lg font-bold text-gray-800 mb-4">
-                        <i class="fas fa-layer-group mr-2"></i>배치 생성 설정
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <!-- 콘텐츠 개수 -->
-                        <div>
-                            <label class="block mb-2 font-semibold text-gray-700">
-                                <i class="fas fa-list-ol mr-2"></i>생성할 콘텐츠 개수
-                            </label>
-                            <select id="contentCount" onchange="updateBatchCalculation()" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
-                                <option value="1" selected>1개</option>
-                                <option value="2">2개</option>
-                                <option value="3">3개</option>
-                                <option value="4">4개</option>
-                                <option value="5">5개</option>
-                                <option value="6">6개</option>
-                                <option value="7">7개</option>
-                                <option value="8">8개</option>
-                                <option value="9">9개</option>
-                                <option value="10">10개</option>
-                                <option value="11">11개</option>
-                                <option value="12">12개</option>
-                                <option value="15">15개</option>
-                                <option value="20">20개</option>
-                            </select>
-                        </div>
-                        <!-- 이미지 분배 -->
-                        <div>
-                            <label class="block mb-2 font-semibold text-gray-700">
-                                <i class="fas fa-images mr-2"></i>콘텐츠당 이미지 수
-                            </label>
-                            <select id="imagesPerContent" onchange="updateBatchCalculation()" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
-                                <option value="1">1장</option>
-                                <option value="3">3장</option>
-                                <option value="5" selected>5장</option>
-                                <option value="7">7장</option>
-                                <option value="10">10장</option>
-                            </select>
-                        </div>
-                        <!-- 자동 계산 정보 -->
-                        <div>
-                            <label class="block mb-2 font-semibold text-gray-700">
-                                <i class="fas fa-calculator mr-2"></i>필요한 이미지 수
-                            </label>
-                            <div class="bg-white rounded-lg p-4 border-2 border-gray-300">
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm text-gray-600">필요:</span>
-                                    <span id="requiredImages" class="font-bold text-purple-600 text-xl">5</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm text-gray-600">업로드:</span>
-                                    <span id="uploadedImages" class="font-bold text-blue-600 text-xl">0</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- 경고 메시지 -->
-                    <div id="batchWarning" class="mt-4 hidden">
-                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
-                            <div class="flex">
-                                <i class="fas fa-exclamation-triangle text-yellow-400 mr-3 mt-1"></i>
-                                <div>
-                                    <p class="font-semibold text-yellow-800">이미지가 부족합니다</p>
-                                    <p class="text-sm text-yellow-700" id="batchWarningText"></p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- 분배 미리보기 -->
-                    <div id="distributionPreview" class="mt-4 hidden">
-                        <h4 class="font-semibold text-gray-700 mb-2 flex items-center">
-                            <i class="fas fa-sitemap mr-2"></i>이미지 자동 분배 미리보기
-                        </h4>
-                        <div id="distributionList" class="bg-white rounded-lg p-4 max-h-40 overflow-y-auto text-sm"></div>
-                    </div>
-                    
-                    <!-- 개별 콘텐츠 정보 입력 -->
-                    <div class="mt-4">
-                        <button
-                            type="button"
-                            onclick="toggleBatchContentInputs()"
-                            class="w-full px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold rounded-lg hover:from-indigo-600 hover:to-purple-600 transition flex items-center justify-center gap-2"
-                        >
-                            <i class="fas fa-list-alt"></i>
-                            <span id="batchInputToggleText">개별 콘텐츠 정보 입력하기 (선택사항)</span>
-                            <i class="fas fa-chevron-down" id="batchInputToggleIcon"></i>
-                        </button>
-                        
-                        <div id="batchContentInputs" class="mt-4 space-y-3 hidden"></div>
-                    </div>
-                </div>
 
                 <!-- 기본 정보 -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -411,42 +293,30 @@ export const htmlTemplate = `
                     </div>
                 </div>
 
-                <!-- 키워드 -->
+                <!-- 생성할 콘텐츠 개수 -->
                 <div>
-                    <label class="block mb-2 font-semibold text-gray-700 flex justify-between items-center">
-                        <span><i class="fas fa-key mr-2"></i>핵심 키워드 <span class="text-red-500">*</span></span>
-                        <button
-                            type="button"
-                            onclick="suggestKeywords(event)"
-                            class="px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm rounded-lg hover:from-purple-600 hover:to-pink-600 transition flex items-center gap-1"
-                            title="이미지 기반 키워드 자동 추천"
-                        >
-                            <i class="fas fa-magic"></i>
-                            AI 추천
-                        </button>
+                    <label class="block mb-2 font-semibold text-gray-700">
+                        <i class="fas fa-list-ol mr-2"></i>생성할 콘텐츠 개수
                     </label>
-                    <input
-                        type="text"
-                        id="keywords"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        placeholder="예: 스킨케어, 보습, 민감성피부 (쉼표로 구분)"
-                        required
-                    />
-                    <div id="keywordSuggestions" class="mt-2 hidden">
-                        <p class="text-sm text-gray-600 mb-2">✨ 추천 키워드 (클릭하여 추가):</p>
-                        <div id="suggestedKeywordsList" class="flex flex-wrap gap-2"></div>
-                    </div>
-                    <div class="mt-2 p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
-                        <p class="text-sm text-blue-800">
-                            <i class="fas fa-info-circle mr-2"></i>
-                            <strong>배치 생성 팁:</strong> 여러 키워드를 쉼표로 구분하면 각 콘텐츠마다 자동으로 순환됩니다.
-                            <br/>
-                            <span class="text-xs text-blue-600 mt-1 block ml-5">
-                                예: "수분크림, 에센스, 토너" → 콘텐츠 #1: 수분크림, #2: 에센스, #3: 토너, #4: 수분크림...
-                            </span>
-                        </p>
-                    </div>
+                    <select id="contentCount" onchange="generateContentBlocks()" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                        <option value="1" selected>1개</option>
+                        <option value="2">2개</option>
+                        <option value="3">3개</option>
+                        <option value="4">4개</option>
+                        <option value="5">5개</option>
+                        <option value="6">6개</option>
+                        <option value="7">7개</option>
+                        <option value="8">8개</option>
+                        <option value="9">9개</option>
+                        <option value="10">10개</option>
+                        <option value="12">12개</option>
+                        <option value="15">15개</option>
+                        <option value="20">20개</option>
+                    </select>
                 </div>
+                
+                <!-- 개별 콘텐츠 입력 영역 -->
+                <div id="contentBlocksContainer" class="space-y-4"></div>
 
                 <!-- 톤앤매너, 연령대, 산업 -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -854,7 +724,7 @@ export const htmlTemplate = `
     <div id="toastContainer"></div>
 
     <script src="/static/i18n.js?v=5.3.2"></script>
-    <script src="/static/app-v3-final.js?v=5.3.2"></script>
+    <script src="/static/app-v3-final.js?v=6.0.0"></script>
 </body>
 </html>
 `;
