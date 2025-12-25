@@ -215,22 +215,21 @@ export const htmlTemplate = `
                                 <i class="fas fa-list-ol mr-2"></i>생성할 콘텐츠 개수
                             </label>
                             <select id="contentCount" onchange="updateBatchCalculation()" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
-                                <option value="1">1개</option>
+                                <option value="1" selected>1개</option>
+                                <option value="2">2개</option>
                                 <option value="3">3개</option>
+                                <option value="4">4개</option>
                                 <option value="5">5개</option>
+                                <option value="6">6개</option>
+                                <option value="7">7개</option>
+                                <option value="8">8개</option>
+                                <option value="9">9개</option>
                                 <option value="10">10개</option>
-                                <option value="12">12개 (월간 콘텐츠)</option>
-                                <option value="custom">직접 입력...</option>
+                                <option value="11">11개</option>
+                                <option value="12">12개</option>
+                                <option value="15">15개</option>
+                                <option value="20">20개</option>
                             </select>
-                            <input
-                                type="number"
-                                id="customContentCount"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 mt-2 hidden"
-                                placeholder="개수 입력 (1-20)"
-                                min="1"
-                                max="20"
-                                onchange="updateBatchCalculation()"
-                            />
                         </div>
                         <!-- 이미지 분배 -->
                         <div>

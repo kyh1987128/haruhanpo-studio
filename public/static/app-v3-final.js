@@ -357,6 +357,9 @@ async function initializeApp() {
   // 비용 초기화
   updateCostEstimate();
   
+  // 배치 계산 초기화
+  updateBatchCalculation();
+  
   // 다국어 초기화
   if (typeof window.i18n !== 'undefined' && typeof window.i18n.init === 'function') {
     window.i18n.init();
@@ -415,10 +418,13 @@ function setupEventListeners() {
     templateBtn.addEventListener('click', openTemplateModal);
   }
 
-  // 플랫폼 선택 변경 시 비용 재계산
+  // 플랫폼 선택 변경 시 비용 재계산 및 배치 계산
   const platformCheckboxes = document.querySelectorAll('input[name="platform"]');
   platformCheckboxes.forEach((checkbox) => {
-    checkbox.addEventListener('change', updateCostEstimate);
+    checkbox.addEventListener('change', () => {
+      updateCostEstimate();
+      updateBatchCalculation();
+    });
   });
 }
 
@@ -732,18 +738,12 @@ function updateCostEstimate() {
 // ===================================
 function updateBatchCalculation() {
   const contentCountSelect = document.getElementById('contentCount');
-  const customContentCountInput = document.getElementById('customContentCount');
-  const imagesPerContent = parseInt(document.getElementById('imagesPerContent').value);
+  const imagesPerContentSelect = document.getElementById('imagesPerContent');
   
-  // 콘텐츠 개수 결정
-  let contentCount = 1;
-  if (contentCountSelect.value === 'custom') {
-    customContentCountInput.classList.remove('hidden');
-    contentCount = parseInt(customContentCountInput.value) || 1;
-  } else {
-    customContentCountInput.classList.add('hidden');
-    contentCount = parseInt(contentCountSelect.value);
-  }
+  if (!contentCountSelect || !imagesPerContentSelect) return;
+  
+  const contentCount = parseInt(contentCountSelect.value) || 1;
+  const imagesPerContent = parseInt(imagesPerContentSelect.value) || 5;
   
   // 필요한 이미지 수 계산
   const requiredImages = contentCount * imagesPerContent;
