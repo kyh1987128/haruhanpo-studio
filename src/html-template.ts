@@ -828,8 +828,8 @@ export const htmlTemplate = `
     <!-- 토스트 메시지 컨테이너 -->
     <div id="toastContainer"></div>
 
-    <script src="/static/i18n.js"></script>
-    <script src="/static/app-v3-final.js"></script>
+    <script src="/static/i18n.js?v=5.3.1"></script>
+    <script src="/static/app-v3-final.js?v=5.3.1"></script>
 </body>
 </html>
 `;
