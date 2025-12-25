@@ -181,7 +181,7 @@ export const htmlTemplate = `
                 <!-- 이미지 업로드 -->
                 <div>
                     <label class="block mb-2 font-semibold text-gray-700">
-                        <i class="fas fa-image mr-2"></i>이미지 업로드 (최대 10장, 총 50MB)
+                        <i class="fas fa-image mr-2"></i>이미지 업로드 (최대 100장, 총 200MB)
                     </label>
                     <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-purple-400 transition cursor-pointer" id="uploadArea">
                         <i class="fas fa-cloud-upload-alt text-6xl text-gray-400 mb-4"></i>
@@ -196,8 +196,91 @@ export const htmlTemplate = `
                             <span class="text-purple-600 font-semibold hover:underline">클릭하여 이미지 선택</span>
                             <span class="text-gray-500"> 또는 드래그앤드롭</span>
                         </p>
+                        <p class="text-sm text-gray-500 mt-2">
+                            💡 배치 생성: 여러 콘텐츠를 한번에 만들 수 있습니다
+                        </p>
                     </div>
                     <div id="imagePreviewContainer" class="mt-4 grid grid-cols-5 gap-3"></div>
+                </div>
+
+                <!-- 배치 생성 설정 -->
+                <div id="batchSettings" class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 border border-purple-200">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">
+                        <i class="fas fa-layer-group mr-2"></i>배치 생성 설정
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- 콘텐츠 개수 -->
+                        <div>
+                            <label class="block mb-2 font-semibold text-gray-700">
+                                <i class="fas fa-list-ol mr-2"></i>생성할 콘텐츠 개수
+                            </label>
+                            <select id="contentCount" onchange="updateBatchCalculation()" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                <option value="1">1개</option>
+                                <option value="3">3개</option>
+                                <option value="5">5개</option>
+                                <option value="10">10개</option>
+                                <option value="12">12개 (월간 콘텐츠)</option>
+                                <option value="custom">직접 입력...</option>
+                            </select>
+                            <input
+                                type="number"
+                                id="customContentCount"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 mt-2 hidden"
+                                placeholder="개수 입력 (1-20)"
+                                min="1"
+                                max="20"
+                                onchange="updateBatchCalculation()"
+                            />
+                        </div>
+                        <!-- 이미지 분배 -->
+                        <div>
+                            <label class="block mb-2 font-semibold text-gray-700">
+                                <i class="fas fa-images mr-2"></i>콘텐츠당 이미지 수
+                            </label>
+                            <select id="imagesPerContent" onchange="updateBatchCalculation()" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                <option value="1">1장</option>
+                                <option value="3">3장</option>
+                                <option value="5" selected>5장</option>
+                                <option value="7">7장</option>
+                                <option value="10">10장</option>
+                            </select>
+                        </div>
+                        <!-- 자동 계산 정보 -->
+                        <div>
+                            <label class="block mb-2 font-semibold text-gray-700">
+                                <i class="fas fa-calculator mr-2"></i>필요한 이미지 수
+                            </label>
+                            <div class="bg-white rounded-lg p-4 border-2 border-gray-300">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm text-gray-600">필요:</span>
+                                    <span id="requiredImages" class="font-bold text-purple-600 text-xl">5</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-600">업로드:</span>
+                                    <span id="uploadedImages" class="font-bold text-blue-600 text-xl">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 경고 메시지 -->
+                    <div id="batchWarning" class="mt-4 hidden">
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                            <div class="flex">
+                                <i class="fas fa-exclamation-triangle text-yellow-400 mr-3 mt-1"></i>
+                                <div>
+                                    <p class="font-semibold text-yellow-800">이미지가 부족합니다</p>
+                                    <p class="text-sm text-yellow-700" id="batchWarningText"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 분배 미리보기 -->
+                    <div id="distributionPreview" class="mt-4 hidden">
+                        <h4 class="font-semibold text-gray-700 mb-2 flex items-center">
+                            <i class="fas fa-sitemap mr-2"></i>이미지 자동 분배 미리보기
+                        </h4>
+                        <div id="distributionList" class="bg-white rounded-lg p-4 max-h-40 overflow-y-auto text-sm"></div>
+                    </div>
                 </div>
 
                 <!-- 기본 정보 -->
@@ -426,6 +509,89 @@ export const htmlTemplate = `
                             <input type="checkbox" name="platform" value="youtube" class="w-5 h-5 text-purple-600">
                             <span class="font-medium">🎬 유튜브 숏폼</span>
                         </label>
+                    </div>
+                </div>
+
+                <!-- 배치 생성 옵션 -->
+                <div class="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-6">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-layer-group text-2xl text-purple-600 mr-3"></i>
+                        <h3 class="text-lg font-bold text-gray-800">배치 생성 설정</h3>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- 생성 개수 -->
+                        <div>
+                            <label class="block mb-2 font-semibold text-gray-700">
+                                📦 생성 개수
+                            </label>
+                            <div class="flex gap-2 mb-2">
+                                <button type="button" onclick="setBatchCount(1)" class="batch-count-btn flex-1 px-3 py-2 border-2 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition">1개</button>
+                                <button type="button" onclick="setBatchCount(3)" class="batch-count-btn flex-1 px-3 py-2 border-2 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition">3개</button>
+                                <button type="button" onclick="setBatchCount(5)" class="batch-count-btn flex-1 px-3 py-2 border-2 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition">5개</button>
+                                <button type="button" onclick="setBatchCount(10)" class="batch-count-btn flex-1 px-3 py-2 border-2 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition">10개</button>
+                            </div>
+                            <input
+                                type="number"
+                                id="batchCount"
+                                min="1"
+                                max="20"
+                                value="1"
+                                class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                                placeholder="또는 직접 입력"
+                                onchange="updateBatchCalculation()"
+                            />
+                        </div>
+
+                        <!-- 콘텐츠당 이미지 -->
+                        <div>
+                            <label class="block mb-2 font-semibold text-gray-700">
+                                📷 콘텐츠당 이미지
+                            </label>
+                            <div class="flex gap-2 mb-2">
+                                <button type="button" onclick="setImagesPerContent(1)" class="images-per-content-btn flex-1 px-3 py-2 border-2 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition">1장</button>
+                                <button type="button" onclick="setImagesPerContent(3)" class="images-per-content-btn flex-1 px-3 py-2 border-2 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition">3장</button>
+                                <button type="button" onclick="setImagesPerContent(5)" class="images-per-content-btn flex-1 px-3 py-2 border-2 border-purple-500 bg-purple-50 rounded-lg hover:border-purple-600 hover:bg-purple-100 transition font-semibold">5장</button>
+                                <button type="button" onclick="setImagesPerContent(10)" class="images-per-content-btn flex-1 px-3 py-2 border-2 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition">10장</button>
+                            </div>
+                            <select
+                                id="imagesPerContent"
+                                class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                                onchange="updateBatchCalculation()"
+                            >
+                                <option value="1">1장</option>
+                                <option value="3">3장</option>
+                                <option value="5" selected>5장</option>
+                                <option value="7">7장</option>
+                                <option value="10">10장</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 자동 계산 결과 -->
+                    <div id="batchCalculation" class="mt-4 p-4 bg-white rounded-lg border-2 border-purple-300">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">필요한 이미지</p>
+                                <p class="text-2xl font-bold text-purple-600"><span id="requiredImages">5</span>장</p>
+                            </div>
+                            <div class="text-3xl">
+                                <i class="fas fa-arrow-right text-gray-400"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">업로드된 이미지</p>
+                                <p class="text-2xl font-bold text-blue-600"><span id="uploadedImages">0</span>장</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">상태</p>
+                                <p class="text-lg font-bold" id="imageStatus">
+                                    <span class="text-red-600">⚠️ 부족</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div id="imageWarning" class="mt-3 p-3 bg-yellow-50 border-l-4 border-yellow-400 text-sm text-gray-700">
+                            💡 <span id="missingImages">5</span>장 더 업로드해주세요!
+                        </div>
                     </div>
                 </div>
 

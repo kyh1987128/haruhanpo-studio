@@ -455,8 +455,8 @@ function handleImageSelect(e) {
 }
 
 async function processImageFiles(files) {
-  if (selectedImages.length + files.length > 10) {
-    showToast('❌ 최대 10장까지 업로드 가능합니다', 'error');
+  if (selectedImages.length + files.length > 100) {
+    showToast('❌ 최대 100장까지 업로드 가능합니다', 'error');
     return;
   }
 
@@ -465,9 +465,9 @@ async function processImageFiles(files) {
     totalSize += file.size;
   }
 
-  const maxSize = 50 * 1024 * 1024; // 50MB
+  const maxSize = 200 * 1024 * 1024; // 200MB
   if (totalSize > maxSize) {
-    showToast('❌ 총 파일 크기는 50MB를 초과할 수 없습니다', 'error');
+    showToast('❌ 총 파일 크기는 200MB를 초과할 수 없습니다', 'error');
     return;
   }
 
@@ -483,6 +483,7 @@ async function processImageFiles(files) {
 
   renderImagePreviews();
   updateCostEstimate();
+  updateBatchCalculation(); // 배치 계산 업데이트
 }
 
 function fileToBase64(file) {
@@ -526,6 +527,7 @@ function removeImage(index) {
   selectedImages.splice(index, 1);
   renderImagePreviews();
   updateCostEstimate();
+  updateBatchCalculation(); // 배치 계산 업데이트
 }
 
 // ===================================
@@ -726,6 +728,83 @@ function updateCostEstimate() {
 }
 
 // ===================================
+// 배치 생성 계산
+// ===================================
+function updateBatchCalculation() {
+  const contentCountSelect = document.getElementById('contentCount');
+  const customContentCountInput = document.getElementById('customContentCount');
+  const imagesPerContent = parseInt(document.getElementById('imagesPerContent').value);
+  
+  // 콘텐츠 개수 결정
+  let contentCount = 1;
+  if (contentCountSelect.value === 'custom') {
+    customContentCountInput.classList.remove('hidden');
+    contentCount = parseInt(customContentCountInput.value) || 1;
+  } else {
+    customContentCountInput.classList.add('hidden');
+    contentCount = parseInt(contentCountSelect.value);
+  }
+  
+  // 필요한 이미지 수 계산
+  const requiredImages = contentCount * imagesPerContent;
+  const uploadedImages = selectedImages.length;
+  
+  // UI 업데이트
+  document.getElementById('requiredImages').textContent = requiredImages;
+  document.getElementById('uploadedImages').textContent = uploadedImages;
+  
+  // 경고 메시지
+  const warningDiv = document.getElementById('batchWarning');
+  const warningText = document.getElementById('batchWarningText');
+  
+  if (uploadedImages < requiredImages) {
+    warningDiv.classList.remove('hidden');
+    const shortage = requiredImages - uploadedImages;
+    warningText.textContent = `${shortage}장의 이미지를 더 업로드해주세요. (현재: ${uploadedImages}장 / 필요: ${requiredImages}장)`;
+  } else {
+    warningDiv.classList.add('hidden');
+  }
+  
+  // 분배 미리보기
+  const distributionPreview = document.getElementById('distributionPreview');
+  const distributionList = document.getElementById('distributionList');
+  
+  if (uploadedImages > 0 && contentCount > 1) {
+    distributionPreview.classList.remove('hidden');
+    
+    let previewHTML = '<div class="space-y-1">';
+    const platformCheckboxes = document.querySelectorAll('input[name="platform"]:checked');
+    const platforms = Array.from(platformCheckboxes).map(cb => {
+      const value = cb.value;
+      const labels = { blog: '블로그', instagram: '인스타', threads: '스레드', youtube: '유튜브' };
+      return labels[value] || value;
+    }).join(' + ') || '선택된 플랫폼';
+    
+    for (let i = 0; i < contentCount; i++) {
+      const startIdx = i * imagesPerContent + 1;
+      const endIdx = Math.min((i + 1) * imagesPerContent, uploadedImages);
+      const available = endIdx >= startIdx;
+      
+      previewHTML += `
+        <div class="flex items-center justify-between py-2 border-b border-gray-200">
+          <span class="${available ? 'text-gray-700' : 'text-red-500'} font-medium">
+            ${platforms} #${i + 1}
+          </span>
+          <span class="${available ? 'text-purple-600' : 'text-red-500'} text-sm">
+            ${available ? `이미지 ${startIdx}~${endIdx}번` : '이미지 부족'}
+          </span>
+        </div>
+      `;
+    }
+    previewHTML += '</div>';
+    
+    distributionList.innerHTML = previewHTML;
+  } else {
+    distributionPreview.classList.add('hidden');
+  }
+}
+
+// ===================================
 // 키워드 자동 추천
 // ===================================
 async function suggestKeywords(event) {
@@ -838,6 +917,34 @@ async function handleGenerate() {
   }
 
   const platforms = Array.from(platformCheckboxes).map((cb) => cb.value);
+  
+  // 배치 생성 설정 확인
+  const contentCountSelect = document.getElementById('contentCount');
+  const customContentCountInput = document.getElementById('customContentCount');
+  const imagesPerContent = parseInt(document.getElementById('imagesPerContent').value);
+  
+  let contentCount = 1;
+  if (contentCountSelect.value === 'custom') {
+    contentCount = parseInt(customContentCountInput.value) || 1;
+  } else {
+    contentCount = parseInt(contentCountSelect.value);
+  }
+  
+  const requiredImages = contentCount * imagesPerContent;
+  
+  // 이미지 부족 체크
+  if (selectedImages.length < requiredImages) {
+    showToast(`❌ 이미지가 부족합니다. ${requiredImages}장이 필요하지만 ${selectedImages.length}장만 업로드되었습니다`, 'error');
+    return;
+  }
+  
+  // 배치 생성 실행
+  if (contentCount > 1) {
+    await handleBatchGenerate(contentCount, imagesPerContent, platforms);
+    return;
+  }
+  
+  // 단일 생성 (기존 로직)
 
   // 웹사이트 URL 자동 보정 (http:// 없으면 추가)
   let website = document.getElementById('website')?.value.trim() || '';
@@ -900,6 +1007,242 @@ async function handleGenerate() {
     hideLoadingOverlay();
     showErrorModal('네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.');
   }
+}
+
+// ===================================
+// 배치 생성
+// ===================================
+async function handleBatchGenerate(contentCount, imagesPerContent, platforms) {
+  const brand = document.getElementById('brand').value.trim();
+  const companyName = document.getElementById('companyName')?.value.trim() || '';
+  const businessType = document.getElementById('businessType')?.value.trim() || '';
+  const location = document.getElementById('location')?.value.trim() || '';
+  const targetGender = document.getElementById('targetGender')?.value || '';
+  const contact = document.getElementById('contact')?.value.trim() || '';
+  let website = document.getElementById('website')?.value.trim() || '';
+  if (website && !website.startsWith('http://') && !website.startsWith('https://')) {
+    website = 'https://' + website;
+  }
+  const sns = document.getElementById('sns')?.value.trim() || '';
+  const keywords = document.getElementById('keywords').value.trim();
+  const tone = document.getElementById('tone')?.value || '친근한';
+  const targetAge = document.getElementById('targetAge')?.value || '20대';
+  const industry = document.getElementById('industry')?.value || '라이프스타일';
+  
+  // 배치 생성 시작
+  showBatchLoadingOverlay(contentCount);
+  
+  const allResults = [];
+  const errors = [];
+  
+  for (let i = 0; i < contentCount; i++) {
+    const startIdx = i * imagesPerContent;
+    const endIdx = Math.min((i + 1) * imagesPerContent, selectedImages.length);
+    const batchImages = selectedImages.slice(startIdx, endIdx);
+    
+    updateBatchProgress(i + 1, contentCount, `콘텐츠 #${i + 1} 생성 중...`);
+    
+    const formData = {
+      brand,
+      companyName,
+      businessType,
+      location,
+      targetGender,
+      contact,
+      website,
+      sns,
+      keywords,
+      tone,
+      targetAge,
+      industry,
+      images: batchImages.map((img) => img.base64),
+      platforms,
+      aiModel: 'gpt-4o',
+    };
+    
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        allResults.push({
+          index: i + 1,
+          data: result.data,
+          platforms: result.generatedPlatforms,
+        });
+      } else {
+        errors.push({
+          index: i + 1,
+          error: result.error || '알 수 없는 오류',
+        });
+      }
+    } catch (error) {
+      console.error(`콘텐츠 #${i + 1} 생성 오류:`, error);
+      errors.push({
+        index: i + 1,
+        error: '네트워크 오류',
+      });
+    }
+  }
+  
+  hideBatchLoadingOverlay();
+  
+  // 결과 표시
+  if (allResults.length > 0) {
+    displayBatchResults(allResults, errors);
+    showToast(`✅ ${allResults.length}/${contentCount}개 콘텐츠 생성 완료!`, 'success');
+  } else {
+    showToast('❌ 모든 콘텐츠 생성에 실패했습니다', 'error');
+    showErrorModal('배치 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
+  }
+}
+
+// 배치 로딩 오버레이
+function showBatchLoadingOverlay(totalCount) {
+  const overlay = document.getElementById('loadingOverlay');
+  overlay.classList.remove('hidden');
+  
+  const loadingMessage = document.getElementById('loadingMessage');
+  loadingMessage.textContent = `배치 생성 중... (0/${totalCount})`;
+  
+  const progressBar = document.getElementById('progressBar');
+  progressBar.style.width = '0%';
+  document.getElementById('progressPercent').textContent = '0%';
+}
+
+function updateBatchProgress(current, total, message) {
+  const progress = (current / total) * 100;
+  const progressBar = document.getElementById('progressBar');
+  const progressPercent = document.getElementById('progressPercent');
+  const loadingMessage = document.getElementById('loadingMessage');
+  
+  progressBar.style.width = progress + '%';
+  progressPercent.textContent = Math.floor(progress) + '%';
+  loadingMessage.textContent = `${message} (${current}/${total})`;
+}
+
+function hideBatchLoadingOverlay() {
+  const overlay = document.getElementById('loadingOverlay');
+  const progressBar = document.getElementById('progressBar');
+  const progressPercent = document.getElementById('progressPercent');
+  
+  progressBar.style.width = '100%';
+  progressPercent.textContent = '100%';
+  
+  setTimeout(() => {
+    overlay.classList.add('hidden');
+    progressBar.style.width = '0%';
+    progressPercent.textContent = '0%';
+    document.getElementById('loadingMessage').textContent = '이미지 분석 중...';
+  }, 500);
+}
+
+// 배치 결과 표시
+function displayBatchResults(allResults, errors) {
+  const resultsSection = document.getElementById('resultsSection');
+  if (!resultsSection) return;
+  
+  resultsSection.classList.remove('hidden');
+  resultsSection.scrollIntoView({ behavior: 'smooth' });
+  
+  let html = `
+    <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 mb-6 border-2 border-green-200">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">
+        <i class="fas fa-check-circle text-green-600 mr-2"></i>
+        배치 생성 완료
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <div class="bg-white rounded-lg p-4">
+          <span class="text-gray-600">성공:</span>
+          <span class="font-bold text-green-600 text-2xl ml-2">${allResults.length}개</span>
+        </div>
+        <div class="bg-white rounded-lg p-4">
+          <span class="text-gray-600">실패:</span>
+          <span class="font-bold text-red-600 text-2xl ml-2">${errors.length}개</span>
+        </div>
+      </div>
+      <button
+        onclick="downloadBatchExcel()"
+        class="mt-4 w-full px-6 py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white font-bold rounded-lg hover:from-green-700 hover:to-blue-700 transition"
+      >
+        <i class="fas fa-file-excel mr-2"></i>전체 결과 Excel 다운로드
+      </button>
+    </div>
+  `;
+  
+  // 각 콘텐츠 결과 표시
+  allResults.forEach((result) => {
+    html += `
+      <div class="bg-white rounded-xl p-6 mb-6 shadow-lg border border-gray-200">
+        <h3 class="text-xl font-bold text-gray-800 mb-4">
+          <i class="fas fa-file-alt mr-2 text-purple-600"></i>
+          콘텐츠 #${result.index}
+        </h3>
+    `;
+    
+    result.platforms.forEach((platform) => {
+      const content = result.data[platform];
+      if (!content) return;
+      
+      const platformNames = {
+        blog: '네이버 블로그',
+        instagram: '인스타그램',
+        threads: '스레드',
+        youtube: '유튜브 숏폼',
+      };
+      
+      html += `
+        <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <h4 class="font-bold text-gray-700 mb-2">${platformNames[platform] || platform}</h4>
+          <div class="bg-white p-4 rounded border border-gray-200 max-h-60 overflow-y-auto whitespace-pre-wrap text-sm">
+            ${content}
+          </div>
+          <div class="mt-3 flex gap-2">
+            <button
+              onclick="copyToClipboard(${JSON.stringify(content).replace(/"/g, '&quot;')}, '${platformNames[platform]}')"
+              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+            >
+              <i class="fas fa-copy mr-1"></i>복사
+            </button>
+          </div>
+        </div>
+      `;
+    });
+    
+    html += `</div>`;
+  });
+  
+  // 오류 표시
+  if (errors.length > 0) {
+    html += `
+      <div class="bg-red-50 rounded-xl p-6 border-2 border-red-200">
+        <h3 class="text-xl font-bold text-red-800 mb-4">
+          <i class="fas fa-exclamation-triangle mr-2"></i>
+          생성 실패 항목
+        </h3>
+    `;
+    
+    errors.forEach((err) => {
+      html += `
+        <div class="bg-white p-4 rounded-lg mb-2 border border-red-200">
+          <span class="font-semibold">콘텐츠 #${err.index}:</span>
+          <span class="text-red-600 ml-2">${err.error}</span>
+        </div>
+      `;
+    });
+    
+    html += `</div>`;
+  }
+  
+  resultsSection.innerHTML = html;
+  
+  // 전역 변수에 저장 (Excel 다운로드용)
+  window.batchResults = allResults;
 }
 
 // ===================================
@@ -1486,6 +1829,106 @@ function downloadAllAsExcel() {
   URL.revokeObjectURL(url);
   
   showToast('✅ Excel 파일 다운로드 완료!', 'success');
+}
+
+// 배치 Excel 다운로드
+function downloadBatchExcel() {
+  if (!window.batchResults || window.batchResults.length === 0) {
+    showToast('❌ 다운로드할 배치 결과가 없습니다', 'error');
+    return;
+  }
+  
+  const brand = document.getElementById('brand').value.trim() || 'content';
+  const date = new Date().toISOString().split('T')[0];
+  const filename = `${brand}_배치생성_${date}.xls`;
+  
+  const platformNames = {
+    blog: '네이버블로그',
+    instagram: '인스타그램',
+    threads: '스레드',
+    youtube: '유튜브숏폼'
+  };
+  
+  // HTML 테이블 형식으로 변환
+  let tableRows = '';
+  
+  window.batchResults.forEach((result) => {
+    result.platforms.forEach((platform) => {
+      const content = result.data[platform];
+      if (!content) return;
+      
+      const escapedContent = content
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/\n/g, '<br>');
+      
+      tableRows += `
+        <tr>
+          <td style="vertical-align: top; font-weight: bold; background: #f0f0f0; text-align: center;">콘텐츠 #${result.index}</td>
+          <td style="vertical-align: top; font-weight: bold; background: #f9f9f9;">${platformNames[platform]}</td>
+          <td style="vertical-align: top; white-space: pre-wrap;">${escapedContent}</td>
+        </tr>
+      `;
+    });
+  });
+  
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        table { 
+          border-collapse: collapse; 
+          width: 100%; 
+          font-family: 'Malgun Gothic', sans-serif;
+        }
+        th, td { 
+          border: 1px solid #ddd; 
+          padding: 12px; 
+          text-align: left;
+        }
+        th { 
+          background-color: #667eea; 
+          color: white;
+          font-weight: bold;
+        }
+      </style>
+    </head>
+    <body>
+      <h2>${brand} - 배치 생성 콘텐츠 (${window.batchResults.length}개)</h2>
+      <p>생성일: ${date}</p>
+      <table>
+        <thead>
+          <tr>
+            <th width="100">번호</th>
+            <th width="120">플랫폼</th>
+            <th>콘텐츠</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `;
+  
+  const blob = new Blob(['\ufeff', htmlContent], { 
+    type: 'application/vnd.ms-excel;charset=utf-8' 
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  showToast('✅ 배치 Excel 파일 다운로드 완료!', 'success');
 }
 
 // ===================================
