@@ -280,6 +280,21 @@ export const htmlTemplate = `
                         </h4>
                         <div id="distributionList" class="bg-white rounded-lg p-4 max-h-40 overflow-y-auto text-sm"></div>
                     </div>
+                    
+                    <!-- 개별 콘텐츠 정보 입력 -->
+                    <div class="mt-4">
+                        <button
+                            type="button"
+                            onclick="toggleBatchContentInputs()"
+                            class="w-full px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold rounded-lg hover:from-indigo-600 hover:to-purple-600 transition flex items-center justify-center gap-2"
+                        >
+                            <i class="fas fa-list-alt"></i>
+                            <span id="batchInputToggleText">개별 콘텐츠 정보 입력하기 (선택사항)</span>
+                            <i class="fas fa-chevron-down" id="batchInputToggleIcon"></i>
+                        </button>
+                        
+                        <div id="batchContentInputs" class="mt-4 space-y-3 hidden"></div>
+                    </div>
                 </div>
 
                 <!-- 기본 정보 -->

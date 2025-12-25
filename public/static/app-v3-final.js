@@ -814,6 +814,103 @@ function updateBatchCalculation() {
   } else {
     distributionPreview.classList.add('hidden');
   }
+  
+  // 개별 콘텐츠 입력 필드가 열려있으면 재생성
+  const batchInputsContainer = document.getElementById('batchContentInputs');
+  if (batchInputsContainer && !batchInputsContainer.classList.contains('hidden')) {
+    generateBatchContentInputs();
+  }
+}
+
+// ===================================
+// 개별 콘텐츠 정보 입력
+// ===================================
+function toggleBatchContentInputs() {
+  const container = document.getElementById('batchContentInputs');
+  const toggleText = document.getElementById('batchInputToggleText');
+  const toggleIcon = document.getElementById('batchInputToggleIcon');
+  
+  if (container.classList.contains('hidden')) {
+    container.classList.remove('hidden');
+    toggleText.textContent = '개별 콘텐츠 정보 입력 접기';
+    toggleIcon.classList.remove('fa-chevron-down');
+    toggleIcon.classList.add('fa-chevron-up');
+    generateBatchContentInputs();
+  } else {
+    container.classList.add('hidden');
+    toggleText.textContent = '개별 콘텐츠 정보 입력하기 (선택사항)';
+    toggleIcon.classList.remove('fa-chevron-up');
+    toggleIcon.classList.add('fa-chevron-down');
+  }
+}
+
+function generateBatchContentInputs() {
+  const contentCountSelect = document.getElementById('contentCount');
+  const container = document.getElementById('batchContentInputs');
+  
+  if (!contentCountSelect || !container) return;
+  
+  const contentCount = parseInt(contentCountSelect.value) || 1;
+  
+  let html = `
+    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 border-2 border-indigo-200 mb-3">
+      <p class="text-sm text-indigo-800">
+        <i class="fas fa-info-circle mr-2"></i>
+        <strong>개별 정보 입력:</strong> 각 콘텐츠마다 다른 키워드, 주제, 설명을 입력할 수 있습니다. 
+        비워두면 기본 정보가 사용됩니다.
+      </p>
+    </div>
+  `;
+  
+  for (let i = 0; i < contentCount; i++) {
+    html += `
+      <div class="bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-purple-300 transition">
+        <h4 class="font-bold text-gray-800 mb-3 flex items-center">
+          <span class="bg-purple-500 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm mr-2">
+            ${i + 1}
+          </span>
+          콘텐츠 #${i + 1}
+        </h4>
+        <div class="grid grid-cols-1 gap-3">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">
+              <i class="fas fa-key mr-1 text-purple-500"></i>키워드
+            </label>
+            <input
+              type="text"
+              id="batchKeyword_${i}"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+              placeholder="예: 수분크림, 보습"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">
+              <i class="fas fa-lightbulb mr-1 text-yellow-500"></i>주제/내용 (1줄 설명)
+            </label>
+            <input
+              type="text"
+              id="batchTopic_${i}"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+              placeholder="예: 겨울철 피부 수분 관리법"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">
+              <i class="fas fa-comment-dots mr-1 text-blue-500"></i>추가 설명 (선택)
+            </label>
+            <textarea
+              id="batchDescription_${i}"
+              rows="2"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm resize-none"
+              placeholder="예: 건조한 겨울철 피부에 필수적인 수분 공급 방법을 소개합니다"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  container.innerHTML = html;
 }
 
 // ===================================
@@ -1055,10 +1152,33 @@ async function handleBatchGenerate(contentCount, imagesPerContent, platforms) {
     const endIdx = Math.min((i + 1) * imagesPerContent, selectedImages.length);
     const batchImages = selectedImages.slice(startIdx, endIdx);
     
-    // 키워드 순환: 배열에서 현재 인덱스에 해당하는 키워드 선택
-    const currentKeyword = keywordArray.length > 0 
-      ? keywordArray[i % keywordArray.length] 
-      : keywords;
+    // 개별 콘텐츠 정보 확인
+    const batchKeywordInput = document.getElementById(`batchKeyword_${i}`);
+    const batchTopicInput = document.getElementById(`batchTopic_${i}`);
+    const batchDescriptionInput = document.getElementById(`batchDescription_${i}`);
+    
+    // 개별 입력이 있으면 사용, 없으면 기본 키워드 순환
+    let currentKeyword, currentTopic, currentDescription;
+    
+    if (batchKeywordInput && batchKeywordInput.value.trim()) {
+      currentKeyword = batchKeywordInput.value.trim();
+    } else {
+      currentKeyword = keywordArray.length > 0 
+        ? keywordArray[i % keywordArray.length] 
+        : keywords;
+    }
+    
+    currentTopic = batchTopicInput ? batchTopicInput.value.trim() : '';
+    currentDescription = batchDescriptionInput ? batchDescriptionInput.value.trim() : '';
+    
+    // 주제와 설명을 키워드에 추가 (AI 프롬프트에 반영)
+    let enhancedKeywords = currentKeyword;
+    if (currentTopic) {
+      enhancedKeywords += ` (주제: ${currentTopic})`;
+    }
+    if (currentDescription) {
+      enhancedKeywords += ` (${currentDescription})`;
+    }
     
     updateBatchProgress(i + 1, contentCount, `콘텐츠 #${i + 1} 생성 중... (${currentKeyword})`);
     
@@ -1071,7 +1191,7 @@ async function handleBatchGenerate(contentCount, imagesPerContent, platforms) {
       contact,
       website,
       sns,
-      keywords: currentKeyword, // 순환된 키워드 사용
+      keywords: enhancedKeywords, // 확장된 키워드 사용
       tone,
       targetAge,
       industry,
