@@ -421,6 +421,16 @@ export const htmlTemplate = `
                         <p class="text-sm text-gray-600 mb-2">✨ 추천 키워드 (클릭하여 추가):</p>
                         <div id="suggestedKeywordsList" class="flex flex-wrap gap-2"></div>
                     </div>
+                    <div class="mt-2 p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
+                        <p class="text-sm text-blue-800">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            <strong>배치 생성 팁:</strong> 여러 키워드를 쉼표로 구분하면 각 콘텐츠마다 자동으로 순환됩니다.
+                            <br/>
+                            <span class="text-xs text-blue-600 mt-1 block ml-5">
+                                예: "수분크림, 에센스, 토너" → 콘텐츠 #1: 수분크림, #2: 에센스, #3: 토너, #4: 수분크림...
+                            </span>
+                        </p>
+                    </div>
                 </div>
 
                 <!-- 톤앤매너, 연령대, 산업 -->
@@ -828,8 +838,8 @@ export const htmlTemplate = `
     <!-- 토스트 메시지 컨테이너 -->
     <div id="toastContainer"></div>
 
-    <script src="/static/i18n.js?v=5.3.1"></script>
-    <script src="/static/app-v3-final.js?v=5.3.1"></script>
+    <script src="/static/i18n.js?v=5.3.2"></script>
+    <script src="/static/app-v3-final.js?v=5.3.2"></script>
 </body>
 </html>
 `;

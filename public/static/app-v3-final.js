@@ -780,16 +780,28 @@ function updateBatchCalculation() {
       return labels[value] || value;
     }).join(' + ') || '선택된 플랫폼';
     
+    // 키워드 순환 정보 추가
+    const keywordsInput = document.getElementById('keywords')?.value.trim() || '';
+    const keywordArray = keywordsInput.split(',').map(k => k.trim()).filter(k => k.length > 0);
+    
     for (let i = 0; i < contentCount; i++) {
       const startIdx = i * imagesPerContent + 1;
       const endIdx = Math.min((i + 1) * imagesPerContent, uploadedImages);
       const available = endIdx >= startIdx;
       
+      // 현재 콘텐츠의 키워드 결정
+      const currentKeyword = keywordArray.length > 0 
+        ? keywordArray[i % keywordArray.length] 
+        : '';
+      
       previewHTML += `
         <div class="flex items-center justify-between py-2 border-b border-gray-200">
-          <span class="${available ? 'text-gray-700' : 'text-red-500'} font-medium">
-            ${platforms} #${i + 1}
-          </span>
+          <div class="flex items-center gap-2">
+            <span class="${available ? 'text-gray-700' : 'text-red-500'} font-medium">
+              ${platforms} #${i + 1}
+            </span>
+            ${currentKeyword ? `<span class="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">${currentKeyword}</span>` : ''}
+          </div>
           <span class="${available ? 'text-purple-600' : 'text-red-500'} text-sm">
             ${available ? `이미지 ${startIdx}~${endIdx}번` : '이미지 부족'}
           </span>
@@ -1032,6 +1044,9 @@ async function handleBatchGenerate(contentCount, imagesPerContent, platforms) {
   // 배치 생성 시작
   showBatchLoadingOverlay(contentCount);
   
+  // 키워드 배열로 변환 (쉼표 구분)
+  const keywordArray = keywords.split(',').map(k => k.trim()).filter(k => k.length > 0);
+  
   const allResults = [];
   const errors = [];
   
@@ -1040,7 +1055,12 @@ async function handleBatchGenerate(contentCount, imagesPerContent, platforms) {
     const endIdx = Math.min((i + 1) * imagesPerContent, selectedImages.length);
     const batchImages = selectedImages.slice(startIdx, endIdx);
     
-    updateBatchProgress(i + 1, contentCount, `콘텐츠 #${i + 1} 생성 중...`);
+    // 키워드 순환: 배열에서 현재 인덱스에 해당하는 키워드 선택
+    const currentKeyword = keywordArray.length > 0 
+      ? keywordArray[i % keywordArray.length] 
+      : keywords;
+    
+    updateBatchProgress(i + 1, contentCount, `콘텐츠 #${i + 1} 생성 중... (${currentKeyword})`);
     
     const formData = {
       brand,
@@ -1051,7 +1071,7 @@ async function handleBatchGenerate(contentCount, imagesPerContent, platforms) {
       contact,
       website,
       sns,
-      keywords,
+      keywords: currentKeyword, // 순환된 키워드 사용
       tone,
       targetAge,
       industry,
@@ -1074,6 +1094,7 @@ async function handleBatchGenerate(contentCount, imagesPerContent, platforms) {
           index: i + 1,
           data: result.data,
           platforms: result.generatedPlatforms,
+          keyword: currentKeyword, // 사용된 키워드 저장
         });
       } else {
         errors.push({
@@ -1179,10 +1200,15 @@ function displayBatchResults(allResults, errors) {
   allResults.forEach((result) => {
     html += `
       <div class="bg-white rounded-xl p-6 mb-6 shadow-lg border border-gray-200">
-        <h3 class="text-xl font-bold text-gray-800 mb-4">
-          <i class="fas fa-file-alt mr-2 text-purple-600"></i>
-          콘텐츠 #${result.index}
-        </h3>
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-bold text-gray-800">
+            <i class="fas fa-file-alt mr-2 text-purple-600"></i>
+            콘텐츠 #${result.index}
+          </h3>
+          <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">
+            <i class="fas fa-key mr-1"></i>${result.keyword || '키워드'}
+          </span>
+        </div>
     `;
     
     result.platforms.forEach((platform) => {
