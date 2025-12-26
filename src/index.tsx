@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { serveStatic } from 'hono/cloudflare-workers';
 import OpenAI from 'openai';
-import { getBlogPrompt, getInstagramPrompt, getThreadsPrompt, getYouTubePrompt } from './prompts';
+import { getBlogPrompt, getInstagramPrompt, getThreadsPrompt, getYouTubePrompt, getYoutubeLongformPrompt, getShortformPrompt, getMetadataPrompt } from './prompts';
 import { htmlTemplate } from './html-template';
 
 type Bindings = {
@@ -231,7 +231,7 @@ app.post('/api/generate/batch', async (c) => {
             );
           }
 
-          if (platforms.includes('instagram')) {
+          if (platforms.includes('instagram') || platforms.includes('instagram_feed')) {
             generationTasks.push(
               generateContent(openai, 'instagram', getInstagramPrompt(promptParams), aiModel)
             );
@@ -243,9 +243,30 @@ app.post('/api/generate/batch', async (c) => {
             );
           }
 
-          if (platforms.includes('youtube')) {
+          if (platforms.includes('youtube') || platforms.includes('youtube_shorts')) {
             generationTasks.push(
               generateContent(openai, 'youtube', getYouTubePrompt(promptParams), aiModel)
+            );
+          }
+          
+          // 새로운 플랫폼: 유튜브 롱폼
+          if (platforms.includes('youtube_longform')) {
+            generationTasks.push(
+              generateContent(openai, 'youtube_longform', getYoutubeLongformPrompt(promptParams), aiModel)
+            );
+          }
+          
+          // 새로운 플랫폼: 숏폼 (틱톡/릴스/쇼츠 통합)
+          if (platforms.includes('shortform_multi') || platforms.includes('tiktok') || platforms.includes('instagram_reels')) {
+            generationTasks.push(
+              generateContent(openai, 'shortform_multi', getShortformPrompt(promptParams), aiModel)
+            );
+          }
+          
+          // 새로운 플랫폼: 메타데이터 생성
+          if (platforms.includes('metadata_generation')) {
+            generationTasks.push(
+              generateContent(openai, 'metadata', getMetadataPrompt(promptParams), aiModel)
             );
           }
 
@@ -520,7 +541,7 @@ ${combinedImageDescription}
       );
     }
 
-    if (platforms.includes('instagram')) {
+    if (platforms.includes('instagram') || platforms.includes('instagram_feed')) {
       generationTasks.push(
         generateContent(openai, 'instagram', getInstagramPrompt(promptParams), aiModel)
       );
@@ -532,9 +553,30 @@ ${combinedImageDescription}
       );
     }
 
-    if (platforms.includes('youtube')) {
+    if (platforms.includes('youtube') || platforms.includes('youtube_shorts')) {
       generationTasks.push(
         generateContent(openai, 'youtube', getYouTubePrompt(promptParams), aiModel)
+      );
+    }
+    
+    // 새로운 플랫폼: 유튜브 롱폼
+    if (platforms.includes('youtube_longform')) {
+      generationTasks.push(
+        generateContent(openai, 'youtube_longform', getYoutubeLongformPrompt(promptParams), aiModel)
+      );
+    }
+    
+    // 새로운 플랫폼: 숏폼 (틱톡/릴스/쇼츠 통합)
+    if (platforms.includes('shortform_multi') || platforms.includes('tiktok') || platforms.includes('instagram_reels')) {
+      generationTasks.push(
+        generateContent(openai, 'shortform_multi', getShortformPrompt(promptParams), aiModel)
+      );
+    }
+    
+    // 새로운 플랫폼: 메타데이터 생성
+    if (platforms.includes('metadata_generation')) {
+      generationTasks.push(
+        generateContent(openai, 'metadata', getMetadataPrompt(promptParams), aiModel)
       );
     }
 

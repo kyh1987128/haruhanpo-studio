@@ -386,23 +386,68 @@ export const htmlTemplate = `
                     <label class="block mb-3 font-semibold text-gray-700">
                         <i class="fas fa-check-square mr-2"></i>생성할 플랫폼 선택 (최소 1개)
                     </label>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <label class="flex items-center space-x-3 border-2 rounded-lg p-4 cursor-pointer hover:bg-purple-50 transition">
-                            <input type="checkbox" name="platform" value="blog" checked class="w-5 h-5 text-purple-600">
-                            <span class="font-medium">📝 네이버 블로그</span>
-                        </label>
-                        <label class="flex items-center space-x-3 border-2 rounded-lg p-4 cursor-pointer hover:bg-purple-50 transition">
-                            <input type="checkbox" name="platform" value="instagram" checked class="w-5 h-5 text-purple-600">
-                            <span class="font-medium">📸 인스타그램</span>
-                        </label>
-                        <label class="flex items-center space-x-3 border-2 rounded-lg p-4 cursor-pointer hover:bg-purple-50 transition">
-                            <input type="checkbox" name="platform" value="threads" class="w-5 h-5 text-purple-600">
-                            <span class="font-medium">🧵 스레드</span>
-                        </label>
-                        <label class="flex items-center space-x-3 border-2 rounded-lg p-4 cursor-pointer hover:bg-purple-50 transition">
-                            <input type="checkbox" name="platform" value="youtube" class="w-5 h-5 text-purple-600">
-                            <span class="font-medium">🎬 유튜브 숏폼</span>
-                        </label>
+                    
+                    <!-- 블로그 & SNS -->
+                    <div class="mb-4">
+                        <h4 class="text-sm font-semibold text-gray-600 mb-2">📝 블로그 & SNS 포스트</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <label class="flex items-center space-x-3 border-2 rounded-lg p-3 cursor-pointer hover:bg-purple-50 transition">
+                                <input type="checkbox" name="platform" value="blog" checked class="w-5 h-5 text-purple-600">
+                                <span class="font-medium text-sm">📝 네이버 블로그</span>
+                            </label>
+                            <label class="flex items-center space-x-3 border-2 rounded-lg p-3 cursor-pointer hover:bg-purple-50 transition">
+                                <input type="checkbox" name="platform" value="instagram_feed" class="w-5 h-5 text-purple-600">
+                                <span class="font-medium text-sm">📸 인스타그램 피드</span>
+                            </label>
+                            <label class="flex items-center space-x-3 border-2 rounded-lg p-3 cursor-pointer hover:bg-purple-50 transition">
+                                <input type="checkbox" name="platform" value="threads" class="w-5 h-5 text-purple-600">
+                                <span class="font-medium text-sm">🧵 스레드</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- 숏폼 비디오 -->
+                    <div class="mb-4">
+                        <h4 class="text-sm font-semibold text-gray-600 mb-2">📱 숏폼 영상 (9:16, 15-60초)</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <label class="flex items-center space-x-3 border-2 rounded-lg p-3 cursor-pointer hover:bg-pink-50 transition">
+                                <input type="checkbox" name="platform" value="tiktok" class="w-5 h-5 text-pink-600">
+                                <span class="font-medium text-sm">🎵 틱톡</span>
+                            </label>
+                            <label class="flex items-center space-x-3 border-2 rounded-lg p-3 cursor-pointer hover:bg-pink-50 transition">
+                                <input type="checkbox" name="platform" value="instagram_reels" checked class="w-5 h-5 text-pink-600">
+                                <span class="font-medium text-sm">📸 인스타 릴스</span>
+                            </label>
+                            <label class="flex items-center space-x-3 border-2 rounded-lg p-3 cursor-pointer hover:bg-pink-50 transition">
+                                <input type="checkbox" name="platform" value="youtube_shorts" class="w-5 h-5 text-pink-600">
+                                <span class="font-medium text-sm">🎬 유튜브 쇼츠</span>
+                            </label>
+                            <label class="flex items-center space-x-3 border-2 rounded-lg p-3 cursor-pointer hover:bg-pink-50 transition">
+                                <input type="checkbox" name="platform" value="shortform_multi" class="w-5 h-5 text-pink-600">
+                                <span class="font-medium text-sm">🎥 숏폼(전체)</span>
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2 ml-1">
+                            💡 "숏폼(전체)"는 틱톡+릴스+쇼츠에 모두 최적화된 대본을 생성합니다
+                        </p>
+                    </div>
+                    
+                    <!-- 롱폼 비디오 -->
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-600 mb-2">🎬 롱폼 영상 (16:9, 5-15분)</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-2 gap-3">
+                            <label class="flex items-center space-x-3 border-2 rounded-lg p-3 cursor-pointer hover:bg-red-50 transition">
+                                <input type="checkbox" name="platform" value="youtube_longform" class="w-5 h-5 text-red-600">
+                                <span class="font-medium text-sm">🎥 유튜브 롱폼</span>
+                            </label>
+                            <label class="flex items-center space-x-3 border-2 rounded-lg p-3 cursor-pointer hover:bg-blue-50 transition">
+                                <input type="checkbox" name="platform" value="metadata_generation" class="w-5 h-5 text-blue-600">
+                                <span class="font-medium text-sm">📊 메타데이터 생성</span>
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2 ml-1">
+                            💡 롱폼: 상세한 시나리오 & 연출 지시 | 메타데이터: 제목, 썸네일, 설명, 태그 최적화
+                        </p>
                     </div>
                 </div>
 
@@ -724,7 +769,7 @@ export const htmlTemplate = `
     <div id="toastContainer"></div>
 
     <script src="/static/i18n.js?v=5.3.2"></script>
-    <script src="/static/app-v3-final.js?v=6.0.0"></script>
+    <script src="/static/app-v3-final.js?v=6.1.0"></script>
 </body>
 </html>
 `;

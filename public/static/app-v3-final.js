@@ -26,8 +26,15 @@ const COSTS = {
   IMAGE_ANALYSIS: 0.01, // 이미지 1장당 분석 비용
   BLOG: 0.04,
   INSTAGRAM: 0.03,
+  INSTAGRAM_FEED: 0.03,
+  INSTAGRAM_REELS: 0.04,
   THREADS: 0.02,
   YOUTUBE: 0.04,
+  YOUTUBE_SHORTS: 0.04,
+  YOUTUBE_LONGFORM: 0.08, // 롱폼은 더 길고 복잡하므로 2배
+  TIKTOK: 0.04,
+  SHORTFORM_MULTI: 0.05, // 멀티플랫폼 최적화 추가 비용
+  METADATA_GENERATION: 0.03,
 };
 
 // 환율 정보
