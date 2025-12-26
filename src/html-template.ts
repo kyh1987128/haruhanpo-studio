@@ -155,7 +155,7 @@ export const htmlTemplate = `
                 콘텐츠잇다 AI Studio
             </h1>
             <p class="text-gray-600 text-lg" data-i18n="subtitle">
-                이미지로 4개 플랫폼 콘텐츠 자동 생성 🔒 내부 전용
+                이미지로 10개 플랫폼 콘텐츠 자동 생성 🔒 내부 전용
             </p>
             
             <!-- 프로필 & 히스토리 & 템플릿 버튼 -->
@@ -769,7 +769,7 @@ export const htmlTemplate = `
     <div id="toastContainer"></div>
 
     <script src="/static/i18n.js?v=5.3.2"></script>
-    <script src="/static/app-v3-final.js?v=6.1.0"></script>
+    <script src="/static/app-v3-final.js?v=6.2.0"></script>
 </body>
 </html>
 `;
