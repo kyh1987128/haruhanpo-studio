@@ -486,7 +486,9 @@ ${combinedImageDescription}
       });
 
       const validationText = validationResponse.choices[0].message.content || '{}';
-      const validation = JSON.parse(validationText);
+      // JSON 코드 블록 제거
+      const cleanedText = validationText.replace(/```json\n?|\n?```/g, '').trim();
+      const validation = JSON.parse(cleanedText);
 
         console.log('검증 결과:', validation);
 
