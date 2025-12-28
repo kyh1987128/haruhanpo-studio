@@ -1852,6 +1852,7 @@ async function handleGenerate() {
     tone: document.getElementById('tone')?.value || '친근한',
     targetAge: document.getElementById('targetAge')?.value || '20대',
     industry: document.getElementById('industry')?.value || '라이프스타일',
+    contentStrategy: document.querySelector('input[name="contentStrategy"]:checked')?.value || 'auto', // 🔥 NEW v6.1
     images: content.images.map((img) => img.base64),
     platforms,
     aiModel: 'gpt-4o',
@@ -3147,6 +3148,7 @@ function saveProfile() {
     tone: document.getElementById('tone')?.value || '친근한',
     targetAge: document.getElementById('targetAge')?.value || '20대',
     industry: document.getElementById('industry')?.value || '라이프스타일',
+    contentStrategy: document.querySelector('input[name="contentStrategy"]:checked')?.value || 'auto', // 🔥 NEW v6.1
     selectedPlatforms: selectedPlatforms, // 선택한 플랫폼 저장 ⭐
     createdAt: new Date().toISOString()
   };

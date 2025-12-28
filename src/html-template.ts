@@ -382,6 +382,175 @@ export const htmlTemplate = `
                     </div>
                 </div>
 
+                <!-- 🔥 NEW v6.1: 하이브리드 전략 선택 -->
+                <div class="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl border-2 border-purple-200">
+                    <div class="flex items-start mb-4">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
+                                <i class="fas fa-brain text-white text-lg"></i>
+                            </div>
+                        </div>
+                        <div class="ml-4 flex-1">
+                            <h3 class="text-lg font-bold text-gray-800 mb-1">
+                                🧠 하이브리드 AI 전략 선택 
+                                <span class="ml-2 text-xs bg-purple-600 text-white px-2 py-1 rounded-full">NEW v6.1</span>
+                            </h3>
+                            <p class="text-sm text-gray-600">
+                                이미지와 변수(키워드/산업/톤/타깃)의 우선순위를 어떻게 조정할까요?
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                        <!-- 자동 선택 (권장) -->
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="contentStrategy" value="auto" checked class="peer sr-only">
+                            <div class="p-4 border-2 border-gray-300 rounded-lg peer-checked:border-green-500 peer-checked:bg-green-50 hover:border-green-300 transition-all">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-lg">🤖</span>
+                                    <span class="text-xs bg-green-500 text-white px-2 py-0.5 rounded-full peer-checked:block hidden">선택됨</span>
+                                </div>
+                                <div class="font-bold text-gray-800 mb-1">자동 선택 ✅</div>
+                                <div class="text-xs text-gray-600 leading-relaxed">
+                                    AI가 이미지-변수 일치도를 분석해서 최적의 전략을 자동으로 선택합니다
+                                </div>
+                                <div class="mt-2 text-xs text-green-600 font-semibold">
+                                    💡 권장 옵션
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- 통합형 (균형) -->
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="contentStrategy" value="integrated" class="peer sr-only">
+                            <div class="p-4 border-2 border-gray-300 rounded-lg peer-checked:border-purple-500 peer-checked:bg-purple-50 hover:border-purple-300 transition-all">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-lg">⚖️</span>
+                                    <span class="text-xs bg-purple-500 text-white px-2 py-0.5 rounded-full peer-checked:block hidden">선택됨</span>
+                                </div>
+                                <div class="font-bold text-gray-800 mb-1">통합형</div>
+                                <div class="text-xs text-gray-600 leading-relaxed">
+                                    이미지 시각적 묘사 + 변수로 맥락/타깃팅 균형있게 활용
+                                </div>
+                                <div class="mt-2 text-xs text-purple-600">
+                                    예: 카페 사진 + "브런치" → 둘 다 활용
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- 이미지 중심 -->
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="contentStrategy" value="image-first" class="peer sr-only">
+                            <div class="p-4 border-2 border-gray-300 rounded-lg peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:border-blue-300 transition-all">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-lg">📸</span>
+                                    <span class="text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full peer-checked:block hidden">선택됨</span>
+                                </div>
+                                <div class="font-bold text-gray-800 mb-1">이미지 중심</div>
+                                <div class="text-xs text-gray-600 leading-relaxed">
+                                    이미지에 실제로 보이는 것을 중심으로 작성, 변수는 보조
+                                </div>
+                                <div class="mt-2 text-xs text-blue-600">
+                                    예: 명확한 제품 사진 → 이미지 우선
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- 변수 중심 (SEO) -->
+                        <label class="relative cursor-pointer">
+                            <input type="radio" name="contentStrategy" value="keyword-first" class="peer sr-only">
+                            <div class="p-4 border-2 border-gray-300 rounded-lg peer-checked:border-orange-500 peer-checked:bg-orange-50 hover:border-orange-300 transition-all">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-lg">🔑</span>
+                                    <span class="text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full peer-checked:block hidden">선택됨</span>
+                                </div>
+                                <div class="font-bold text-gray-800 mb-1">변수 중심 (SEO 최우선)</div>
+                                <div class="text-xs text-gray-600 leading-relaxed">
+                                    키워드/산업/톤/타깃 변수를 우선 활용, 이미지는 무시/배경
+                                </div>
+                                <div class="mt-2 text-xs text-orange-600">
+                                    예: 이미지와 키워드 불일치 → SEO 우선
+                                </div>
+                            </div>
+                        </label>
+
+                        <!-- 전략 설명 펼치기/접기 -->
+                        <div class="flex items-center justify-center">
+                            <button 
+                                type="button"
+                                id="strategyToggle"
+                                class="w-full h-full px-6 py-4 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-purple-400 transition-all text-center"
+                            >
+                                <i class="fas fa-info-circle text-purple-600 text-2xl mb-2"></i>
+                                <div class="font-semibold text-gray-700 text-sm">전략 자세히 보기</div>
+                                <div class="text-xs text-gray-500 mt-1">각 전략의 차이점 확인</div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 전략 상세 설명 (접힌 상태) -->
+                    <div id="strategyDetails" class="hidden mt-4 p-4 bg-white rounded-lg border border-gray-200">
+                        <h4 class="font-bold text-gray-800 mb-3 flex items-center">
+                            <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
+                            전략별 상세 설명
+                        </h4>
+                        
+                        <div class="space-y-3 text-sm">
+                            <div class="p-3 bg-green-50 rounded-lg border-l-4 border-green-500">
+                                <div class="font-bold text-green-800 mb-1">🤖 자동 선택 (권장)</div>
+                                <div class="text-gray-700 text-xs leading-relaxed">
+                                    • AI가 이미지-변수 일치도를 0-100점으로 자동 분석<br>
+                                    • 70점 이상: 통합형 / 50-69점: 이미지 중심 / 50점 미만: 변수 중심<br>
+                                    • 30점 미만이면 경고 후 사용자 확인<br>
+                                    • <strong>가장 자연스러운 콘텐츠 보장 ✅</strong>
+                                </div>
+                            </div>
+
+                            <div class="p-3 bg-purple-50 rounded-lg border-l-4 border-purple-500">
+                                <div class="font-bold text-purple-800 mb-1">⚖️ 통합형</div>
+                                <div class="text-gray-700 text-xs leading-relaxed">
+                                    • 이미지: 시각적 요소 구체 묘사 (제품 외관, 색상, 분위기)<br>
+                                    • 변수: 맥락, 타깃팅, SEO 키워드 자연스럽게 삽입<br>
+                                    • 예: "이 카페의 브런치 플레이트 (이미지) + 20-30대 감성 (변수)"
+                                </div>
+                            </div>
+
+                            <div class="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                                <div class="font-bold text-blue-800 mb-1">📸 이미지 중심</div>
+                                <div class="text-gray-700 text-xs leading-relaxed">
+                                    • 이미지에 실제로 보이는 것을 중심으로 작성<br>
+                                    • 변수는 자연스럽게 연결될 때만 사용<br>
+                                    • 예: 명확한 제품 사진 → 제품 중심 작성, 키워드는 보조
+                                </div>
+                            </div>
+
+                            <div class="p-3 bg-orange-50 rounded-lg border-l-4 border-orange-500">
+                                <div class="font-bold text-orange-800 mb-1">🔑 변수 중심 (SEO)</div>
+                                <div class="text-gray-700 text-xs leading-relaxed">
+                                    • 키워드, 산업분야, 톤앤매너, 타깃 연령대를 필수 반영<br>
+                                    • 이미지는 배경 요소로만 활용하거나 무시<br>
+                                    • 키워드 밀도 1-2% 유지 필수<br>
+                                    • 예: 이미지와 키워드 불일치 → 키워드 중심 SEO 최적화
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                            <div class="flex items-start">
+                                <i class="fas fa-exclamation-triangle text-yellow-600 mt-0.5 mr-2"></i>
+                                <div class="text-xs text-gray-700">
+                                    <strong>언제 수동 선택하나요?</strong><br>
+                                    • 특정 전략을 강제하고 싶을 때 (예: SEO 우선 필수)<br>
+                                    • AI 자동 선택 결과가 만족스럽지 않을 때<br>
+                                    • <strong>대부분의 경우 "자동 선택"을 권장합니다 ✅</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 플랫폼 선택 -->
                 <div>
                     <label class="block mb-3 font-semibold text-gray-700">
@@ -769,8 +938,35 @@ export const htmlTemplate = `
     <!-- 토스트 메시지 컨테이너 -->
     <div id="toastContainer"></div>
 
+    <!-- 🔥 NEW v6.1: 전략 토글 스크립트 -->
+    <script>
+        // 전략 상세 설명 토글
+        document.addEventListener('DOMContentLoaded', function() {
+            const strategyToggle = document.getElementById('strategyToggle');
+            const strategyDetails = document.getElementById('strategyDetails');
+            
+            if (strategyToggle && strategyDetails) {
+                strategyToggle.addEventListener('click', function() {
+                    strategyDetails.classList.toggle('hidden');
+                    
+                    // 아이콘 회전
+                    const icon = this.querySelector('i');
+                    if (strategyDetails.classList.contains('hidden')) {
+                        icon.classList.remove('fa-chevron-up');
+                        icon.classList.add('fa-info-circle');
+                        this.querySelector('.font-semibold').textContent = '전략 자세히 보기';
+                    } else {
+                        icon.classList.remove('fa-info-circle');
+                        icon.classList.add('fa-chevron-up');
+                        this.querySelector('.font-semibold').textContent = '전략 설명 접기';
+                    }
+                });
+            }
+        });
+    </script>
+
     <script src="/static/i18n.js?v=5.3.2"></script>
-    <script src="/static/app-v3-final.js?v=6.3.1"></script>
+    <script src="/static/app-v3-final.js?v=6.3.2"></script>
 </body>
 </html>
 `;
