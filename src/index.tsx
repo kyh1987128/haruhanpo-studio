@@ -543,9 +543,15 @@ ${combinedImageDescription}
       );
     }
 
-    if (platforms.includes('instagram') || platforms.includes('instagram_feed')) {
+    if (platforms.includes('instagram')) {
       generationTasks.push(
         generateContent(openai, 'instagram', getInstagramPrompt(promptParams), aiModel)
+      );
+    }
+    
+    if (platforms.includes('instagram_feed')) {
+      generationTasks.push(
+        generateContent(openai, 'instagram_feed', getInstagramFeedPrompt(promptParams), aiModel)
       );
     }
 

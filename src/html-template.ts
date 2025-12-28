@@ -769,7 +769,7 @@ export const htmlTemplate = `
     <div id="toastContainer"></div>
 
     <script src="/static/i18n.js?v=5.3.2"></script>
-    <script src="/static/app-v3-final.js?v=6.2.2"></script>
+    <script src="/static/app-v3-final.js?v=6.3.0"></script>
 </body>
 </html>
 `;
