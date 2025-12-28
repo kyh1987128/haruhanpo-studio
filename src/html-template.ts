@@ -352,7 +352,8 @@ export const htmlTemplate = `
                             <i class="fas fa-industry mr-2"></i>산업 분야
                         </label>
                         <select id="industry" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
-                            <option value="라이프스타일" selected>라이프스타일</option>
+                            <option value="" selected>선택안함 (AI가 자동 판단)</option>
+                            <option value="라이프스타일">라이프스타일</option>
                             <option value="뷰티/코스메틱">뷰티/코스메틱</option>
                             <option value="패션/의류">패션/의류</option>
                             <option value="음식/외식">음식/외식 (F&B)</option>
@@ -769,7 +770,7 @@ export const htmlTemplate = `
     <div id="toastContainer"></div>
 
     <script src="/static/i18n.js?v=5.3.2"></script>
-    <script src="/static/app-v3-final.js?v=6.3.0"></script>
+    <script src="/static/app-v3-final.js?v=6.3.1"></script>
 </body>
 </html>
 `;
