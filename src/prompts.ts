@@ -14,9 +14,24 @@ interface PromptParams {
   targetAge: string;
   industry: string;
   imageDescription: string;
+  contentStrategy?: 'integrated' | 'image-first' | 'keyword-first' | 'auto'; // 하이브리드 전략
 }
 
 type ContentCategory = 'person' | 'service' | 'product' | 'general';
+
+// 하이브리드 전략 타입
+export type ContentStrategy = 'integrated' | 'image-first' | 'keyword-first';
+
+// 매칭 분석 결과 인터페이스
+export interface MatchingAnalysis {
+  isMatch: boolean;
+  confidence: number; // 0-100
+  strategy: ContentStrategy;
+  reason: string;
+  imageSummary: string;
+  userInputSummary: string;
+  recommendation: string;
+}
 
 // 1) 카테고리 감지
 function detectContentCategory(params: PromptParams): ContentCategory {
@@ -222,7 +237,69 @@ ${params.contact ? `문의: ${params.contact}` : ''}
 #태그1 #태그2 #태그3 #태그4 #태그5 #태그6 #태그7 #태그8 #태그9 #태그10
 `;
 
-  return header + hardRules + structureGuide + dynamicRules + outputFormat;
+  // 전략별 추가 가이드라인
+  const strategyGuide = getStrategyGuide(params.contentStrategy || 'auto', category);
+  
+  return header + hardRules + structureGuide + dynamicRules + strategyGuide + outputFormat;
+}
+
+// 전략별 가이드라인 생성 함수
+function getStrategyGuide(strategy: string, category: ContentCategory): string {
+  if (strategy === 'integrated' || strategy === 'auto') {
+    return `
+📌 콘텐츠 생성 전략: 통합형 (이미지 + 키워드 균형)
+
+✅ 작성 방식:
+- 이미지와 키워드가 서로 보완하는 방향으로 작성
+- 이미지에 보이는 것을 구체적으로 묘사하면서 키워드를 자연스럽게 녹여냄
+- 둘 다 적극 활용하여 풍부한 콘텐츠 생성
+
+예시:
+이미지: 화장품 제품 / 키워드: "보습, 민감성피부"
+→ "이 제품의 텍스처를 보시면 (이미지 활용), 보습력이 뛰어나 보이는데 실제로 민감성 피부에도 좋다고 합니다 (키워드 활용)"
+`;
+  }
+  
+  if (strategy === 'image-first') {
+    return `
+📌 콘텐츠 생성 전략: 이미지 중심형
+
+⚠️ 중요 지침:
+- 이미지에 실제로 보이는 것을 중심으로 작성
+- 키워드는 이미지와 자연스럽게 연결될 때만 사용
+- 억지로 키워드를 끼워넣지 말 것
+- 이미지와 관련 없는 키워드는 과감히 생략
+
+예시:
+이미지: 카페 인테리어 / 키워드: "보습크림"
+→ 키워드 무시하고 카페 인테리어만 설명
+→ "따뜻한 조명과 원목 가구가 인상적인 이 카페는..."
+
+✅ 자연스러움이 최우선!
+`;
+  }
+  
+  if (strategy === 'keyword-first') {
+    return `
+📌 콘텐츠 생성 전략: 키워드 중심형 (SEO 최적화)
+
+⚠️ 중요 지침:
+- 키워드를 중심으로 콘텐츠 구성 (SEO 우선)
+- 이미지는 분위기 참고 정도로만 활용
+- 이미지와 키워드가 안 맞아도 키워드에 집중
+- 키워드 밀도 1-2% 유지 필수
+
+예시:
+이미지: 카페 인테리어 / 키워드: "보습크림 추천"
+→ 이미지는 무시하고 보습크림 중심으로 작성
+→ "겨울철 건조한 날씨에 필수인 보습크림! 민감성 피부에도 좋은..."
+
+✅ SEO 키워드 포함이 최우선!
+✅ 이미지는 분위기 연출용으로만 활용하거나 무시
+`;
+  }
+  
+  return '';
 }
 
 export function getInstagramPrompt(params: PromptParams): string {

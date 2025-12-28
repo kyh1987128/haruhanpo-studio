@@ -221,6 +221,7 @@ app.post('/api/generate/batch', async (c) => {
             targetAge,
             industry,
             imageDescription: combinedImageDescription,
+            contentStrategy: 'auto' as const, // 배치 생성은 자동 전략 사용
           };
 
           const generationTasks = [];
@@ -438,21 +439,24 @@ app.post('/api/generate', async (c) => {
       .map((img) => `[이미지 ${img.index}]\n${img.description}`)
       .join('\n\n');
 
-    console.log('이미지 분석 완료. 일치성 검증 시작...');
+    console.log('이미지 분석 완료. 하이브리드 전략 분석 시작...');
 
-    // 2단계: 이미지와 사용자 입력 정보의 일치성 검증 (forceGenerate가 false일 때만)
+    // 2단계: 하이브리드 AI 판단 시스템 - 이미지-변수 매칭 분석 및 전략 자동 선택
+    let contentStrategy: 'integrated' | 'image-first' | 'keyword-first' = 'integrated';
+    let matchingAnalysis: any = null;
+
     if (!forceGenerate) {
       try {
-      const validationResponse = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: '당신은 이미지 분석과 사용자 입력 정보의 연관성을 판단하는 전문가입니다.',
-          },
-          {
-            role: 'user',
-            content: `다음 이미지 분석 결과와 사용자 입력 정보가 서로 일치하는지 검증해주세요.
+        const strategyResponse = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: '당신은 이미지와 텍스트 콘텐츠의 연관성을 분석하고 최적의 콘텐츠 생성 전략을 판단하는 전문가입니다.',
+            },
+            {
+              role: 'user',
+              content: `다음 이미지 분석 결과와 사용자 입력 정보를 바탕으로 최적의 콘텐츠 생성 전략을 결정해주세요.
 
 📸 이미지 분석 결과:
 ${combinedImageDescription}
@@ -468,57 +472,83 @@ ${combinedImageDescription}
 {
   "isMatch": true 또는 false,
   "confidence": 0-100 사이의 숫자 (일치 확신도),
-  "reason": "불일치 이유 (한글, 100자 이내)",
-  "imageSummary": "이미지 주요 내용 요약 (한글, 50자 이내)",
-  "userInputSummary": "사용자 입력 요약 (한글, 50자 이내)",
-  "recommendation": "사용자에게 제안할 조치 (한글, 100자 이내)"
+  "strategy": "integrated" | "image-first" | "keyword-first",
+  "reason": "전략 선택 이유 (한글, 150자 이내)",
+  "imageSummary": "이미지 주요 내용 (한글, 50자 이내)",
+  "userInputSummary": "사용자 키워드 요약 (한글, 50자 이내)",
+  "recommendation": "사용자 안내 메시지 (한글, 100자 이내)"
 }
 
-판단 기준:
-- confidence 70 이상: 일치 (isMatch: true)
-- confidence 70 미만: 불일치 (isMatch: false)
-- 이미지 내용과 브랜드/키워드/산업분야가 명확히 다른 경우 불일치
-- 약간의 차이는 허용 (예: 카페 이미지 + 레스토랑 키워드 → 일치 가능)`,
-          },
-        ],
-        temperature: 0.3,
-        max_tokens: 500,
-      });
+전략 선택 기준:
 
-      const validationText = validationResponse.choices[0].message.content || '{}';
-      // JSON 코드 블록 제거
-      const cleanedText = validationText.replace(/```json\n?|\n?```/g, '').trim();
-      const validation = JSON.parse(cleanedText);
+1️⃣ "integrated" (통합형) - confidence 70 이상
+   - 이미지와 키워드가 서로 잘 맞음
+   - 예: 화장품 사진 + "보습크림" 키워드 ✅
+   - 예: 카페 사진 + "카페 인테리어" 키워드 ✅
 
-        console.log('검증 결과:', validation);
+2️⃣ "image-first" (이미지 중심) - confidence 50-69
+   - 이미지가 명확하지만 키워드와 약간 다름
+   - 이미지가 더 풍부한 정보를 담고 있음
+   - 예: 레스토랑 사진 + "카페" 키워드 → 레스토랑으로 작성
+   - 예: 제품 다각도 사진 + 일반적인 키워드 → 제품 중심
 
-        // 불일치 감지 시 경고 반환
-        if (!validation.isMatch || validation.confidence < 70) {
+3️⃣ "keyword-first" (키워드 중심) - confidence 50 미만
+   - 이미지와 키워드가 명확히 다름
+   - SEO를 위해 키워드 우선 필요
+   - 예: 카페 사진 + "보습크림" 키워드 → 보습크림으로 작성
+   - 예: 풍경 사진 + "IT 서비스" 키워드 → IT 서비스로 작성
+
+⚠️ 중요: 자연스러운 콘텐츠 생성이 목표입니다. 억지로 끼워맞추지 말고 최적의 전략을 선택하세요.`,
+            },
+          ],
+          temperature: 0.3,
+          max_tokens: 600,
+        });
+
+        const strategyText = strategyResponse.choices[0].message.content || '{}';
+        const cleanedText = strategyText.replace(/```json\n?|\n?```/g, '').trim();
+        matchingAnalysis = JSON.parse(cleanedText);
+
+        console.log('하이브리드 전략 분석 결과:', matchingAnalysis);
+
+        // 전략 자동 선택
+        contentStrategy = matchingAnalysis.strategy || 'integrated';
+        
+        console.log(`선택된 전략: ${contentStrategy} (confidence: ${matchingAnalysis.confidence})`);
+        console.log(`전략 이유: ${matchingAnalysis.reason}`);
+
+        // confidence 30 미만이면 사용자에게 경고 (너무 불일치)
+        if (matchingAnalysis.confidence < 30) {
           return c.json({
             success: false,
             requireConfirmation: true,
             validation: {
-              isMatch: validation.isMatch,
-              confidence: validation.confidence,
-              reason: validation.reason,
-              imageSummary: validation.imageSummary,
-              userInputSummary: validation.userInputSummary,
-              recommendation: validation.recommendation,
+              isMatch: false,
+              confidence: matchingAnalysis.confidence,
+              strategy: contentStrategy,
+              reason: matchingAnalysis.reason,
+              imageSummary: matchingAnalysis.imageSummary,
+              userInputSummary: matchingAnalysis.userInputSummary,
+              recommendation: matchingAnalysis.recommendation,
             },
-            message: '이미지와 입력 정보가 일치하지 않습니다.',
+            message: '이미지와 키워드가 매우 다릅니다. 그래도 계속하시겠습니까?',
           });
         }
+
       } catch (error: any) {
-        console.error('검증 오류:', error.message);
-        // 검증 실패 시 경고 없이 진행 (서비스 중단 방지)
+        console.error('전략 분석 오류:', error.message);
+        // 분석 실패 시 기본 전략 사용
+        contentStrategy = 'integrated';
+        console.log('전략 분석 실패, 기본 전략(integrated) 사용');
       }
     } else {
       console.log('검증 우회 (사용자가 강제 진행 선택)');
+      contentStrategy = 'keyword-first'; // 강제 진행 시 키워드 우선
     }
 
-    console.log('검증 통과. 콘텐츠 생성 시작...');
+    console.log(`하이브리드 전략 결정 완료: ${contentStrategy}. 콘텐츠 생성 시작...`);
 
-    // 2단계: 선택된 플랫폼만 콘텐츠 생성 (병렬 처리)
+    // 3단계: 선택된 플랫폼만 콘텐츠 생성 (병렬 처리)
     const promptParams = {
       brand,
       companyName,
@@ -533,6 +563,7 @@ ${combinedImageDescription}
       targetAge,
       industry,
       imageDescription: combinedImageDescription,
+      contentStrategy: contentStrategy, // 하이브리드 전략 추가
     };
 
     const generationTasks = [];
@@ -604,6 +635,13 @@ ${combinedImageDescription}
       data,
       generatedPlatforms: platforms,
       imageCount: images.length,
+      strategy: {
+        selected: contentStrategy,
+        confidence: matchingAnalysis?.confidence || 100,
+        reason: matchingAnalysis?.reason || '기본 전략 사용',
+        imageSummary: matchingAnalysis?.imageSummary || '',
+        userInputSummary: matchingAnalysis?.userInputSummary || '',
+      },
     });
   } catch (error: any) {
     console.error('콘텐츠 생성 오류:', error);
