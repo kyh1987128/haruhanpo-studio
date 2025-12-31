@@ -2,11 +2,13 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { serveStatic } from 'hono/cloudflare-workers';
 import OpenAI from 'openai';
-import { getBlogPrompt, getInstagramPrompt, getThreadsPrompt, getYouTubePrompt, getYoutubeLongformPrompt, getShortformPrompt, getMetadataPrompt } from './prompts';
+import { getBlogPrompt, getInstagramPrompt, getThreadsPrompt, getYouTubePrompt, getYoutubeLongformPrompt, getShortformPrompt, getMetadataPrompt, getInstagramFeedPrompt } from './prompts';
 import { htmlTemplate } from './html-template';
+import { analyzeImageWithGemini, generateContentWithGemini, calculateGeminiCost, estimateTokens } from './gemini';
 
 type Bindings = {
   OPENAI_API_KEY: string;
+  GEMINI_API_KEY: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -384,20 +386,31 @@ app.post('/api/generate', async (c) => {
       apiKey: finalApiKey,
     });
 
-    // 1단계: 모든 이미지 상세 분석
-    console.log(`이미지 ${images.length}장 분석 시작...`);
+    // 🚀 하이브리드 전략: Gemini API 키 확인
+    const geminiApiKey = c.env.GEMINI_API_KEY;
+    
+    // 1단계: 모든 이미지 상세 분석 (Gemini Flash 사용 - 70% 비용 절감)
+    console.log(`✨ [하이브리드] 이미지 ${images.length}장 분석 시작 (Gemini Flash)...`);
     const imageAnalyses = await Promise.all(
       images.map(async (imageBase64: string, index: number) => {
         try {
-          const analysis = await openai.chat.completions.create({
-            model: 'gpt-4o',
-            messages: [
-              {
-                role: 'user',
-                content: [
-                  {
-                    type: 'text',
-                    text: `이미지 ${index + 1}을 매우 상세하게 분석해주세요.
+          let description = '';
+          
+          // Gemini API가 있으면 Gemini 사용, 없으면 OpenAI 사용
+          if (geminiApiKey) {
+            console.log(`  📸 이미지 ${index + 1}: Gemini Flash 분석`);
+            description = await analyzeImageWithGemini(geminiApiKey, imageBase64);
+          } else {
+            console.log(`  📸 이미지 ${index + 1}: GPT-4o 분석 (Gemini 키 없음)`);
+            const analysis = await openai.chat.completions.create({
+              model: 'gpt-4o',
+              messages: [
+                {
+                  role: 'user',
+                  content: [
+                    {
+                      type: 'text',
+                      text: `이미지 ${index + 1}을 매우 상세하게 분석해주세요.
 
 다음 요소를 포함하여 분석:
 - 주요 피사체 및 제품 (있다면)
@@ -409,20 +422,22 @@ app.post('/api/generate', async (c) => {
 - 어떤 메시지를 전달하려는지
 
 300-500자로 상세히 설명해주세요.`,
-                  },
-                  {
-                    type: 'image_url',
-                    image_url: { url: imageBase64 },
-                  },
-                ],
-              },
-            ],
-            max_tokens: 1000,
-          });
+                    },
+                    {
+                      type: 'image_url',
+                      image_url: { url: imageBase64 },
+                    },
+                  ],
+                },
+              ],
+              max_tokens: 1000,
+            });
+            description = analysis.choices[0].message.content || '이미지 분석 실패';
+          }
 
           return {
             index: index + 1,
-            description: analysis.choices[0].message.content || '이미지 분석 실패',
+            description,
           };
         } catch (error: any) {
           console.error(`이미지 ${index + 1} 분석 오류:`, error.message);
@@ -566,57 +581,131 @@ ${combinedImageDescription}
       contentStrategy: contentStrategy, // 하이브리드 전략 추가
     };
 
+    // 🚀 하이브리드 전략 적용
     const generationTasks = [];
+    let totalCost = { openai: 0, gemini: 0 };
 
+    // 블로그: GPT-4o 사용 (최고 품질 필요)
     if (platforms.includes('blog')) {
+      console.log('  📝 블로그: GPT-4o (최고 품질)');
       generationTasks.push(
-        generateContent(openai, 'blog', getBlogPrompt(promptParams), aiModel)
+        generateContent(openai, 'blog', getBlogPrompt(promptParams), aiModel).then(result => {
+          totalCost.openai += 0.052; // 약 52원
+          return result;
+        })
       );
     }
 
+    // 인스타그램: Gemini Flash (충분한 품질 + 저렴)
     if (platforms.includes('instagram')) {
-      generationTasks.push(
-        generateContent(openai, 'instagram', getInstagramPrompt(promptParams), aiModel)
-      );
+      if (geminiApiKey) {
+        console.log('  📷 인스타그램: Gemini Flash (70% 절감)');
+        generationTasks.push(
+          generateContentWithGemini(geminiApiKey, getInstagramPrompt(promptParams))
+            .then(content => {
+              totalCost.gemini += 0.010; // 약 10원
+              return { platform: 'instagram', content };
+            })
+        );
+      } else {
+        generationTasks.push(generateContent(openai, 'instagram', getInstagramPrompt(promptParams), aiModel));
+      }
     }
     
+    // 인스타그램 피드: Gemini Flash
     if (platforms.includes('instagram_feed')) {
-      generationTasks.push(
-        generateContent(openai, 'instagram_feed', getInstagramFeedPrompt(promptParams), aiModel)
-      );
+      if (geminiApiKey) {
+        console.log('  📷 인스타그램 피드: Gemini Flash');
+        generationTasks.push(
+          generateContentWithGemini(geminiApiKey, getInstagramFeedPrompt(promptParams))
+            .then(content => {
+              totalCost.gemini += 0.010;
+              return { platform: 'instagram_feed', content };
+            })
+        );
+      } else {
+        generationTasks.push(generateContent(openai, 'instagram_feed', getInstagramFeedPrompt(promptParams), aiModel));
+      }
     }
 
+    // 스레드: Gemini Flash
     if (platforms.includes('threads')) {
-      generationTasks.push(
-        generateContent(openai, 'threads', getThreadsPrompt(promptParams), aiModel)
-      );
+      if (geminiApiKey) {
+        console.log('  🧵 스레드: Gemini Flash (70% 절감)');
+        generationTasks.push(
+          generateContentWithGemini(geminiApiKey, getThreadsPrompt(promptParams))
+            .then(content => {
+              totalCost.gemini += 0.006; // 약 6원
+              return { platform: 'threads', content };
+            })
+        );
+      } else {
+        generationTasks.push(generateContent(openai, 'threads', getThreadsPrompt(promptParams), aiModel));
+      }
     }
 
+    // 유튜브 쇼츠: Gemini Flash
     if (platforms.includes('youtube') || platforms.includes('youtube_shorts')) {
-      generationTasks.push(
-        generateContent(openai, 'youtube', getYouTubePrompt(promptParams), aiModel)
-      );
+      if (geminiApiKey) {
+        console.log('  🎬 유튜브 쇼츠: Gemini Flash (70% 절감)');
+        generationTasks.push(
+          generateContentWithGemini(geminiApiKey, getYouTubePrompt(promptParams))
+            .then(content => {
+              totalCost.gemini += 0.023; // 약 23원
+              return { platform: 'youtube', content };
+            })
+        );
+      } else {
+        generationTasks.push(generateContent(openai, 'youtube', getYouTubePrompt(promptParams), aiModel));
+      }
     }
     
-    // 새로운 플랫폼: 유튜브 롱폼
+    // 유튜브 롱폼: Gemini Flash
     if (platforms.includes('youtube_longform')) {
-      generationTasks.push(
-        generateContent(openai, 'youtube_longform', getYoutubeLongformPrompt(promptParams), aiModel)
-      );
+      if (geminiApiKey) {
+        console.log('  🎥 유튜브 롱폼: Gemini Flash (70% 절감)');
+        generationTasks.push(
+          generateContentWithGemini(geminiApiKey, getYoutubeLongformPrompt(promptParams))
+            .then(content => {
+              totalCost.gemini += 0.023;
+              return { platform: 'youtube_longform', content };
+            })
+        );
+      } else {
+        generationTasks.push(generateContent(openai, 'youtube_longform', getYoutubeLongformPrompt(promptParams), aiModel));
+      }
     }
     
-    // 새로운 플랫폼: 숏폼 (틱톡/릴스/쇼츠 통합)
+    // 숏폼: Gemini Flash
     if (platforms.includes('shortform_multi') || platforms.includes('tiktok') || platforms.includes('instagram_reels')) {
-      generationTasks.push(
-        generateContent(openai, 'shortform_multi', getShortformPrompt(promptParams), aiModel)
-      );
+      if (geminiApiKey) {
+        console.log('  📱 숏폼: Gemini Flash (70% 절감)');
+        generationTasks.push(
+          generateContentWithGemini(geminiApiKey, getShortformPrompt(promptParams))
+            .then(content => {
+              totalCost.gemini += 0.023;
+              return { platform: 'shortform_multi', content };
+            })
+        );
+      } else {
+        generationTasks.push(generateContent(openai, 'shortform_multi', getShortformPrompt(promptParams), aiModel));
+      }
     }
     
-    // 새로운 플랫폼: 메타데이터 생성
+    // 메타데이터: Gemini Flash
     if (platforms.includes('metadata_generation')) {
-      generationTasks.push(
-        generateContent(openai, 'metadata', getMetadataPrompt(promptParams), aiModel)
-      );
+      if (geminiApiKey) {
+        console.log('  📊 메타데이터: Gemini Flash (70% 절감)');
+        generationTasks.push(
+          generateContentWithGemini(geminiApiKey, getMetadataPrompt(promptParams))
+            .then(content => {
+              totalCost.gemini += 0.015;
+              return { platform: 'metadata', content };
+            })
+        );
+      } else {
+        generationTasks.push(generateContent(openai, 'metadata', getMetadataPrompt(promptParams), aiModel));
+      }
     }
 
     // 모든 생성 작업 완료 대기
@@ -629,6 +718,7 @@ ${combinedImageDescription}
     });
 
     console.log('콘텐츠 생성 완료!');
+    console.log(`💰 비용 추정: OpenAI $${totalCost.openai.toFixed(3)}, Gemini $${totalCost.gemini.toFixed(3)}, 총 $${(totalCost.openai + totalCost.gemini).toFixed(3)}`);
 
     return c.json({
       success: true,
@@ -641,6 +731,12 @@ ${combinedImageDescription}
         reason: matchingAnalysis?.reason || '기본 전략 사용',
         imageSummary: matchingAnalysis?.imageSummary || '',
         userInputSummary: matchingAnalysis?.userInputSummary || '',
+      },
+      cost: {
+        openai: totalCost.openai,
+        gemini: totalCost.gemini,
+        total: totalCost.openai + totalCost.gemini,
+        savings: geminiApiKey ? '약 52% 절감 (하이브리드 전략)' : '절감 없음',
       },
     });
   } catch (error: any) {
