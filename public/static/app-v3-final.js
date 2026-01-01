@@ -3751,3 +3751,8 @@ window.retryGeneration = retryGeneration;
 // NEW v7.0: 개별 콘텐츠 문서 업로드 함수
 window.handleContentDocumentUpload = handleContentDocumentUpload;
 window.removeContentDocument = removeContentDocument;
+
+// 콘텐츠 블록 생성 함수
+window.generateContentBlocks = generateContentBlocks;
+window.updateContentData = updateContentData;
+window.suggestKeywordsForContent = suggestKeywordsForContent;
