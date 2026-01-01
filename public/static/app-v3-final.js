@@ -3588,6 +3588,235 @@ function closeModal(modalId) {
 }
 
 // ===================================
+// 파일 업로드 처리 (NEW v7.0)
+// ===================================
+let uploadedImages = [];
+let uploadedDocuments = [];
+
+// 이미지 업로드 처리
+function handleImageUpload(event) {
+  const files = Array.from(event.target.files);
+  const maxFiles = 5;
+  const maxSize = 10 * 1024 * 1024; // 10MB
+
+  if (uploadedImages.length + files.length > maxFiles) {
+    alert(`최대 ${maxFiles}장까지 업로드 가능합니다.`);
+    return;
+  }
+
+  files.forEach(file => {
+    if (file.size > maxSize) {
+      alert(`${file.name}은(는) 10MB를 초과합니다.`);
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      alert(`${file.name}은(는) 이미지 파일이 아닙니다.`);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      uploadedImages.push({
+        file: file,
+        name: file.name,
+        dataUrl: e.target.result
+      });
+      renderImagePreviews();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // input 초기화
+  event.target.value = '';
+}
+
+// 이미지 미리보기 렌더링
+function renderImagePreviews() {
+  const container = document.getElementById('imagePreviewGrid');
+  if (!container) return;
+
+  container.innerHTML = uploadedImages.map((img, index) => `
+    <div class="relative group">
+      <img src="${img.dataUrl}" class="w-full h-24 object-cover rounded-lg border-2 border-gray-200">
+      <button
+        onclick="removeUploadedImage(${index})"
+        class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+        type="button"
+      >
+        <i class="fas fa-times text-xs"></i>
+      </button>
+      <div class="absolute bottom-1 left-1 bg-black bg-opacity-70 text-white text-xs px-2 py-0.5 rounded">
+        ${img.name.length > 15 ? img.name.substring(0, 12) + '...' : img.name}
+      </div>
+    </div>
+  `).join('');
+}
+
+// 이미지 제거
+function removeUploadedImage(index) {
+  uploadedImages.splice(index, 1);
+  renderImagePreviews();
+}
+
+// 문서 업로드 처리
+function handleDocumentUpload(event) {
+  const files = Array.from(event.target.files);
+  const maxFiles = 3;
+  const maxSize = 10 * 1024 * 1024; // 10MB
+
+  if (uploadedDocuments.length + files.length > maxFiles) {
+    alert(`최대 ${maxFiles}개까지 업로드 가능합니다.`);
+    return;
+  }
+
+  files.forEach(file => {
+    if (file.size > maxSize) {
+      alert(`${file.name}은(는) 10MB를 초과합니다.`);
+      return;
+    }
+
+    const allowedTypes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      alert(`${file.name}은(는) 지원하지 않는 파일 형식입니다. (PDF, DOCX, TXT만 가능)`);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      uploadedDocuments.push({
+        file: file,
+        name: file.name,
+        type: file.type,
+        dataUrl: e.target.result
+      });
+      renderDocumentList();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // input 초기화
+  event.target.value = '';
+}
+
+// 문서 목록 렌더링
+function renderDocumentList() {
+  const container = document.getElementById('documentList');
+  if (!container) return;
+
+  container.innerHTML = uploadedDocuments.map((doc, index) => {
+    const icon = doc.type.includes('pdf') ? 'fa-file-pdf text-red-500' :
+                 doc.type.includes('word') ? 'fa-file-word text-blue-500' :
+                 'fa-file-alt text-gray-500';
+    
+    const sizeKB = Math.round(doc.file.size / 1024);
+    
+    return `
+      <div class="flex items-center justify-between p-3 bg-white border-2 border-gray-200 rounded-lg hover:border-purple-400 transition">
+        <div class="flex items-center space-x-3">
+          <i class="fas ${icon} text-2xl"></i>
+          <div>
+            <div class="font-medium text-sm text-gray-800">${doc.name}</div>
+            <div class="text-xs text-gray-500">${sizeKB} KB</div>
+          </div>
+        </div>
+        <button
+          onclick="removeUploadedDocument(${index})"
+          class="text-red-500 hover:text-red-700 transition"
+          type="button"
+        >
+          <i class="fas fa-trash text-lg"></i>
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+// 문서 제거
+function removeUploadedDocument(index) {
+  uploadedDocuments.splice(index, 1);
+  renderDocumentList();
+}
+
+// 드래그 앤 드롭 지원 추가
+document.addEventListener('DOMContentLoaded', () => {
+  // 이미지 드래그 앤 드롭
+  const imageDropZone = document.querySelector('[onclick*="imageFiles"]');
+  if (imageDropZone) {
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      imageDropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      imageDropZone.addEventListener(eventName, () => {
+        imageDropZone.classList.add('border-blue-500', 'bg-blue-50');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      imageDropZone.addEventListener(eventName, () => {
+        imageDropZone.classList.remove('border-blue-500', 'bg-blue-50');
+      });
+    });
+
+    imageDropZone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      const imageInput = document.getElementById('imageFiles');
+      if (imageInput) {
+        imageInput.files = files;
+        handleImageUpload({ target: imageInput });
+      }
+    });
+  }
+
+  // 문서 드래그 앤 드롭
+  const documentDropZone = document.querySelector('[onclick*="documentFiles"]');
+  if (documentDropZone) {
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      documentDropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      documentDropZone.addEventListener(eventName, () => {
+        documentDropZone.classList.add('border-purple-500', 'bg-purple-50');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      documentDropZone.addEventListener(eventName, () => {
+        documentDropZone.classList.remove('border-purple-500', 'bg-purple-50');
+      });
+    });
+
+    documentDropZone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      const documentInput = document.getElementById('documentFiles');
+      if (documentInput) {
+        documentInput.files = files;
+        handleDocumentUpload({ target: documentInput });
+      }
+    });
+  }
+});
+
+// ===================================
 // 전역 함수 노출
 // ===================================
 window.removeImage = removeImage;
@@ -3607,3 +3836,9 @@ window.viewHistory = viewHistory;
 window.deleteHistory = deleteHistory;
 window.closeErrorModal = closeErrorModal;
 window.retryGeneration = retryGeneration;
+
+// NEW v7.0: 파일 업로드 함수
+window.handleImageUpload = handleImageUpload;
+window.handleDocumentUpload = handleDocumentUpload;
+window.removeUploadedImage = removeUploadedImage;
+window.removeUploadedDocument = removeUploadedDocument;
