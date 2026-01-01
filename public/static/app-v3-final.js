@@ -5,7 +5,7 @@
 
 // 전역 변수
 let selectedImages = []; // 더 이상 사용 안 함 (개별 콘텐츠로 변경)
-let contentBlocks = {}; // { 0: { images: [], keywords: '', topic: '', description: '' }, 1: {...}, ... }
+let contentBlocks = {}; // { 0: { images: [], documents: [], keywords: '', topic: '', description: '' }, 1: {...}, ... }
 let resultData = {};
 let savedProfiles = [];
 let contentHistory = [];
@@ -1364,7 +1364,7 @@ function generateContentBlocks() {
     if (existingData[i]) {
       contentBlocks[i] = existingData[i];
     } else {
-      contentBlocks[i] = { images: [], keywords: '', topic: '', description: '' };
+      contentBlocks[i] = { images: [], documents: [], keywords: '', topic: '', description: '' };
     }
     
     const existingImages = contentBlocks[i].images || [];
@@ -1400,6 +1400,35 @@ function generateContentBlocks() {
             </p>
           </div>
           <div id="imagePreview_${i}" class="mt-3 grid grid-cols-5 gap-2"></div>
+        </div>
+        
+        <!-- 문서 업로드 (선택사항) NEW v7.0 -->
+        <div class="mb-4">
+          <label class="block mb-2 font-semibold text-gray-700">
+            <i class="fas fa-file-alt mr-2"></i>문서 첨부 (선택사항, 최대 3개)
+            <span class="ml-2 text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">NEW</span>
+          </label>
+          <div class="border-2 border-dashed border-blue-200 rounded-lg p-4 text-center hover:border-blue-400 transition cursor-pointer bg-blue-50" 
+               onclick="document.getElementById('documentInput_${i}').click()">
+            <i class="fas fa-file-pdf text-3xl text-blue-400 mb-2"></i>
+            <input
+              type="file"
+              accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+              multiple
+              id="documentInput_${i}"
+              class="hidden"
+              onchange="handleContentDocumentUpload(${i})"
+            />
+            <p class="text-gray-600 text-sm">
+              <span class="text-blue-600 font-semibold">클릭하여 문서 선택</span>
+              <span class="text-gray-500"> (PDF, DOCX, TXT)</span>
+            </p>
+          </div>
+          <div id="documentList_${i}" class="mt-2 space-y-2"></div>
+          <div class="mt-2 p-2 bg-blue-50 border-l-4 border-blue-400 rounded text-xs text-gray-700">
+            <strong>💡 3가지 시나리오:</strong><br>
+            • 이미지만: ₩92/회 | 문서만: ₩40/회 (절감) | 이미지+문서: ₩105/회 (프리미엄)
+          </div>
         </div>
         
         <!-- 키워드 + AI 추천 -->
@@ -3588,84 +3617,29 @@ function closeModal(modalId) {
 }
 
 // ===================================
-// 파일 업로드 처리 (NEW v7.0)
+// 개별 콘텐츠 문서 업로드 처리 (NEW v7.0)
 // ===================================
-let uploadedImages = [];
-let uploadedDocuments = [];
 
-// 이미지 업로드 처리
-function handleImageUpload(event) {
-  const files = Array.from(event.target.files);
-  const maxFiles = 5;
-  const maxSize = 10 * 1024 * 1024; // 10MB
+// 개별 콘텐츠 문서 업로드
+function handleContentDocumentUpload(contentIndex) {
+  const input = document.getElementById(`documentInput_${contentIndex}`);
+  if (!input || !input.files) return;
 
-  if (uploadedImages.length + files.length > maxFiles) {
-    alert(`최대 ${maxFiles}장까지 업로드 가능합니다.`);
-    return;
-  }
-
-  files.forEach(file => {
-    if (file.size > maxSize) {
-      alert(`${file.name}은(는) 10MB를 초과합니다.`);
-      return;
-    }
-
-    if (!file.type.startsWith('image/')) {
-      alert(`${file.name}은(는) 이미지 파일이 아닙니다.`);
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      uploadedImages.push({
-        file: file,
-        name: file.name,
-        dataUrl: e.target.result
-      });
-      renderImagePreviews();
-    };
-    reader.readAsDataURL(file);
-  });
-
-  // input 초기화
-  event.target.value = '';
-}
-
-// 이미지 미리보기 렌더링
-function renderImagePreviews() {
-  const container = document.getElementById('imagePreviewGrid');
-  if (!container) return;
-
-  container.innerHTML = uploadedImages.map((img, index) => `
-    <div class="relative group">
-      <img src="${img.dataUrl}" class="w-full h-24 object-cover rounded-lg border-2 border-gray-200">
-      <button
-        onclick="removeUploadedImage(${index})"
-        class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
-        type="button"
-      >
-        <i class="fas fa-times text-xs"></i>
-      </button>
-      <div class="absolute bottom-1 left-1 bg-black bg-opacity-70 text-white text-xs px-2 py-0.5 rounded">
-        ${img.name.length > 15 ? img.name.substring(0, 12) + '...' : img.name}
-      </div>
-    </div>
-  `).join('');
-}
-
-// 이미지 제거
-function removeUploadedImage(index) {
-  uploadedImages.splice(index, 1);
-  renderImagePreviews();
-}
-
-// 문서 업로드 처리
-function handleDocumentUpload(event) {
-  const files = Array.from(event.target.files);
+  const files = Array.from(input.files);
   const maxFiles = 3;
   const maxSize = 10 * 1024 * 1024; // 10MB
 
-  if (uploadedDocuments.length + files.length > maxFiles) {
+  // 초기화
+  if (!contentBlocks[contentIndex]) {
+    contentBlocks[contentIndex] = { images: [], documents: [], keywords: '', topic: '', description: '' };
+  }
+  if (!contentBlocks[contentIndex].documents) {
+    contentBlocks[contentIndex].documents = [];
+  }
+
+  const currentCount = contentBlocks[contentIndex].documents.length;
+
+  if (currentCount + files.length > maxFiles) {
     alert(`최대 ${maxFiles}개까지 업로드 가능합니다.`);
     return;
   }
@@ -3689,132 +3663,73 @@ function handleDocumentUpload(event) {
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      uploadedDocuments.push({
+      contentBlocks[contentIndex].documents.push({
         file: file,
         name: file.name,
         type: file.type,
+        size: file.size,
         dataUrl: e.target.result
       });
-      renderDocumentList();
+      renderContentDocumentList(contentIndex);
     };
     reader.readAsDataURL(file);
   });
 
   // input 초기화
-  event.target.value = '';
+  input.value = '';
 }
 
-// 문서 목록 렌더링
-function renderDocumentList() {
-  const container = document.getElementById('documentList');
+// 개별 콘텐츠 문서 목록 렌더링
+function renderContentDocumentList(contentIndex) {
+  const container = document.getElementById(`documentList_${contentIndex}`);
   if (!container) return;
 
-  container.innerHTML = uploadedDocuments.map((doc, index) => {
+  const documents = contentBlocks[contentIndex]?.documents || [];
+
+  if (documents.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = documents.map((doc, docIndex) => {
     const icon = doc.type.includes('pdf') ? 'fa-file-pdf text-red-500' :
                  doc.type.includes('word') ? 'fa-file-word text-blue-500' :
                  'fa-file-alt text-gray-500';
     
-    const sizeKB = Math.round(doc.file.size / 1024);
+    const sizeKB = Math.round(doc.size / 1024);
     
     return `
-      <div class="flex items-center justify-between p-3 bg-white border-2 border-gray-200 rounded-lg hover:border-purple-400 transition">
-        <div class="flex items-center space-x-3">
-          <i class="fas ${icon} text-2xl"></i>
+      <div class="flex items-center justify-between p-2 bg-white border border-gray-200 rounded-lg hover:border-blue-400 transition">
+        <div class="flex items-center space-x-2">
+          <i class="fas ${icon} text-lg"></i>
           <div>
-            <div class="font-medium text-sm text-gray-800">${doc.name}</div>
+            <div class="font-medium text-xs text-gray-800">${doc.name}</div>
             <div class="text-xs text-gray-500">${sizeKB} KB</div>
           </div>
         </div>
         <button
-          onclick="removeUploadedDocument(${index})"
+          onclick="removeContentDocument(${contentIndex}, ${docIndex})"
           class="text-red-500 hover:text-red-700 transition"
           type="button"
         >
-          <i class="fas fa-trash text-lg"></i>
+          <i class="fas fa-times text-sm"></i>
         </button>
       </div>
     `;
   }).join('');
 }
 
-// 문서 제거
-function removeUploadedDocument(index) {
-  uploadedDocuments.splice(index, 1);
-  renderDocumentList();
+// 개별 콘텐츠 문서 제거
+function removeContentDocument(contentIndex, docIndex) {
+  if (contentBlocks[contentIndex] && contentBlocks[contentIndex].documents) {
+    contentBlocks[contentIndex].documents.splice(docIndex, 1);
+    renderContentDocumentList(contentIndex);
+  }
 }
 
-// 드래그 앤 드롭 지원 추가
-document.addEventListener('DOMContentLoaded', () => {
-  // 이미지 드래그 앤 드롭
-  const imageDropZone = document.querySelector('[onclick*="imageFiles"]');
-  if (imageDropZone) {
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-      imageDropZone.addEventListener(eventName, preventDefaults, false);
-    });
-
-    function preventDefaults(e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-
-    ['dragenter', 'dragover'].forEach(eventName => {
-      imageDropZone.addEventListener(eventName, () => {
-        imageDropZone.classList.add('border-blue-500', 'bg-blue-50');
-      });
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-      imageDropZone.addEventListener(eventName, () => {
-        imageDropZone.classList.remove('border-blue-500', 'bg-blue-50');
-      });
-    });
-
-    imageDropZone.addEventListener('drop', (e) => {
-      const dt = e.dataTransfer;
-      const files = dt.files;
-      const imageInput = document.getElementById('imageFiles');
-      if (imageInput) {
-        imageInput.files = files;
-        handleImageUpload({ target: imageInput });
-      }
-    });
-  }
-
-  // 문서 드래그 앤 드롭
-  const documentDropZone = document.querySelector('[onclick*="documentFiles"]');
-  if (documentDropZone) {
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-      documentDropZone.addEventListener(eventName, preventDefaults, false);
-    });
-
-    function preventDefaults(e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-
-    ['dragenter', 'dragover'].forEach(eventName => {
-      documentDropZone.addEventListener(eventName, () => {
-        documentDropZone.classList.add('border-purple-500', 'bg-purple-50');
-      });
-    });
-
-    ['dragleave', 'drop'].forEach(eventName => {
-      documentDropZone.addEventListener(eventName, () => {
-        documentDropZone.classList.remove('border-purple-500', 'bg-purple-50');
-      });
-    });
-
-    documentDropZone.addEventListener('drop', (e) => {
-      const dt = e.dataTransfer;
-      const files = dt.files;
-      const documentInput = document.getElementById('documentFiles');
-      if (documentInput) {
-        documentInput.files = files;
-        handleDocumentUpload({ target: documentInput });
-      }
-    });
-  }
-});
+    `;
+  }).join('');
+}
 
 // ===================================
 // 전역 함수 노출
@@ -3837,8 +3752,6 @@ window.deleteHistory = deleteHistory;
 window.closeErrorModal = closeErrorModal;
 window.retryGeneration = retryGeneration;
 
-// NEW v7.0: 파일 업로드 함수
-window.handleImageUpload = handleImageUpload;
-window.handleDocumentUpload = handleDocumentUpload;
-window.removeUploadedImage = removeUploadedImage;
-window.removeUploadedDocument = removeUploadedDocument;
+// NEW v7.0: 개별 콘텐츠 문서 업로드 함수
+window.handleContentDocumentUpload = handleContentDocumentUpload;
+window.removeContentDocument = removeContentDocument;
