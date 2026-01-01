@@ -788,6 +788,78 @@ async function generateContent(
   }
 }
 
+// ========================================
+// 인증 API (NEW v7.2)
+// ========================================
+
+// 사용자 동기화 엔드포인트
+app.post('/api/auth/sync', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { user_id, email, name } = body;
+    
+    if (!user_id || !email) {
+      return c.json({ error: 'user_id와 email은 필수입니다' }, 400);
+    }
+    
+    // TODO: Supabase에 사용자 정보 저장/업데이트
+    // 현재는 기본 크레딧 정보만 반환
+    
+    return c.json({
+      success: true,
+      user_id,
+      email,
+      name,
+      credits: 3, // 무료회원 기본 크레딧
+      tier: 'free',
+      subscription_status: 'free',
+      message: '사용자 정보가 동기화되었습니다'
+    });
+  } catch (error: any) {
+    console.error('사용자 동기화 실패:', error);
+    return c.json(
+      { error: '사용자 동기화 중 오류가 발생했습니다', details: error.message },
+      500
+    );
+  }
+});
+
+// 사용자 정보 조회 엔드포인트
+app.get('/api/auth/me', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json({
+        is_guest: true,
+        user: null
+      });
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    // TODO: JWT 토큰 검증 및 Supabase에서 사용자 정보 조회
+    // 현재는 임시 응답
+    
+    return c.json({
+      is_guest: false,
+      user: {
+        id: 'temp-user-id',
+        email: 'user@example.com',
+        name: '사용자',
+        credits: 3,
+        subscription_status: 'free'
+      }
+    });
+  } catch (error: any) {
+    console.error('사용자 정보 조회 실패:', error);
+    return c.json(
+      { error: '사용자 정보 조회 중 오류가 발생했습니다' },
+      500
+    );
+  }
+});
+
 // 메인 페이지
 app.get('/', (c) => {
   return c.html(htmlTemplate);
