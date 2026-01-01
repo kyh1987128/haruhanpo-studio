@@ -3727,10 +3727,6 @@ function removeContentDocument(contentIndex, docIndex) {
   }
 }
 
-    `;
-  }).join('');
-}
-
 // ===================================
 // 전역 함수 노출
 // ===================================
