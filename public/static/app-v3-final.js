@@ -3757,6 +3757,13 @@ window.suggestKeywordsForContent = suggestKeywordsForContent;
 // 회원 인증 및 등급 관리 (NEW v7.1)
 // ===================================
 
+// Supabase 클라이언트 초기화
+const SUPABASE_URL = 'https://gmjbsndricdogtqsovnb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtamJzbmRyaWNkb2d0cXNvdm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyNzE1ODksImV4cCI6MjA4Mjg0NzU4OX0.naZnsBPYd84pdLoLAh-mEz_qerl5UakYs2FfVumnEJw';
+
+// Supabase 클라이언트 (CDN에서 로드)
+let supabaseClient = null;
+
 // 사용자 상태
 let currentUser = {
   isLoggedIn: false,
@@ -3768,16 +3775,110 @@ let currentUser = {
   subscription_status: null
 };
 
+// Supabase 클라이언트 초기화
+async function initSupabase() {
+  try {
+    // Supabase JS SDK를 동적으로 로드
+    if (typeof window.supabase === 'undefined') {
+      // CDN에서 Supabase 로드
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+      script.onload = () => {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('✅ Supabase 클라이언트 초기화 완료');
+        checkSupabaseSession();
+      };
+      document.head.appendChild(script);
+    } else {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      checkSupabaseSession();
+    }
+  } catch (error) {
+    console.error('❌ Supabase 초기화 실패:', error);
+  }
+}
+
+// Supabase 세션 확인
+async function checkSupabaseSession() {
+  if (!supabaseClient) return;
+  
+  try {
+    const { data: { session }, error } = await supabaseClient.auth.getSession();
+    
+    if (error) {
+      console.error('세션 확인 실패:', error);
+      return;
+    }
+    
+    if (session) {
+      // 로그인 상태
+      currentUser = {
+        isLoggedIn: true,
+        isGuest: false,
+        name: session.user.user_metadata.full_name || session.user.email,
+        email: session.user.email,
+        credits: 3, // TODO: 서버에서 실제 크레딧 조회
+        tier: 'free', // TODO: 서버에서 실제 등급 조회
+        subscription_status: 'free'
+      };
+      
+      localStorage.setItem('postflow_user', JSON.stringify(currentUser));
+      localStorage.setItem('postflow_token', session.access_token);
+      
+      updateAuthUI();
+      
+      // 서버에 사용자 정보 동기화
+      syncUserToBackend(session);
+    } else {
+      // 비로그인 상태
+      handleAuthError();
+    }
+  } catch (error) {
+    console.error('세션 확인 오류:', error);
+  }
+}
+
+// 서버에 사용자 정보 동기화
+async function syncUserToBackend(session) {
+  try {
+    const response = await fetch('/api/auth/sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({
+        user_id: session.user.id,
+        email: session.user.email,
+        name: session.user.user_metadata.full_name || session.user.email
+      })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      // 서버에서 받은 실제 크레딧 정보 업데이트
+      currentUser.credits = data.credits || 3;
+      currentUser.tier = data.tier || 'free';
+      currentUser.subscription_status = data.subscription_status || 'free';
+      
+      localStorage.setItem('postflow_user', JSON.stringify(currentUser));
+      updateAuthUI();
+    }
+  } catch (error) {
+    console.error('사용자 동기화 실패:', error);
+  }
+}
+
 // UI 초기화
 function initializeAuth() {
+  // Supabase 초기화
+  initSupabase();
+  
   // 로컬 스토리지에서 사용자 정보 확인
   const savedUser = localStorage.getItem('postflow_user');
   if (savedUser) {
     currentUser = JSON.parse(savedUser);
     updateAuthUI();
-    
-    // 서버에서 최신 정보 확인
-    checkAuthStatus();
   } else {
     // 비회원 상태로 시작
     currentUser.isGuest = true;
@@ -3861,19 +3962,61 @@ function handleAuthError() {
   updateAuthUI();
 }
 
-// Google 로그인
-function handleLogin() {
-  // Supabase Google OAuth 또는 API 호출
-  window.location.href = '/api/auth/google';
+// Google 로그인 (Supabase OAuth)
+async function handleLogin() {
+  if (!supabaseClient) {
+    alert('인증 시스템을 초기화하는 중입니다. 잠시 후 다시 시도해주세요.');
+    return;
+  }
+  
+  try {
+    const { data, error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent'
+        }
+      }
+    });
+    
+    if (error) {
+      console.error('Google 로그인 실패:', error);
+      alert('로그인에 실패했습니다. 다시 시도해주세요.');
+    }
+    
+    // OAuth는 자동으로 리디렉션됩니다
+  } catch (error) {
+    console.error('로그인 오류:', error);
+    alert('로그인 중 오류가 발생했습니다.');
+  }
 }
 
 // 로그아웃
-function handleLogout() {
+async function handleLogout() {
   if (confirm('로그아웃 하시겠습니까?')) {
-    localStorage.removeItem('postflow_token');
-    localStorage.removeItem('postflow_user');
-    handleAuthError();
-    showToast('로그아웃되었습니다', 'success');
+    try {
+      if (supabaseClient) {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) {
+          console.error('로그아웃 실패:', error);
+        }
+      }
+      
+      localStorage.removeItem('postflow_token');
+      localStorage.removeItem('postflow_user');
+      handleAuthError();
+      showToast('로그아웃되었습니다', 'success');
+      
+      // 페이지 새로고침
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } catch (error) {
+      console.error('로그아웃 오류:', error);
+      alert('로그아웃 중 오류가 발생했습니다.');
+    }
   }
 }
 
@@ -3926,10 +4069,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 전역 노출
 window.initializeAuth = initializeAuth;
+window.initSupabase = initSupabase;
+window.checkSupabaseSession = checkSupabaseSession;
 window.checkAuthStatus = checkAuthStatus;
 window.updateAuthUI = updateAuthUI;
 window.handleLogin = handleLogin;
 window.handleLogout = handleLogout;
 window.handleTrial = handleTrial;
 window.currentUser = currentUser;
+window.supabaseClient = null; // 초기화 후 접근 가능
 
