@@ -3756,3 +3756,184 @@ window.removeContentDocument = removeContentDocument;
 window.generateContentBlocks = generateContentBlocks;
 window.updateContentData = updateContentData;
 window.suggestKeywordsForContent = suggestKeywordsForContent;
+
+// ===================================
+// 회원 인증 및 등급 관리 (NEW v7.1)
+// ===================================
+
+// 사용자 상태
+let currentUser = {
+  isLoggedIn: false,
+  isGuest: true,
+  name: null,
+  email: null,
+  credits: 1, // 비회원 1회
+  tier: 'guest', // guest, free, paid
+  subscription_status: null
+};
+
+// UI 초기화
+function initializeAuth() {
+  // 로컬 스토리지에서 사용자 정보 확인
+  const savedUser = localStorage.getItem('postflow_user');
+  if (savedUser) {
+    currentUser = JSON.parse(savedUser);
+    updateAuthUI();
+    
+    // 서버에서 최신 정보 확인
+    checkAuthStatus();
+  } else {
+    // 비회원 상태로 시작
+    currentUser.isGuest = true;
+    currentUser.tier = 'guest';
+    currentUser.credits = 1;
+    updateAuthUI();
+  }
+}
+
+// 인증 상태 확인
+async function checkAuthStatus() {
+  try {
+    const response = await fetch('/api/auth/me', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('postflow_token')}`
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      currentUser = {
+        isLoggedIn: !data.is_guest,
+        isGuest: data.is_guest,
+        name: data.user?.name || '게스트',
+        email: data.user?.email || null,
+        credits: data.user?.credits || 1,
+        tier: data.user?.subscription_status === 'active' ? 'paid' : (data.is_guest ? 'guest' : 'free'),
+        subscription_status: data.user?.subscription_status
+      };
+      
+      localStorage.setItem('postflow_user', JSON.stringify(currentUser));
+      updateAuthUI();
+    } else {
+      // 토큰 만료 또는 유효하지 않음
+      handleAuthError();
+    }
+  } catch (error) {
+    console.error('인증 확인 실패:', error);
+  }
+}
+
+// UI 업데이트
+function updateAuthUI() {
+  const userInfoArea = document.getElementById('userInfoArea');
+  const guestArea = document.getElementById('guestArea');
+  const memberFeaturesArea = document.getElementById('memberFeaturesArea');
+  const userName = document.getElementById('userName');
+  const userTier = document.getElementById('userTier');
+  const userCredits = document.getElementById('userCredits');
+  
+  if (currentUser.isLoggedIn && !currentUser.isGuest) {
+    // 로그인 상태
+    userInfoArea.classList.remove('hidden');
+    guestArea.classList.add('hidden');
+    memberFeaturesArea.classList.remove('hidden');
+    
+    userName.textContent = currentUser.name;
+    userTier.textContent = currentUser.tier === 'paid' ? '유료회원' : '무료회원';
+    userCredits.textContent = currentUser.credits;
+  } else {
+    // 비회원/게스트 상태
+    userInfoArea.classList.add('hidden');
+    guestArea.classList.remove('hidden');
+    memberFeaturesArea.classList.add('hidden');
+  }
+}
+
+// 인증 에러 처리
+function handleAuthError() {
+  localStorage.removeItem('postflow_token');
+  localStorage.removeItem('postflow_user');
+  currentUser = {
+    isLoggedIn: false,
+    isGuest: true,
+    name: null,
+    email: null,
+    credits: 1,
+    tier: 'guest',
+    subscription_status: null
+  };
+  updateAuthUI();
+}
+
+// Google 로그인
+function handleLogin() {
+  // Supabase Google OAuth 또는 API 호출
+  window.location.href = '/api/auth/google';
+}
+
+// 로그아웃
+function handleLogout() {
+  if (confirm('로그아웃 하시겠습니까?')) {
+    localStorage.removeItem('postflow_token');
+    localStorage.removeItem('postflow_user');
+    handleAuthError();
+    showToast('로그아웃되었습니다', 'success');
+  }
+}
+
+// 무료 체험 시작
+function handleTrial() {
+  if (currentUser.isGuest && currentUser.credits > 0) {
+    showToast('비회원 체험 1회를 사용할 수 있습니다', 'info');
+    // 콘텐츠 생성 폼으로 스크롤
+    document.getElementById('contentForm').scrollIntoView({ behavior: 'smooth' });
+  } else if (currentUser.credits === 0) {
+    showToast('체험 횟수를 모두 사용했습니다. 로그인 후 이용해주세요', 'warning');
+  }
+}
+
+// 이벤트 리스너 등록
+document.addEventListener('DOMContentLoaded', () => {
+  // 인증 초기화
+  initializeAuth();
+  
+  // 로그인 버튼들
+  const loginBtn = document.getElementById('loginBtn');
+  const heroLoginBtn = document.getElementById('heroLoginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const heroTrialBtn = document.getElementById('heroTrialBtn');
+  
+  if (loginBtn) loginBtn.addEventListener('click', handleLogin);
+  if (heroLoginBtn) heroLoginBtn.addEventListener('click', handleLogin);
+  if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+  if (heroTrialBtn) heroTrialBtn.addEventListener('click', handleTrial);
+  
+  // 회원 전용 버튼 클릭 시 로그인 유도
+  const memberButtons = ['saveProfileBtn', 'loadProfileBtn', 'historyBtn', 'templateBtn'];
+  memberButtons.forEach(btnId => {
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      const originalClick = btn.onclick;
+      btn.addEventListener('click', (e) => {
+        if (currentUser.isGuest) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (confirm('이 기능은 회원 전용입니다. 로그인 하시겠습니까?')) {
+            handleLogin();
+          }
+          return false;
+        }
+      });
+    }
+  });
+});
+
+// 전역 노출
+window.initializeAuth = initializeAuth;
+window.checkAuthStatus = checkAuthStatus;
+window.updateAuthUI = updateAuthUI;
+window.handleLogin = handleLogin;
+window.handleLogout = handleLogout;
+window.handleTrial = handleTrial;
+window.currentUser = currentUser;
+

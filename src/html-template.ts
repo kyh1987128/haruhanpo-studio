@@ -138,28 +138,112 @@ export const htmlTemplate = `
     </style>
 </head>
 <body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen">
-    <div class="container mx-auto px-4 py-8 max-w-6xl">
-        <!-- 헤더 -->
-        <div class="text-center mb-8">
-            <!-- 언어 선택 -->
-            <div class="flex justify-end mb-4 space-x-2">
-                <button onclick="window.i18n.changeLanguage('ko')" class="px-3 py-1 rounded hover:bg-purple-100 transition" title="한국어">
-                    🇰🇷
-                </button>
-                <button onclick="window.i18n.changeLanguage('en')" class="px-3 py-1 rounded hover:bg-purple-100 transition" title="English">
-                    🇺🇸
-                </button>
+        <!-- 네비게이션 바 -->
+        <nav class="bg-white shadow-md rounded-2xl mb-8 px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <h1 class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                        하루한포 (PostFlow)
+                    </h1>
+                    <span class="text-sm text-gray-500">v7.0</span>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- 사용자 정보 영역 -->
+                    <div id="userInfoArea" class="hidden">
+                        <div class="flex items-center space-x-3">
+                            <div class="text-right">
+                                <p class="text-sm font-semibold text-gray-700" id="userName">사용자</p>
+                                <p class="text-xs text-gray-500">
+                                    <span id="userTier" class="font-semibold">무료회원</span> | 
+                                    <span id="userCredits" class="text-purple-600 font-bold">3</span>회 남음
+                                </p>
+                            </div>
+                            <button id="logoutBtn" class="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 transition">
+                                <i class="fas fa-sign-out-alt mr-1"></i>로그아웃
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 게스트/로그인 버튼 영역 -->
+                    <div id="guestArea">
+                        <button id="loginBtn" class="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Google 로그인
+                        </button>
+                    </div>
+                </div>
             </div>
-            
-            <h1 class="text-5xl font-bold mb-3 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent" data-i18n="title">
-                콘텐츠잇다 AI Studio
-            </h1>
-            <p class="text-gray-600 text-lg" data-i18n="subtitle">
-                이미지로 10개 플랫폼 콘텐츠 자동 생성 🔒 내부 전용
+        </nav>
+
+        <!-- 히어로 섹션 -->
+        <div class="bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl shadow-xl p-12 mb-8 text-white text-center">
+            <h2 class="text-4xl font-bold mb-4">
+                ☕️ 하루 한 포스트, 커피 한 잔 가격으로
+            </h2>
+            <p class="text-xl mb-6 opacity-90">
+                이미지와 문서를 업로드하면 AI가 블로그·인스타·유튜브 등<br>
+                <strong>10개 플랫폼 맞춤 콘텐츠</strong>를 30초 안에 자동 생성합니다
             </p>
             
-            <!-- 프로필 & 히스토리 & 템플릿 버튼 -->
-            <div class="flex justify-center space-x-3 mt-6 flex-wrap">
+            <div class="flex justify-center space-x-8 mb-8">
+                <div class="text-center">
+                    <div class="text-3xl font-bold mb-1">₩9,900</div>
+                    <div class="text-sm opacity-80">월 구독</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold mb-1">30회</div>
+                    <div class="text-sm opacity-80">월 생성 가능</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold mb-1">₩330</div>
+                    <div class="text-sm opacity-80">1회당 비용</div>
+                </div>
+            </div>
+            
+            <!-- 가입 혜택 -->
+            <div class="bg-white bg-opacity-20 rounded-xl p-6 max-w-3xl mx-auto mb-6">
+                <div class="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                        <div class="text-2xl mb-2">👤</div>
+                        <div class="font-semibold mb-1">비회원 체험</div>
+                        <div class="text-sm opacity-90">1회 무료</div>
+                        <div class="text-xs opacity-75">(IP 기반)</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl mb-2">🆓</div>
+                        <div class="font-semibold mb-1">무료회원</div>
+                        <div class="text-sm opacity-90">월 3회</div>
+                        <div class="text-xs opacity-75">(Google 로그인)</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl mb-2">⭐</div>
+                        <div class="font-semibold mb-1">유료회원</div>
+                        <div class="text-sm opacity-90">월 30회</div>
+                        <div class="text-xs opacity-75">(₩9,900/월)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- CTA 버튼 -->
+            <div class="flex justify-center space-x-4">
+                <button id="heroLoginBtn" class="px-8 py-3 bg-white text-purple-600 rounded-lg font-semibold hover:shadow-xl transition text-lg">
+                    <i class="fas fa-rocket mr-2"></i>지금 시작하기
+                </button>
+                <button id="heroTrialBtn" class="px-8 py-3 bg-purple-800 bg-opacity-50 text-white rounded-lg font-semibold hover:bg-opacity-70 transition text-lg">
+                    <i class="fas fa-gift mr-2"></i>1회 무료 체험
+                </button>
+            </div>
+        </div>
+        
+        <!-- 회원 전용 기능 버튼 (로그인 후 표시) -->
+        <div id="memberFeaturesArea" class="hidden bg-white rounded-2xl shadow-md p-6 mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-700">
+                    <i class="fas fa-star mr-2 text-yellow-500"></i>회원 전용 기능
+                </h3>
+                <span class="text-xs text-gray-500">프로필 저장, 히스토리, 템플릿 관리</span>
+            </div>
+            <div class="flex justify-center space-x-3 flex-wrap gap-2">
                 <button id="saveProfileBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
                     <i class="fas fa-save mr-2"></i><span data-i18n="saveProfile">프로필 저장</span>
                 </button>
@@ -174,6 +258,7 @@ export const htmlTemplate = `
                 </button>
             </div>
         </div>
+
 
         <!-- 입력 폼 -->
         <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
@@ -966,7 +1051,7 @@ export const htmlTemplate = `
     </script>
 
     <script src="/static/i18n.js?v=5.3.2"></script>
-    <script src="/static/app-v3-final.js?v=7.0.3"></script>
+    <script src="/static/app-v3-final.js?v=7.1.0"></script>
 </body>
 </html>
 `;
