@@ -1,12 +1,54 @@
-# 콘텐츠잇다 AI Studio
+# 하루한포 (PostFlow)
 
 ## 프로젝트 개요
-- **이름**: 콘텐츠잇다 AI Studio
-- **부제**: 이미지로 4개 플랫폼 콘텐츠 자동 생성 🔒 내부 전용
-- **목표**: 이미지와 브랜드 정보를 입력받아 원하는 플랫폼만 선택하여 최적화된 콘텐츠를 AI로 자동 생성
-- **기술 스택**: Hono + TypeScript + Vite + OpenAI API (GPT-4o + Vision)
+- **이름**: 하루한포 (PostFlow)
+- **부제**: 이미지/문서로 4개 플랫폼 콘텐츠 자동 생성 + 회원/결제 시스템
+- **목표**: 이미지와 문서(PDF/DOCX/TXT)를 입력받아 원하는 플랫폼만 선택하여 최적화된 콘텐츠를 AI로 자동 생성
+- **기술 스택**: 
+  - Frontend: Hono + TypeScript + Vite + TailwindCSS
+  - Backend: Cloudflare Workers + Supabase PostgreSQL + 토스페이먼츠
+  - AI: OpenAI GPT-4o + Google Gemini Flash (하이브리드)
 
-## 🌟 최신 기능 (v6.3 Gemini Flash 하이브리드) ⭐⭐⭐ NEW
+## 🌟 최신 기능 (v7.0 백엔드 시스템 완성) ⭐⭐⭐ NEW
+
+### 🎯 **v7.0 백엔드 통합** ⭐⭐⭐ NEW (2025-01-01)
+**완전한 SaaS 플랫폼으로 진화!**
+
+**새로 추가된 핵심 기능:**
+1. ✅ **회원 시스템** (Supabase Auth + Google OAuth)
+   - 비회원: IP 기반 1회 무료 체험
+   - 무료회원: Google 로그인 시 월 3회 크레딧
+   - 유료회원: 월 ₩9,900 구독 시 월 30회 크레딧
+
+2. ✅ **파일 처리 확장** (이미지 + 문서 통합)
+   - 시나리오1 (이미지만): ₩92/회
+   - 시나리오2 (문서만): ₩40/회 (절감형)
+   - 시나리오3 (이미지+문서): ₩105/회 (프리미엄)
+   - 지원 형식: JPG, PNG, WebP, GIF, PDF, DOCX, TXT
+
+3. ✅ **크레딧 시스템** (자동 차감/충전)
+   - 생성 1회당 1크레딧 차감
+   - 잔액 부족 시 403 + 결제 옵션 안내
+   - 월 자동 리셋 (구독자)
+
+4. ✅ **토스페이먼츠 결제 연동**
+   - 월 구독: ₩9,900 (30 크레딧)
+   - 추가 크레딧: 10회(₩4,500), 20회(₩8,500), 50회(₩18,500)
+   - Webhook 자동 충전
+
+5. ✅ **데이터베이스** (Supabase PostgreSQL)
+   - 6개 테이블: users, generations, credit_transactions, payments, uploaded_files, trial_usage
+   - Row Level Security (RLS) 활성화
+   - 자동 인덱싱 및 트리거
+
+**백엔드 문서:**
+- 📘 [완전한 통합 가이드](./BACKEND_INTEGRATION_GUIDE.md)
+- 📗 [구현 완료 보고서](./BACKEND_IMPLEMENTATION_COMPLETE.md)
+- 📙 [환경 변수 템플릿](./.env.template)
+
+---
+
+## 🌟 AI 기능 (v6.3 Gemini Flash 하이브리드) ⭐⭐⭐
 
 ### 🚀 **Gemini Flash 하이브리드 전략** ⭐⭐⭐ NEW v6.3 (2025-12-28)
 **비용 52% 절감 + 품질 유지!**
