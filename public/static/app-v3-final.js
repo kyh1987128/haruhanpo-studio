@@ -3925,6 +3925,7 @@ function updateAuthUI() {
   const userInfoArea = document.getElementById('userInfoArea');
   const guestArea = document.getElementById('guestArea');
   const memberFeaturesArea = document.getElementById('memberFeaturesArea');
+  const heroSection = document.getElementById('heroSection');
   const userName = document.getElementById('userName');
   const userTier = document.getElementById('userTier');
   const userCredits = document.getElementById('userCredits');
@@ -3935,6 +3936,11 @@ function updateAuthUI() {
     guestArea.classList.add('hidden');
     memberFeaturesArea.classList.remove('hidden');
     
+    // 히어로 섹션 숨기기
+    if (heroSection) {
+      heroSection.classList.add('hidden');
+    }
+    
     userName.textContent = currentUser.name;
     userTier.textContent = currentUser.tier === 'paid' ? '유료회원' : '무료회원';
     userCredits.textContent = currentUser.credits;
@@ -3943,6 +3949,11 @@ function updateAuthUI() {
     userInfoArea.classList.add('hidden');
     guestArea.classList.remove('hidden');
     memberFeaturesArea.classList.add('hidden');
+    
+    // 히어로 섹션 표시
+    if (heroSection) {
+      heroSection.classList.remove('hidden');
+    }
   }
 }
 
@@ -4037,11 +4048,14 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeAuth();
   
   // 로그인 버튼들
+  const signupBtn = document.getElementById('signupBtn');
   const loginBtn = document.getElementById('loginBtn');
   const heroLoginBtn = document.getElementById('heroLoginBtn');
   const logoutBtn = document.getElementById('logoutBtn');
   const heroTrialBtn = document.getElementById('heroTrialBtn');
   
+  // 회원가입과 로그인 모두 Google OAuth로 연결
+  if (signupBtn) signupBtn.addEventListener('click', handleLogin);
   if (loginBtn) loginBtn.addEventListener('click', handleLogin);
   if (heroLoginBtn) heroLoginBtn.addEventListener('click', handleLogin);
   if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);

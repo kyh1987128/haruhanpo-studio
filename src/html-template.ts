@@ -167,16 +167,21 @@ export const htmlTemplate = `
                     
                     <!-- 게스트/로그인 버튼 영역 -->
                     <div id="guestArea">
-                        <button id="loginBtn" class="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition">
-                            <i class="fas fa-sign-in-alt mr-2"></i>Google 로그인
-                        </button>
+                        <div class="flex items-center space-x-3">
+                            <button id="signupBtn" class="px-4 py-2 bg-white text-purple-600 border-2 border-purple-600 rounded-lg hover:bg-purple-50 transition font-semibold">
+                                회원가입
+                            </button>
+                            <button id="loginBtn" class="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition font-semibold">
+                                <i class="fas fa-sign-in-alt mr-2"></i>로그인
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <!-- 히어로 섹션 -->
-        <div class="bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl shadow-xl p-12 mb-8 text-white text-center">
+        <!-- 히어로 섹션 (비로그인 시만 표시) -->
+        <div id="heroSection" class="bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl shadow-xl p-12 mb-8 text-white text-center">
             <h2 class="text-4xl font-bold mb-4">
                 ☕️ 하루 한 포스트, 커피 한 잔 가격으로
             </h2>
@@ -1051,7 +1056,7 @@ export const htmlTemplate = `
     </script>
 
     <script src="/static/i18n.js?v=5.3.2"></script>
-    <script src="/static/app-v3-final.js?v=7.2.0"></script>
+    <script src="/static/app-v3-final.js?v=7.3.0"></script>
 </body>
 </html>
 `;
