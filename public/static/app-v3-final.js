@@ -1425,10 +1425,6 @@ function generateContentBlocks() {
             </p>
           </div>
           <div id="documentList_${i}" class="mt-2 space-y-2"></div>
-          <div class="mt-2 p-2 bg-blue-50 border-l-4 border-blue-400 rounded text-xs text-gray-700">
-            <strong>💡 3가지 시나리오:</strong><br>
-            • 이미지만: ₩92/회 | 문서만: ₩40/회 (절감) | 이미지+문서: ₩105/회 (프리미엄)
-          </div>
         </div>
         
         <!-- 키워드 + AI 추천 -->

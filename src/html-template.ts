@@ -1051,7 +1051,7 @@ export const htmlTemplate = `
     </script>
 
     <script src="/static/i18n.js?v=5.3.2"></script>
-    <script src="/static/app-v3-final.js?v=7.1.0"></script>
+    <script src="/static/app-v3-final.js?v=7.1.1"></script>
 </body>
 </html>
 `;
