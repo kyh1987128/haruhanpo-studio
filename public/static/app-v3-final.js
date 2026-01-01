@@ -3811,6 +3811,11 @@ async function checkSupabaseSession() {
     }
     
     if (session) {
+      // 신규 사용자 확인 (created_at과 last_sign_in_at이 거의 같으면 신규)
+      const createdAt = new Date(session.user.created_at).getTime();
+      const lastSignInAt = new Date(session.user.last_sign_in_at).getTime();
+      const isNewUser = Math.abs(createdAt - lastSignInAt) < 5000; // 5초 이내면 신규
+      
       // 로그인 상태
       currentUser = {
         isLoggedIn: true,
@@ -3827,8 +3832,8 @@ async function checkSupabaseSession() {
       
       updateAuthUI();
       
-      // 서버에 사용자 정보 동기화
-      syncUserToBackend(session);
+      // 서버에 사용자 정보 동기화 (신규 여부 전달)
+      syncUserToBackend(session, isNewUser);
     } else {
       // 비로그인 상태
       handleAuthError();
@@ -3839,7 +3844,7 @@ async function checkSupabaseSession() {
 }
 
 // 서버에 사용자 정보 동기화
-async function syncUserToBackend(session) {
+async function syncUserToBackend(session, isNewUser = false) {
   try {
     const response = await fetch('/api/auth/sync', {
       method: 'POST',
@@ -3863,10 +3868,61 @@ async function syncUserToBackend(session) {
       
       localStorage.setItem('postflow_user', JSON.stringify(currentUser));
       updateAuthUI();
+      
+      // 신규 사용자 / 기존 사용자 환영 메시지
+      if (isNewUser) {
+        showWelcomeMessage('signup');
+      } else {
+        showWelcomeMessage('login');
+      }
     }
   } catch (error) {
     console.error('사용자 동기화 실패:', error);
   }
+}
+
+// 환영 메시지 표시
+function showWelcomeMessage(type) {
+  const messages = {
+    signup: {
+      title: '🎉 회원가입 완료!',
+      message: `환영합니다, ${currentUser.name}님!<br>무료 체험으로 <strong>월 3회</strong> 콘텐츠를 생성할 수 있습니다.`,
+      duration: 5000
+    },
+    login: {
+      title: '👋 다시 오신 것을 환영합니다!',
+      message: `${currentUser.name}님, 반갑습니다!<br>남은 크레딧: <strong>${currentUser.credits}회</strong>`,
+      duration: 3000
+    }
+  };
+  
+  const msg = messages[type];
+  
+  // 메시지 컨테이너 생성
+  const messageDiv = document.createElement('div');
+  messageDiv.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-white border-2 border-blue-500 rounded-lg shadow-2xl p-6 max-w-md w-full mx-4 animate-fade-in';
+  messageDiv.innerHTML = `
+    <div class="flex items-start">
+      <div class="flex-1">
+        <h3 class="text-xl font-bold text-gray-800 mb-2">${msg.title}</h3>
+        <p class="text-gray-600">${msg.message}</p>
+      </div>
+      <button onclick="this.parentElement.parentElement.remove()" class="text-gray-400 hover:text-gray-600 ml-4">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  `;
+  
+  document.body.appendChild(messageDiv);
+  
+  // 자동 제거
+  setTimeout(() => {
+    if (messageDiv.parentElement) {
+      messageDiv.style.opacity = '0';
+      messageDiv.style.transform = 'translateY(-20px) translateX(-50%)';
+      setTimeout(() => messageDiv.remove(), 300);
+    }
+  }, msg.duration);
 }
 
 // UI 초기화
