@@ -340,7 +340,6 @@ app.post('/api/generate', async (c) => {
       targetAge,
       industry,
       images, // base64 이미지 배열
-      documents = [], // 📄 NEW: 첨부 문서 배열
       platforms, // ['blog', 'instagram', 'threads', 'youtube']
       aiModel = 'gpt-4o', // AI 모델 선택 (기본값: gpt-4o)
       apiKey, // 클라이언트에서 전달받은 API 키
@@ -497,23 +496,7 @@ app.post('/api/generate', async (c) => {
     // 🚀 하이브리드 전략: Gemini API 키 확인
     const geminiApiKey = c.env.GEMINI_API_KEY;
     
-    // 📄 NEW: 첨부 문서 파싱
-    let documentText = '';
-    if (documents && documents.length > 0) {
-      console.log(`📚 첨부 문서 ${documents.length}개 파싱 시작...`);
-      try {
-        const parsedTexts = await parseMultipleDocuments(documents);
-        const fileNames = documents.map((doc: any) => doc.name || 'Untitled');
-        const combinedText = combineDocumentTexts(parsedTexts, fileNames);
-        documentText = truncateText(combinedText, 5000); // 최대 5000자로 제한
-        console.log(`✅ 문서 파싱 완료: ${documentText.length}자`);
-      } catch (error: any) {
-        console.error('❌ 문서 파싱 오류:', error.message);
-        documentText = '[문서 파싱 중 오류가 발생했습니다]';
-      }
-    } else {
-      console.log('📄 첨부 문서 없음');
-    }
+    // 📄 문서 파싱 제거: 이미지 + 텍스트 변수만 사용
     
     // 1단계: 모든 이미지 상세 분석 (Gemini Flash 사용 - 70% 비용 절감)
     console.log(`✨ [하이브리드] 이미지 ${images.length}장 분석 시작 (Gemini Flash)...`);
@@ -603,9 +586,6 @@ app.post('/api/generate', async (c) => {
 📸 이미지 분석 결과:
 ${combinedImageDescription}
 
-📄 첨부 문서 내용:
-${documentText || '없음'}
-
 📝 사용자 입력 정보:
 - 브랜드명/서비스명: ${brand}
 - 회사명: ${companyName || '없음'}
@@ -626,14 +606,14 @@ ${documentText || '없음'}
   "overallConfidence": 0-100,
   "conflicts": [
     {
-      "type": "image-keyword" | "image-brand" | "document-keyword" | "brand-website" | "industry-keyword" | "target-content",
+      "type": "image-keyword" | "image-brand" | "brand-website" | "industry-keyword" | "target-content",
       "severity": "high" | "medium" | "low",
       "description": "불일치 상세 설명 (한글, 100자 이내)",
       "items": ["항목1", "항목2"],
       "suggestion": "수정 제안 (한글, 100자 이내)"
     }
   ],
-  "strategy": "integrated" | "image-first" | "keyword-first" | "document-first",
+  "strategy": "integrated" | "image-first" | "keyword-first",
   "reason": "전략 선택 이유 (한글, 200자 이내)",
   "recommendation": "사용자에게 안내할 메시지 (한글, 150자 이내)"
 }
@@ -648,23 +628,19 @@ ${documentText || '없음'}
    - 브랜드명과 이미지가 관련 있는가?
    - 예: "테슬라" + 카페 사진 → medium severity
 
-3️⃣ 문서-키워드 일치성
-   - 첨부 문서 내용과 키워드가 관련 있는가?
-   - 예: "스킨케어 가이드" + "IT 컨설팅" → high severity
-
-4️⃣ 브랜드-웹사이트 일치성
+3️⃣ 브랜드-웹사이트 일치성
    - 브랜드명과 웹사이트 도메인이 일치하는가?
    - 예: "테슬라" + "samsung.com" → medium severity
 
-5️⃣ 산업-키워드 일치성
+4️⃣ 산업-키워드 일치성
    - 산업 분야와 키워드가 관련 있는가?
    - 예: "제조업" + "IT 컨설팅" → low severity
 
-6️⃣ 타겟-콘텐츠 일치성
+5️⃣ 타겟-콘텐츠 일치성
    - 타겟 연령대/성별과 콘텐츠가 맞는가?
    - 예: "60대" + "트렌디한 SNS" → low severity
 
-7️⃣ 종합 판단
+6️⃣ 종합 판단
    - high severity 충돌 2개 이상 → isConsistent: false
    - medium severity 충돌 3개 이상 → isConsistent: false
    - overallConfidence 40 미만 → isConsistent: false
@@ -673,7 +649,6 @@ ${documentText || '없음'}
 - integrated: 모든 요소 조화롭게 활용 (confidence 70+)
 - image-first: 이미지 중심, 키워드 보조 (confidence 50-69)
 - keyword-first: 키워드 중심, 이미지 참고 (confidence 30-49)
-- document-first: 문서 중심, 나머지 보조 (documentText 있고 confidence < 30)
 
 ⚠️ 중요: 사소한 불일치는 허용하고, 명백한 모순만 충돌로 판단하세요.`,
             },
@@ -722,7 +697,7 @@ ${documentText || '없음'}
     } else {
       console.log('검증 우회 (사용자가 강제 진행 선택)');
       // 강제 진행 시 문서가 있으면 document-first, 없으면 keyword-first
-      contentStrategy = documentText ? 'document-first' : 'keyword-first';
+      contentStrategy = 'keyword-first';
     }
 
     console.log(`전략 결정 완료: ${contentStrategy}. 콘텐츠 생성 시작...`);

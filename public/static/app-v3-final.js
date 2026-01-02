@@ -5,7 +5,7 @@
 
 // 전역 변수
 let selectedImages = []; // 더 이상 사용 안 함 (개별 콘텐츠로 변경)
-let contentBlocks = {}; // { 0: { images: [], documents: [], keywords: '', topic: '', description: '' }, 1: {...}, ... }
+let contentBlocks = {}; // { 0: { images: [], keywords: '', topic: '', description: '' }, 1: {...}, ... }
 let resultData = {};
 let savedProfiles = [];
 let contentHistory = [];
@@ -1149,14 +1149,12 @@ async function fetchExchangeRate() {
 }
 
 function updateCostEstimate() {
-  // 개별 콘텐츠 블록의 총 이미지 및 문서 수 계산
+  // 개별 콘텐츠 블록의 총 이미지 수 계산
   let totalImageCount = 0;
-  let totalDocumentCount = 0;
   const contentCount = Object.keys(contentBlocks).length;
   
   Object.values(contentBlocks).forEach(block => {
     totalImageCount += (block.images || []).length;
-    totalDocumentCount += (block.documents || []).length;
   });
   
   const platformCheckboxes = document.querySelectorAll('input[name="platform"]:checked');
@@ -1302,12 +1300,6 @@ function updateCostEstimate() {
           <span>📸 분석할 이미지:</span>
           <span style="font-weight: 600;">${totalImageCount}장</span>
         </div>
-        ${totalDocumentCount > 0 ? `
-        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-          <span>📎 첨부 문서:</span>
-          <span style="font-weight: 600;">${totalDocumentCount}개</span>
-        </div>
-        ` : ''}
         <div style="display: flex; justify-content: space-between;">
           <span>✨ 생성할 콘텐츠:</span>
           <span style="font-weight: 600;">${contentCount}개 × ${platformCount}개 플랫폼</span>
@@ -1461,7 +1453,7 @@ function generateContentBlocks() {
     if (existingData[i]) {
       contentBlocks[i] = existingData[i];
     } else {
-      contentBlocks[i] = { images: [], documents: [], keywords: '', topic: '', description: '' };
+      contentBlocks[i] = { images: [], keywords: '', topic: '', description: '' };
     }
     
     const existingImages = contentBlocks[i].images || [];
@@ -1497,31 +1489,6 @@ function generateContentBlocks() {
             </p>
           </div>
           <div id="imagePreview_${i}" class="mt-3 grid grid-cols-5 gap-2"></div>
-        </div>
-        
-        <!-- 문서 업로드 (선택사항) NEW v7.0 -->
-        <div class="mb-4">
-          <label class="block mb-2 font-semibold text-gray-700">
-            <i class="fas fa-file-alt mr-2"></i>문서 첨부 (선택사항, 최대 3개)
-            <span class="ml-2 text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">NEW</span>
-          </label>
-          <div class="border-2 border-dashed border-blue-200 rounded-lg p-4 text-center hover:border-blue-400 transition cursor-pointer bg-blue-50" 
-               onclick="document.getElementById('documentInput_${i}').click()">
-            <i class="fas fa-file-pdf text-3xl text-blue-400 mb-2"></i>
-            <input
-              type="file"
-              accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-              multiple
-              id="documentInput_${i}"
-              class="hidden"
-              onchange="handleContentDocumentUpload(${i})"
-            />
-            <p class="text-gray-600 text-sm">
-              <span class="text-blue-600 font-semibold">클릭하여 문서 선택</span>
-              <span class="text-gray-500"> (PDF, DOCX, TXT)</span>
-            </p>
-          </div>
-          <div id="documentList_${i}" class="mt-2 space-y-2"></div>
         </div>
         
         <!-- 키워드 + AI 추천 -->
@@ -1978,11 +1945,6 @@ async function handleGenerate() {
     industry: document.getElementById('industry')?.value || '라이프스타일',
     contentStrategy: document.querySelector('input[name="contentStrategy"]:checked')?.value || 'auto', // 🔥 NEW v6.1
     images: content.images.map((img) => img.base64),
-    documents: (content.documents || []).map((doc) => ({
-      filename: doc.filename || doc.name,      // ✅ 필드명 호환성
-      content: doc.base64 || doc.dataUrl,      // ✅ 필드명 호환성
-      mimeType: doc.mimeType || doc.type       // ✅ 필드명 호환성
-    })), // ✅ 첨부 문서 추가
     platforms,
     aiModel: 'gpt-4o',
   };
@@ -3848,112 +3810,6 @@ function closeModal(modalId) {
 // 개별 콘텐츠 문서 업로드 처리 (NEW v7.0)
 // ===================================
 
-// 개별 콘텐츠 문서 업로드
-function handleContentDocumentUpload(contentIndex) {
-  const input = document.getElementById(`documentInput_${contentIndex}`);
-  if (!input || !input.files) return;
-
-  const files = Array.from(input.files);
-  const maxFiles = 3;
-  const maxSize = 10 * 1024 * 1024; // 10MB
-
-  // 초기화
-  if (!contentBlocks[contentIndex]) {
-    contentBlocks[contentIndex] = { images: [], documents: [], keywords: '', topic: '', description: '' };
-  }
-  if (!contentBlocks[contentIndex].documents) {
-    contentBlocks[contentIndex].documents = [];
-  }
-
-  const currentCount = contentBlocks[contentIndex].documents.length;
-
-  if (currentCount + files.length > maxFiles) {
-    alert(`최대 ${maxFiles}개까지 업로드 가능합니다.`);
-    return;
-  }
-
-  files.forEach(file => {
-    if (file.size > maxSize) {
-      alert(`${file.name}은(는) 10MB를 초과합니다.`);
-      return;
-    }
-
-    const allowedTypes = [
-      'application/pdf',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain'
-    ];
-
-    if (!allowedTypes.includes(file.type)) {
-      alert(`${file.name}은(는) 지원하지 않는 파일 형식입니다. (PDF, DOCX, TXT만 가능)`);
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      contentBlocks[contentIndex].documents.push({
-        filename: file.name,        // ✅ name → filename
-        base64: e.target.result,    // ✅ dataUrl → base64
-        mimeType: file.type,        // ✅ type → mimeType
-        size: file.size             // ✅ 크기 정보 유지
-      });
-      renderContentDocumentList(contentIndex);
-    };
-    reader.readAsDataURL(file);
-  });
-
-  // input 초기화
-  input.value = '';
-}
-
-// 개별 콘텐츠 문서 목록 렌더링
-function renderContentDocumentList(contentIndex) {
-  const container = document.getElementById(`documentList_${contentIndex}`);
-  if (!container) return;
-
-  const documents = contentBlocks[contentIndex]?.documents || [];
-
-  if (documents.length === 0) {
-    container.innerHTML = '';
-    return;
-  }
-
-  container.innerHTML = documents.map((doc, docIndex) => {
-    const icon = doc.mimeType.includes('pdf') ? 'fa-file-pdf text-red-500' :
-                 doc.mimeType.includes('word') ? 'fa-file-word text-blue-500' :
-                 'fa-file-alt text-gray-500';
-    
-    const sizeKB = Math.round(doc.size / 1024);
-    
-    return `
-      <div class="flex items-center justify-between p-2 bg-white border border-gray-200 rounded-lg hover:border-blue-400 transition">
-        <div class="flex items-center space-x-2">
-          <i class="fas ${icon} text-lg"></i>
-          <div>
-            <div class="font-medium text-xs text-gray-800">${doc.filename}</div>
-            <div class="text-xs text-gray-500">${sizeKB} KB</div>
-          </div>
-        </div>
-        <button
-          onclick="removeContentDocument(${contentIndex}, ${docIndex})"
-          class="text-red-500 hover:text-red-700 transition"
-          type="button"
-        >
-          <i class="fas fa-times text-sm"></i>
-        </button>
-      </div>
-    `;
-  }).join('');
-}
-
-// 개별 콘텐츠 문서 제거
-function removeContentDocument(contentIndex, docIndex) {
-  if (contentBlocks[contentIndex] && contentBlocks[contentIndex].documents) {
-    contentBlocks[contentIndex].documents.splice(docIndex, 1);
-    renderContentDocumentList(contentIndex);
-  }
-}
-
 // ===================================
 // 전역 함수 노출
 // ===================================
@@ -3974,10 +3830,6 @@ window.viewHistory = viewHistory;
 window.deleteHistory = deleteHistory;
 window.closeErrorModal = closeErrorModal;
 window.retryGeneration = retryGeneration;
-
-// NEW v7.0: 개별 콘텐츠 문서 업로드 함수
-window.handleContentDocumentUpload = handleContentDocumentUpload;
-window.removeContentDocument = removeContentDocument;
 
 // 콘텐츠 블록 생성 함수
 window.generateContentBlocks = generateContentBlocks;

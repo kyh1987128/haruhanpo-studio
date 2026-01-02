@@ -186,7 +186,7 @@ export const htmlTemplate = `
                 ☕️ 하루 한 포스트, 커피 한 잔 가격으로
             </h2>
             <p class="text-xl mb-6 opacity-90">
-                이미지와 문서를 업로드하면 AI가 블로그·인스타·유튜브 등<br>
+                이미지를 업로드하면 AI가 블로그·인스타·유튜브 등<br>
                 <strong>10개 플랫폼 맞춤 콘텐츠</strong>를 30초 안에 자동 생성합니다
             </p>
             
@@ -1056,7 +1056,7 @@ export const htmlTemplate = `
     </script>
 
     <script src="/static/i18n.js?v=5.3.2"></script>
-    <script src="/static/app-v3-final.js?v=7.8.5"></script>
+    <script src="/static/app-v3-final.js?v=8.0.0"></script>
 </body>
 </html>
 `;
