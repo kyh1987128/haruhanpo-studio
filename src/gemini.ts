@@ -10,10 +10,19 @@ export async function analyzeImageWithGemini(
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-  // 이미지 URL을 base64로 변환
+  // 이미지 URL을 base64로 변환 (대용량 이미지 안전 처리)
   const response = await fetch(imageUrl);
   const arrayBuffer = await response.arrayBuffer();
-  const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+  const bytes = new Uint8Array(arrayBuffer);
+  
+  // 청크 단위로 변환하여 스택 오버플로우 방지
+  let binary = '';
+  const chunkSize = 8192;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.slice(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, Array.from(chunk));
+  }
+  const base64 = btoa(binary);
 
   const result = await model.generateContent([
     {
