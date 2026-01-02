@@ -324,6 +324,8 @@ app.post('/api/generate', async (c) => {
   try {
     const body = await c.req.json();
     const {
+      user_id, // ✅ 추가: 사용자 식별
+      is_guest = false, // ✅ 추가: 비회원 여부
       brand,
       companyName,
       businessType,
@@ -372,6 +374,106 @@ app.post('/api/generate', async (c) => {
         },
         400
       );
+    }
+
+    // ✅ Supabase Admin 클라이언트 초기화
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+
+    // ✅ 비회원 체험 제한 체크 (IP 기반 1회 제한)
+    if (is_guest) {
+      const ipAddress = c.req.header('CF-Connecting-IP') || 
+                        c.req.header('X-Forwarded-For') || 
+                        c.req.header('X-Real-IP') || 
+                        'unknown';
+      
+      const deviceFingerprint = c.req.header('X-Device-Fingerprint') || 
+                                c.req.header('User-Agent') || 
+                                'unknown';
+      
+      // 기존 체험 기록 조회
+      const { data: trialData, error: trialError } = await supabase
+        .from('trial_usage')
+        .select('usage_count, is_blocked, block_reason')
+        .eq('ip_address', ipAddress)
+        .eq('device_fingerprint', deviceFingerprint)
+        .single();
+      
+      // 차단된 경우
+      if (trialData?.is_blocked) {
+        return c.json({
+          error: '접근 차단',
+          message: trialData.block_reason || '어뷰징이 감지되어 체험이 차단되었습니다.',
+          redirect: '/signup'
+        }, 403);
+      }
+      
+      // 이미 1회 사용한 경우
+      if (trialData && trialData.usage_count >= 1) {
+        return c.json({
+          error: '무료 체험 제한',
+          message: '무료 체험은 1회만 가능합니다. 회원 가입하시면 월 10회 무료로 이용하실 수 있습니다.',
+          redirect: '/signup'
+        }, 403);
+      }
+      
+      console.log(`✅ 비회원 체험 허용: ${ipAddress}`);
+    }
+
+    // ✅ 회원 크레딧 및 월간 사용량 체크
+    if (!is_guest && user_id) {
+      // 사용자 정보 조회
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('credits, subscription_status, monthly_free_usage_count, monthly_limit')
+        .eq('id', user_id)
+        .single();
+      
+      if (userError || !user) {
+        return c.json({
+          error: '사용자 정보 조회 실패',
+          message: '사용자를 찾을 수 없습니다. 다시 로그인해주세요.',
+          redirect: '/login'
+        }, 404);
+      }
+      
+      console.log(`📊 사용자 상태: ${user_id} | 크레딧: ${user.credits} | 월간 사용: ${user.monthly_free_usage_count}/${user.monthly_limit || 10}`);
+      
+      // 유료 회원 (subscription_status === 'active')
+      if (user.subscription_status === 'active') {
+        // 크레딧만 체크
+        if (user.credits < 1) {
+          return c.json({
+            error: '크레딧 부족',
+            message: '크레딧이 부족합니다. 크레딧을 구매해주세요.',
+            currentCredits: user.credits,
+            redirect: '/payment'
+          }, 403);
+        }
+        console.log(`✅ 유료 회원 크레딧 체크 통과: ${user.credits}크레딧`);
+      } else {
+        // 무료 회원: 월간 무료 사용량 체크
+        const quotaResult = await checkAndUseMonthlyQuota(supabase, user_id);
+        
+        if (!quotaResult.available) {
+          // 월간 무료 횟수 소진 → 크레딧 확인
+          if (user.credits < 1) {
+            return c.json({
+              error: '월 10회 무료 사용 제한',
+              message: '이번 달 무료 사용 횟수(10회)를 모두 소진했습니다. 크레딧을 구매하거나 다음 달을 기다려주세요.',
+              monthlyUsed: user.monthly_free_usage_count,
+              monthlyLimit: user.monthly_limit || 10,
+              currentCredits: user.credits,
+              redirect: '/payment'
+            }, 403);
+          }
+          console.log(`⚠️ 무료 횟수 소진, 크레딧 사용 예정: ${user.credits}크레딧`);
+        } else {
+          console.log(`✅ 월간 무료 사용 허용: ${quotaResult.remaining}회 남음`);
+        }
+      }
     }
 
     // OpenAI API 키 확인 (환경변수에서만 읽기)
@@ -724,6 +826,108 @@ ${combinedImageDescription}
     console.log('콘텐츠 생성 완료!');
     console.log(`💰 비용 추정: OpenAI $${totalCost.openai.toFixed(3)}, Gemini $${totalCost.gemini.toFixed(3)}, 총 $${(totalCost.openai + totalCost.gemini).toFixed(3)}`);
 
+    // ✅ 크레딧 차감 로직
+    let creditDeducted = false;
+    let newCredits = 0;
+    let usedMonthlyQuota = false;
+    
+    if (!is_guest && user_id) {
+      // 사용자 정보 재조회
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('credits, subscription_status, monthly_free_usage_count, monthly_limit')
+        .eq('id', user_id)
+        .single();
+      
+      if (!userError && user) {
+        // 유료 회원이거나 무료 횟수 소진한 경우 크레딧 차감
+        const needCreditDeduction = 
+          user.subscription_status === 'active' || 
+          (user.monthly_free_usage_count >= (user.monthly_limit || 10));
+        
+        if (needCreditDeduction && user.credits > 0) {
+          // 크레딧 1개 차감
+          const { data: updatedUser, error: deductError } = await supabase
+            .from('users')
+            .update({ 
+              credits: user.credits - 1,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', user_id)
+            .select('credits')
+            .single();
+          
+          if (!deductError && updatedUser) {
+            newCredits = updatedUser.credits;
+            creditDeducted = true;
+            
+            // credit_transactions 기록
+            await supabase.from('credit_transactions').insert({
+              user_id,
+              amount: -1,
+              balance_after: newCredits,
+              type: 'usage',
+              description: `콘텐츠 생성 (${platforms.join(', ')})`
+            });
+            
+            console.log(`✅ 크레딧 차감: ${user_id} | -1크레딧 → 남은 크레딧 ${newCredits}`);
+          } else {
+            console.error('크레딧 차감 실패:', deductError);
+          }
+        } else if (!needCreditDeduction) {
+          // 월간 무료 사용 (이미 checkAndUseMonthlyQuota에서 차감됨)
+          usedMonthlyQuota = true;
+          newCredits = user.credits;
+          console.log(`✅ 월간 무료 사용: ${user_id} | 크레딧 차감 없음`);
+        }
+      }
+    } else if (is_guest) {
+      // 비회원 사용 기록
+      const ipAddress = c.req.header('CF-Connecting-IP') || 
+                        c.req.header('X-Forwarded-For') || 
+                        c.req.header('X-Real-IP') || 
+                        'unknown';
+      
+      const deviceFingerprint = c.req.header('X-Device-Fingerprint') || 
+                                c.req.header('User-Agent') || 
+                                'unknown';
+      
+      const userAgent = c.req.header('User-Agent') || 'unknown';
+      
+      // trial_usage 기록 업데이트
+      const { data: existingTrial } = await supabase
+        .from('trial_usage')
+        .select('usage_count')
+        .eq('ip_address', ipAddress)
+        .eq('device_fingerprint', deviceFingerprint)
+        .single();
+      
+      if (existingTrial) {
+        // 기존 기록 업데이트
+        await supabase
+          .from('trial_usage')
+          .update({
+            usage_count: existingTrial.usage_count + 1,
+            last_used_at: new Date().toISOString()
+          })
+          .eq('ip_address', ipAddress)
+          .eq('device_fingerprint', deviceFingerprint);
+      } else {
+        // 신규 기록 생성
+        await supabase
+          .from('trial_usage')
+          .insert({
+            ip_address: ipAddress,
+            device_fingerprint: deviceFingerprint,
+            user_agent: userAgent,
+            usage_count: 1,
+            last_used_at: new Date().toISOString()
+          });
+      }
+      
+      console.log(`✅ 비회원 사용 기록: ${ipAddress} | 1회 사용 완료`);
+    }
+
     return c.json({
       success: true,
       data,
@@ -742,6 +946,13 @@ ${combinedImageDescription}
         total: totalCost.openai + totalCost.gemini,
         savings: geminiApiKey ? '약 52% 절감 (하이브리드 전략)' : '절감 없음',
       },
+      // ✅ 크레딧 정보 추가
+      credits: {
+        deducted: creditDeducted,
+        amount: creditDeducted ? -1 : 0,
+        remaining: newCredits,
+        usedMonthlyQuota: usedMonthlyQuota
+      }
     });
   } catch (error: any) {
     console.error('콘텐츠 생성 오류:', error);

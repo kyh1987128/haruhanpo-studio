@@ -1865,6 +1865,8 @@ async function handleGenerate() {
   }
 
   const formData = {
+    user_id: currentUser?.id || null, // ✅ 추가: 사용자 ID
+    is_guest: currentUser?.isGuest || false, // ✅ 추가: 비회원 여부
     brand,
     companyName: document.getElementById('companyName')?.value.trim() || '',
     businessType: document.getElementById('businessType')?.value.trim() || '',
@@ -1905,12 +1907,45 @@ async function handleGenerate() {
       return;
     }
 
+    // ✅ 에러 응답 처리 (403: 크레딧/제한, 404: 사용자 없음)
+    if (!response.ok) {
+      hideLoadingOverlay();
+      if (response.status === 403) {
+        // 크레딧 부족 또는 월간 제한
+        showErrorModal(result.message || result.error);
+        if (result.redirect) {
+          setTimeout(() => {
+            window.location.href = result.redirect;
+          }, 2000);
+        }
+        return;
+      } else if (response.status === 404) {
+        // 사용자 정보 없음
+        showErrorModal(result.message || '사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.');
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+        return;
+      }
+    }
+
     if (result.success) {
       hideLoadingOverlay();
       resultData = result.data;
       displayResults(result.data, result.generatedPlatforms);
       saveToHistory(formData, result.data);
-      showToast('✅ 콘텐츠 생성 완료!', 'success');
+      
+      // ✅ 크레딧 정보 업데이트
+      if (result.credits && result.credits.deducted) {
+        currentUser.credits = result.credits.remaining;
+        localStorage.setItem('postflow_user', JSON.stringify(currentUser));
+        updateUI();
+        showToast(`✅ 콘텐츠 생성 완료! (${result.credits.amount}크레딧 사용, 남은 크레딧: ${result.credits.remaining})`, 'success');
+      } else if (result.credits && result.credits.usedMonthlyQuota) {
+        showToast('✅ 콘텐츠 생성 완료! (월간 무료 사용)', 'success');
+      } else {
+        showToast('✅ 콘텐츠 생성 완료!', 'success');
+      }
     } else {
       hideLoadingOverlay();
       showErrorModal(result.error || '알 수 없는 오류가 발생했습니다');
@@ -1967,6 +2002,8 @@ async function handleNewBatchGenerate(contentCount, platforms) {
     updateBatchProgress(i + 1, contentCount, `콘텐츠 #${i + 1} 생성 중... (${content.keywords})`);
     
     const formData = {
+      user_id: currentUser?.id || null, // ✅ 추가
+      is_guest: currentUser?.isGuest || false, // ✅ 추가
       brand,
       companyName,
       businessType,
@@ -2085,6 +2122,8 @@ async function handleBatchGenerate(contentCount, imagesPerContent, platforms) {
     updateBatchProgress(i + 1, contentCount, `콘텐츠 #${i + 1} 생성 중... (${currentKeyword})`);
     
     const formData = {
+      user_id: currentUser?.id || null, // ✅ 추가
+      is_guest: currentUser?.isGuest || false, // ✅ 추가
       brand,
       companyName,
       businessType,
