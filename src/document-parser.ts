@@ -17,6 +17,14 @@ export async function parseDocument(
   fileType: string
 ): Promise<string> {
   try {
+    // 입력 검증
+    if (!base64Data) {
+      throw new Error('문서 데이터가 없습니다.');
+    }
+    if (!fileType) {
+      throw new Error('파일 형식 정보가 없습니다.');
+    }
+
     // Base64에서 실제 데이터 추출 (data:...;base64, 제거)
     const base64Content = base64Data.includes(',') 
       ? base64Data.split(',')[1] 
@@ -76,18 +84,30 @@ export async function parseDocument(
 
 /**
  * 여러 문서를 한번에 파싱
- * @param documents - 문서 배열 [{ dataUrl, type, name }]
+ * @param documents - 문서 배열 [{ dataUrl, type, name }] 또는 [{ content, mimeType, filename }]
  * @returns 파싱된 텍스트 배열
  */
 export async function parseMultipleDocuments(
-  documents: Array<{ dataUrl: string; type: string; name: string }>
+  documents: Array<{ 
+    dataUrl?: string; 
+    content?: string;
+    type?: string; 
+    mimeType?: string;
+    name?: string;
+    filename?: string;
+  }>
 ): Promise<string[]> {
   console.log(`📚 ${documents.length}개 문서 파싱 시작...`);
   
   const parsedTexts = await Promise.all(
     documents.map(async (doc, index) => {
-      console.log(`  ${index + 1}. ${doc.name} (${doc.type})`);
-      const text = await parseDocument(doc.dataUrl, doc.type);
+      // 필드명 정규화: content/dataUrl, mimeType/type, filename/name
+      const base64Data = doc.content || doc.dataUrl || '';
+      const fileType = doc.mimeType || doc.type || '';
+      const fileName = doc.filename || doc.name || 'Untitled';
+      
+      console.log(`  ${index + 1}. ${fileName} (${fileType})`);
+      const text = await parseDocument(base64Data, fileType);
       return text;
     })
   );
