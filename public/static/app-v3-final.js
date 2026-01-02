@@ -1970,6 +1970,11 @@ async function handleGenerate() {
     industry: document.getElementById('industry')?.value || '라이프스타일',
     contentStrategy: document.querySelector('input[name="contentStrategy"]:checked')?.value || 'auto', // 🔥 NEW v6.1
     images: content.images.map((img) => img.base64),
+    documents: (content.documents || []).map((doc) => ({
+      filename: doc.filename,
+      content: doc.base64,
+      mimeType: doc.mimeType
+    })), // ✅ 첨부 문서 추가
     platforms,
     aiModel: 'gpt-4o',
   };
