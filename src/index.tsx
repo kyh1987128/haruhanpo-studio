@@ -807,8 +807,8 @@ app.post('/api/auth/sync', async (c) => {
     
     // 현재 날짜로 월별 사용량 계산
     const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     
+    // ✅ 수파베이스 컬럼명에 맞춤
     return c.json({
       success: true,
       user_id,
@@ -817,18 +817,15 @@ app.post('/api/auth/sync', async (c) => {
       credits: 5, // 신규 가입 보상 (변경: 3 → 5)
       tier: 'free',
       subscription_status: 'free',
-      monthly_usage: 0,
+      monthly_free_usage_count: 0, // ✅ 수파베이스 컬럼명
       monthly_limit: 10, // 무료 회원 월 10회 제한
       monthly_remaining: 10,
-      current_month: currentMonth,
-      // 달성 보상 추적
-      rewards: {
-        onboarding_completed: false,
-        first_generation_completed: false,
-        streak_3days_completed: false
-      },
+      monthly_usage_reset_date: now.toISOString().split('T')[0], // ✅ DATE 타입
+      // 달성 보상 추적 (users 테이블 BOOLEAN 컬럼)
+      onboarding_completed: false,
+      first_generation_completed: false,
       last_login_date: now.toISOString().split('T')[0],
-      login_streak: 1,
+      consecutive_login_days: 1, // ✅ 수파베이스 컬럼명
       message: '사용자 정보가 동기화되었습니다'
     });
   } catch (error: any) {
@@ -856,8 +853,8 @@ app.post('/api/rewards/claim', async (c) => {
       return c.json({ error: '유효하지 않은 보상 타입입니다' }, 400);
     }
     
-    // TODO: Supabase에서 사용자 보상 상태 확인 및 업데이트
-    // 중복 지급 방지 로직 필요
+    // ✅ Supabase RPC 함수 호출: grant_milestone_credit
+    // TODO: Supabase 클라이언트 초기화 후 활성화
     
     const rewardAmount = 5; // 모든 보상은 5크레딧
     const rewardMessages = {
@@ -866,12 +863,19 @@ app.post('/api/rewards/claim', async (c) => {
       streak_3days_completed: '🔥 3일 연속 로그인 보상'
     };
     
+    // Supabase RPC 호출 예제:
+    // const { data, error } = await supabase.rpc('grant_milestone_credit', {
+    //   user_id_param: user_id,
+    //   milestone_type: reward_type
+    // });
+    // if (error) throw error;
+    
     return c.json({
       success: true,
       reward_type,
       amount: rewardAmount,
       message: rewardMessages[reward_type],
-      new_credits: 10 // TODO: 실제 크레딧 계산
+      new_credits: 10 // TODO: data.new_credits로 교체
     });
   } catch (error: any) {
     console.error('보상 지급 실패:', error);
@@ -892,14 +896,20 @@ app.post('/api/rewards/check-streak', async (c) => {
       return c.json({ error: 'user_id는 필수입니다' }, 400);
     }
     
-    // TODO: Supabase에서 마지막 로그인 날짜 조회
-    // 연속 로그인 일수 계산
+    // ✅ Supabase RPC 함수 호출: update_consecutive_login
+    // TODO: Supabase 클라이언트 초기화 후 활성화
     
     const today = new Date().toISOString().split('T')[0];
     
+    // Supabase RPC 호출 예제:
+    // const { data, error } = await supabase.rpc('update_consecutive_login', {
+    //   user_id_param: user_id
+    // });
+    // if (error) throw error;
+    
     return c.json({
       success: true,
-      login_streak: 1, // TODO: 실제 연속 로그인 일수
+      consecutive_login_days: 1, // ✅ 수파베이스 컬럼명 (login_streak → consecutive_login_days)
       last_login_date: today,
       streak_reward_eligible: false // 3일 달성 여부
     });

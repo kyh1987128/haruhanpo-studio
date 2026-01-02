@@ -3773,17 +3773,15 @@ let currentUser = {
   credits: 1, // 비회원 1회
   tier: 'guest', // guest, free, paid
   subscription_status: null,
-  monthly_usage: 0, // 이번 달 사용 횟수
+  monthly_free_usage_count: 0, // ✅ 수파베이스 컬럼명 (이번 달 사용 횟수)
   monthly_limit: 10, // 무료 회원 월 제한
   monthly_remaining: 10, // 남은 월별 사용 가능 횟수
-  // 달성 보상 추적
-  rewards: {
-    onboarding_completed: false,
-    first_generation_completed: false,
-    streak_3days_completed: false
-  },
+  monthly_usage_reset_date: null, // ✅ 수파베이스 컬럼명
+  // 달성 보상 추적 (users 테이블 BOOLEAN 컬럼)
+  onboarding_completed: false,
+  first_generation_completed: false,
   last_login_date: null,
-  login_streak: 0
+  consecutive_login_days: 0 // ✅ 수파베이스 컬럼명 (login_streak → consecutive_login_days)
 };
 
 // Supabase 클라이언트 초기화

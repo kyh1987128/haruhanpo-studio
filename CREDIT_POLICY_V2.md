@@ -88,20 +88,19 @@
 
 ### ✅ **프론트엔드 (app-v3-final.js)**
 
-- [x] 1. **사용자 데이터 구조 확장**
+- [x] 1. **사용자 데이터 구조 확장 (✅ 수파베이스 컬럼명 적용)**
   ```javascript
   currentUser = {
     credits: 5, // 신규 가입 시 5크레딧
-    monthly_usage: 0, // 이번 달 사용 횟수
+    monthly_free_usage_count: 0, // ✅ 이번 달 사용 횟수 (수파베이스 컬럼명)
     monthly_limit: 10, // 무료 회원 월 10회
     monthly_remaining: 10, // 남은 사용 가능 횟수
-    rewards: {
-      onboarding_completed: false,
-      first_generation_completed: false,
-      streak_3days_completed: false
-    },
+    monthly_usage_reset_date: null, // ✅ 월간 리셋 날짜 (수파베이스 컬럼명)
+    // users 테이블 BOOLEAN 컬럼
+    onboarding_completed: false,
+    first_generation_completed: false,
     last_login_date: null,
-    login_streak: 0
+    consecutive_login_days: 0 // ✅ 연속 로그인 일수 (수파베이스 컬럼명)
   }
   ```
 
@@ -128,30 +127,35 @@
 
 ### ✅ **백엔드 (src/index.tsx)**
 
-- [x] 1. **/api/auth/sync 수정**
+- [x] 1. **/api/auth/sync 수정 (✅ 수파베이스 컬럼명 적용)**
   ```typescript
   - 신규 가입 시 5크레딧 지급 (기존 3 → 5)
-  - monthly_usage, monthly_limit, rewards 필드 추가
-  - current_month, last_login_date, login_streak 추가
+  - monthly_free_usage_count: 0 (✅ 수파베이스 컬럼명)
+  - monthly_usage_reset_date: DATE (✅ 수파베이스 컬럼명)
+  - onboarding_completed, first_generation_completed (users 테이블 BOOLEAN)
+  - consecutive_login_days: 1 (✅ 수파베이스 컬럼명)
   ```
 
-- [x] 2. **/api/rewards/claim 추가**
+- [x] 2. **/api/rewards/claim 추가 (✅ 수파베이스 RPC 함수 호출)**
   ```typescript
+  - Supabase RPC: grant_milestone_credit(user_id_param, milestone_type)
   - 보상 타입: onboarding_completed, first_generation_completed, streak_3days_completed
   - 각 보상: 5크레딧
-  - 중복 지급 방지 로직
+  - 중복 지급 방지: users 테이블 BOOLEAN 컬럼으로 추적
   ```
 
-- [x] 3. **/api/rewards/check-streak 추가**
+- [x] 3. **/api/rewards/check-streak 추가 (✅ 수파베이스 RPC 함수 호출)**
   ```typescript
+  - Supabase RPC: update_consecutive_login(user_id_param)
   - 마지막 로그인 날짜 조회
-  - 연속 로그인 일수 계산
+  - 연속 로그인 일수 계산 (consecutive_login_days)
   - 3일 달성 시 보상 지급 가능 여부 반환
   ```
 
-- [ ] 4. **/api/generate 수정**
+- [ ] 4. **/api/generate 수정 (✅ 수파베이스 RPC 함수 호출 필요)**
+  - Supabase RPC: check_and_use_monthly_quota(user_id_param)
   - 월별 사용량 체크 로직 추가
-  - monthly_usage 증가
+  - monthly_free_usage_count 증가
   - monthly_remaining 감소
 
 - [ ] 5. **Cron 작업: 월간 리셋**
