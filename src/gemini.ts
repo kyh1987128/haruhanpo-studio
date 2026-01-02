@@ -8,7 +8,7 @@ export async function analyzeImageWithGemini(
   imageUrl: string
 ): Promise<string> {
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
 
   // 이미지 URL을 base64로 변환 (대용량 이미지 안전 처리)
   const response = await fetch(imageUrl);
@@ -56,7 +56,7 @@ export async function generateContentWithGemini(
 ): Promise<string> {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ 
-    model: 'gemini-1.5-flash',
+    model: 'gemini-1.5-flash-latest',
     generationConfig: {
       temperature: 0.7,
       maxOutputTokens: 4000,
