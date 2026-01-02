@@ -1962,6 +1962,16 @@ async function handleGenerate() {
       body: JSON.stringify(formData),
     });
 
+    // HTML 에러 페이지 체크
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      hideLoadingOverlay();
+      const errorText = await response.text();
+      console.error('서버 에러:', response.status, errorText.substring(0, 200));
+      showErrorModal(`서버 오류가 발생했습니다. (${response.status})\n\n잠시 후 다시 시도해주세요.`);
+      return;
+    }
+
     const result = await response.json();
 
     // 검증 실패 시 확인 모달 표시

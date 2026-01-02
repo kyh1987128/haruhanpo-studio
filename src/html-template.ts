@@ -1354,7 +1354,7 @@ export const htmlTemplate = `
     </div>
 
     <script src="/static/i18n.js?v=5.3.2"></script>
-    <script src="/static/app-v3-final.js?v=8.1.3"></script>
+    <script src="/static/app-v3-final.js?v=8.1.4"></script>
 </body>
 </html>
 `;
