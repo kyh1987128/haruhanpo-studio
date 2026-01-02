@@ -1164,24 +1164,12 @@ function updateCostEstimate() {
     document.getElementById('costEstimate').innerHTML = `
       <div style="padding: 1.5rem; text-align: center; background: #f9fafb; border-radius: 12px; border: 2px dashed #d1d5db;">
         <p style="color: #6b7280; margin: 0;">
-          📊 콘텐츠별 이미지와 플랫폼을 선택하면 예상 비용이 표시됩니다
+          📊 콘텐츠별 이미지와 플랫폼을 선택하면 크레딧 정보가 표시됩니다
         </p>
       </div>
     `;
     return;
   }
-
-  // 비용 계산: 총 이미지 분석 비용 + (콘텐츠 수 × 플랫폼별 생성 비용)
-  const imageCost = totalImageCount * COSTS.IMAGE_ANALYSIS;
-  let platformCost = 0;
-
-  platformCheckboxes.forEach((checkbox) => {
-    const platform = checkbox.value;
-    platformCost += (COSTS[platform.toUpperCase()] || 0) * contentCount;
-  });
-
-  const totalCostUSD = imageCost + platformCost;
-  const totalCostKRW = Math.round(totalCostUSD * EXCHANGE_RATE);
 
   // 예상 소요 시간 계산
   const imageAnalysisTime = Math.min(totalImageCount * 3, 5);
@@ -1189,31 +1177,132 @@ function updateCostEstimate() {
   const totalTimeSeconds = imageAnalysisTime + contentGenerationTime;
   const totalTimeMinutes = Math.ceil(totalTimeSeconds / 60);
 
-  document.getElementById('costEstimate').innerHTML = `
-    <div style="padding: 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
-      <h3 style="font-size: 1.2rem; font-weight: bold; margin-bottom: 1rem; text-align: center;">
-        💰 예상 비용 및 소요 시간
-      </h3>
+  // ===================================
+  // NEW v7.7: 크레딧 기반 비용 표시
+  // ===================================
+  
+  let costInfoHTML = '';
+  let statusBadge = '';
+  let gradientColor = '';
+  
+  if (currentUser.isGuest) {
+    // 비회원: 체험 1회 사용
+    gradientColor = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+    statusBadge = '<span style="background: rgba(255,255,255,0.3); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">🎁 무료 체험</span>';
+    
+    costInfoHTML = `
+      <div style="background: rgba(255,255,255,0.2); padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem; text-align: center;">
+        <div style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem;">
+          무료 체험 1회 사용 가능
+        </div>
+        <p style="font-size: 0.95rem; opacity: 0.9; margin: 0;">
+          로그인하면 매달 <strong>10회 무료</strong> + 크레딧으로 무제한 사용!
+        </p>
+      </div>
+    `;
+  } else if (currentUser.tier === 'free' || currentUser.subscription_status === 'free') {
+    // 무료 회원
+    const monthlyRemaining = currentUser.monthly_remaining || 0;
+    const monthlyLimit = currentUser.monthly_limit || 10;
+    const usedCount = monthlyLimit - monthlyRemaining;
+    
+    if (monthlyRemaining > 0) {
+      // 무료 횟수 남음
+      gradientColor = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+      statusBadge = '<span style="background: rgba(255,255,255,0.3); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">🎉 무료 사용 가능</span>';
       
-      <div style="background: rgba(255,255,255,0.15); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
-          <span>📸 이미지 분석 (${totalImageCount}장):</span>
-          <span style="font-weight: 600;">$${imageCost.toFixed(2)} / ₩${Math.round(imageCost * EXCHANGE_RATE).toLocaleString()}</span>
+      const progressPercent = (usedCount / monthlyLimit) * 100;
+      
+      costInfoHTML = `
+        <div style="background: rgba(255,255,255,0.2); padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem;">
+          <div style="text-align: center; margin-bottom: 1rem;">
+            <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.3rem;">
+              ${monthlyRemaining}회 남음
+            </div>
+            <p style="font-size: 0.9rem; opacity: 0.9; margin: 0;">
+              이번 달 무료 사용 가능 (${usedCount}/${monthlyLimit}회 사용)
+            </p>
+          </div>
+          
+          <!-- 진행률 바 -->
+          <div style="background: rgba(255,255,255,0.3); border-radius: 10px; height: 12px; overflow: hidden; margin-bottom: 0.5rem;">
+            <div style="background: rgba(255,255,255,0.9); height: 100%; width: ${progressPercent}%; transition: width 0.3s;"></div>
+          </div>
+          
+          <p style="font-size: 0.85rem; opacity: 0.85; margin: 0; text-align: center;">
+            💡 무료 횟수 소진 시 크레딧으로 계속 사용 가능 (현재 ${currentUser.credits || 0}크레딧 보유)
+          </p>
         </div>
-        <div style="display: flex; justify-content: space-between;">
-          <span>✨ 콘텐츠 생성 (${contentCount}개 × ${platformCount}개 플랫폼):</span>
-          <span style="font-weight: 600;">$${platformCost.toFixed(2)} / ₩${Math.round(platformCost * EXCHANGE_RATE).toLocaleString()}</span>
+      `;
+    } else {
+      // 무료 횟수 소진, 크레딧 필요
+      gradientColor = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+      statusBadge = '<span style="background: rgba(255,255,255,0.3); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">💳 크레딧 사용</span>';
+      
+      costInfoHTML = `
+        <div style="background: rgba(255,255,255,0.2); padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem; text-align: center;">
+          <div style="font-size: 1.3rem; font-weight: 600; margin-bottom: 0.8rem; opacity: 0.9;">
+            이번 달 무료 ${monthlyLimit}회를 모두 사용했습니다
+          </div>
+          <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.3rem;">
+            1 크레딧 차감
+          </div>
+          <p style="font-size: 1.1rem; opacity: 0.9; margin: 0;">
+            현재 보유: <strong>${currentUser.credits || 0}크레딧</strong>
+          </p>
+          ${currentUser.credits === 0 ? `
+            <div style="background: rgba(239, 68, 68, 0.3); border: 1px solid rgba(239, 68, 68, 0.5); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+              <p style="margin: 0; font-size: 0.95rem;">
+                ⚠️ 크레딧이 부족합니다. <a href="/payment" style="color: white; text-decoration: underline; font-weight: 600;">충전하기</a>
+              </p>
+            </div>
+          ` : ''}
         </div>
+      `;
+    }
+  } else {
+    // 유료 회원
+    gradientColor = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
+    statusBadge = '<span style="background: rgba(255,255,255,0.3); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">⭐ 유료 회원</span>';
+    
+    costInfoHTML = `
+      <div style="background: rgba(255,255,255,0.2); padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem; text-align: center;">
+        <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.3rem;">
+          1 크레딧 차감
+        </div>
+        <p style="font-size: 1.1rem; opacity: 0.9; margin: 0;">
+          현재 보유: <strong>${currentUser.credits || 0}크레딧</strong>
+        </p>
+        ${currentUser.credits === 0 ? `
+          <div style="background: rgba(239, 68, 68, 0.3); border: 1px solid rgba(239, 68, 68, 0.5); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+            <p style="margin: 0; font-size: 0.95rem;">
+              ⚠️ 크레딧이 부족합니다. <a href="/payment" style="color: white; text-decoration: underline; font-weight: 600;">충전하기</a>
+            </p>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  document.getElementById('costEstimate').innerHTML = `
+    <div style="padding: 1.5rem; background: ${gradientColor}; border-radius: 12px; color: white; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="font-size: 1.2rem; font-weight: bold; margin: 0;">
+          💰 예상 사용 크레딧 및 소요 시간
+        </h3>
+        ${statusBadge}
       </div>
       
-      <div style="background: rgba(255,255,255,0.25); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-        <div style="display: flex; justify-content: space-between; font-size: 1.3rem; font-weight: bold;">
-          <span>💵 총 예상 비용:</span>
-          <span>$${totalCostUSD.toFixed(2)}</span>
+      ${costInfoHTML}
+      
+      <div style="background: rgba(255,255,255,0.15); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+          <span>📸 분석할 이미지:</span>
+          <span style="font-weight: 600;">${totalImageCount}장</span>
         </div>
-        <div style="display: flex; justify-content: space-between; font-size: 1.5rem; font-weight: bold; margin-top: 0.5rem;">
-          <span>💴 총 예상 비용:</span>
-          <span>₩${totalCostKRW.toLocaleString()}</span>
+        <div style="display: flex; justify-content: space-between;">
+          <span>✨ 생성할 콘텐츠:</span>
+          <span style="font-weight: 600;">${contentCount}개 × ${platformCount}개 플랫폼</span>
         </div>
       </div>
       
@@ -1225,7 +1314,7 @@ function updateCostEstimate() {
       </div>
       
       <p style="font-size: 0.85rem; opacity: 0.9; margin-top: 1rem; text-align: center; margin-bottom: 0;">
-        환율: $1 = ₩${EXCHANGE_RATE.toFixed(0)} | 모델: GPT-4o | 업데이트: ${lastExchangeUpdate ? lastExchangeUpdate.toLocaleDateString() : '오늘'}
+        모델: GPT-4o + Gemini Flash (하이브리드 전략) | 1회 생성 = 1크레딧
       </p>
     </div>
   `;
