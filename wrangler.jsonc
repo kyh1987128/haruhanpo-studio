@@ -5,30 +5,15 @@
   "pages_build_output_dir": "./dist",
   "compatibility_flags": [
     "nodejs_compat"
-  ]
-  // "vars": {
-  //   "MY_VAR": "my-variable"
-  // },
-  // "kv_namespaces": [
-  //   {
-  //     "binding": "MY_KV_NAMESPACE",
-  //     "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-  //   }
-  // ],
-  // "r2_buckets": [
-  //   {
-  //     "binding": "MY_BUCKET",
-  //     "bucket_name": "my-bucket"
-  //   }
-  // ],
-  // "d1_databases": [
-  //   {
-  //     "binding": "MY_DB",
-  //     "database_name": "my-database",
-  //     "database_id": ""
-  //   }
-  // ],
-  // "ai": {
-  //   "binding": "AI"
-  // }
+  ],
+  // 환경 변수 설정 (로컬 개발용)
+  // 프로덕션 배포 시: wrangler pages secret put <SECRET_NAME>
+  "vars": {
+    // Supabase 설정
+    "SUPABASE_URL": "https://gmjbsndricdogtqsovnb.supabase.co"
+    // SUPABASE_ANON_KEY: wrangler pages secret put SUPABASE_ANON_KEY
+    // SUPABASE_SERVICE_KEY: wrangler pages secret put SUPABASE_SERVICE_KEY
+    // OPENAI_API_KEY: wrangler pages secret put OPENAI_API_KEY
+    // GEMINI_API_KEY: wrangler pages secret put GEMINI_API_KEY
+  }
 }

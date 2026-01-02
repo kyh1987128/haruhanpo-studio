@@ -5,10 +5,14 @@ import OpenAI from 'openai';
 import { getBlogPrompt, getInstagramPrompt, getThreadsPrompt, getYouTubePrompt, getYoutubeLongformPrompt, getShortformPrompt, getMetadataPrompt, getInstagramFeedPrompt } from './prompts';
 import { htmlTemplate } from './html-template';
 import { analyzeImageWithGemini, generateContentWithGemini, calculateGeminiCost, estimateTokens } from './gemini';
+import { createSupabaseAdmin, createSupabaseClient, grantMilestoneCredit, updateConsecutiveLogin, checkAndUseMonthlyQuota } from './lib/supabase';
 
 type Bindings = {
   OPENAI_API_KEY: string;
   GEMINI_API_KEY: string;
+  SUPABASE_URL: string;
+  SUPABASE_ANON_KEY: string;
+  SUPABASE_SERVICE_KEY: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -802,31 +806,98 @@ app.post('/api/auth/sync', async (c) => {
       return c.json({ error: 'user_id와 email은 필수입니다' }, 400);
     }
     
-    // TODO: Supabase에 사용자 정보 저장/업데이트
-    // 신규 가입자는 5크레딧으로 시작 (변경됨: 기존 3 → 5)
+    // ✅ Supabase Admin 클라이언트 초기화
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
     
-    // 현재 날짜로 월별 사용량 계산
+    // Supabase에 사용자 정보 조회 (UPSERT 대신 SELECT → INSERT/UPDATE)
+    const { data: existingUser, error: selectError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user_id)
+      .single();
+    
     const now = new Date();
+    const today = now.toISOString().split('T')[0];
     
-    // ✅ 수파베이스 컬럼명에 맞춤
+    // 신규 사용자인 경우
+    if (selectError && selectError.code === 'PGRST116') {
+      // 신규 가입: users 테이블에 INSERT (트리거가 5크레딧 자동 지급)
+      const { data: newUser, error: insertError } = await supabase
+        .from('users')
+        .insert({
+          id: user_id,
+          email,
+          name: name || null,
+          last_login_date: today,
+          consecutive_login_days: 1
+        })
+        .select()
+        .single();
+      
+      if (insertError) {
+        console.error('[Supabase] 사용자 생성 실패:', insertError);
+        throw insertError;
+      }
+      
+      console.log('✅ 신규 사용자 생성:', newUser.email, '5크레딧 지급');
+      
+      return c.json({
+        success: true,
+        user_id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        credits: newUser.credits, // 트리거에서 5크레딧 지급됨
+        tier: 'free',
+        subscription_status: newUser.subscription_status,
+        monthly_free_usage_count: newUser.monthly_free_usage_count,
+        monthly_limit: 10,
+        monthly_remaining: 10 - newUser.monthly_free_usage_count,
+        monthly_usage_reset_date: newUser.monthly_usage_reset_date,
+        onboarding_completed: newUser.onboarding_completed,
+        first_generation_completed: newUser.first_generation_completed,
+        last_login_date: newUser.last_login_date,
+        consecutive_login_days: newUser.consecutive_login_days,
+        message: '신규 회원가입이 완료되었습니다. 5크레딧이 지급되었습니다.'
+      });
+    }
+    
+    // 기존 사용자인 경우: 연속 로그인 업데이트
+    const loginResult = await updateConsecutiveLogin(supabase, user_id);
+    
+    // 사용자 정보 다시 조회
+    const { data: updatedUser, error: refetchError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user_id)
+      .single();
+    
+    if (refetchError) {
+      throw refetchError;
+    }
+    
+    console.log('✅ 기존 사용자 로그인:', updatedUser.email, `${updatedUser.consecutive_login_days}일 연속`);
+    
     return c.json({
       success: true,
-      user_id,
-      email,
-      name,
-      credits: 5, // 신규 가입 보상 (변경: 3 → 5)
-      tier: 'free',
-      subscription_status: 'free',
-      monthly_free_usage_count: 0, // ✅ 수파베이스 컬럼명
-      monthly_limit: 10, // 무료 회원 월 10회 제한
-      monthly_remaining: 10,
-      monthly_usage_reset_date: now.toISOString().split('T')[0], // ✅ DATE 타입
-      // 달성 보상 추적 (users 테이블 BOOLEAN 컬럼)
-      onboarding_completed: false,
-      first_generation_completed: false,
-      last_login_date: now.toISOString().split('T')[0],
-      consecutive_login_days: 1, // ✅ 수파베이스 컬럼명
-      message: '사용자 정보가 동기화되었습니다'
+      user_id: updatedUser.id,
+      email: updatedUser.email,
+      name: updatedUser.name,
+      credits: updatedUser.credits,
+      tier: updatedUser.subscription_status === 'active' ? 'paid' : 'free',
+      subscription_status: updatedUser.subscription_status,
+      monthly_free_usage_count: updatedUser.monthly_free_usage_count,
+      monthly_limit: 10,
+      monthly_remaining: 10 - updatedUser.monthly_free_usage_count,
+      monthly_usage_reset_date: updatedUser.monthly_usage_reset_date,
+      onboarding_completed: updatedUser.onboarding_completed,
+      first_generation_completed: updatedUser.first_generation_completed,
+      last_login_date: updatedUser.last_login_date,
+      consecutive_login_days: updatedUser.consecutive_login_days,
+      streak_reward_eligible: loginResult.streak_reward_eligible,
+      message: '로그인 성공'
     });
   } catch (error: any) {
     console.error('사용자 동기화 실패:', error);
@@ -853,8 +924,11 @@ app.post('/api/rewards/claim', async (c) => {
       return c.json({ error: '유효하지 않은 보상 타입입니다' }, 400);
     }
     
-    // ✅ Supabase RPC 함수 호출: grant_milestone_credit
-    // TODO: Supabase 클라이언트 초기화 후 활성화
+    // ✅ Supabase Admin 클라이언트 초기화
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
     
     const rewardAmount = 5; // 모든 보상은 5크레딧
     const rewardMessages = {
@@ -863,19 +937,24 @@ app.post('/api/rewards/claim', async (c) => {
       streak_3days_completed: '🔥 3일 연속 로그인 보상'
     };
     
-    // Supabase RPC 호출 예제:
-    // const { data, error } = await supabase.rpc('grant_milestone_credit', {
-    //   user_id_param: user_id,
-    //   milestone_type: reward_type
-    // });
-    // if (error) throw error;
+    // ✅ Supabase RPC 호출: grant_milestone_credit
+    const result = await grantMilestoneCredit(supabase, user_id, reward_type);
+    
+    if (!result.success) {
+      return c.json({
+        error: '보상 지급 실패',
+        message: result.error || '이미 지급받은 보상입니다'
+      }, 400);
+    }
+    
+    console.log(`✅ 보상 지급: ${user_id} ${reward_type} ${rewardAmount}크레딧 → 총 ${result.new_credits}크레딧`);
     
     return c.json({
       success: true,
       reward_type,
       amount: rewardAmount,
       message: rewardMessages[reward_type],
-      new_credits: 10 // TODO: data.new_credits로 교체
+      new_credits: result.new_credits
     });
   } catch (error: any) {
     console.error('보상 지급 실패:', error);
@@ -896,22 +975,31 @@ app.post('/api/rewards/check-streak', async (c) => {
       return c.json({ error: 'user_id는 필수입니다' }, 400);
     }
     
-    // ✅ Supabase RPC 함수 호출: update_consecutive_login
-    // TODO: Supabase 클라이언트 초기화 후 활성화
+    // ✅ Supabase Admin 클라이언트 초기화
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // ✅ Supabase RPC 호출: update_consecutive_login
+    const result = await updateConsecutiveLogin(supabase, user_id);
+    
+    if (result.error) {
+      return c.json({
+        error: '연속 로그인 체크 실패',
+        message: result.error
+      }, 500);
+    }
     
     const today = new Date().toISOString().split('T')[0];
     
-    // Supabase RPC 호출 예제:
-    // const { data, error } = await supabase.rpc('update_consecutive_login', {
-    //   user_id_param: user_id
-    // });
-    // if (error) throw error;
+    console.log(`✅ 연속 로그인: ${user_id} ${result.consecutive_days}일 연속`);
     
     return c.json({
       success: true,
-      consecutive_login_days: 1, // ✅ 수파베이스 컬럼명 (login_streak → consecutive_login_days)
+      consecutive_login_days: result.consecutive_days, // ✅ 수파베이스 컬럼명
       last_login_date: today,
-      streak_reward_eligible: false // 3일 달성 여부
+      streak_reward_eligible: result.streak_reward_eligible // 3일 달성 여부
     });
   } catch (error: any) {
     console.error('연속 로그인 체크 실패:', error);

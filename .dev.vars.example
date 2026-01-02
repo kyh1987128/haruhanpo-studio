@@ -1,0 +1,17 @@
+# 로컬 개발용 환경 변수 예제
+# 실제 사용 시 .dev.vars 파일로 복사하고 실제 값 입력
+# cp .dev.vars.example .dev.vars
+
+# Supabase 설정
+SUPABASE_URL=https://gmjbsndricdogtqsovnb.supabase.co
+SUPABASE_ANON_KEY=your-supabase-anon-key-here
+SUPABASE_SERVICE_KEY=your-supabase-service-key-here
+
+# AI API 키
+OPENAI_API_KEY=your-openai-api-key-here
+GEMINI_API_KEY=your-gemini-api-key-here
+
+# 주의사항:
+# 1. .dev.vars 파일은 .gitignore에 포함되어야 함
+# 2. 프로덕션 배포 시: wrangler pages secret put <SECRET_NAME> 사용
+# 3. Service Key는 관리자 권한이므로 절대 노출 금지
