@@ -156,7 +156,13 @@ export const htmlTemplate = `
                                 <p class="text-sm font-semibold text-gray-700" id="userName">사용자</p>
                                 <p class="text-xs text-gray-500">
                                     <span id="userTier" class="font-semibold">무료회원</span> | 
-                                    <span id="userCredits" class="text-purple-600 font-bold">3</span>회 남음
+                                    <span id="userCredits" class="text-purple-600 font-bold">3</span> 크레딧
+                                    <button onclick="showCreditDetailsModal()" class="ml-2 text-blue-600 hover:text-blue-700">
+                                        <i class="fas fa-info-circle"></i>
+                                    </button>
+                                    <button onclick="showCreditPurchaseModal()" class="ml-2 px-3 py-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs rounded-lg hover:shadow-lg transition">
+                                        <i class="fas fa-plus mr-1"></i>충전
+                                    </button>
                                 </p>
                             </div>
                             <button id="logoutBtn" class="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 transition">
@@ -1055,8 +1061,229 @@ export const htmlTemplate = `
         });
     </script>
 
+    <!-- 푸터 (환불정책 포함) -->
+    <footer class="bg-gray-900 text-gray-300 py-12 mt-20">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                <!-- 서비스 정보 -->
+                <div>
+                    <h3 class="text-white text-lg font-bold mb-4">☕️ 하루한포 AI Studio</h3>
+                    <p class="text-sm text-gray-400 mb-4">
+                        이미지를 업로드하면 AI가 블로그·인스타·유튜브 등<br>
+                        10개 플랫폼 맞춤 콘텐츠를 30초 안에 자동 생성합니다.
+                    </p>
+                    <div class="flex gap-4">
+                        <a href="mailto:support@haruhanpo.com" class="text-blue-400 hover:text-blue-300 transition">
+                            <i class="fas fa-envelope"></i> support@haruhanpo.com
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 빠른 링크 -->
+                <div>
+                    <h3 class="text-white text-lg font-bold mb-4">빠른 링크</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" onclick="showRefundPolicy(); return false;" class="hover:text-white transition">환불 정책</a></li>
+                        <li><a href="#" onclick="showPrivacyPolicy(); return false;" class="hover:text-white transition">개인정보 처리방침</a></li>
+                        <li><a href="#" onclick="showTermsOfService(); return false;" class="hover:text-white transition">서비스 이용약관</a></li>
+                        <li><a href="mailto:support@haruhanpo.com" class="hover:text-white transition">문의하기</a></li>
+                    </ul>
+                </div>
+
+                <!-- 크레딧 정책 -->
+                <div>
+                    <h3 class="text-white text-lg font-bold mb-4">크레딧 정책</h3>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><i class="fas fa-check text-green-400 mr-2"></i>콘텐츠 1개 생성 = 1 크레딧</li>
+                        <li><i class="fas fa-check text-green-400 mr-2"></i>크레딧 유효기간: 구매일로부터 1년</li>
+                        <li><i class="fas fa-check text-green-400 mr-2"></i>미사용 크레딧 환불 가능 (7일 이내)</li>
+                        <li><i class="fas fa-info-circle text-blue-400 mr-2"></i>자세한 내용은 환불 정책 참조</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 저작권 및 법적 고지 -->
+            <div class="border-t border-gray-800 pt-8 text-center text-sm text-gray-500">
+                <p class="mb-2">© 2026 하루한포 AI Studio. All rights reserved.</p>
+                <p class="text-xs">
+                    본 서비스는 AI 기술을 활용한 콘텐츠 생성 도구입니다. 
+                    생성된 콘텐츠의 저작권은 사용자에게 있으며, 
+                    법적 책임은 사용자에게 있습니다.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 환불 정책 모달 -->
+    <div id="refundPolicyModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-xl">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold">
+                        <i class="fas fa-undo mr-2"></i>환불 정책
+                    </h2>
+                    <button onclick="closeRefundPolicyModal()" class="text-white hover:text-gray-200 text-3xl font-bold">&times;</button>
+                </div>
+            </div>
+
+            <div class="p-8">
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">
+                        <i class="fas fa-info-circle text-blue-600 mr-2"></i>환불 기본 원칙
+                    </h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        하루한포 AI Studio는 고객님의 권익 보호를 최우선으로 생각합니다. 
+                        아래 환불 정책에 따라 공정하고 투명하게 환불 처리를 진행합니다.
+                    </p>
+                </div>
+
+                <div class="mb-6 bg-blue-50 p-4 rounded-lg border-l-4 border-blue-600">
+                    <h4 class="font-bold text-gray-800 mb-2">
+                        <i class="fas fa-check-circle text-green-600 mr-2"></i>환불 가능 조건
+                    </h4>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                        <li><strong>구매일로부터 7일 이내</strong> 환불 요청 시</li>
+                        <li><strong>크레딧 미사용 또는 30% 이하 사용</strong> 시</li>
+                        <li><strong>서비스 오류로 인한 크레딧 차감</strong> 시 (즉시 환불)</li>
+                        <li><strong>중복 결제</strong> 발생 시 (즉시 환불)</li>
+                    </ul>
+                </div>
+
+                <div class="mb-6 bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-600">
+                    <h4 class="font-bold text-gray-800 mb-2">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 mr-2"></i>환불 불가 조건
+                    </h4>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                        <li>구매일로부터 <strong>7일 경과</strong> 후</li>
+                        <li>크레딧 <strong>30% 초과 사용</strong> 시</li>
+                        <li>생성된 콘텐츠를 <strong>이미 다운로드하거나 복사</strong>한 경우</li>
+                        <li>무료 체험 크레딧 (환불 대상 아님)</li>
+                    </ul>
+                </div>
+
+                <div class="mb-6">
+                    <h4 class="font-bold text-gray-800 mb-3">
+                        <i class="fas fa-calculator text-purple-600 mr-2"></i>환불 금액 계산
+                    </h4>
+                    <table class="w-full border-collapse border border-gray-300">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="border border-gray-300 px-4 py-2 text-left">사용 크레딧</th>
+                                <th class="border border-gray-300 px-4 py-2 text-left">환불 비율</th>
+                                <th class="border border-gray-300 px-4 py-2 text-left">예시</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="border border-gray-300 px-4 py-2">0% (미사용)</td>
+                                <td class="border border-gray-300 px-4 py-2 text-green-600 font-bold">100% 환불</td>
+                                <td class="border border-gray-300 px-4 py-2">10,000원 → 10,000원 환불</td>
+                            </tr>
+                            <tr class="bg-gray-50">
+                                <td class="border border-gray-300 px-4 py-2">1~10%</td>
+                                <td class="border border-gray-300 px-4 py-2 text-green-600 font-bold">90% 환불</td>
+                                <td class="border border-gray-300 px-4 py-2">10,000원 → 9,000원 환불</td>
+                            </tr>
+                            <tr>
+                                <td class="border border-gray-300 px-4 py-2">11~20%</td>
+                                <td class="border border-gray-300 px-4 py-2 text-blue-600 font-bold">80% 환불</td>
+                                <td class="border border-gray-300 px-4 py-2">10,000원 → 8,000원 환불</td>
+                            </tr>
+                            <tr class="bg-gray-50">
+                                <td class="border border-gray-300 px-4 py-2">21~30%</td>
+                                <td class="border border-gray-300 px-4 py-2 text-yellow-600 font-bold">70% 환불</td>
+                                <td class="border border-gray-300 px-4 py-2">10,000원 → 7,000원 환불</td>
+                            </tr>
+                            <tr>
+                                <td class="border border-gray-300 px-4 py-2">31% 이상</td>
+                                <td class="border border-gray-300 px-4 py-2 text-red-600 font-bold">환불 불가</td>
+                                <td class="border border-gray-300 px-4 py-2">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mb-6">
+                    <h4 class="font-bold text-gray-800 mb-3">
+                        <i class="fas fa-clock text-blue-600 mr-2"></i>환불 처리 기간
+                    </h4>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                        <li><strong>신용카드</strong>: 환불 승인 후 3~7 영업일</li>
+                        <li><strong>계좌이체</strong>: 환불 승인 후 1~3 영업일</li>
+                        <li><strong>간편결제</strong>: 각 PG사 정책에 따름 (3~7 영업일)</li>
+                    </ul>
+                </div>
+
+                <div class="mb-6 bg-red-50 p-4 rounded-lg border-l-4 border-red-600">
+                    <h4 class="font-bold text-gray-800 mb-2">
+                        <i class="fas fa-ban text-red-600 mr-2"></i>환불 거부 사유
+                    </h4>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                        <li>허위 환불 요청 또는 악용 목적</li>
+                        <li>생성된 콘텐츠를 상업적으로 이미 사용한 경우</li>
+                        <li>환불 정책을 위반한 경우</li>
+                    </ul>
+                </div>
+
+                <div class="bg-gray-100 p-4 rounded-lg">
+                    <h4 class="font-bold text-gray-800 mb-2">
+                        <i class="fas fa-phone text-green-600 mr-2"></i>환불 요청 방법
+                    </h4>
+                    <p class="text-gray-700 mb-2">
+                        환불을 원하시면 아래 방법으로 문의해주세요:
+                    </p>
+                    <ul class="list-disc list-inside space-y-1 text-gray-700">
+                        <li>이메일: <a href="mailto:refund@haruhanpo.com" class="text-blue-600 hover:underline">refund@haruhanpo.com</a></li>
+                        <li>고객센터: 1234-5678 (평일 09:00~18:00)</li>
+                        <li>필수 정보: 주문번호, 구매일자, 환불 사유</li>
+                    </ul>
+                </div>
+
+                <div class="mt-6 text-sm text-gray-500">
+                    <p><i class="fas fa-info-circle mr-2"></i>본 환불 정책은 전자상거래 등에서의 소비자보호에 관한 법률에 따라 작성되었습니다.</p>
+                    <p class="mt-1"><i class="fas fa-calendar-alt mr-2"></i>최종 업데이트: 2026년 1월 2일</p>
+                </div>
+            </div>
+
+            <div class="sticky bottom-0 bg-gray-50 p-6 rounded-b-xl border-t">
+                <button onclick="closeRefundPolicyModal()" class="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold">
+                    <i class="fas fa-check mr-2"></i>확인
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 환불 정책 모달 열기/닫기
+        function showRefundPolicy() {
+            document.getElementById('refundPolicyModal').style.display = 'flex';
+        }
+        function closeRefundPolicyModal() {
+            document.getElementById('refundPolicyModal').style.display = 'none';
+        }
+        function showPrivacyPolicy() {
+            alert('개인정보 처리방침 페이지는 준비 중입니다.');
+        }
+        function showTermsOfService() {
+            alert('서비스 이용약관 페이지는 준비 중입니다.');
+        }
+        
+        // 크레딧 상세 정보 모달
+        function showCreditDetailsModal() {
+            alert('크레딧 상세 내역:\n\n잔액: ' + (document.getElementById('userCredits')?.textContent || '0') + ' 크레딧\n\n크레딧 사용 내역은 개발 중입니다.');
+        }
+        
+        // 크레딧 충전 모달
+        function showCreditPurchaseModal() {
+            const confirmed = confirm('크레딧 충전 페이지로 이동하시겠습니까?\n\n충전 옵션:\n- 10 크레딧: 10,000원\n- 50 크레딧: 45,000원 (10% 할인)\n- 100 크레딧: 80,000원 (20% 할인)');
+            if (confirmed) {
+                alert('크레딧 충전 시스템은 개발 중입니다.\n\n문의: support@haruhanpo.com');
+            }
+        }
+    </script>
+
     <script src="/static/i18n.js?v=5.3.2"></script>
-    <script src="/static/app-v3-final.js?v=8.0.0"></script>
+    <script src="/static/app-v3-final.js?v=8.1.0"></script>
 </body>
 </html>
 `;
