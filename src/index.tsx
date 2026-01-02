@@ -970,10 +970,10 @@ ${combinedImageDescription}
       imageCount: images.length,
       strategy: {
         selected: contentStrategy,
-        confidence: matchingAnalysis?.confidence || 100,
-        reason: matchingAnalysis?.reason || '기본 전략 사용',
-        imageSummary: matchingAnalysis?.imageSummary || '',
-        userInputSummary: matchingAnalysis?.userInputSummary || '',
+        confidence: validation?.overallConfidence || 100,
+        reason: validation?.reason || '기본 전략 사용',
+        imageSummary: combinedImageDescription || '',
+        userInputSummary: `${brand} - ${keywords}`,
       },
       cost: {
         openai: totalCost.openai,
