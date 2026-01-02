@@ -3859,6 +3859,7 @@ let supabaseClient = null;
 
 // 사용자 상태
 let currentUser = {
+  id: null,  // ✅ 추가: 사용자 ID
   isLoggedIn: false,
   isGuest: true,
   name: null,
@@ -3920,6 +3921,7 @@ async function checkSupabaseSession() {
       
       // 로그인 상태
       currentUser = {
+        id: session.user.id,  // ✅ 추가: 사용자 ID
         isLoggedIn: true,
         isGuest: false,
         name: session.user.user_metadata.full_name || session.user.email,
@@ -4058,6 +4060,7 @@ async function checkAuthStatus() {
     if (response.ok) {
       const data = await response.json();
       currentUser = {
+        id: data.user?.id || null,  // ✅ 추가: 사용자 ID
         isLoggedIn: !data.is_guest,
         isGuest: data.is_guest,
         name: data.user?.name || '게스트',
@@ -4120,6 +4123,7 @@ function handleAuthError() {
   localStorage.removeItem('postflow_token');
   localStorage.removeItem('postflow_user');
   currentUser = {
+    id: null,  // ✅ 추가: 비회원은 ID 없음
     isLoggedIn: false,
     isGuest: true,
     name: null,
