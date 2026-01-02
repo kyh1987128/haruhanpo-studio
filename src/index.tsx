@@ -346,9 +346,9 @@ app.post('/api/generate', async (c) => {
       website,
       sns,
       keywords,
-      tone,
-      targetAge,
-      industry,
+      tone = '친근한', // 🎯 스마트 기본값: 친근한 톤
+      targetAge = '20-30대', // 🎯 스마트 기본값: 20-30대 (가장 일반적)
+      industry = '', // 🎯 스마트 기본값: 키워드에서 자동 추출 예정
       images, // base64 이미지 배열
       platforms, // ['blog', 'instagram', 'threads', 'youtube']
       aiModel = 'gpt-4o', // AI 모델 선택 (기본값: gpt-4o)
@@ -578,6 +578,37 @@ app.post('/api/generate', async (c) => {
     console.log('이미지 분석 완료. 콘텐츠 생성 준비...');
     console.log('📸 결합된 이미지 설명:', combinedImageDescription.substring(0, 500) + '...');
 
+    // 🎯 스마트 기본값: 산업 분야 자동 추출 (입력 안 했을 때만)
+    let finalIndustry = industry;
+    if (!industry || industry.trim() === '') {
+      // 키워드에서 산업 분야 추론
+      const keywordsLower = keywords.toLowerCase();
+      if (keywordsLower.includes('카페') || keywordsLower.includes('음식') || keywordsLower.includes('맛집')) {
+        finalIndustry = '외식업';
+      } else if (keywordsLower.includes('패션') || keywordsLower.includes('옷') || keywordsLower.includes('쇼핑')) {
+        finalIndustry = '패션/의류';
+      } else if (keywordsLower.includes('뷰티') || keywordsLower.includes('화장품') || keywordsLower.includes('스킨케어')) {
+        finalIndustry = '뷰티/코스메틱';
+      } else if (keywordsLower.includes('교육') || keywordsLower.includes('학원') || keywordsLower.includes('강의')) {
+        finalIndustry = '교육';
+      } else if (keywordsLower.includes('스튜디오') || keywordsLower.includes('촬영') || keywordsLower.includes('렌탈')) {
+        finalIndustry = '문화/예술';
+      } else if (keywordsLower.includes('it') || keywordsLower.includes('소프트웨어') || keywordsLower.includes('앱')) {
+        finalIndustry = 'IT/기술';
+      } else {
+        // 이미지 분석 결과에서 추론
+        const imageLower = combinedImageDescription.toLowerCase();
+        if (imageLower.includes('교육') || imageLower.includes('강의') || imageLower.includes('학습')) {
+          finalIndustry = '교육';
+        } else if (imageLower.includes('스튜디오') || imageLower.includes('촬영')) {
+          finalIndustry = '문화/예술';
+        } else {
+          finalIndustry = '일반 서비스';
+        }
+      }
+      console.log(`🎯 산업 분야 자동 설정: ${finalIndustry} (키워드: ${keywords})`);
+    }
+
     // 2단계: 간소화된 검증 - 매우 낮은 confidence만 경고
     let contentStrategy: 'integrated' | 'image-first' | 'keyword-first' | 'document-first' = 'image-first'; // 기본값을 image-first로
     let comprehensiveValidation: any = null;
@@ -620,7 +651,7 @@ app.post('/api/generate', async (c) => {
       keywords,
       tone,
       targetAge,
-      industry,
+      industry: finalIndustry, // 🎯 스마트 기본값 적용
       imageDescription: combinedImageDescription,
       contentStrategy: contentStrategy, // 하이브리드 전략 추가
     };
