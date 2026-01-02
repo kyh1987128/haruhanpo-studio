@@ -2510,20 +2510,22 @@ function showValidationModal(validation, formData) {
   const confidence = validation.confidence || 0;
   confidenceEl.textContent = `${confidence}%`;
   
-  // 신뢰도에 따른 색상 변경
-  const confidenceContainer = confidenceEl.closest('div[style*="background"]');
-  if (confidence < 30) {
-    confidenceContainer.style.background = '#fee2e2';
-    confidenceContainer.style.borderLeftColor = '#dc2626';
-    confidenceEl.style.color = '#991b1b';
-  } else if (confidence < 50) {
-    confidenceContainer.style.background = '#fef3c7';
-    confidenceContainer.style.borderLeftColor = '#f59e0b';
-    confidenceEl.style.color = '#b45309';
-  } else {
-    confidenceContainer.style.background = '#dbeafe';
-    confidenceContainer.style.borderLeftColor = '#3b82f6';
-    confidenceEl.style.color = '#1e40af';
+  // 신뢰도에 따른 색상 변경 (안전한 방법)
+  const confidenceContainer = confidenceEl.parentElement?.parentElement;
+  if (confidenceContainer) {
+    if (confidence < 30) {
+      confidenceContainer.style.background = '#fee2e2';
+      confidenceContainer.style.borderLeftColor = '#dc2626';
+      confidenceEl.style.color = '#991b1b';
+    } else if (confidence < 50) {
+      confidenceContainer.style.background = '#fef3c7';
+      confidenceContainer.style.borderLeftColor = '#f59e0b';
+      confidenceEl.style.color = '#b45309';
+    } else {
+      confidenceContainer.style.background = '#dbeafe';
+      confidenceContainer.style.borderLeftColor = '#3b82f6';
+      confidenceEl.style.color = '#1e40af';
+    }
   }
   
   // 충돌 목록 표시
