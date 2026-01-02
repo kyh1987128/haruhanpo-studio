@@ -546,10 +546,11 @@ app.post('/api/generate', async (c) => {
             description,
           };
         } catch (error: any) {
-          console.error(`이미지 ${index + 1} 분석 오류:`, error.message);
+          console.error(`❌ 이미지 ${index + 1} 분석 오류:`, error.message);
           return {
             index: index + 1,
-            description: `이미지 ${index + 1} 분석 중 오류가 발생했습니다.`,
+            description: `[분석 실패] 이미지 ${index + 1}은(는) 처리할 수 없습니다. (파일 손상 또는 형식 문제)`,
+            failed: true,
           };
         }
       })
@@ -638,8 +639,8 @@ ${combinedImageDescription}
         console.log(`선택된 전략: ${contentStrategy} (confidence: ${matchingAnalysis.confidence})`);
         console.log(`전략 이유: ${matchingAnalysis.reason}`);
 
-        // confidence 30 미만이면 사용자에게 경고 (너무 불일치)
-        if (matchingAnalysis.confidence < 30) {
+        // confidence 40 미만이면 사용자에게 경고 (너무 불일치)
+        if (matchingAnalysis.confidence < 40) {
           return c.json({
             success: false,
             requireConfirmation: true,
@@ -652,7 +653,7 @@ ${combinedImageDescription}
               userInputSummary: matchingAnalysis.userInputSummary,
               recommendation: matchingAnalysis.recommendation,
             },
-            message: '이미지와 키워드가 매우 다릅니다. 그래도 계속하시겠습니까?',
+            message: '⚠️ 업로드한 이미지와 입력한 키워드가 서로 맞지 않습니다. 그래도 계속하시겠습니까?',
           });
         }
 

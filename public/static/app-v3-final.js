@@ -2495,7 +2495,7 @@ function showValidationModal(validation, formData) {
   document.getElementById('validationImageSummary').textContent = validation.imageSummary || '분석 결과 없음';
   document.getElementById('validationUserInputSummary').textContent = validation.userInputSummary || '입력 정보 없음';
   document.getElementById('validationRecommendation').textContent = validation.recommendation || '이미지를 변경하거나 입력 정보를 수정해주세요.';
-  document.getElementById('validationConfidence').textContent = `${validation.confidence || 0}% (기준: 70% 이상)`;
+  document.getElementById('validationConfidence').textContent = `${validation.confidence || 0}% (기준: 40% 이상 권장)`;
   
   modal.classList.remove('hidden');
 }
