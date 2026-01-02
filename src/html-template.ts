@@ -1283,6 +1283,76 @@ export const htmlTemplate = `
         }
     </script>
 
+    <!-- 종합 검증 모달 -->
+    <div id="validationModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
+      <div class="modal-content" style="background-color: #fefefe; padding: 30px; border-radius: 16px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; margin: 50px auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="font-size: 1.5rem; font-weight: bold; color: #dc2626;">
+            <i class="fas fa-exclamation-triangle"></i> 입력 정보 검증
+          </h2>
+          <button onclick="closeValidationModal()" style="font-size: 28px; font-weight: bold; color: #aaa; cursor: pointer; border: none; background: none;">&times;</button>
+        </div>
+        
+        <!-- 전체 신뢰도 -->
+        <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #f59e0b;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 600; color: #92400e;">
+              <i class="fas fa-chart-line"></i> 일관성 신뢰도:
+            </span>
+            <span id="validationConfidence" style="font-weight: 700; font-size: 1.1rem; color: #b45309;">0%</span>
+          </div>
+          <p style="margin-top: 8px; color: #78350f; font-size: 0.9rem;">
+            <i class="fas fa-info-circle"></i> 기준: 40% 이상 권장
+          </p>
+        </div>
+        
+        <!-- 충돌 목록 -->
+        <div id="conflictsList" style="margin-bottom: 20px;">
+          <!-- 동적으로 생성 -->
+        </div>
+        
+        <!-- 전략 및 이유 -->
+        <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+          <h3 style="font-weight: 600; margin-bottom: 10px; color: #1f2937;">
+            <i class="fas fa-lightbulb"></i> 선택된 전략
+          </h3>
+          <p id="validationReason" style="color: #4b5563; line-height: 1.6;">-</p>
+        </div>
+        
+        <!-- 권장 사항 -->
+        <div style="background: #eff6ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #3b82f6;">
+          <h3 style="font-weight: 600; margin-bottom: 10px; color: #1e40af;">
+            <i class="fas fa-clipboard-check"></i> 권장 사항
+          </h3>
+          <p id="validationRecommendation" style="color: #1e3a8a; line-height: 1.6;">-</p>
+        </div>
+        
+        <!-- 품질 경고 -->
+        <div style="background: #fee2e2; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #dc2626;">
+          <h3 style="font-weight: 600; margin-bottom: 10px; color: #991b1b;">
+            <i class="fas fa-exclamation-circle"></i> 품질 경고
+          </h3>
+          <p style="color: #7f1d1d; line-height: 1.6;">
+            현재 입력된 정보로 생성 시 <strong>콘텐츠 품질이 낮을 수 있습니다</strong>. 
+            입력 정보를 수정하거나, 그래도 진행하시려면 아래 버튼을 클릭하세요.
+          </p>
+          <p style="margin-top: 10px; color: #7f1d1d; font-size: 0.9rem;">
+            ⚠️ 강제 진행 시에도 <strong>크레딧은 정상적으로 차감</strong>됩니다.
+          </p>
+        </div>
+        
+        <!-- 버튼 -->
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button onclick="closeValidationModal()" style="padding: 12px 24px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            <i class="fas fa-times"></i> 닫기 (수정하기)
+          </button>
+          <button onclick="forceGenerate()" style="padding: 12px 24px; background: #dc2626; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            <i class="fas fa-bolt"></i> 무시하고 진행
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script src="/static/i18n.js?v=5.3.2"></script>
     <script src="/static/app-v3-final.js?v=8.1.2"></script>
 </body>
