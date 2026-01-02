@@ -1270,20 +1270,21 @@ export const htmlTemplate = `
         
         // 크레딧 상세 정보 모달
         function showCreditDetailsModal() {
-            alert('크레딧 상세 내역:\n\n잔액: ' + (document.getElementById('userCredits')?.textContent || '0') + ' 크레딧\n\n크레딧 사용 내역은 개발 중입니다.');
+            const credits = document.getElementById('userCredits')?.textContent || '0';
+            alert(`크레딧 상세 내역:\n\n잔액: ${credits} 크레딧\n\n크레딧 사용 내역은 개발 중입니다.`);
         }
         
         // 크레딧 충전 모달
         function showCreditPurchaseModal() {
-            const confirmed = confirm('크레딧 충전 페이지로 이동하시겠습니까?\n\n충전 옵션:\n- 10 크레딧: 10,000원\n- 50 크레딧: 45,000원 (10% 할인)\n- 100 크레딧: 80,000원 (20% 할인)');
+            const confirmed = confirm(`크레딧 충전 페이지로 이동하시겠습니까?\n\n충전 옵션:\n- 10 크레딧: 10,000원\n- 50 크레딧: 45,000원 (10% 할인)\n- 100 크레딧: 80,000원 (20% 할인)`);
             if (confirmed) {
-                alert('크레딧 충전 시스템은 개발 중입니다.\n\n문의: support@haruhanpo.com');
+                alert(`크레딧 충전 시스템은 개발 중입니다.\n\n문의: support@haruhanpo.com`);
             }
         }
     </script>
 
     <script src="/static/i18n.js?v=5.3.2"></script>
-    <script src="/static/app-v3-final.js?v=8.1.0"></script>
+    <script src="/static/app-v3-final.js?v=8.1.2"></script>
 </body>
 </html>
 `;
