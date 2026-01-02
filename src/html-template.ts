@@ -5,6 +5,16 @@ export const htmlTemplate = `
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>콘텐츠잇다 AI Studio</title>
+    
+    <!-- Google Analytics (GA4) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -138,6 +148,7 @@ export const htmlTemplate = `
     </style>
 </head>
 <body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 py-4">
         <!-- 네비게이션 바 -->
         <nav class="bg-white shadow-md rounded-2xl mb-8 px-6 py-4">
             <div class="flex justify-between items-center">
@@ -193,7 +204,7 @@ export const htmlTemplate = `
             </h2>
             <p class="text-xl mb-6 opacity-90">
                 이미지를 업로드하면 AI가 블로그·인스타·유튜브 등<br>
-                <strong>10개 플랫폼 맞춤 콘텐츠</strong>를 30초 안에 자동 생성합니다
+                <strong>5개 플랫폼 맞춤 콘텐츠</strong>를 30초 안에 자동 생성합니다
             </p>
             
             <div class="flex justify-center space-x-8 mb-8">
@@ -1070,11 +1081,11 @@ export const htmlTemplate = `
                     <h3 class="text-white text-lg font-bold mb-4">☕️ 하루한포 AI Studio</h3>
                     <p class="text-sm text-gray-400 mb-4">
                         이미지를 업로드하면 AI가 블로그·인스타·유튜브 등<br>
-                        10개 플랫폼 맞춤 콘텐츠를 30초 안에 자동 생성합니다.
+                        5개 플랫폼 맞춤 콘텐츠를 30초 안에 자동 생성합니다.
                     </p>
                     <div class="flex gap-4">
-                        <a href="mailto:support@haruhanpo.com" class="text-blue-400 hover:text-blue-300 transition">
-                            <i class="fas fa-envelope"></i> support@haruhanpo.com
+                        <a href="mailto:contentitda@naver.com" class="text-blue-400 hover:text-blue-300 transition">
+                            <i class="fas fa-envelope"></i> contentitda@naver.com
                         </a>
                     </div>
                 </div>
@@ -1086,7 +1097,7 @@ export const htmlTemplate = `
                         <li><a href="#" onclick="showRefundPolicy(); return false;" class="hover:text-white transition">환불 정책</a></li>
                         <li><a href="#" onclick="showPrivacyPolicy(); return false;" class="hover:text-white transition">개인정보 처리방침</a></li>
                         <li><a href="#" onclick="showTermsOfService(); return false;" class="hover:text-white transition">서비스 이용약관</a></li>
-                        <li><a href="mailto:support@haruhanpo.com" class="hover:text-white transition">문의하기</a></li>
+                        <li><a href="mailto:contentitda@naver.com" class="hover:text-white transition">문의하기</a></li>
                     </ul>
                 </div>
 
@@ -1234,8 +1245,20 @@ export const htmlTemplate = `
                     </p>
                     <ul class="list-disc list-inside space-y-1 text-gray-700">
                         <li>이메일: <a href="mailto:refund@haruhanpo.com" class="text-blue-600 hover:underline">refund@haruhanpo.com</a></li>
-                        <li>고객센터: 1234-5678 (평일 09:00~18:00)</li>
+                        <li>고객센터: 055-606-0826 (평일 09:00~18:00)</li>
                         <li>필수 정보: 주문번호, 구매일자, 환불 사유</li>
+                    </ul>
+                </div>
+
+                <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2">
+                        <i class="fas fa-gift text-yellow-600 mr-2"></i>래퍼럴(친구 초대) 보상 정책
+                    </h4>
+                    <ul class="text-sm text-gray-700 space-y-1 ml-6">
+                        <li><i class="fas fa-check-circle text-yellow-600 mr-2"></i><strong>추천인 보상:</strong> 친구가 첫 유료 충전 시 5 크레딧 지급</li>
+                        <li><i class="fas fa-check-circle text-yellow-600 mr-2"></i><strong>피추천인 보상:</strong> 회원가입 시 2 크레딧 즉시 지급</li>
+                        <li><i class="fas fa-check-circle text-yellow-600 mr-2"></i><strong>보상 유효기간:</strong> 추천 코드 사용 후 30일 이내 첫 충전 시 적용</li>
+                        <li><i class="fas fa-info-circle text-yellow-600 mr-2"></i>래퍼럴 시스템은 개발 중이며, 곧 출시될 예정입니다.</li>
                     </ul>
                 </div>
 
@@ -1262,10 +1285,16 @@ export const htmlTemplate = `
             document.getElementById('refundPolicyModal').style.display = 'none';
         }
         function showPrivacyPolicy() {
-            alert('개인정보 처리방침 페이지는 준비 중입니다.');
+            document.getElementById('privacyPolicyModal').style.display = 'flex';
+        }
+        function closePrivacyPolicy() {
+            document.getElementById('privacyPolicyModal').style.display = 'none';
         }
         function showTermsOfService() {
-            alert('서비스 이용약관 페이지는 준비 중입니다.');
+            document.getElementById('termsOfServiceModal').style.display = 'flex';
+        }
+        function closeTermsOfService() {
+            document.getElementById('termsOfServiceModal').style.display = 'none';
         }
         
         // 크레딧 상세 정보 모달
@@ -1278,7 +1307,7 @@ export const htmlTemplate = `
         function showCreditPurchaseModal() {
             const confirmed = confirm(\`크레딧 충전 페이지로 이동하시겠습니까?\\n\\n충전 옵션:\\n- 10 크레딧: 10,000원\\n- 50 크레딧: 45,000원 (10% 할인)\\n- 100 크레딧: 80,000원 (20% 할인)\`);
             if (confirmed) {
-                alert(\`크레딧 충전 시스템은 개발 중입니다.\\n\\n문의: support@haruhanpo.com\`);
+                alert(\`크레딧 충전 시스템은 개발 중입니다.\\n\\n문의: contentitda@naver.com\\n고객센터: 055-606-0826\`);
             }
         }
     </script>
@@ -1353,8 +1382,253 @@ export const htmlTemplate = `
       </div>
     </div>
 
+    <!-- 개인정보 처리방침 모달 -->
+    <div id="privacyPolicyModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
+      <div class="modal-content" style="background-color: #fefefe; padding: 30px; border-radius: 16px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; margin: 50px auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f59e0b; padding-bottom: 15px;">
+          <h2 style="font-size: 1.5rem; font-weight: 700; color: #1f2937;">
+            <i class="fas fa-shield-alt"></i> 개인정보 처리방침
+          </h2>
+          <button onclick="closePrivacyPolicy()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div style="line-height: 1.8; color: #374151;">
+          <p style="margin-bottom: 20px; color: #6b7280;">시행일자: 2026년 1월 2일</p>
+          
+          <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">1. 개인정보의 수집 및 이용 목적</h3>
+          <p style="margin-bottom: 15px;">
+            하루한포 스튜디오(이하 "회사")는 다음의 목적을 위하여 개인정보를 처리합니다:
+          </p>
+          <ul style="list-style: disc; margin-left: 20px; margin-bottom: 15px;">
+            <li>회원 가입 및 관리</li>
+            <li>AI 콘텐츠 생성 서비스 제공</li>
+            <li>서비스 이용 내역 관리 및 요금 정산</li>
+            <li>고객 문의 및 불만 처리</li>
+            <li>서비스 개선 및 신규 서비스 개발</li>
+          </ul>
+
+          <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">2. 수집하는 개인정보의 항목</h3>
+          <p style="margin-bottom: 10px;"><strong>필수 항목:</strong></p>
+          <ul style="list-style: disc; margin-left: 20px; margin-bottom: 15px;">
+            <li>이메일 주소</li>
+            <li>비밀번호 (암호화 저장)</li>
+            <li>서비스 이용 기록</li>
+          </ul>
+          <p style="margin-bottom: 10px;"><strong>선택 항목:</strong></p>
+          <ul style="list-style: disc; margin-left: 20px; margin-bottom: 15px;">
+            <li>업로드한 이미지 (콘텐츠 생성용)</li>
+            <li>브랜드명, 키워드 등 입력 정보</li>
+          </ul>
+
+          <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">3. 개인정보의 보유 및 이용 기간</h3>
+          <p style="margin-bottom: 15px;">
+            회원 탈퇴 시까지 보유하며, 관련 법령에 따라 일정 기간 보관이 필요한 경우 해당 기간 동안 보관합니다:
+          </p>
+          <ul style="list-style: disc; margin-left: 20px; margin-bottom: 15px;">
+            <li>계약 또는 청약철회 등에 관한 기록: 5년 (전자상거래법)</li>
+            <li>대금결제 및 재화 등의 공급에 관한 기록: 5년 (전자상거래법)</li>
+            <li>소비자의 불만 또는 분쟁처리에 관한 기록: 3년 (전자상거래법)</li>
+            <li>접속 로그 기록: 3개월 (통신비밀보호법)</li>
+          </ul>
+
+          <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">4. 개인정보의 제3자 제공</h3>
+          <p style="margin-bottom: 15px;">
+            회사는 원칙적으로 이용자의 개인정보를 제3자에게 제공하지 않습니다. 다만, 다음의 경우는 예외로 합니다:
+          </p>
+          <ul style="list-style: disc; margin-left: 20px; margin-bottom: 15px;">
+            <li>이용자가 사전에 동의한 경우</li>
+            <li>법령의 규정에 의거하거나 수사 목적으로 법령에 정해진 절차와 방법에 따라 수사기관의 요구가 있는 경우</li>
+          </ul>
+
+          <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">5. 개인정보의 처리 위탁</h3>
+          <p style="margin-bottom: 10px;">회사는 원활한 서비스 제공을 위해 다음과 같이 개인정보 처리를 위탁하고 있습니다:</p>
+          <ul style="list-style: disc; margin-left: 20px; margin-bottom: 15px;">
+            <li>Supabase: 회원 정보 및 데이터 저장</li>
+            <li>OpenAI, Google Gemini: AI 콘텐츠 생성 (이미지 분석 및 텍스트 생성)</li>
+            <li>Cloudflare: 웹 호스팅 및 CDN 서비스</li>
+          </ul>
+
+          <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">6. 정보주체의 권리·의무 및 행사방법</h3>
+          <p style="margin-bottom: 15px;">
+            이용자는 언제든지 다음의 권리를 행사할 수 있습니다:
+          </p>
+          <ul style="list-style: disc; margin-left: 20px; margin-bottom: 15px;">
+            <li>개인정보 열람 요구</li>
+            <li>개인정보 정정·삭제 요구</li>
+            <li>개인정보 처리정지 요구</li>
+          </ul>
+          <p style="margin-bottom: 15px;">
+            권리 행사는 서면, 전화, 이메일 등을 통해 가능하며, 회사는 지체 없이 조치하겠습니다.
+          </p>
+
+          <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">7. 개인정보 보호책임자</h3>
+          <p style="margin-bottom: 15px;">
+            회사는 개인정보 처리에 관한 업무를 총괄해서 책임지고, 개인정보 처리와 관련한 정보주체의 불만처리 및 피해구제를 위하여 아래와 같이 개인정보 보호책임자를 지정하고 있습니다:
+          </p>
+          <ul style="list-style: none; margin-left: 0; margin-bottom: 15px;">
+            <li><strong>이메일:</strong> contentitda@naver.com</li>
+            <li><strong>전화번호:</strong> 055-606-0826</li>
+          </ul>
+
+          <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">8. 개인정보 처리방침의 변경</h3>
+          <p style="margin-bottom: 15px;">
+            이 개인정보 처리방침은 시행일로부터 적용되며, 법령 및 방침에 따른 변경내용의 추가, 삭제 및 정정이 있는 경우에는 변경사항의 시행 7일 전부터 공지사항을 통하여 고지할 것입니다.
+          </p>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+          <button onclick="closePrivacyPolicy()" style="padding: 12px 24px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            <i class="fas fa-check"></i> 확인
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 서비스 이용약관 모달 -->
+    <div id="termsOfServiceModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
+      <div class="modal-content" style="background-color: #fefefe; padding: 30px; border-radius: 16px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; margin: 50px auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f59e0b; padding-bottom: 15px;">
+          <h2 style="font-size: 1.5rem; font-weight: 700; color: #1f2937;">
+            <i class="fas fa-file-contract"></i> 서비스 이용약관
+          </h2>
+          <button onclick="closeTermsOfService()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div style="line-height: 1.8; color: #374151;">
+          <p style="margin-bottom: 20px; color: #6b7280;">시행일자: 2026년 1월 2일</p>
+          
+          <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">제1조 (목적)</h3>
+          <p style="margin-bottom: 15px;">
+            본 약관은 하루한포 스튜디오(이하 "회사")가 제공하는 AI 콘텐츠 생성 서비스(이하 "서비스")의 이용과 관련하여 회사와 이용자 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.
+          </p>
+
+          <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">제2조 (정의)</h3>
+          <ul style="list-style: decimal; margin-left: 20px; margin-bottom: 15px;">
+            <li>"서비스"란 회사가 제공하는 AI 기반 멀티 플랫폼 콘텐츠 생성 서비스를 의미합니다.</li>
+            <li>"이용자"란 본 약관에 따라 회사가 제공하는 서비스를 이용하는 회원 및 비회원을 말합니다.</li>
+            <li>"회원"이란 회사와 서비스 이용계약을 체결하고 아이디를 부여받은 자를 말합니다.</li>
+            <li>"크레딧"이란 서비스 이용을 위해 회사가 발행하는 가상의 결제 수단을 말합니다.</li>
+          </ul>
+
+          <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">제3조 (약관의 효력 및 변경)</h3>
+          <p style="margin-bottom: 15px;">
+            1. 본 약관은 서비스 화면에 게시하거나 기타의 방법으로 이용자에게 공지함으로써 효력이 발생합니다.<br>
+            2. 회사는 필요한 경우 관련 법령을 위배하지 않는 범위에서 본 약관을 변경할 수 있으며, 약관이 변경되는 경우 변경사항을 시행일자 7일 전에 공지합니다.<br>
+            3. 이용자가 변경된 약관에 동의하지 않는 경우 서비스 이용을 중단하고 회원 탈퇴를 할 수 있습니다.
+          </p>
+
+          <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">제4조 (회원가입)</h3>
+          <p style="margin-bottom: 15px;">
+            1. 이용자는 회사가 정한 가입 양식에 따라 회원정보를 기입한 후 본 약관에 동의한다는 의사표시를 함으로써 회원가입을 신청합니다.<br>
+            2. 회사는 제1항과 같이 회원으로 가입할 것을 신청한 이용자 중 다음 각 호에 해당하지 않는 한 회원으로 등록합니다:
+          </p>
+          <ul style="list-style: disc; margin-left: 40px; margin-bottom: 15px;">
+            <li>타인의 명의를 이용한 경우</li>
+            <li>허위 정보를 기재한 경우</li>
+            <li>사회의 안녕과 질서 또는 미풍양속을 저해할 목적으로 신청한 경우</li>
+            <li>기타 회사가 정한 이용신청 요건을 충족하지 못한 경우</li>
+          </ul>
+
+          <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">제5조 (서비스의 제공 및 변경)</h3>
+          <p style="margin-bottom: 15px;">
+            1. 회사는 다음과 같은 서비스를 제공합니다:
+          </p>
+          <ul style="list-style: disc; margin-left: 40px; margin-bottom: 15px;">
+            <li>AI 기반 이미지 분석 서비스</li>
+            <li>블로그, 인스타그램, 스레드, 유튜브, 틱톡 등 멀티 플랫폼 콘텐츠 생성</li>
+            <li>크레딧 기반 서비스 이용</li>
+            <li>기타 회사가 추가 개발하거나 제휴계약 등을 통해 이용자에게 제공하는 일체의 서비스</li>
+          </ul>
+          <p style="margin-bottom: 15px;">
+            2. 회사는 서비스의 내용 및 제공 일자를 변경할 수 있으며, 이 경우 변경 사유 및 내용을 서비스 화면에 사전 공지합니다.
+          </p>
+
+          <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">제6조 (크레딧 및 요금)</h3>
+          <p style="margin-bottom: 15px;">
+            1. 서비스 이용을 위해서는 크레딧이 필요하며, 콘텐츠 생성 플랫폼별로 차등 차감됩니다.<br>
+            2. 회원은 크레딧을 충전하여 사용할 수 있으며, 충전 방법 및 금액은 회사가 정한 바에 따릅니다.<br>
+            3. 크레딧의 유효기간은 충전일로부터 1년이며, 기간 내 미사용 시 자동 소멸됩니다.<br>
+            4. 크레딧은 타인에게 양도하거나 환불할 수 없습니다. 단, 관련 법령 또는 회사 정책에 따라 예외가 인정될 수 있습니다.
+          </p>
+
+          <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">제7조 (환불 정책)</h3>
+          <p style="margin-bottom: 15px;">
+            1. 다음 각 호의 경우 환불이 가능합니다:
+          </p>
+          <ul style="list-style: disc; margin-left: 40px; margin-bottom: 15px;">
+            <li>서비스 장애로 인해 콘텐츠 생성이 불가능한 경우</li>
+            <li>생성된 콘텐츠가 명백히 요청 내용과 무관한 경우</li>
+            <li>기타 회사의 귀책사유로 서비스 이용이 불가능한 경우</li>
+          </ul>
+          <p style="margin-bottom: 15px;">
+            2. 다음 각 호의 경우 환불이 불가능합니다:
+          </p>
+          <ul style="list-style: disc; margin-left: 40px; margin-bottom: 15px;">
+            <li>이미 콘텐츠가 정상적으로 생성되어 제공된 경우</li>
+            <li>이용자의 단순 변심 또는 이용자의 귀책사유로 인한 경우</li>
+            <li>생성된 콘텐츠의 품질이 주관적 기대에 미치지 못하는 경우 (기술적 오류가 아닌 경우)</li>
+          </ul>
+          <p style="margin-bottom: 15px;">
+            3. 환불 요청은 고객센터(055-606-0826 또는 contentitda@naver.com)를 통해 가능합니다.
+          </p>
+
+          <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">제8조 (이용자의 의무)</h3>
+          <p style="margin-bottom: 15px;">
+            이용자는 다음 행위를 하여서는 안 됩니다:
+          </p>
+          <ul style="list-style: disc; margin-left: 40px; margin-bottom: 15px;">
+            <li>신청 또는 변경 시 허위 내용의 등록</li>
+            <li>타인의 정보 도용</li>
+            <li>회사가 게시한 정보의 변경</li>
+            <li>회사가 정한 정보 이외의 정보 등의 송신 또는 게시</li>
+            <li>회사와 기타 제3자의 저작권 등 지적재산권에 대한 침해</li>
+            <li>회사 및 기타 제3자의 명예를 손상시키거나 업무를 방해하는 행위</li>
+            <li>외설 또는 폭력적인 메시지, 화상, 음성, 기타 공서양속에 반하는 정보를 서비스에 공개 또는 게시하는 행위</li>
+          </ul>
+
+          <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">제9조 (저작권)</h3>
+          <p style="margin-bottom: 15px;">
+            1. 서비스에 의해 생성된 콘텐츠의 저작권은 이용자에게 귀속됩니다.<br>
+            2. 단, 회사는 서비스 개선 및 홍보 목적으로 생성된 콘텐츠를 활용할 수 있습니다. (개인정보는 제외)<br>
+            3. 이용자가 업로드한 이미지 및 입력 정보는 AI 학습에 사용되지 않습니다.
+          </p>
+
+          <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">제10조 (면책조항)</h3>
+          <p style="margin-bottom: 15px;">
+            1. 회사는 천재지변 또는 이에 준하는 불가항력으로 인하여 서비스를 제공할 수 없는 경우에는 서비스 제공에 관한 책임이 면제됩니다.<br>
+            2. 회사는 이용자의 귀책사유로 인한 서비스 이용의 장애에 대하여 책임을 지지 않습니다.<br>
+            3. 회사는 이용자가 서비스를 이용하여 기대하는 수익을 얻지 못한 것에 대하여 책임을 지지 않습니다.<br>
+            4. 회사는 AI가 생성한 콘텐츠의 정확성, 신뢰성, 적법성에 대해 보증하지 않으며, 이용자는 생성된 콘텐츠를 사용하기 전 반드시 검토해야 합니다.
+          </p>
+
+          <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">제11조 (분쟁해결)</h3>
+          <p style="margin-bottom: 15px;">
+            1. 회사는 이용자가 제기하는 정당한 의견이나 불만을 반영하고 그 피해를 보상처리하기 위하여 피해보상처리기구를 설치·운영합니다.<br>
+            2. 본 약관에 명시되지 않은 사항은 전기통신사업법 등 관계법령과 상관례에 따릅니다.<br>
+            3. 서비스 이용으로 발생한 분쟁에 대해 소송이 제기될 경우 회사의 본사 소재지를 관할하는 법원을 전속 관할 법원으로 합니다.
+          </p>
+
+          <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">부칙</h3>
+          <p style="margin-bottom: 15px;">
+            본 약관은 2026년 1월 2일부터 시행합니다.
+          </p>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+          <button onclick="closeTermsOfService()" style="padding: 12px 24px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            <i class="fas fa-check"></i> 확인
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script src="/static/i18n.js?v=5.3.2"></script>
     <script src="/static/app-v3-final.js?v=8.1.4"></script>
+    </div><!-- max-w-7xl container -->
 </body>
 </html>
 `;
