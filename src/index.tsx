@@ -322,8 +322,18 @@ app.post('/api/generate/batch', async (c) => {
 
 // API 라우트: 이미지 분석 및 콘텐츠 생성
 app.post('/api/generate', async (c) => {
+  console.log('🚀 /api/generate 요청 시작');
+  
   try {
     const body = await c.req.json();
+    console.log('📦 요청 데이터:', {
+      brand: body.brand,
+      keywords: body.keywords,
+      imageCount: body.images?.length,
+      platformCount: body.platforms?.length,
+      platforms: body.platforms,
+    });
+    
     const {
       user_id, // ✅ 추가: 사용자 식별
       is_guest = false, // ✅ 추가: 비회원 여부
@@ -348,6 +358,7 @@ app.post('/api/generate', async (c) => {
 
     // 입력 검증
     if (!brand || !keywords || !images || !platforms) {
+      console.error('❌ 필수 입력 항목 누락:', { brand: !!brand, keywords: !!keywords, images: !!images, platforms: !!platforms });
       return c.json(
         {
           success: false,
@@ -722,6 +733,12 @@ ${combinedImageDescription}
       contentStrategy: contentStrategy, // 하이브리드 전략 추가
     };
 
+    // ⚠️ 플랫폼 수 제한 (타임아웃 방지)
+    if (platforms.length > 3) {
+      console.warn('⚠️ 플랫폼이 3개를 초과합니다. 처음 3개만 생성합니다:', platforms.slice(0, 3));
+      platforms.splice(3);
+    }
+
     // 🚀 하이브리드 전략 적용
     const generationTasks = [];
     let totalCost = { openai: 0, gemini: 0 };
@@ -849,8 +866,21 @@ ${combinedImageDescription}
       }
     }
 
-    // 모든 생성 작업 완료 대기
-    const results = await Promise.all(generationTasks);
+    // 모든 생성 작업 완료 대기 (순차 처리로 타임아웃 방지)
+    console.log(`🔄 콘텐츠 생성 시작 (${generationTasks.length}개 플랫폼, 순차 처리)`);
+    const results = [];
+    for (let i = 0; i < generationTasks.length; i++) {
+      console.log(`  [${i + 1}/${generationTasks.length}] 생성 중...`);
+      try {
+        const result = await generationTasks[i];
+        results.push(result);
+        console.log(`  ✅ [${i + 1}/${generationTasks.length}] 완료:`, result.platform);
+      } catch (error: any) {
+        console.error(`  ❌ [${i + 1}/${generationTasks.length}] 실패:`, error.message);
+        // 에러 발생 시에도 계속 진행
+        results.push({ platform: 'error', content: `생성 실패: ${error.message}` });
+      }
+    }
 
     // 결과를 객체로 변환
     const data: Record<string, string> = {};
@@ -970,8 +1000,8 @@ ${combinedImageDescription}
       imageCount: images.length,
       strategy: {
         selected: contentStrategy,
-        confidence: validation?.overallConfidence || 100,
-        reason: validation?.reason || '기본 전략 사용',
+        confidence: comprehensiveValidation?.overallConfidence || 100,
+        reason: comprehensiveValidation?.reason || '기본 전략 사용',
         imageSummary: combinedImageDescription || '',
         userInputSummary: `${brand} - ${keywords}`,
       },
