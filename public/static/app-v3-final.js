@@ -1149,12 +1149,14 @@ async function fetchExchangeRate() {
 }
 
 function updateCostEstimate() {
-  // 개별 콘텐츠 블록의 총 이미지 수 계산
+  // 개별 콘텐츠 블록의 총 이미지 및 문서 수 계산
   let totalImageCount = 0;
+  let totalDocumentCount = 0;
   const contentCount = Object.keys(contentBlocks).length;
   
   Object.values(contentBlocks).forEach(block => {
     totalImageCount += (block.images || []).length;
+    totalDocumentCount += (block.documents || []).length;
   });
   
   const platformCheckboxes = document.querySelectorAll('input[name="platform"]:checked');
@@ -1300,6 +1302,12 @@ function updateCostEstimate() {
           <span>📸 분석할 이미지:</span>
           <span style="font-weight: 600;">${totalImageCount}장</span>
         </div>
+        ${totalDocumentCount > 0 ? `
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+          <span>📎 첨부 문서:</span>
+          <span style="font-weight: 600;">${totalDocumentCount}개</span>
+        </div>
+        ` : ''}
         <div style="display: flex; justify-content: space-between;">
           <span>✨ 생성할 콘텐츠:</span>
           <span style="font-weight: 600;">${contentCount}개 × ${platformCount}개 플랫폼</span>
