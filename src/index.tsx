@@ -998,10 +998,15 @@ async function generateContent(
 // 사용자 동기화 엔드포인트
 app.post('/api/auth/sync', async (c) => {
   try {
+    console.log('🔄 /api/auth/sync 요청 받음');
+    
     const body = await c.req.json();
     const { user_id, email, name } = body;
     
+    console.log('📝 요청 데이터:', { user_id, email, name });
+    
     if (!user_id || !email) {
+      console.error('❌ user_id 또는 email 누락:', { user_id, email });
       return c.json({ error: 'user_id와 email은 필수입니다' }, 400);
     }
     
@@ -1010,6 +1015,8 @@ app.post('/api/auth/sync', async (c) => {
       c.env.SUPABASE_URL,
       c.env.SUPABASE_SERVICE_KEY
     );
+    
+    console.log('🔍 Supabase에서 사용자 조회 중:', user_id);
     
     // Supabase에 사용자 정보 조회 (UPSERT 대신 SELECT → INSERT/UPDATE)
     const { data: existingUser, error: selectError } = await supabase
@@ -1023,6 +1030,7 @@ app.post('/api/auth/sync', async (c) => {
     
     // 신규 사용자인 경우
     if (selectError && selectError.code === 'PGRST116') {
+      console.log('🆕 신규 사용자 생성 중:', email);
       // 신규 가입: users 테이블에 INSERT (트리거가 5크레딧 자동 지급)
       const { data: newUser, error: insertError } = await supabase
         .from('users')
