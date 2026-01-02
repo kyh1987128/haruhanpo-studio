@@ -9,4 +9,10 @@
   // 환경 변수 설정
   // 로컬 개발: .dev.vars 파일 사용
   // 프로덕션: wrangler pages secret 사용 (이미 설정됨)
+  // 
+  // ⚠️ Cloudflare Pages는 vars를 통해 환경 변수를 바인딩해야 함
+  // Secret은 Cloudflare Dashboard에서 설정
+  "vars": {
+    "SUPABASE_URL": "https://gmjbsndricdogtqsovnb.supabase.co"
+  }
 }
