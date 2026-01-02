@@ -1971,9 +1971,9 @@ async function handleGenerate() {
     contentStrategy: document.querySelector('input[name="contentStrategy"]:checked')?.value || 'auto', // 🔥 NEW v6.1
     images: content.images.map((img) => img.base64),
     documents: (content.documents || []).map((doc) => ({
-      filename: doc.filename,
-      content: doc.base64,
-      mimeType: doc.mimeType
+      filename: doc.filename || doc.name,      // ✅ 필드명 호환성
+      content: doc.base64 || doc.dataUrl,      // ✅ 필드명 호환성
+      mimeType: doc.mimeType || doc.type       // ✅ 필드명 호환성
     })), // ✅ 첨부 문서 추가
     platforms,
     aiModel: 'gpt-4o',
@@ -3882,11 +3882,10 @@ function handleContentDocumentUpload(contentIndex) {
     const reader = new FileReader();
     reader.onload = (e) => {
       contentBlocks[contentIndex].documents.push({
-        file: file,
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        dataUrl: e.target.result
+        filename: file.name,        // ✅ name → filename
+        base64: e.target.result,    // ✅ dataUrl → base64
+        mimeType: file.type,        // ✅ type → mimeType
+        size: file.size             // ✅ 크기 정보 유지
       });
       renderContentDocumentList(contentIndex);
     };
@@ -3910,8 +3909,8 @@ function renderContentDocumentList(contentIndex) {
   }
 
   container.innerHTML = documents.map((doc, docIndex) => {
-    const icon = doc.type.includes('pdf') ? 'fa-file-pdf text-red-500' :
-                 doc.type.includes('word') ? 'fa-file-word text-blue-500' :
+    const icon = doc.mimeType.includes('pdf') ? 'fa-file-pdf text-red-500' :
+                 doc.mimeType.includes('word') ? 'fa-file-word text-blue-500' :
                  'fa-file-alt text-gray-500';
     
     const sizeKB = Math.round(doc.size / 1024);
@@ -3921,7 +3920,7 @@ function renderContentDocumentList(contentIndex) {
         <div class="flex items-center space-x-2">
           <i class="fas ${icon} text-lg"></i>
           <div>
-            <div class="font-medium text-xs text-gray-800">${doc.name}</div>
+            <div class="font-medium text-xs text-gray-800">${doc.filename}</div>
             <div class="text-xs text-gray-500">${sizeKB} KB</div>
           </div>
         </div>
