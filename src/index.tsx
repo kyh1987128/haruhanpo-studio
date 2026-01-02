@@ -575,145 +575,37 @@ app.post('/api/generate', async (c) => {
       .map((img) => `[이미지 ${img.index}]\n${img.description}`)
       .join('\n\n');
 
-    console.log('이미지 분석 완료. 종합 검증 시스템 시작...');
+    console.log('이미지 분석 완료. 콘텐츠 생성 준비...');
+    console.log('📸 결합된 이미지 설명:', combinedImageDescription.substring(0, 500) + '...');
 
-    // 2단계: 🚀 종합 검증 시스템 - 모든 입력 항목의 일관성 검증
-    let contentStrategy: 'integrated' | 'image-first' | 'keyword-first' | 'document-first' = 'integrated';
+    // 2단계: 간소화된 검증 - 매우 낮은 confidence만 경고
+    let contentStrategy: 'integrated' | 'image-first' | 'keyword-first' | 'document-first' = 'image-first'; // 기본값을 image-first로
     let comprehensiveValidation: any = null;
 
-    if (!forceGenerate) {
-      try {
-        const validationResponse = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: '당신은 콘텐츠 마케팅 전문가입니다. 사용자가 입력한 모든 정보의 일관성을 검증하고 최적의 콘텐츠 전략을 제안합니다.',
-            },
-            {
-              role: 'user',
-              content: `사용자가 입력한 정보가 서로 일관성이 있는지 종합적으로 분석해주세요.
-
-📸 이미지 분석 결과:
-${combinedImageDescription}
-
-📝 사용자 입력 정보:
-- 브랜드명/서비스명: ${brand}
-- 회사명: ${companyName || '없음'}
-- 업종: ${businessType || '없음'}
-- 웹사이트: ${website || '없음'}
-- SNS: ${sns || '없음'}
-- 핵심 키워드: ${keywords}
-- 산업 분야: ${industry}
-- 톤앤매너: ${tone}
-- 타겟 연령대: ${targetAge}
-- 타겟 성별: ${targetGender || '없음'}
-- 지역: ${location || '없음'}
-- 연락처: ${contact || '없음'}
-
-아래 JSON 형식으로 응답하세요:
-{
-  "isConsistent": true/false,
-  "overallConfidence": 0-100,
-  "conflicts": [
-    {
-      "type": "image-keyword" | "image-brand" | "brand-website" | "industry-keyword" | "target-content",
-      "severity": "high" | "medium" | "low",
-      "description": "불일치 상세 설명 (한글, 100자 이내)",
-      "items": ["항목1", "항목2"],
-      "suggestion": "수정 제안 (한글, 100자 이내)"
-    }
-  ],
-  "strategy": "integrated" | "image-first" | "keyword-first",
-  "reason": "전략 선택 이유 (한글, 200자 이내)",
-  "recommendation": "사용자에게 안내할 메시지 (한글, 150자 이내)"
-}
-
-검증 기준:
-
-1️⃣ 이미지-키워드 일치성
-   - 이미지 내용과 키워드가 관련 있는가?
-   - 예: 카페 사진 + "IT 서비스" → high severity
-
-2️⃣ 브랜드-이미지 일치성
-   - 브랜드명과 이미지가 관련 있는가?
-   - 예: "테슬라" + 카페 사진 → medium severity
-
-3️⃣ 브랜드-웹사이트 일치성
-   - 브랜드명과 웹사이트 도메인이 일치하는가?
-   - 예: "테슬라" + "samsung.com" → medium severity
-
-4️⃣ 산업-키워드 일치성
-   - 산업 분야와 키워드가 관련 있는가?
-   - 예: "제조업" + "IT 컨설팅" → low severity
-
-5️⃣ 타겟-콘텐츠 일치성
-   - 타겟 연령대/성별과 콘텐츠가 맞는가?
-   - 예: "60대" + "트렌디한 SNS" → low severity
-
-6️⃣ 종합 판단
-   - high severity 충돌 2개 이상 → isConsistent: false
-   - medium severity 충돌 3개 이상 → isConsistent: false
-   - overallConfidence 40 미만 → isConsistent: false
-
-전략 선택:
-- integrated: 모든 요소 조화롭게 활용 (confidence 70+)
-- image-first: 이미지 중심, 키워드 보조 (confidence 50-69)
-- keyword-first: 키워드 중심, 이미지 참고 (confidence 30-49)
-
-⚠️ 중요: 사소한 불일치는 허용하고, 명백한 모순만 충돌로 판단하세요.`,
-            },
-          ],
-          temperature: 0.3,
-          max_tokens: 1000,
-        });
-
-        const validationText = validationResponse.choices[0].message.content || '{}';
-        const cleanedText = validationText.replace(/```json\n?|\n?```/g, '').trim();
-        comprehensiveValidation = JSON.parse(cleanedText);
-
-        console.log('종합 검증 결과:', comprehensiveValidation);
-
-        // 전략 자동 선택
-        contentStrategy = comprehensiveValidation.strategy || 'integrated';
-        
-        console.log(`선택된 전략: ${contentStrategy} (confidence: ${comprehensiveValidation.overallConfidence})`);
-        console.log(`전략 이유: ${comprehensiveValidation.reason}`);
-
-        // overallConfidence 40 미만 또는 high severity 충돌 있으면 경고
-        const hasHighSeverity = comprehensiveValidation.conflicts?.some((c: any) => c.severity === 'high');
-        
-        if (comprehensiveValidation.overallConfidence < 40 || hasHighSeverity) {
-          return c.json({
-            success: false,
-            requireConfirmation: true,
-            validation: {
-              isConsistent: comprehensiveValidation.isConsistent,
-              confidence: comprehensiveValidation.overallConfidence,
-              conflicts: comprehensiveValidation.conflicts || [],
-              strategy: contentStrategy,
-              reason: comprehensiveValidation.reason,
-              recommendation: comprehensiveValidation.recommendation,
-            },
-            message: '⚠️ 입력하신 정보에 일관성 문제가 있습니다. 확인해주세요.',
-          });
-        }
-
-      } catch (error: any) {
-        console.error('종합 검증 오류:', error.message);
-        // 검증 실패 시 기본 전략 사용
-        contentStrategy = 'integrated';
-        console.log('검증 분석 실패, 기본 전략(integrated) 사용');
-      }
-    } else {
-      console.log('검증 우회 (사용자가 강제 진행 선택)');
-      // 강제 진행 시 문서가 있으면 document-first, 없으면 keyword-first
-      contentStrategy = 'keyword-first';
+    // forceGenerate가 아니고, 이미지 설명이 너무 짧으면 경고
+    if (!forceGenerate && combinedImageDescription.length < 100) {
+      return c.json({
+        success: false,
+        requireConfirmation: true,
+        validation: {
+          isConsistent: false,
+          confidence: 20,
+          conflicts: [{
+            type: 'image-analysis',
+            severity: 'high',
+            description: '이미지 분석 결과가 불충분합니다.',
+            items: ['이미지 분석'],
+            suggestion: '더 명확한 이미지를 업로드하거나, 키워드를 구체적으로 입력해주세요.'
+          }],
+          strategy: 'keyword-first',
+          reason: '이미지 분석 실패',
+          recommendation: '이미지를 다시 확인하거나, 키워드 중심으로 진행하세요.',
+        },
+        message: '⚠️ 이미지 분석이 불충분합니다. 확인 후 다시 시도해주세요.',
+      });
     }
 
-    console.log(`전략 결정 완료: ${contentStrategy}. 콘텐츠 생성 시작...`);
-
-    console.log(`하이브리드 전략 결정 완료: ${contentStrategy}. 콘텐츠 생성 시작...`);
+    console.log(`전략 결정: ${contentStrategy}. 콘텐츠 생성 시작...`);
 
     // 3단계: 선택된 플랫폼만 콘텐츠 생성 (병렬 처리)
     const promptParams = {
