@@ -6,6 +6,7 @@ import { getBlogPrompt, getInstagramPrompt, getThreadsPrompt, getYouTubePrompt, 
 import { htmlTemplate } from './html-template';
 import { analyzeImageWithGemini, generateContentWithGemini, calculateGeminiCost, estimateTokens } from './gemini';
 import { createSupabaseAdmin, createSupabaseClient, grantMilestoneCredit, updateConsecutiveLogin, checkAndUseMonthlyQuota } from './lib/supabase';
+import { parseMultipleDocuments, combineDocumentTexts, truncateText } from './document-parser';
 
 type Bindings = {
   OPENAI_API_KEY: string;
@@ -339,6 +340,7 @@ app.post('/api/generate', async (c) => {
       targetAge,
       industry,
       images, // base64 이미지 배열
+      documents = [], // 📄 NEW: 첨부 문서 배열
       platforms, // ['blog', 'instagram', 'threads', 'youtube']
       aiModel = 'gpt-4o', // AI 모델 선택 (기본값: gpt-4o)
       apiKey, // 클라이언트에서 전달받은 API 키
@@ -495,6 +497,24 @@ app.post('/api/generate', async (c) => {
     // 🚀 하이브리드 전략: Gemini API 키 확인
     const geminiApiKey = c.env.GEMINI_API_KEY;
     
+    // 📄 NEW: 첨부 문서 파싱
+    let documentText = '';
+    if (documents && documents.length > 0) {
+      console.log(`📚 첨부 문서 ${documents.length}개 파싱 시작...`);
+      try {
+        const parsedTexts = await parseMultipleDocuments(documents);
+        const fileNames = documents.map((doc: any) => doc.name || 'Untitled');
+        const combinedText = combineDocumentTexts(parsedTexts, fileNames);
+        documentText = truncateText(combinedText, 5000); // 최대 5000자로 제한
+        console.log(`✅ 문서 파싱 완료: ${documentText.length}자`);
+      } catch (error: any) {
+        console.error('❌ 문서 파싱 오류:', error.message);
+        documentText = '[문서 파싱 중 오류가 발생했습니다]';
+      }
+    } else {
+      console.log('📄 첨부 문서 없음');
+    }
+    
     // 1단계: 모든 이미지 상세 분석 (Gemini Flash 사용 - 70% 비용 절감)
     console.log(`✨ [하이브리드] 이미지 ${images.length}장 분석 시작 (Gemini Flash)...`);
     const imageAnalyses = await Promise.all(
@@ -561,112 +581,151 @@ app.post('/api/generate', async (c) => {
       .map((img) => `[이미지 ${img.index}]\n${img.description}`)
       .join('\n\n');
 
-    console.log('이미지 분석 완료. 하이브리드 전략 분석 시작...');
+    console.log('이미지 분석 완료. 종합 검증 시스템 시작...');
 
-    // 2단계: 하이브리드 AI 판단 시스템 - 이미지-변수 매칭 분석 및 전략 자동 선택
-    let contentStrategy: 'integrated' | 'image-first' | 'keyword-first' = 'integrated';
-    let matchingAnalysis: any = null;
+    // 2단계: 🚀 종합 검증 시스템 - 모든 입력 항목의 일관성 검증
+    let contentStrategy: 'integrated' | 'image-first' | 'keyword-first' | 'document-first' = 'integrated';
+    let comprehensiveValidation: any = null;
 
     if (!forceGenerate) {
       try {
-        const strategyResponse = await openai.chat.completions.create({
+        const validationResponse = await openai.chat.completions.create({
           model: 'gpt-4o',
           messages: [
             {
               role: 'system',
-              content: '당신은 이미지와 텍스트 콘텐츠의 연관성을 분석하고 최적의 콘텐츠 생성 전략을 판단하는 전문가입니다.',
+              content: '당신은 콘텐츠 마케팅 전문가입니다. 사용자가 입력한 모든 정보의 일관성을 검증하고 최적의 콘텐츠 전략을 제안합니다.',
             },
             {
               role: 'user',
-              content: `다음 이미지 분석 결과와 사용자 입력 정보를 바탕으로 최적의 콘텐츠 생성 전략을 결정해주세요.
+              content: `사용자가 입력한 정보가 서로 일관성이 있는지 종합적으로 분석해주세요.
 
 📸 이미지 분석 결과:
 ${combinedImageDescription}
 
+📄 첨부 문서 내용:
+${documentText || '없음'}
+
 📝 사용자 입력 정보:
 - 브랜드명/서비스명: ${brand}
+- 회사명: ${companyName || '없음'}
+- 업종: ${businessType || '없음'}
+- 웹사이트: ${website || '없음'}
+- SNS: ${sns || '없음'}
 - 핵심 키워드: ${keywords}
 - 산업 분야: ${industry}
 - 톤앤매너: ${tone}
 - 타겟 연령대: ${targetAge}
+- 타겟 성별: ${targetGender || '없음'}
+- 지역: ${location || '없음'}
+- 연락처: ${contact || '없음'}
 
-아래 JSON 형식으로만 응답하세요:
+아래 JSON 형식으로 응답하세요:
 {
-  "isMatch": true 또는 false,
-  "confidence": 0-100 사이의 숫자 (일치 확신도),
-  "strategy": "integrated" | "image-first" | "keyword-first",
-  "reason": "전략 선택 이유 (한글, 150자 이내)",
-  "imageSummary": "이미지 주요 내용 (한글, 50자 이내)",
-  "userInputSummary": "사용자 키워드 요약 (한글, 50자 이내)",
-  "recommendation": "사용자 안내 메시지 (한글, 100자 이내)"
+  "isConsistent": true/false,
+  "overallConfidence": 0-100,
+  "conflicts": [
+    {
+      "type": "image-keyword" | "image-brand" | "document-keyword" | "brand-website" | "industry-keyword" | "target-content",
+      "severity": "high" | "medium" | "low",
+      "description": "불일치 상세 설명 (한글, 100자 이내)",
+      "items": ["항목1", "항목2"],
+      "suggestion": "수정 제안 (한글, 100자 이내)"
+    }
+  ],
+  "strategy": "integrated" | "image-first" | "keyword-first" | "document-first",
+  "reason": "전략 선택 이유 (한글, 200자 이내)",
+  "recommendation": "사용자에게 안내할 메시지 (한글, 150자 이내)"
 }
 
-전략 선택 기준:
+검증 기준:
 
-1️⃣ "integrated" (통합형) - confidence 70 이상
-   - 이미지와 키워드가 서로 잘 맞음
-   - 예: 화장품 사진 + "보습크림" 키워드 ✅
-   - 예: 카페 사진 + "카페 인테리어" 키워드 ✅
+1️⃣ 이미지-키워드 일치성
+   - 이미지 내용과 키워드가 관련 있는가?
+   - 예: 카페 사진 + "IT 서비스" → high severity
 
-2️⃣ "image-first" (이미지 중심) - confidence 50-69
-   - 이미지가 명확하지만 키워드와 약간 다름
-   - 이미지가 더 풍부한 정보를 담고 있음
-   - 예: 레스토랑 사진 + "카페" 키워드 → 레스토랑으로 작성
-   - 예: 제품 다각도 사진 + 일반적인 키워드 → 제품 중심
+2️⃣ 브랜드-이미지 일치성
+   - 브랜드명과 이미지가 관련 있는가?
+   - 예: "테슬라" + 카페 사진 → medium severity
 
-3️⃣ "keyword-first" (키워드 중심) - confidence 50 미만
-   - 이미지와 키워드가 명확히 다름
-   - SEO를 위해 키워드 우선 필요
-   - 예: 카페 사진 + "보습크림" 키워드 → 보습크림으로 작성
-   - 예: 풍경 사진 + "IT 서비스" 키워드 → IT 서비스로 작성
+3️⃣ 문서-키워드 일치성
+   - 첨부 문서 내용과 키워드가 관련 있는가?
+   - 예: "스킨케어 가이드" + "IT 컨설팅" → high severity
 
-⚠️ 중요: 자연스러운 콘텐츠 생성이 목표입니다. 억지로 끼워맞추지 말고 최적의 전략을 선택하세요.`,
+4️⃣ 브랜드-웹사이트 일치성
+   - 브랜드명과 웹사이트 도메인이 일치하는가?
+   - 예: "테슬라" + "samsung.com" → medium severity
+
+5️⃣ 산업-키워드 일치성
+   - 산업 분야와 키워드가 관련 있는가?
+   - 예: "제조업" + "IT 컨설팅" → low severity
+
+6️⃣ 타겟-콘텐츠 일치성
+   - 타겟 연령대/성별과 콘텐츠가 맞는가?
+   - 예: "60대" + "트렌디한 SNS" → low severity
+
+7️⃣ 종합 판단
+   - high severity 충돌 2개 이상 → isConsistent: false
+   - medium severity 충돌 3개 이상 → isConsistent: false
+   - overallConfidence 40 미만 → isConsistent: false
+
+전략 선택:
+- integrated: 모든 요소 조화롭게 활용 (confidence 70+)
+- image-first: 이미지 중심, 키워드 보조 (confidence 50-69)
+- keyword-first: 키워드 중심, 이미지 참고 (confidence 30-49)
+- document-first: 문서 중심, 나머지 보조 (documentText 있고 confidence < 30)
+
+⚠️ 중요: 사소한 불일치는 허용하고, 명백한 모순만 충돌로 판단하세요.`,
             },
           ],
           temperature: 0.3,
-          max_tokens: 600,
+          max_tokens: 1000,
         });
 
-        const strategyText = strategyResponse.choices[0].message.content || '{}';
-        const cleanedText = strategyText.replace(/```json\n?|\n?```/g, '').trim();
-        matchingAnalysis = JSON.parse(cleanedText);
+        const validationText = validationResponse.choices[0].message.content || '{}';
+        const cleanedText = validationText.replace(/```json\n?|\n?```/g, '').trim();
+        comprehensiveValidation = JSON.parse(cleanedText);
 
-        console.log('하이브리드 전략 분석 결과:', matchingAnalysis);
+        console.log('종합 검증 결과:', comprehensiveValidation);
 
         // 전략 자동 선택
-        contentStrategy = matchingAnalysis.strategy || 'integrated';
+        contentStrategy = comprehensiveValidation.strategy || 'integrated';
         
-        console.log(`선택된 전략: ${contentStrategy} (confidence: ${matchingAnalysis.confidence})`);
-        console.log(`전략 이유: ${matchingAnalysis.reason}`);
+        console.log(`선택된 전략: ${contentStrategy} (confidence: ${comprehensiveValidation.overallConfidence})`);
+        console.log(`전략 이유: ${comprehensiveValidation.reason}`);
 
-        // confidence 40 미만이면 사용자에게 경고 (너무 불일치)
-        if (matchingAnalysis.confidence < 40) {
+        // overallConfidence 40 미만 또는 high severity 충돌 있으면 경고
+        const hasHighSeverity = comprehensiveValidation.conflicts?.some((c: any) => c.severity === 'high');
+        
+        if (comprehensiveValidation.overallConfidence < 40 || hasHighSeverity) {
           return c.json({
             success: false,
             requireConfirmation: true,
             validation: {
-              isMatch: false,
-              confidence: matchingAnalysis.confidence,
+              isConsistent: comprehensiveValidation.isConsistent,
+              confidence: comprehensiveValidation.overallConfidence,
+              conflicts: comprehensiveValidation.conflicts || [],
               strategy: contentStrategy,
-              reason: matchingAnalysis.reason,
-              imageSummary: matchingAnalysis.imageSummary,
-              userInputSummary: matchingAnalysis.userInputSummary,
-              recommendation: matchingAnalysis.recommendation,
+              reason: comprehensiveValidation.reason,
+              recommendation: comprehensiveValidation.recommendation,
             },
-            message: '⚠️ 업로드한 이미지와 입력한 키워드가 서로 맞지 않습니다. 그래도 계속하시겠습니까?',
+            message: '⚠️ 입력하신 정보에 일관성 문제가 있습니다. 확인해주세요.',
           });
         }
 
       } catch (error: any) {
-        console.error('전략 분석 오류:', error.message);
-        // 분석 실패 시 기본 전략 사용
+        console.error('종합 검증 오류:', error.message);
+        // 검증 실패 시 기본 전략 사용
         contentStrategy = 'integrated';
-        console.log('전략 분석 실패, 기본 전략(integrated) 사용');
+        console.log('검증 분석 실패, 기본 전략(integrated) 사용');
       }
     } else {
       console.log('검증 우회 (사용자가 강제 진행 선택)');
-      contentStrategy = 'keyword-first'; // 강제 진행 시 키워드 우선
+      // 강제 진행 시 문서가 있으면 document-first, 없으면 keyword-first
+      contentStrategy = documentText ? 'document-first' : 'keyword-first';
     }
+
+    console.log(`전략 결정 완료: ${contentStrategy}. 콘텐츠 생성 시작...`);
 
     console.log(`하이브리드 전략 결정 완료: ${contentStrategy}. 콘텐츠 생성 시작...`);
 

@@ -2491,11 +2491,89 @@ function showValidationModal(validation, formData) {
   pendingFormData = formData;
   
   const modal = document.getElementById('validationModal');
+  
+  // 신뢰도 표시
+  const confidenceEl = document.getElementById('validationConfidence');
+  const confidence = validation.confidence || 0;
+  confidenceEl.textContent = `${confidence}%`;
+  
+  // 신뢰도에 따른 색상 변경
+  const confidenceContainer = confidenceEl.closest('div[style*="background"]');
+  if (confidence < 30) {
+    confidenceContainer.style.background = '#fee2e2';
+    confidenceContainer.style.borderLeftColor = '#dc2626';
+    confidenceEl.style.color = '#991b1b';
+  } else if (confidence < 50) {
+    confidenceContainer.style.background = '#fef3c7';
+    confidenceContainer.style.borderLeftColor = '#f59e0b';
+    confidenceEl.style.color = '#b45309';
+  } else {
+    confidenceContainer.style.background = '#dbeafe';
+    confidenceContainer.style.borderLeftColor = '#3b82f6';
+    confidenceEl.style.color = '#1e40af';
+  }
+  
+  // 충돌 목록 표시
+  const conflictsListEl = document.getElementById('conflictsList');
+  conflictsListEl.innerHTML = '';
+  
+  if (validation.conflicts && validation.conflicts.length > 0) {
+    conflictsListEl.innerHTML = '<h3 style="font-weight: 600; margin-bottom: 12px; color: #1f2937;"><i class="fas fa-exclamation-triangle"></i> 발견된 충돌 (' + validation.conflicts.length + '개)</h3>';
+    
+    validation.conflicts.forEach((conflict, index) => {
+      const severityColor = {
+        high: '#dc2626',
+        medium: '#f59e0b',
+        low: '#3b82f6'
+      }[conflict.severity] || '#6b7280';
+      
+      const severityLabel = {
+        high: '높음',
+        medium: '중간',
+        low: '낮음'
+      }[conflict.severity] || '알 수 없음';
+      
+      const typeLabel = {
+        'image-keyword': '이미지-키워드',
+        'image-brand': '이미지-브랜드',
+        'document-keyword': '문서-키워드',
+        'brand-website': '브랜드-웹사이트',
+        'industry-keyword': '산업-키워드',
+        'target-content': '타겟-콘텐츠'
+      }[conflict.type] || conflict.type;
+      
+      const conflictHtml = `
+        <div style="background: #f9fafb; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid ${severityColor};">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-weight: 600; color: #1f2937;">
+              <i class="fas fa-times-circle"></i> ${typeLabel}
+            </span>
+            <span style="background: ${severityColor}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
+              ${severityLabel}
+            </span>
+          </div>
+          <p style="color: #4b5563; margin-bottom: 8px; font-size: 0.9rem;">${conflict.description}</p>
+          ${conflict.items && conflict.items.length > 0 ? 
+            '<p style="color: #6b7280; font-size: 0.85rem; margin-bottom: 8px;"><strong>관련 항목:</strong> ' + conflict.items.join(', ') + '</p>' : 
+            ''
+          }
+          <p style="color: #059669; font-size: 0.85rem;">
+            <i class="fas fa-lightbulb"></i> <strong>수정 제안:</strong> ${conflict.suggestion}
+          </p>
+        </div>
+      `;
+      
+      conflictsListEl.innerHTML += conflictHtml;
+    });
+  } else {
+    conflictsListEl.innerHTML = '<p style="color: #059669;"><i class="fas fa-check-circle"></i> 충돌이 발견되지 않았습니다.</p>';
+  }
+  
+  // 전략 및 이유 표시
   document.getElementById('validationReason').textContent = validation.reason || '상세 정보 없음';
-  document.getElementById('validationImageSummary').textContent = validation.imageSummary || '분석 결과 없음';
-  document.getElementById('validationUserInputSummary').textContent = validation.userInputSummary || '입력 정보 없음';
-  document.getElementById('validationRecommendation').textContent = validation.recommendation || '이미지를 변경하거나 입력 정보를 수정해주세요.';
-  document.getElementById('validationConfidence').textContent = `${validation.confidence || 0}% (기준: 40% 이상 권장)`;
+  
+  // 권장 사항 표시
+  document.getElementById('validationRecommendation').textContent = validation.recommendation || '입력 정보를 수정해주세요.';
   
   modal.classList.remove('hidden');
 }

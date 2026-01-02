@@ -20,9 +20,9 @@
     "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.39.0",
     "hono": "^4.11.1",
-    "mammoth": "^1.6.0",
+    "mammoth": "^1.11.0",
     "openai": "^6.15.0",
-    "pdf-parse": "^1.1.1"
+    "pdf-parse": "^1.1.4"
   },
   "devDependencies": {
     "@hono/vite-build": "^1.2.0",
