@@ -3950,6 +3950,13 @@ async function checkSupabaseSession() {
 // 서버에 사용자 정보 동기화
 async function syncUserToBackend(session, isNewUser = false) {
   try {
+    console.log('🚀 syncUserToBackend 시작:', {
+      user_id: session.user.id,
+      email: session.user.email,
+      name: session.user.user_metadata.full_name || session.user.email,
+      isNewUser
+    });
+    
     const response = await fetch('/api/auth/sync', {
       method: 'POST',
       headers: {
@@ -3963,8 +3970,15 @@ async function syncUserToBackend(session, isNewUser = false) {
       })
     });
     
+    console.log('📡 /api/auth/sync 응답:', {
+      status: response.status,
+      ok: response.ok
+    });
+    
     if (response.ok) {
       const data = await response.json();
+      console.log('✅ /api/auth/sync 성공:', data);
+      
       // 서버에서 받은 실제 크레딧 정보 업데이트
       currentUser.credits = data.credits || 3;
       currentUser.tier = data.tier || 'free';
@@ -3979,9 +3993,16 @@ async function syncUserToBackend(session, isNewUser = false) {
       } else {
         showWelcomeMessage('login');
       }
+    } else {
+      const errorData = await response.json().catch(() => ({ error: '응답 파싱 실패' }));
+      console.error('❌ /api/auth/sync 실패:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      });
     }
   } catch (error) {
-    console.error('사용자 동기화 실패:', error);
+    console.error('❌ 사용자 동기화 에러:', error);
   }
 }
 
