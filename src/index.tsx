@@ -1107,9 +1107,25 @@ app.post('/api/auth/sync', async (c) => {
       message: '로그인 성공'
     });
   } catch (error: any) {
-    console.error('사용자 동기화 실패:', error);
+    console.error('❌ 사용자 동기화 실패:', error);
+    console.error('에러 상세:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
+    console.error('환경 변수 확인:', {
+      SUPABASE_URL: !!c.env.SUPABASE_URL,
+      SUPABASE_SERVICE_KEY: !!c.env.SUPABASE_SERVICE_KEY
+    });
     return c.json(
-      { error: '사용자 동기화 중 오류가 발생했습니다', details: error.message },
+      { 
+        error: '사용자 동기화 중 오류가 발생했습니다', 
+        details: error.message,
+        env_check: {
+          SUPABASE_URL: !!c.env.SUPABASE_URL,
+          SUPABASE_SERVICE_KEY: !!c.env.SUPABASE_SERVICE_KEY
+        }
+      },
       500
     );
   }
