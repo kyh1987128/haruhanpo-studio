@@ -145,7 +145,7 @@ export async function checkTrialLimit(c: Context<{ Bindings: Env }>, next: Next)
       if (trialData.usage_count >= 1) {
         return c.json({
           error: '무료 체험 제한',
-          message: '무료 체험은 1회만 가능합니다. 회원 가입하시면 월 3회 무료 크레딧을 받으실 수 있습니다.',
+          message: '무료 체험은 1회만 가능합니다. 회원 가입하시면 월 10회 무료로 이용하실 수 있습니다.',
           redirect: '/signup'
         }, 403);
       }

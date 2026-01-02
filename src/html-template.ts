@@ -217,7 +217,7 @@ export const htmlTemplate = `
                     <div>
                         <div class="text-2xl mb-2">🆓</div>
                         <div class="font-semibold mb-1">무료회원</div>
-                        <div class="text-sm opacity-90">월 3회</div>
+                        <div class="text-sm opacity-90">월 10회</div>
                         <div class="text-xs opacity-75">(Google 로그인)</div>
                     </div>
                     <div>

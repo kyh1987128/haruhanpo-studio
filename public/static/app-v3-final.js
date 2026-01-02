@@ -3772,7 +3772,18 @@ let currentUser = {
   email: null,
   credits: 1, // 비회원 1회
   tier: 'guest', // guest, free, paid
-  subscription_status: null
+  subscription_status: null,
+  monthly_usage: 0, // 이번 달 사용 횟수
+  monthly_limit: 10, // 무료 회원 월 제한
+  monthly_remaining: 10, // 남은 월별 사용 가능 횟수
+  // 달성 보상 추적
+  rewards: {
+    onboarding_completed: false,
+    first_generation_completed: false,
+    streak_3days_completed: false
+  },
+  last_login_date: null,
+  login_streak: 0
 };
 
 // Supabase 클라이언트 초기화
@@ -3886,13 +3897,13 @@ function showWelcomeMessage(type) {
   const messages = {
     signup: {
       title: '🎉 회원가입 완료!',
-      message: `환영합니다, ${currentUser.name}님!<br>무료 체험으로 <strong>월 3회</strong> 콘텐츠를 생성할 수 있습니다.`,
-      duration: 5000
+      message: `환영합니다, ${currentUser.name}님!<br>가입 보상으로 <strong>5크레딧</strong>을 받았습니다!<br><br>🎁 추가 보상:<br>• 온보딩 완료: +5크레딧<br>• 첫 콘텐츠 생성: +5크레딧<br>• 3일 연속 로그인: +5크레딧<br><br>무료 회원은 <strong>월 10회</strong> 생성 가능합니다.`,
+      duration: 8000
     },
     login: {
       title: '👋 다시 오신 것을 환영합니다!',
-      message: `${currentUser.name}님, 반갑습니다!<br>남은 크레딧: <strong>${currentUser.credits}회</strong>`,
-      duration: 3000
+      message: `${currentUser.name}님, 반갑습니다!<br>남은 크레딧: <strong>${currentUser.credits}회</strong><br>이번 달 사용 가능: <strong>${currentUser.monthly_remaining || 10}회</strong>`,
+      duration: 4000
     }
   };
   

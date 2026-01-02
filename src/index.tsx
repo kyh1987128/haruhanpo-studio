@@ -803,22 +803,110 @@ app.post('/api/auth/sync', async (c) => {
     }
     
     // TODO: Supabase에 사용자 정보 저장/업데이트
-    // 현재는 기본 크레딧 정보만 반환
+    // 신규 가입자는 5크레딧으로 시작 (변경됨: 기존 3 → 5)
+    
+    // 현재 날짜로 월별 사용량 계산
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     
     return c.json({
       success: true,
       user_id,
       email,
       name,
-      credits: 3, // 무료회원 기본 크레딧
+      credits: 5, // 신규 가입 보상 (변경: 3 → 5)
       tier: 'free',
       subscription_status: 'free',
+      monthly_usage: 0,
+      monthly_limit: 10, // 무료 회원 월 10회 제한
+      monthly_remaining: 10,
+      current_month: currentMonth,
+      // 달성 보상 추적
+      rewards: {
+        onboarding_completed: false,
+        first_generation_completed: false,
+        streak_3days_completed: false
+      },
+      last_login_date: now.toISOString().split('T')[0],
+      login_streak: 1,
       message: '사용자 정보가 동기화되었습니다'
     });
   } catch (error: any) {
     console.error('사용자 동기화 실패:', error);
     return c.json(
       { error: '사용자 동기화 중 오류가 발생했습니다', details: error.message },
+      500
+    );
+  }
+});
+
+// 보상 지급 엔드포인트
+app.post('/api/rewards/claim', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { user_id, reward_type } = body;
+    
+    if (!user_id || !reward_type) {
+      return c.json({ error: 'user_id와 reward_type은 필수입니다' }, 400);
+    }
+    
+    // 보상 타입 검증
+    const validRewards = ['onboarding_completed', 'first_generation_completed', 'streak_3days_completed'];
+    if (!validRewards.includes(reward_type)) {
+      return c.json({ error: '유효하지 않은 보상 타입입니다' }, 400);
+    }
+    
+    // TODO: Supabase에서 사용자 보상 상태 확인 및 업데이트
+    // 중복 지급 방지 로직 필요
+    
+    const rewardAmount = 5; // 모든 보상은 5크레딧
+    const rewardMessages = {
+      onboarding_completed: '🎓 온보딩 완료 보상',
+      first_generation_completed: '🎨 첫 콘텐츠 생성 보상',
+      streak_3days_completed: '🔥 3일 연속 로그인 보상'
+    };
+    
+    return c.json({
+      success: true,
+      reward_type,
+      amount: rewardAmount,
+      message: rewardMessages[reward_type],
+      new_credits: 10 // TODO: 실제 크레딧 계산
+    });
+  } catch (error: any) {
+    console.error('보상 지급 실패:', error);
+    return c.json(
+      { error: '보상 지급 중 오류가 발생했습니다', details: error.message },
+      500
+    );
+  }
+});
+
+// 연속 로그인 체크 엔드포인트
+app.post('/api/rewards/check-streak', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { user_id } = body;
+    
+    if (!user_id) {
+      return c.json({ error: 'user_id는 필수입니다' }, 400);
+    }
+    
+    // TODO: Supabase에서 마지막 로그인 날짜 조회
+    // 연속 로그인 일수 계산
+    
+    const today = new Date().toISOString().split('T')[0];
+    
+    return c.json({
+      success: true,
+      login_streak: 1, // TODO: 실제 연속 로그인 일수
+      last_login_date: today,
+      streak_reward_eligible: false // 3일 달성 여부
+    });
+  } catch (error: any) {
+    console.error('연속 로그인 체크 실패:', error);
+    return c.json(
+      { error: '연속 로그인 체크 중 오류가 발생했습니다', details: error.message },
       500
     );
   }
