@@ -4303,5 +4303,3 @@ window.handleTrial = handleTrial;
 window.currentUser = currentUser;
 window.supabaseClient = null; // 초기화 후 접근 가능
 
-근 가능
-
