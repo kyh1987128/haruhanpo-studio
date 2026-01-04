@@ -213,35 +213,35 @@ export const htmlTemplate = `
                     <div class="text-sm opacity-80">월 구독</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-3xl font-bold mb-1">50회</div>
-                    <div class="text-sm opacity-80">월 생성 가능</div>
+                    <div class="text-3xl font-bold mb-1">50크레딧</div>
+                    <div class="text-sm opacity-80">매월 지급</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-3xl font-bold mb-1">₩198</div>
-                    <div class="text-sm opacity-80">1회당 비용</div>
+                    <div class="text-3xl font-bold mb-1">1크레딧</div>
+                    <div class="text-sm opacity-80">= 1회 생성</div>
                 </div>
             </div>
             
-            <!-- 가입 혜택 (하이브리드 플랜) -->
+            <!-- 가입 혜택 (1크레딧 = 1회) -->
             <div class="bg-white bg-opacity-20 rounded-xl p-6 max-w-3xl mx-auto mb-6">
                 <div class="grid grid-cols-3 gap-4 text-center">
                     <div>
                         <div class="text-2xl mb-2">💎</div>
                         <div class="font-semibold mb-1">Pro 플랜</div>
-                        <div class="text-sm opacity-90">월 50회 포함</div>
+                        <div class="text-sm opacity-90">월 50크레딧 지급</div>
                         <div class="text-xs opacity-75">(₩9,900/월)</div>
                     </div>
                     <div>
-                        <div class="text-2xl mb-2">🎯</div>
-                        <div class="font-semibold mb-1">추가 크레딧</div>
-                        <div class="text-sm opacity-90">1회 = ₩100</div>
-                        <div class="text-xs opacity-75">(필요할 때만)</div>
+                        <div class="text-2xl mb-2">🎁</div>
+                        <div class="font-semibold mb-1">가입 보너스</div>
+                        <div class="text-sm opacity-90">3크레딧 즉시 지급</div>
+                        <div class="text-xs opacity-75">(신규 회원)</div>
                     </div>
                     <div>
-                        <div class="text-2xl mb-2">📦</div>
-                        <div class="font-semibold mb-1">크레딧 패키지</div>
-                        <div class="text-sm opacity-90">최대 30% 할인</div>
-                        <div class="text-xs opacity-75">(10~100개)</div>
+                        <div class="text-2xl mb-2">➕</div>
+                        <div class="font-semibold mb-1">추가 충전</div>
+                        <div class="text-sm opacity-90">1크레딧 = ₩100</div>
+                        <div class="text-xs opacity-75">(필요 시)</div>
                     </div>
                 </div>
             </div>
@@ -1624,7 +1624,7 @@ export const htmlTemplate = `
     </div>
 
     <script src="/static/i18n.js?v=5.3.2"></script>
-    <script src="/static/app-v3-final.js?v=9.0.0"></script>
+    <script src="/static/app-v3-final.js?v=10.0.0"></script>
     </div><!-- max-w-7xl container -->
 </body>
 </html>

@@ -1047,7 +1047,7 @@ app.post('/api/auth/sync', async (c) => {
       // 2️⃣ 기존 사용자: 업데이트
       console.log('📌 기존 사용자 로그인:', existingUser.email);
       
-      // 월간 사용량 리셋 체크
+      // 월간 크레딧 리셋 체크 (1크레딧 = 1회)
       const userResetMonth = existingUser.monthly_reset_date 
         ? existingUser.monthly_reset_date.substring(0, 7) 
         : null;
@@ -1055,10 +1055,10 @@ app.post('/api/auth/sync', async (c) => {
       const needsReset = !userResetMonth || userResetMonth < currentMonth;
       
       if (needsReset) {
-        console.log('📅 월간 사용량 리셋:', { 
+        console.log('📅 월간 크레딧 리셋:', { 
           userResetMonth, 
           currentMonth,
-          oldUsedCount: existingUser.monthly_used_count 
+          oldCredits: existingUser.credits
         });
         
         const { data: updatedUser, error: updateError } = await supabase
@@ -1066,7 +1066,7 @@ app.post('/api/auth/sync', async (c) => {
           .update({ 
             email,
             name: name || existingUser.name,
-            monthly_used_count: 0,
+            credits: 50, // ✅ 월 50크레딧으로 리셋
             monthly_reset_date: today,
             updated_at: new Date().toISOString()
           })
@@ -1103,10 +1103,8 @@ app.post('/api/auth/sync', async (c) => {
           email,
           name: name || null,
           subscription_status: 'active',
-          monthly_included_count: 50,
-          monthly_used_count: 0,
-          monthly_reset_date: today,
-          credits: 3 // DB 기본값과 동일
+          credits: 53, // ✅ 월 50크레딧 + 가입 보너스 3크레딧
+          monthly_reset_date: today
         })
         .select()
         .single();
@@ -1122,8 +1120,6 @@ app.post('/api/auth/sync', async (c) => {
     console.log('✅ 사용자 동기화 완료:', {
       email: user.email,
       subscription_status: user.subscription_status,
-      monthly_included: user.monthly_included_count,
-      monthly_used: user.monthly_used_count,
       credits: user.credits
     });
     
@@ -1133,10 +1129,7 @@ app.post('/api/auth/sync', async (c) => {
       email: user.email,
       name: user.name,
       subscription_status: user.subscription_status || 'active',
-      monthly_included_count: user.monthly_included_count || 50,
-      monthly_used_count: user.monthly_used_count || 0,
-      monthly_remaining: Math.max(0, (user.monthly_included_count || 50) - (user.monthly_used_count || 0)),
-      credits: user.credits ?? 3, // null/undefined면 3
+      credits: user.credits ?? 50, // ✅ 1크레딧 = 1회
       message: existingUser ? '로그인 성공' : '회원가입 완료'
     });
   } catch (error: any) {

@@ -3972,12 +3972,9 @@ async function syncUserToBackend(session, isNewUser = false) {
       const data = await response.json();
       console.log('✅ /api/auth/sync 성공:', data);
       
-      // 서버에서 받은 정보 업데이트 (하이브리드 플랜)
+      // 서버에서 받은 정보 업데이트 (1크레딧 = 1회)
       currentUser.subscription_status = data.subscription_status || 'active';
-      currentUser.monthly_included_count = data.monthly_included_count || 50;
-      currentUser.monthly_used_count = data.monthly_used_count || 0;
-      currentUser.monthly_remaining = data.monthly_remaining || 50;
-      currentUser.credits = data.credits || 0;
+      currentUser.credits = data.credits || 50; // ✅ 1크레딧 = 1회
       
       localStorage.setItem('postflow_user', JSON.stringify(currentUser));
       updateAuthUI();
@@ -4006,12 +4003,12 @@ function showWelcomeMessage(type) {
   const messages = {
     signup: {
       title: '🎉 회원가입 완료!',
-      message: `환영합니다, ${currentUser.name}님!<br><br>💎 Pro 플랜이 활성화되었습니다!<br>• 월 50회 생성 포함<br>• 추가 생성은 1회 = 1크레딧 (₩100)<br><br>지금 바로 콘텐츠를 생성해보세요!`,
+      message: `환영합니다, ${currentUser.name}님!<br><br>💎 Pro 플랜 활성화!<br>• 53크레딧 지급 (월 50크레딧 + 가입 보너스 3크레딧)<br>• 1크레딧 = 1회 생성<br>• 추가 크레딧: 1회 ₩100<br><br>지금 바로 콘텐츠를 생성해보세요!`,
       duration: 6000
     },
     login: {
       title: '👋 다시 오신 것을 환영합니다!',
-      message: `${currentUser.name}님, 반갑습니다!<br><br>💎 Pro 플랜 (₩9,900/월)<br>• 포함 횟수: <strong>${currentUser.monthly_remaining}/50회</strong><br>• 크레딧: <strong>${currentUser.credits}개</strong>`,
+      message: `${currentUser.name}님, 반갑습니다!<br><br>💎 Pro 플랜 (₩9,900/월)<br>• 남은 크레딧: <strong>${currentUser.credits}개</strong><br>• 1크레딧 = 1회 생성`,
       duration: 4000
     }
   };
@@ -4119,9 +4116,9 @@ function updateAuthUI() {
     }
     
     userName.textContent = currentUser.name || '사용자';
-    // 하이브리드 플랜 표시
-    userTier.textContent = `Pro (${currentUser.monthly_remaining}/50회)`;
-    userCredits.textContent = `+${currentUser.credits}개`;
+    // 1크레딧 = 1회
+    userTier.textContent = `Pro`;
+    userCredits.textContent = `${currentUser.credits}크레딧`;
   } else {
     // 비회원/게스트 상태
     userInfoArea.classList.add('hidden');
@@ -4146,10 +4143,7 @@ function handleAuthError() {
     name: null,
     email: null,
     subscription_status: 'active',
-    monthly_included_count: 50,
-    monthly_used_count: 0,
-    monthly_remaining: 50,
-    credits: 0
+    credits: 0 // ✅ 1크레딧 = 1회
   };
   updateAuthUI();
 }
