@@ -1978,7 +1978,7 @@ async function handleGenerate() {
       if (result.usage && result.usage.credits_remaining !== undefined) {
         currentUser.credits = result.usage.credits_remaining;
         localStorage.setItem('postflow_user', JSON.stringify(currentUser));
-        updateUI();
+        updateAuthUI(); // ✅ 인증 UI 업데이트
         showToast(`✅ 콘텐츠 생성 완료! (1크레딧 사용, 남은 크레딧: ${result.usage.credits_remaining})`, 'success');
       } else {
         showToast('✅ 콘텐츠 생성 완료!', 'success');

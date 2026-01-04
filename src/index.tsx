@@ -767,9 +767,9 @@ app.post('/api/generate', async (c) => {
     }
 
     // 유튜브 쇼츠: Gemini Flash
-    if (platforms.includes('youtube') || platforms.includes('youtube_shorts')) {
+    if (platforms.includes('youtube')) {
       if (geminiApiKey) {
-        console.log('  🎬 유튜브 쇼츠: Gemini Flash (70% 절감)');
+        console.log('  🎬 유튜브 숏폼: Gemini Flash (70% 절감)');
         generationTasks.push(
           generateContentWithGemini(geminiApiKey, getYouTubePrompt(promptParams))
             .then(content => {
@@ -798,10 +798,10 @@ app.post('/api/generate', async (c) => {
       }
     }
     
-    // 숏폼: Gemini Flash
-    if (platforms.includes('shortform_multi') || platforms.includes('tiktok') || platforms.includes('instagram_reels')) {
+    // 숏폼 멀티: Gemini Flash
+    if (platforms.includes('shortform_multi')) {
       if (geminiApiKey) {
-        console.log('  📱 숏폼: Gemini Flash (70% 절감)');
+        console.log('  📱 숏폼 멀티: Gemini Flash (70% 절감)');
         generationTasks.push(
           generateContentWithGemini(geminiApiKey, getShortformPrompt(promptParams))
             .then(content => {
@@ -814,6 +814,38 @@ app.post('/api/generate', async (c) => {
       }
     }
     
+    // 틱톡: Gemini Flash
+    if (platforms.includes('tiktok')) {
+      if (geminiApiKey) {
+        console.log('  🎵 틱톡: Gemini Flash (70% 절감)');
+        generationTasks.push(
+          generateContentWithGemini(geminiApiKey, getShortformPrompt(promptParams))
+            .then(content => {
+              totalCost.gemini += 0.023;
+              return { platform: 'tiktok', content };
+            })
+        );
+      } else {
+        generationTasks.push(generateContent(openai, 'tiktok', getShortformPrompt(promptParams), aiModel));
+      }
+    }
+    
+    // 인스타그램 릴스: Gemini Flash
+    if (platforms.includes('instagram_reels')) {
+      if (geminiApiKey) {
+        console.log('  🎬 인스타그램 릴스: Gemini Flash (70% 절감)');
+        generationTasks.push(
+          generateContentWithGemini(geminiApiKey, getShortformPrompt(promptParams))
+            .then(content => {
+              totalCost.gemini += 0.023;
+              return { platform: 'instagram_reels', content };
+            })
+        );
+      } else {
+        generationTasks.push(generateContent(openai, 'instagram_reels', getShortformPrompt(promptParams), aiModel));
+      }
+    }
+    
     // 메타데이터: Gemini Flash
     if (platforms.includes('metadata_generation')) {
       if (geminiApiKey) {
@@ -822,11 +854,11 @@ app.post('/api/generate', async (c) => {
           generateContentWithGemini(geminiApiKey, getMetadataPrompt(promptParams))
             .then(content => {
               totalCost.gemini += 0.015;
-              return { platform: 'metadata', content };
+              return { platform: 'metadata_generation', content };
             })
         );
       } else {
-        generationTasks.push(generateContent(openai, 'metadata', getMetadataPrompt(promptParams), aiModel));
+        generationTasks.push(generateContent(openai, 'metadata_generation', getMetadataPrompt(promptParams), aiModel));
       }
     }
 
