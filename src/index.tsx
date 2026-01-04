@@ -1049,8 +1049,8 @@ app.post('/api/auth/sync', async (c) => {
       
       // 무료 회원만 월간 리셋 (tier === 'free')
       if (existingUser.tier === 'free') {
-        const userResetMonth = existingUser.monthly_reset_date 
-          ? existingUser.monthly_reset_date.substring(0, 7) 
+        const userResetMonth = existingUser.free_monthly_reset_date 
+          ? existingUser.free_monthly_reset_date.substring(0, 7) 
           : null;
         
         const needsReset = !userResetMonth || userResetMonth < currentMonth;
@@ -1068,7 +1068,8 @@ app.post('/api/auth/sync', async (c) => {
               email,
               name: name || existingUser.name,
               credits: 10, // ✅ 무료 회원 월 10크레딧
-              monthly_reset_date: today,
+              free_monthly_count: 0, // ✅ 사용 횟수 리셋
+              free_monthly_reset_date: today,
               updated_at: new Date().toISOString()
             })
             .eq('id', user_id)
@@ -1121,8 +1122,8 @@ app.post('/api/auth/sync', async (c) => {
           name: name || null,
           tier: 'free', // ✅ 무료 회원
           credits: 10, // ✅ 월 10크레딧
-          monthly_free_credits: 10,
-          monthly_reset_date: today
+          free_monthly_count: 0, // ✅ 사용 횟수
+          free_monthly_reset_date: today
         })
         .select()
         .single();
