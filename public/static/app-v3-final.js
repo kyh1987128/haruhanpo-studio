@@ -1974,14 +1974,12 @@ async function handleGenerate() {
       displayResults(result.data, result.generatedPlatforms);
       saveToHistory(formData, result.data);
       
-      // ✅ 크레딧 정보 업데이트
-      if (result.credits && result.credits.deducted) {
-        currentUser.credits = result.credits.remaining;
+      // ✅ 크레딧 정보 업데이트 (수정: usage 객체 사용)
+      if (result.usage && result.usage.credits_remaining !== undefined) {
+        currentUser.credits = result.usage.credits_remaining;
         localStorage.setItem('postflow_user', JSON.stringify(currentUser));
         updateUI();
-        showToast(`✅ 콘텐츠 생성 완료! (${result.credits.amount}크레딧 사용, 남은 크레딧: ${result.credits.remaining})`, 'success');
-      } else if (result.credits && result.credits.usedMonthlyQuota) {
-        showToast('✅ 콘텐츠 생성 완료! (월간 무료 사용)', 'success');
+        showToast(`✅ 콘텐츠 생성 완료! (1크레딧 사용, 남은 크레딧: ${result.usage.credits_remaining})`, 'success');
       } else {
         showToast('✅ 콘텐츠 생성 완료!', 'success');
       }
@@ -3329,7 +3327,14 @@ function resetTemplate(platform) {
 // 프로필 관리 (확장된 구조)
 // ===================================
 function loadProfiles() {
-  const stored = localStorage.getItem(STORAGE_KEYS.PROFILES);
+  // ✅ 사용자별 프로필 로딩
+  if (!currentUser || !currentUser.id) {
+    savedProfiles = [];
+    return;
+  }
+  
+  const profileKey = `${STORAGE_KEYS.PROFILES}_${currentUser.id}`;
+  const stored = localStorage.getItem(profileKey);
   if (stored) {
     try {
       savedProfiles = JSON.parse(stored);
@@ -3443,8 +3448,11 @@ function loadProfile(id) {
   const profile = savedProfiles.find(p => p.id === id);
   if (!profile) return;
   
-  // 기본 필드
-  document.getElementById('brand').value = profile.brand || '';
+  // 기본 필드 (옵셔널 체이닝 추가)
+  const brandEl = document.getElementById('brand');
+  const keywordsEl = document.getElementById('keywords');
+  
+  if (brandEl) brandEl.value = profile.brand || '';
   if (document.getElementById('companyName')) document.getElementById('companyName').value = profile.companyName || '';
   if (document.getElementById('businessType')) document.getElementById('businessType').value = profile.businessType || '';
   if (document.getElementById('location')) document.getElementById('location').value = profile.location || '';
@@ -3452,7 +3460,7 @@ function loadProfile(id) {
   if (document.getElementById('contact')) document.getElementById('contact').value = profile.contact || '';
   if (document.getElementById('website')) document.getElementById('website').value = profile.website || '';
   if (document.getElementById('sns')) document.getElementById('sns').value = profile.sns || '';
-  document.getElementById('keywords').value = profile.keywords || '';
+  if (keywordsEl) keywordsEl.value = profile.keywords || '';
   if (document.getElementById('tone')) document.getElementById('tone').value = profile.tone || '친근한';
   if (document.getElementById('targetAge')) document.getElementById('targetAge').value = profile.targetAge || '20대';
   if (document.getElementById('industry')) document.getElementById('industry').value = profile.industry || '라이프스타일';
@@ -3478,7 +3486,10 @@ function deleteProfile(id) {
   if (!confirm('이 프로필을 삭제하시겠습니까?')) return;
   
   savedProfiles = savedProfiles.filter(p => p.id !== id);
-  localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(savedProfiles));
+  
+  // ✅ 사용자별 프로필 저장
+  const profileKey = `${STORAGE_KEYS.PROFILES}_${currentUser.id}`;
+  localStorage.setItem(profileKey, JSON.stringify(savedProfiles));
   
   openLoadProfileModal();
   showToast('✅ 프로필이 삭제되었습니다', 'success');
@@ -4291,4 +4302,6 @@ window.handleLogout = handleLogout;
 window.handleTrial = handleTrial;
 window.currentUser = currentUser;
 window.supabaseClient = null; // 초기화 후 접근 가능
+
+근 가능
 
