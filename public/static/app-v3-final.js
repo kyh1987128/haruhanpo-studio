@@ -4160,6 +4160,19 @@ async function handleLogin() {
     return;
   }
   
+  // 안전한 로그인 안내
+  const confirmed = confirm(
+    '🔐 안전한 Google 로그인\n\n' +
+    '✅ Google 공식 인증 서비스를 사용합니다\n' +
+    '✅ 비밀번호는 저장되지 않습니다\n' +
+    '✅ 언제든지 연동을 해제할 수 있습니다\n\n' +
+    '로그인하시겠습니까?'
+  );
+  
+  if (!confirmed) {
+    return;
+  }
+  
   try {
     const { data, error } = await supabaseClient.auth.signInWithOAuth({
       provider: 'google',
