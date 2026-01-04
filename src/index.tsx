@@ -639,6 +639,49 @@ app.post('/api/generate', async (c) => {
 
     console.log(`전략 결정: ${contentStrategy}. 콘텐츠 생성 시작...`);
 
+    // ✅ 크레딧 차감 (콘텐츠 생성 전에 차감)
+    let initialCredits = 0;
+    if (!is_guest && user_id) {
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('tier, credits')
+        .eq('id', user_id)
+        .single();
+      
+      if (!userError && user) {
+        initialCredits = user.credits || 0;
+        
+        if (initialCredits > 0) {
+          // 크레딧 차감 실행
+          const { data: updatedUser, error: updateError } = await supabase
+            .from('users')
+            .update({ 
+              credits: initialCredits - 1,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', user_id)
+            .select('tier, credits')
+            .single();
+          
+          if (!updateError && updatedUser) {
+            // credit_transactions 기록
+            await supabase.from('credit_transactions').insert({
+              user_id,
+              amount: -1,
+              balance_after: updatedUser.credits,
+              type: 'usage',
+              description: `콘텐츠 생성 (${platforms.join(', ')})`
+            });
+            
+            console.log(`✅ 크레딧 차감 완료: ${user_id} | ${updatedUser.credits}개 남음`);
+            initialCredits = updatedUser.credits;
+          } else {
+            console.error('❌ 크레딧 차감 실패:', updateError);
+          }
+        }
+      }
+    }
+
     // 3단계: 선택된 플랫폼만 콘텐츠 생성 (병렬 처리)
     const promptParams = {
       brand,
@@ -815,57 +858,14 @@ app.post('/api/generate', async (c) => {
     console.log('콘텐츠 생성 완료!');
     console.log(`💰 비용 추정: OpenAI $${totalCost.openai.toFixed(3)}, Gemini $${totalCost.gemini.toFixed(3)}, 총 $${(totalCost.openai + totalCost.gemini).toFixed(3)}`);
 
-    // ✅ 사용량 차감 로직 (하이브리드 플랜)
+    // ✅ 사용량 정보 반환 (이미 차감 완료)
     let deducted = {
-      type: 'none', // 'included' | 'credit' | 'none'
+      type: 'credit',
       monthly_remaining: 0,
-      credits_remaining: 0
+      credits_remaining: initialCredits // 이미 차감된 크레딧
     };
     
-    if (!is_guest && user_id) {
-      // 사용자 정보 재조회
-      const { data: user, error: userError } = await supabase
-        .from('users')
-        .select('tier, credits')
-        .eq('id', user_id)
-        .single();
-      
-      if (!userError && user) {
-        // 크레딧 차감 (간단한 방식)
-        if ((user.credits || 0) > 0) {
-          const newCredits = user.credits - 1;
-          
-          const { data: updatedUser, error: updateError } = await supabase
-            .from('users')
-            .update({ 
-              credits: newCredits,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', user_id)
-            .select('tier, credits')
-            .single();
-          
-          if (!updateError && updatedUser) {
-            deducted.type = 'credit';
-            deducted.monthly_remaining = 0;
-            deducted.credits_remaining = updatedUser.credits;
-            
-            // credit_transactions 기록
-            await supabase.from('credit_transactions').insert({
-              user_id,
-              amount: -1,
-              balance_after: updatedUser.credits,
-              type: 'usage',
-              description: `콘텐츠 생성 (${platforms.join(', ')})`
-            });
-            
-            console.log(`✅ 크레딧 차감: ${user_id} | ${deducted.credits_remaining}개 남음`);
-          }
-        } else {
-          console.warn(`⚠️ 크레딧 부족: ${user_id} | credits: ${user.credits}`);
-        }
-      }
-    } else if (is_guest) {
+    if (is_guest) {
       // 비회원 사용 기록
       const ipAddress = c.req.header('CF-Connecting-IP') || 
                         c.req.header('X-Forwarded-For') || 
