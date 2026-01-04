@@ -1201,65 +1201,30 @@ function updateCostEstimate() {
       </div>
     `;
   } else if (currentUser.tier === 'free' || currentUser.subscription_status === 'free') {
-    // 무료 회원
-    const monthlyRemaining = currentUser.monthly_remaining || 0;
-    const monthlyLimit = currentUser.monthly_limit || 10;
-    const usedCount = monthlyLimit - monthlyRemaining;
+    // 무료 회원 - 크레딧 시스템 사용
+    gradientColor = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+    statusBadge = '<span style="background: rgba(255,255,255,0.3); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">🎉 무료 회원</span>';
     
-    if (monthlyRemaining > 0) {
-      // 무료 횟수 남음
-      gradientColor = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-      statusBadge = '<span style="background: rgba(255,255,255,0.3); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">🎉 무료 사용 가능</span>';
-      
-      const progressPercent = (usedCount / monthlyLimit) * 100;
-      
-      costInfoHTML = `
-        <div style="background: rgba(255,255,255,0.2); padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem;">
-          <div style="text-align: center; margin-bottom: 1rem;">
-            <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.3rem;">
-              ${monthlyRemaining}회 남음
-            </div>
-            <p style="font-size: 0.9rem; opacity: 0.9; margin: 0;">
-              이번 달 무료 사용 가능 (${usedCount}/${monthlyLimit}회 사용)
+    costInfoHTML = `
+      <div style="background: rgba(255,255,255,0.2); padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem; text-align: center;">
+        <div style="font-size: 1.3rem; font-weight: 600; margin-bottom: 0.8rem; opacity: 0.9;">
+          1 크레딧 차감
+        </div>
+        <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.3rem;">
+          현재 보유: ${currentUser.credits || 0}크레딧
+        </div>
+        <p style="font-size: 0.9rem; opacity: 0.9; margin: 0;">
+          💡 무료 회원은 월 초 10크레딧이 자동 지급됩니다
+        </p>
+        ${currentUser.credits <= 3 ? `
+          <div style="background: rgba(239, 68, 68, 0.3); border: 1px solid rgba(239, 68, 68, 0.5); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+            <p style="margin: 0; font-size: 0.95rem;">
+              ⚠️ 크레딧이 부족합니다. <a href="/payment" style="color: white; text-decoration: underline; font-weight: 600;">충전하기</a>
             </p>
           </div>
-          
-          <!-- 진행률 바 -->
-          <div style="background: rgba(255,255,255,0.3); border-radius: 10px; height: 12px; overflow: hidden; margin-bottom: 0.5rem;">
-            <div style="background: rgba(255,255,255,0.9); height: 100%; width: ${progressPercent}%; transition: width 0.3s;"></div>
-          </div>
-          
-          <p style="font-size: 0.85rem; opacity: 0.85; margin: 0; text-align: center;">
-            💡 무료 횟수 소진 시 크레딧으로 계속 사용 가능 (현재 ${currentUser.credits || 0}크레딧 보유)
-          </p>
-        </div>
-      `;
-    } else {
-      // 무료 횟수 소진, 크레딧 필요
-      gradientColor = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-      statusBadge = '<span style="background: rgba(255,255,255,0.3); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">💳 크레딧 사용</span>';
-      
-      costInfoHTML = `
-        <div style="background: rgba(255,255,255,0.2); padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem; text-align: center;">
-          <div style="font-size: 1.3rem; font-weight: 600; margin-bottom: 0.8rem; opacity: 0.9;">
-            이번 달 무료 ${monthlyLimit}회를 모두 사용했습니다
-          </div>
-          <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.3rem;">
-            1 크레딧 차감
-          </div>
-          <p style="font-size: 1.1rem; opacity: 0.9; margin: 0;">
-            현재 보유: <strong>${currentUser.credits || 0}크레딧</strong>
-          </p>
-          ${currentUser.credits === 0 ? `
-            <div style="background: rgba(239, 68, 68, 0.3); border: 1px solid rgba(239, 68, 68, 0.5); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
-              <p style="margin: 0; font-size: 0.95rem;">
-                ⚠️ 크레딧이 부족합니다. <a href="/payment" style="color: white; text-decoration: underline; font-weight: 600;">충전하기</a>
-              </p>
-            </div>
-          ` : ''}
-        </div>
-      `;
-    }
+        ` : ''}
+      </div>
+    `;
   } else {
     // 유료 회원
     gradientColor = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
@@ -2897,8 +2862,14 @@ function downloadAsText(platform) {
   const platformNames = {
     blog: '네이버블로그',
     instagram: '인스타그램',
+    instagram_feed: '인스타그램 피드',
     threads: '스레드',
-    youtube: '유튜브숏폼'
+    youtube: '유튜브숏폼',
+    youtube_longform: '유튜브 롱폼',
+    shortform_multi: '숏폼',
+    tiktok: '틱톡',
+    instagram_reels: '인스타 릴스',
+    metadata_generation: '메타데이터'
   };
   
   const brand = document.getElementById('brand').value.trim() || 'content';
@@ -2928,8 +2899,14 @@ function downloadAsWord(platform) {
   const platformNames = {
     blog: '네이버블로그',
     instagram: '인스타그램',
+    instagram_feed: '인스타그램 피드',
     threads: '스레드',
-    youtube: '유튜브숏폼'
+    youtube: '유튜브숏폼',
+    youtube_longform: '유튜브 롱폼',
+    shortform_multi: '숏폼',
+    tiktok: '틱톡',
+    instagram_reels: '인스타 릴스',
+    metadata_generation: '메타데이터'
   };
   
   const brand = document.getElementById('brand').value.trim() || 'content';
@@ -3005,8 +2982,14 @@ function downloadAllAsExcel() {
   const platformNames = {
     blog: '네이버블로그',
     instagram: '인스타그램',
+    instagram_feed: '인스타그램 피드',
     threads: '스레드',
-    youtube: '유튜브숏폼'
+    youtube: '유튜브숏폼',
+    youtube_longform: '유튜브 롱폼',
+    shortform_multi: '숏폼',
+    tiktok: '틱톡',
+    instagram_reels: '인스타 릴스',
+    metadata_generation: '메타데이터'
   };
   
   // HTML 테이블 형식으로 변환 (Excel이 읽을 수 있는 형식)
@@ -3097,8 +3080,14 @@ function downloadBatchExcel() {
   const platformNames = {
     blog: '네이버블로그',
     instagram: '인스타그램',
+    instagram_feed: '인스타그램 피드',
     threads: '스레드',
-    youtube: '유튜브숏폼'
+    youtube: '유튜브숏폼',
+    youtube_longform: '유튜브 롱폼',
+    shortform_multi: '숏폼',
+    tiktok: '틱톡',
+    instagram_reels: '인스타 릴스',
+    metadata_generation: '메타데이터'
   };
   
   // HTML 테이블 형식으로 변환
@@ -3715,8 +3704,14 @@ function exportHistoryAsExcel() {
   const platformNames = {
     blog: '네이버블로그',
     instagram: '인스타그램',
+    instagram_feed: '인스타그램 피드',
     threads: '스레드',
-    youtube: '유튜브숏폼'
+    youtube: '유튜브숏폼',
+    youtube_longform: '유튜브 롱폼',
+    shortform_multi: '숏폼',
+    tiktok: '틱톡',
+    instagram_reels: '인스타 릴스',
+    metadata_generation: '메타데이터'
   };
   
   // HTML 테이블 형식
