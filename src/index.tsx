@@ -1032,61 +1032,112 @@ app.post('/api/auth/sync', async (c) => {
     );
     
     const today = new Date().toISOString().split('T')[0];
+    const currentMonth = today.substring(0, 7); // 'YYYY-MM'
     
-    // UPSERT 방식으로 단순화
-    const { data: user, error: upsertError } = await supabase
+    // 1️⃣ 기존 사용자 조회
+    const { data: existingUser, error: selectError } = await supabase
       .from('users')
-      .upsert(
-        {
+      .select('*')
+      .eq('id', user_id)
+      .maybeSingle();
+    
+    let user;
+    
+    if (existingUser) {
+      // 2️⃣ 기존 사용자: 업데이트
+      console.log('📌 기존 사용자 로그인:', existingUser.email);
+      
+      // 월간 사용량 리셋 체크
+      const userResetMonth = existingUser.monthly_reset_date 
+        ? existingUser.monthly_reset_date.substring(0, 7) 
+        : null;
+      
+      const needsReset = !userResetMonth || userResetMonth < currentMonth;
+      
+      if (needsReset) {
+        console.log('📅 월간 사용량 리셋:', { 
+          userResetMonth, 
+          currentMonth,
+          oldUsedCount: existingUser.monthly_used_count 
+        });
+        
+        const { data: updatedUser, error: updateError } = await supabase
+          .from('users')
+          .update({ 
+            email,
+            name: name || existingUser.name,
+            monthly_used_count: 0,
+            monthly_reset_date: today,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', user_id)
+          .select()
+          .single();
+        
+        if (updateError) throw updateError;
+        user = updatedUser;
+      } else {
+        // 리셋 불필요: 이름만 업데이트
+        const { data: updatedUser, error: updateError } = await supabase
+          .from('users')
+          .update({ 
+            email,
+            name: name || existingUser.name,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', user_id)
+          .select()
+          .single();
+        
+        if (updateError) throw updateError;
+        user = updatedUser;
+      }
+    } else {
+      // 3️⃣ 신규 사용자: 생성
+      console.log('🆕 신규 사용자 생성:', email);
+      
+      const { data: newUser, error: insertError } = await supabase
+        .from('users')
+        .insert({
           id: user_id,
           email,
           name: name || null,
-          subscription_status: 'active', // 단일 구독 플랜
-          monthly_included_count: 50, // 월 50회 포함
-          monthly_reset_date: today,
-          updated_at: new Date().toISOString()
-        },
-        { 
-          onConflict: 'id',
-          ignoreDuplicates: false 
-        }
-      )
-      .select()
-      .single();
-    
-    if (upsertError) {
-      console.error('❌ Supabase upsert 실패:', upsertError);
-      throw upsertError;
-    }
-    
-    // 월간 사용량 리셋 체크
-    const currentMonth = today.substring(0, 7) + '-01';
-    if (!user.monthly_reset_date || user.monthly_reset_date < currentMonth) {
-      await supabase
-        .from('users')
-        .update({ 
+          subscription_status: 'active',
+          monthly_included_count: 50,
           monthly_used_count: 0,
-          monthly_reset_date: today
+          monthly_reset_date: today,
+          credits: 3 // DB 기본값과 동일
         })
-        .eq('id', user_id);
+        .select()
+        .single();
       
-      user.monthly_used_count = 0;
-      user.monthly_reset_date = today;
+      if (insertError) {
+        console.error('❌ 신규 사용자 생성 실패:', insertError);
+        throw insertError;
+      }
+      
+      user = newUser;
     }
     
-    console.log('✅ 사용자 동기화 완료:', user.email);
+    console.log('✅ 사용자 동기화 완료:', {
+      email: user.email,
+      subscription_status: user.subscription_status,
+      monthly_included: user.monthly_included_count,
+      monthly_used: user.monthly_used_count,
+      credits: user.credits
+    });
     
     return c.json({
       success: true,
       user_id: user.id,
       email: user.email,
       name: user.name,
-      subscription_status: user.subscription_status,
+      subscription_status: user.subscription_status || 'active',
       monthly_included_count: user.monthly_included_count || 50,
       monthly_used_count: user.monthly_used_count || 0,
       monthly_remaining: Math.max(0, (user.monthly_included_count || 50) - (user.monthly_used_count || 0)),
-      credits: user.credits || 0,
-      message: '로그인 성공'
+      credits: user.credits ?? 3, // null/undefined면 3
+      message: existingUser ? '로그인 성공' : '회원가입 완료'
     });
   } catch (error: any) {
     console.error('❌ 사용자 동기화 실패:', error);
