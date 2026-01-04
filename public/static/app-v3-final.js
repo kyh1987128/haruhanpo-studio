@@ -3972,9 +3972,9 @@ async function syncUserToBackend(session, isNewUser = false) {
       const data = await response.json();
       console.log('✅ /api/auth/sync 성공:', data);
       
-      // 서버에서 받은 정보 업데이트 (1크레딧 = 1회)
-      currentUser.subscription_status = data.subscription_status || 'active';
-      currentUser.credits = data.credits || 50; // ✅ 1크레딧 = 1회
+      // 서버에서 받은 정보 업데이트
+      currentUser.tier = data.tier || 'free'; // 'guest' | 'free' | 'paid'
+      currentUser.credits = data.credits || 10;
       
       localStorage.setItem('postflow_user', JSON.stringify(currentUser));
       updateAuthUI();
@@ -4003,12 +4003,12 @@ function showWelcomeMessage(type) {
   const messages = {
     signup: {
       title: '🎉 회원가입 완료!',
-      message: `환영합니다, ${currentUser.name}님!<br><br>💎 Pro 플랜 활성화!<br>• 53크레딧 지급 (월 50크레딧 + 가입 보너스 3크레딧)<br>• 1크레딧 = 1회 생성<br>• 추가 크레딧: 1회 ₩100<br><br>지금 바로 콘텐츠를 생성해보세요!`,
+      message: `환영합니다, ${currentUser.name}님!<br><br>🎁 무료 회원 혜택<br>• 매월 10크레딧 자동 지급<br>• 1크레딧 = 1회 생성<br><br>💎 유료 플랜 (₩9,900)<br>• 50크레딧 구매 (소진 시까지 유지)<br>• 추가 크레딧: ₩200/개`,
       duration: 6000
     },
     login: {
       title: '👋 다시 오신 것을 환영합니다!',
-      message: `${currentUser.name}님, 반갑습니다!<br><br>💎 Pro 플랜 (₩9,900/월)<br>• 남은 크레딧: <strong>${currentUser.credits}개</strong><br>• 1크레딧 = 1회 생성`,
+      message: `${currentUser.name}님, 반갑습니다!<br><br>${currentUser.tier === 'free' ? '🎁 무료 회원' : '💎 유료 회원'}<br>• 남은 크레딧: <strong>${currentUser.credits}개</strong><br>• 1크레딧 = 1회 생성`,
       duration: 4000
     }
   };
@@ -4116,8 +4116,13 @@ function updateAuthUI() {
     }
     
     userName.textContent = currentUser.name || '사용자';
-    // 1크레딧 = 1회
-    userTier.textContent = `Pro`;
+    // Tier 표시
+    const tierLabels = {
+      'guest': '비회원',
+      'free': '무료',
+      'paid': '유료'
+    };
+    userTier.textContent = tierLabels[currentUser.tier] || '무료';
     userCredits.textContent = `${currentUser.credits}크레딧`;
   } else {
     // 비회원/게스트 상태
@@ -4142,8 +4147,8 @@ function handleAuthError() {
     isGuest: true,
     name: null,
     email: null,
-    subscription_status: 'active',
-    credits: 0 // ✅ 1크레딧 = 1회
+    tier: 'guest', // 'guest' | 'free' | 'paid'
+    credits: 1 // 비회원 1크레딧
   };
   updateAuthUI();
 }

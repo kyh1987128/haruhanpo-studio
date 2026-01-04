@@ -1047,37 +1047,54 @@ app.post('/api/auth/sync', async (c) => {
       // 2️⃣ 기존 사용자: 업데이트
       console.log('📌 기존 사용자 로그인:', existingUser.email);
       
-      // 월간 크레딧 리셋 체크 (1크레딧 = 1회)
-      const userResetMonth = existingUser.monthly_reset_date 
-        ? existingUser.monthly_reset_date.substring(0, 7) 
-        : null;
-      
-      const needsReset = !userResetMonth || userResetMonth < currentMonth;
-      
-      if (needsReset) {
-        console.log('📅 월간 크레딧 리셋:', { 
-          userResetMonth, 
-          currentMonth,
-          oldCredits: existingUser.credits
-        });
+      // 무료 회원만 월간 리셋 (tier === 'free')
+      if (existingUser.tier === 'free') {
+        const userResetMonth = existingUser.monthly_reset_date 
+          ? existingUser.monthly_reset_date.substring(0, 7) 
+          : null;
         
-        const { data: updatedUser, error: updateError } = await supabase
-          .from('users')
-          .update({ 
-            email,
-            name: name || existingUser.name,
-            credits: 50, // ✅ 월 50크레딧으로 리셋
-            monthly_reset_date: today,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', user_id)
-          .select()
-          .single();
+        const needsReset = !userResetMonth || userResetMonth < currentMonth;
         
-        if (updateError) throw updateError;
-        user = updatedUser;
+        if (needsReset) {
+          console.log('📅 무료 회원 월간 크레딧 리셋:', { 
+            userResetMonth, 
+            currentMonth,
+            oldCredits: existingUser.credits
+          });
+          
+          const { data: updatedUser, error: updateError } = await supabase
+            .from('users')
+            .update({ 
+              email,
+              name: name || existingUser.name,
+              credits: 10, // ✅ 무료 회원 월 10크레딧
+              monthly_reset_date: today,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', user_id)
+            .select()
+            .single();
+          
+          if (updateError) throw updateError;
+          user = updatedUser;
+        } else {
+          // 리셋 불필요: 이름만 업데이트
+          const { data: updatedUser, error: updateError } = await supabase
+            .from('users')
+            .update({ 
+              email,
+              name: name || existingUser.name,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', user_id)
+            .select()
+            .single();
+          
+          if (updateError) throw updateError;
+          user = updatedUser;
+        }
       } else {
-        // 리셋 불필요: 이름만 업데이트
+        // 유료 회원: 이름만 업데이트 (리셋 없음)
         const { data: updatedUser, error: updateError } = await supabase
           .from('users')
           .update({ 
@@ -1093,8 +1110,8 @@ app.post('/api/auth/sync', async (c) => {
         user = updatedUser;
       }
     } else {
-      // 3️⃣ 신규 사용자: 생성
-      console.log('🆕 신규 사용자 생성:', email);
+      // 3️⃣ 신규 사용자: 무료 회원으로 생성
+      console.log('🆕 신규 무료 회원 생성:', email);
       
       const { data: newUser, error: insertError } = await supabase
         .from('users')
@@ -1102,8 +1119,9 @@ app.post('/api/auth/sync', async (c) => {
           id: user_id,
           email,
           name: name || null,
-          subscription_status: 'active',
-          credits: 53, // ✅ 월 50크레딧 + 가입 보너스 3크레딧
+          tier: 'free', // ✅ 무료 회원
+          credits: 10, // ✅ 월 10크레딧
+          monthly_free_credits: 10,
           monthly_reset_date: today
         })
         .select()
@@ -1119,7 +1137,7 @@ app.post('/api/auth/sync', async (c) => {
     
     console.log('✅ 사용자 동기화 완료:', {
       email: user.email,
-      subscription_status: user.subscription_status,
+      tier: user.tier,
       credits: user.credits
     });
     
@@ -1128,8 +1146,8 @@ app.post('/api/auth/sync', async (c) => {
       user_id: user.id,
       email: user.email,
       name: user.name,
-      subscription_status: user.subscription_status || 'active',
-      credits: user.credits ?? 50, // ✅ 1크레딧 = 1회
+      tier: user.tier || 'free', // 'guest' | 'free' | 'paid'
+      credits: user.credits ?? 10,
       message: existingUser ? '로그인 성공' : '회원가입 완료'
     });
   } catch (error: any) {
