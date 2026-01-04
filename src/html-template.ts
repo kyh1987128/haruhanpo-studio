@@ -213,35 +213,35 @@ export const htmlTemplate = `
                     <div class="text-sm opacity-80">월 구독</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-3xl font-bold mb-1">30회</div>
+                    <div class="text-3xl font-bold mb-1">50회</div>
                     <div class="text-sm opacity-80">월 생성 가능</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-3xl font-bold mb-1">₩330</div>
+                    <div class="text-3xl font-bold mb-1">₩198</div>
                     <div class="text-sm opacity-80">1회당 비용</div>
                 </div>
             </div>
             
-            <!-- 가입 혜택 -->
+            <!-- 가입 혜택 (하이브리드 플랜) -->
             <div class="bg-white bg-opacity-20 rounded-xl p-6 max-w-3xl mx-auto mb-6">
                 <div class="grid grid-cols-3 gap-4 text-center">
                     <div>
-                        <div class="text-2xl mb-2">👤</div>
-                        <div class="font-semibold mb-1">비회원 체험</div>
-                        <div class="text-sm opacity-90">1회 무료</div>
-                        <div class="text-xs opacity-75">(IP 기반)</div>
-                    </div>
-                    <div>
-                        <div class="text-2xl mb-2">🆓</div>
-                        <div class="font-semibold mb-1">무료회원</div>
-                        <div class="text-sm opacity-90">월 10회</div>
-                        <div class="text-xs opacity-75">(Google 로그인)</div>
-                    </div>
-                    <div>
-                        <div class="text-2xl mb-2">⭐</div>
-                        <div class="font-semibold mb-1">유료회원</div>
-                        <div class="text-sm opacity-90">월 30회</div>
+                        <div class="text-2xl mb-2">💎</div>
+                        <div class="font-semibold mb-1">Pro 플랜</div>
+                        <div class="text-sm opacity-90">월 50회 포함</div>
                         <div class="text-xs opacity-75">(₩9,900/월)</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl mb-2">🎯</div>
+                        <div class="font-semibold mb-1">추가 크레딧</div>
+                        <div class="text-sm opacity-90">1회 = ₩100</div>
+                        <div class="text-xs opacity-75">(필요할 때만)</div>
+                    </div>
+                    <div>
+                        <div class="text-2xl mb-2">📦</div>
+                        <div class="font-semibold mb-1">크레딧 패키지</div>
+                        <div class="text-sm opacity-90">최대 30% 할인</div>
+                        <div class="text-xs opacity-75">(10~100개)</div>
                     </div>
                 </div>
             </div>
@@ -250,9 +250,6 @@ export const htmlTemplate = `
             <div class="flex justify-center space-x-4">
                 <button id="heroLoginBtn" class="px-8 py-3 bg-white text-purple-600 rounded-lg font-semibold hover:shadow-xl transition text-lg">
                     <i class="fas fa-rocket mr-2"></i>지금 시작하기
-                </button>
-                <button id="heroTrialBtn" class="px-8 py-3 bg-purple-800 bg-opacity-50 text-white rounded-lg font-semibold hover:bg-opacity-70 transition text-lg">
-                    <i class="fas fa-gift mr-2"></i>1회 무료 체험
                 </button>
             </div>
         </div>
