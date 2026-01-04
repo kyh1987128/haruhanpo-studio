@@ -2563,14 +2563,12 @@ async function forceGenerate() {
       displayResults(result.data, result.generatedPlatforms);
       saveToHistory(formDataWithForce, result.data);
       
-      // ✅ 크레딧 정보 업데이트
-      if (result.credits && result.credits.deducted) {
-        currentUser.credits = result.credits.remaining;
+      // ✅ 크레딧 정보 업데이트 (수정: usage 객체 사용)
+      if (result.usage && result.usage.credits_remaining !== undefined) {
+        currentUser.credits = result.usage.credits_remaining;
         localStorage.setItem('postflow_user', JSON.stringify(currentUser));
         updateAuthUI();
-        showToast(`✅ 콘텐츠 생성 완료! (${result.credits.amount}크레딧 사용, 남은 크레딧: ${result.credits.remaining})`, 'success');
-      } else if (result.credits && result.credits.usedMonthlyQuota) {
-        showToast('✅ 콘텐츠 생성 완료! (월간 무료 사용)', 'success');
+        showToast(`✅ 콘텐츠 생성 완료! (1크레딧 사용, 남은 크레딧: ${result.usage.credits_remaining})`, 'success');
       } else {
         showToast('✅ 콘텐츠 생성 완료!', 'success');
       }
@@ -2660,8 +2658,14 @@ function displayResults(data, platforms) {
   const platformNames = {
     blog: '📝 네이버 블로그',
     instagram: '📸 인스타그램',
+    instagram_feed: '📸 인스타그램 피드',
     threads: '🧵 스레드',
-    youtube: '🎬 유튜브 숏폼'
+    youtube: '🎬 유튜브 숏폼',
+    youtube_longform: '🎥 유튜브 롱폼',
+    shortform_multi: '📱 숏폼',
+    tiktok: '🎵 틱톡',
+    instagram_reels: '🎬 인스타 릴스',
+    metadata_generation: '📊 메타데이터'
   };
   
   // 탭 버튼 생성
@@ -3354,7 +3358,7 @@ function saveProfile() {
   const profile = {
     id: Date.now(),
     name: profileName,
-    brand: document.getElementById('brand').value.trim(),
+    brand: document.getElementById('brand')?.value.trim() || '',
     companyName: document.getElementById('companyName')?.value.trim() || '',
     businessType: document.getElementById('businessType')?.value.trim() || '',
     location: document.getElementById('location')?.value.trim() || '',
@@ -3362,7 +3366,7 @@ function saveProfile() {
     contact: document.getElementById('contact')?.value.trim() || '',
     website: document.getElementById('website')?.value.trim() || '',
     sns: document.getElementById('sns')?.value.trim() || '',
-    keywords: document.getElementById('keywords').value.trim(),
+    keywords: document.getElementById('keywords')?.value.trim() || '',
     tone: document.getElementById('tone')?.value || '친근한',
     targetAge: document.getElementById('targetAge')?.value || '20대',
     industry: document.getElementById('industry')?.value || '라이프스타일',
