@@ -3857,25 +3857,18 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // Supabase 클라이언트 (CDN에서 로드)
 let supabaseClient = null;
 
-// 사용자 상태
+// 사용자 상태 (하이브리드 플랜)
 let currentUser = {
-  id: null,  // ✅ 추가: 사용자 ID
+  id: null,
   isLoggedIn: false,
   isGuest: true,
   name: null,
   email: null,
-  credits: 1, // 비회원 1회
-  tier: 'guest', // guest, free, paid
-  subscription_status: null,
-  monthly_free_usage_count: 0, // ✅ 수파베이스 컬럼명 (이번 달 사용 횟수)
-  monthly_limit: 10, // 무료 회원 월 제한
-  monthly_remaining: 10, // 남은 월별 사용 가능 횟수
-  monthly_usage_reset_date: null, // ✅ 수파베이스 컬럼명
-  // 달성 보상 추적 (users 테이블 BOOLEAN 컬럼)
-  onboarding_completed: false,
-  first_generation_completed: false,
-  last_login_date: null,
-  consecutive_login_days: 0 // ✅ 수파베이스 컬럼명 (login_streak → consecutive_login_days)
+  subscription_status: 'active', // 단일 구독 플랜
+  monthly_included_count: 50, // 월 50회 포함
+  monthly_used_count: 0, // 이번 달 사용 횟수
+  monthly_remaining: 50, // 남은 포함 횟수
+  credits: 0 // 추가 크레딧
 };
 
 // Supabase 클라이언트 초기화
@@ -3979,10 +3972,12 @@ async function syncUserToBackend(session, isNewUser = false) {
       const data = await response.json();
       console.log('✅ /api/auth/sync 성공:', data);
       
-      // 서버에서 받은 실제 크레딧 정보 업데이트
-      currentUser.credits = data.credits || 3;
-      currentUser.tier = data.tier || 'free';
-      currentUser.subscription_status = data.subscription_status || 'free';
+      // 서버에서 받은 정보 업데이트 (하이브리드 플랜)
+      currentUser.subscription_status = data.subscription_status || 'active';
+      currentUser.monthly_included_count = data.monthly_included_count || 50;
+      currentUser.monthly_used_count = data.monthly_used_count || 0;
+      currentUser.monthly_remaining = data.monthly_remaining || 50;
+      currentUser.credits = data.credits || 0;
       
       localStorage.setItem('postflow_user', JSON.stringify(currentUser));
       updateAuthUI();
@@ -4006,17 +4001,17 @@ async function syncUserToBackend(session, isNewUser = false) {
   }
 }
 
-// 환영 메시지 표시
+// 환영 메시지 표시 (하이브리드 플랜)
 function showWelcomeMessage(type) {
   const messages = {
     signup: {
       title: '🎉 회원가입 완료!',
-      message: `환영합니다, ${currentUser.name}님!<br>가입 보상으로 <strong>5크레딧</strong>을 받았습니다!<br><br>🎁 추가 보상:<br>• 온보딩 완료: +5크레딧<br>• 첫 콘텐츠 생성: +5크레딧<br>• 3일 연속 로그인: +5크레딧<br><br>무료 회원은 <strong>월 10회</strong> 생성 가능합니다.`,
-      duration: 8000
+      message: `환영합니다, ${currentUser.name}님!<br><br>💎 Pro 플랜이 활성화되었습니다!<br>• 월 50회 생성 포함<br>• 추가 생성은 1회 = 1크레딧 (₩100)<br><br>지금 바로 콘텐츠를 생성해보세요!`,
+      duration: 6000
     },
     login: {
       title: '👋 다시 오신 것을 환영합니다!',
-      message: `${currentUser.name}님, 반갑습니다!<br>남은 크레딧: <strong>${currentUser.credits}회</strong><br>이번 달 사용 가능: <strong>${currentUser.monthly_remaining || 10}회</strong>`,
+      message: `${currentUser.name}님, 반갑습니다!<br><br>💎 Pro 플랜 (₩9,900/월)<br>• 포함 횟수: <strong>${currentUser.monthly_remaining}/50회</strong><br>• 크레딧: <strong>${currentUser.credits}개</strong>`,
       duration: 4000
     }
   };
@@ -4113,7 +4108,7 @@ function updateAuthUI() {
   const userCredits = document.getElementById('userCredits');
   
   if (currentUser.isLoggedIn && !currentUser.isGuest) {
-    // 로그인 상태
+    // 로그인 상태 (하이브리드 플랜)
     userInfoArea.classList.remove('hidden');
     guestArea.classList.add('hidden');
     memberFeaturesArea.classList.remove('hidden');
@@ -4123,9 +4118,10 @@ function updateAuthUI() {
       heroSection.classList.add('hidden');
     }
     
-    userName.textContent = currentUser.name;
-    userTier.textContent = currentUser.tier === 'paid' ? '유료회원' : '무료회원';
-    userCredits.textContent = currentUser.credits;
+    userName.textContent = currentUser.name || '사용자';
+    // 하이브리드 플랜 표시
+    userTier.textContent = `Pro (${currentUser.monthly_remaining}/50회)`;
+    userCredits.textContent = `+${currentUser.credits}개`;
   } else {
     // 비회원/게스트 상태
     userInfoArea.classList.add('hidden');
@@ -4139,19 +4135,21 @@ function updateAuthUI() {
   }
 }
 
-// 인증 에러 처리
+// 인증 에러 처리 (하이브리드 플랜)
 function handleAuthError() {
   localStorage.removeItem('postflow_token');
   localStorage.removeItem('postflow_user');
   currentUser = {
-    id: null,  // ✅ 추가: 비회원은 ID 없음
+    id: null,
     isLoggedIn: false,
     isGuest: true,
     name: null,
     email: null,
-    credits: 1,
-    tier: 'guest',
-    subscription_status: null
+    subscription_status: 'active',
+    monthly_included_count: 50,
+    monthly_used_count: 0,
+    monthly_remaining: 50,
+    credits: 0
   };
   updateAuthUI();
 }
