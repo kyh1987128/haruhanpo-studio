@@ -3896,10 +3896,17 @@ async function initSupabase() {
 
 // Supabase 세션 확인
 async function checkSupabaseSession() {
-  if (!supabaseClient) return;
+  console.log('🔍 checkSupabaseSession 호출됨');
+  
+  if (!supabaseClient) {
+    console.error('❌ supabaseClient가 없습니다');
+    return;
+  }
   
   try {
     const { data: { session }, error } = await supabaseClient.auth.getSession();
+    
+    console.log('📦 getSession 결과:', { session: !!session, error });
     
     if (error) {
       console.error('세션 확인 실패:', error);

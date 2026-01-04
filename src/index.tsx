@@ -434,16 +434,17 @@ app.post('/api/generate', async (c) => {
       console.log(`✅ 비회원 체험 허용: ${ipAddress}`);
     }
 
-    // ✅ 회원 사용량 체크 (하이브리드 플랜)
+    // ✅ 회원 크레딧 체크
     if (!is_guest && user_id) {
       // 사용자 정보 조회
       const { data: user, error: userError } = await supabase
         .from('users')
-        .select('subscription_status, monthly_included_count, monthly_used_count, monthly_reset_date, credits')
+        .select('tier, credits, monthly_reset_date')
         .eq('id', user_id)
         .single();
       
       if (userError || !user) {
+        console.error('❌ 사용자 조회 실패:', userError);
         return c.json({
           error: '사용자 정보 조회 실패',
           message: '사용자를 찾을 수 없습니다. 다시 로그인해주세요.',
@@ -451,44 +452,41 @@ app.post('/api/generate', async (c) => {
         }, 404);
       }
       
-      console.log(`📊 사용자 상태: ${user_id} | 포함: ${user.monthly_included_count} | 사용: ${user.monthly_used_count} | 크레딧: ${user.credits}`);
+      console.log(`📊 사용자 상태: ${user_id} | tier: ${user.tier} | 크레딧: ${user.credits}`);
       
-      // 월간 리셋 체크
-      const today = new Date().toISOString().split('T')[0];
-      const currentMonth = today.substring(0, 7) + '-01';
-      if (!user.monthly_reset_date || user.monthly_reset_date < currentMonth) {
-        await supabase
-          .from('users')
-          .update({ 
-            monthly_used_count: 0,
-            monthly_reset_date: today
-          })
-          .eq('id', user_id);
+      // 무료 회원 월간 리셋 체크
+      if (user.tier === 'free') {
+        const today = new Date().toISOString().split('T')[0];
+        const currentMonth = new Date(today).getMonth();
+        const resetMonth = user.monthly_reset_date ? new Date(user.monthly_reset_date).getMonth() : -1;
         
-        user.monthly_used_count = 0;
-        console.log(`📅 월간 사용량 리셋 완료`);
+        if (currentMonth !== resetMonth) {
+          await supabase
+            .from('users')
+            .update({ 
+              credits: 10,
+              monthly_reset_date: today
+            })
+            .eq('id', user_id);
+          
+          user.credits = 10;
+          console.log(`📅 무료 회원 월간 크레딧 리셋 완료`);
+        }
       }
       
-      // 사용 가능 여부 체크
-      const included_remaining = (user.monthly_included_count || 50) - (user.monthly_used_count || 0);
-      
-      if (included_remaining > 0) {
-        // 포함 횟수 있음
-        console.log(`✅ 포함 횟수 사용 가능: ${included_remaining}회 남음`);
-      } else if ((user.credits || 0) > 0) {
-        // 크레딧 있음
-        console.log(`✅ 크레딧 사용 가능: ${user.credits}개 남음`);
-      } else {
-        // 둘 다 없음
+      // 크레딧 확인
+      if ((user.credits || 0) <= 0) {
         return c.json({
-          error: '생성 횟수 부족',
-          message: `월 ${user.monthly_included_count || 50}회를 모두 사용했습니다. 크레딧을 충전해주세요.`,
-          monthly_used: user.monthly_used_count,
-          monthly_included: user.monthly_included_count || 50,
+          error: '크레딧 부족',
+          message: user.tier === 'free' 
+            ? '이번 달 무료 크레딧을 모두 사용했습니다. 다음 달에 다시 이용하거나 유료 플랜으로 업그레이드하세요.'
+            : '크레딧이 부족합니다. 크레딧을 충전해주세요.',
           credits: user.credits || 0,
           redirect: '/payment'
         }, 403);
       }
+      
+      console.log(`✅ 크레딧 사용 가능: ${user.credits}개 남음`);
     }
 
     // OpenAI API 키 확인 (환경변수에서만 읽기)
@@ -828,34 +826,13 @@ app.post('/api/generate', async (c) => {
       // 사용자 정보 재조회
       const { data: user, error: userError } = await supabase
         .from('users')
-        .select('monthly_included_count, monthly_used_count, credits')
+        .select('tier, credits')
         .eq('id', user_id)
         .single();
       
       if (!userError && user) {
-        const included_remaining = (user.monthly_included_count || 50) - (user.monthly_used_count || 0);
-        
-        // 1. 포함 횟수 먼저 차감
-        if (included_remaining > 0) {
-          const { data: updatedUser, error: updateError } = await supabase
-            .from('users')
-            .update({ 
-              monthly_used_count: (user.monthly_used_count || 0) + 1,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', user_id)
-            .select('monthly_included_count, monthly_used_count, credits')
-            .single();
-          
-          if (!updateError && updatedUser) {
-            deducted.type = 'included';
-            deducted.monthly_remaining = updatedUser.monthly_included_count - updatedUser.monthly_used_count;
-            deducted.credits_remaining = updatedUser.credits || 0;
-            console.log(`✅ 포함 횟수 차감: ${user_id} | ${deducted.monthly_remaining}회 남음`);
-          }
-        }
-        // 2. 크레딧 차감
-        else if ((user.credits || 0) > 0) {
+        // 크레딧 차감 (간단한 방식)
+        if ((user.credits || 0) > 0) {
           const newCredits = user.credits - 1;
           
           const { data: updatedUser, error: updateError } = await supabase
@@ -865,7 +842,7 @@ app.post('/api/generate', async (c) => {
               updated_at: new Date().toISOString()
             })
             .eq('id', user_id)
-            .select('monthly_included_count, monthly_used_count, credits')
+            .select('tier, credits')
             .single();
           
           if (!updateError && updatedUser) {
@@ -884,6 +861,8 @@ app.post('/api/generate', async (c) => {
             
             console.log(`✅ 크레딧 차감: ${user_id} | ${deducted.credits_remaining}개 남음`);
           }
+        } else {
+          console.warn(`⚠️ 크레딧 부족: ${user_id} | credits: ${user.credits}`);
         }
       }
     } else if (is_guest) {
