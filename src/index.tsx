@@ -700,11 +700,8 @@ app.post('/api/generate', async (c) => {
       contentStrategy: contentStrategy, // 하이브리드 전략 추가
     };
 
-    // ⚠️ 플랫폼 수 제한 (타임아웃 방지)
-    if (platforms.length > 3) {
-      console.warn('⚠️ 플랫폼이 3개를 초과합니다. 처음 3개만 생성합니다:', platforms.slice(0, 3));
-      platforms.splice(3);
-    }
+    // ✅ 플랫폼 수 제한 제거 (사용자가 선택한 모든 플랫폼 생성)
+    console.log(`📊 콘텐츠 생성 시작: ${platforms.length}개 플랫폼 선택됨 [${platforms.join(', ')}]`);
 
     // 🚀 하이브리드 전략 적용
     const generationTasks = [];
