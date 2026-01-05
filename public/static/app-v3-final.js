@@ -1976,9 +1976,21 @@ async function handleGenerate() {
       
       // ✅ 크레딧 정보 업데이트 (수정: usage 객체 사용)
       if (result.usage && result.usage.credits_remaining !== undefined) {
+        // 1️⃣ currentUser 객체 업데이트
         currentUser.credits = result.usage.credits_remaining;
+        
+        // 2️⃣ 로컬스토리지 업데이트
         localStorage.setItem('postflow_user', JSON.stringify(currentUser));
-        updateAuthUI(); // ✅ 인증 UI 업데이트
+        
+        // 3️⃣ UI 즉시 업데이트
+        const userCreditsEl = document.getElementById('userCredits');
+        if (userCreditsEl) {
+          userCreditsEl.textContent = `${result.usage.credits_remaining}크레딧`;
+        }
+        
+        // 4️⃣ 전체 UI 업데이트
+        updateAuthUI();
+        
         showToast(`✅ 콘텐츠 생성 완료! (1크레딧 사용, 남은 크레딧: ${result.usage.credits_remaining})`, 'success');
       } else {
         showToast('✅ 콘텐츠 생성 완료!', 'success');
@@ -2563,9 +2575,21 @@ async function forceGenerate() {
       
       // ✅ 크레딧 정보 업데이트 (수정: usage 객체 사용)
       if (result.usage && result.usage.credits_remaining !== undefined) {
+        // 1️⃣ currentUser 객체 업데이트
         currentUser.credits = result.usage.credits_remaining;
+        
+        // 2️⃣ 로컬스토리지 업데이트
         localStorage.setItem('postflow_user', JSON.stringify(currentUser));
+        
+        // 3️⃣ UI 즉시 업데이트
+        const userCreditsEl = document.getElementById('userCredits');
+        if (userCreditsEl) {
+          userCreditsEl.textContent = `${result.usage.credits_remaining}크레딧`;
+        }
+        
+        // 4️⃣ 전체 UI 업데이트
         updateAuthUI();
+        
         showToast(`✅ 콘텐츠 생성 완료! (1크레딧 사용, 남은 크레딧: ${result.usage.credits_remaining})`, 'success');
       } else {
         showToast('✅ 콘텐츠 생성 완료!', 'success');
