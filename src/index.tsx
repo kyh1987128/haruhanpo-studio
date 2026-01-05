@@ -1039,8 +1039,17 @@ app.post('/api/auth/sync', async (c) => {
       c.env.SUPABASE_SERVICE_KEY
     );
     
-    const today = new Date().toISOString().split('T')[0];
-    const currentMonth = today.substring(0, 7); // 'YYYY-MM'
+    const today = new Date();
+    const todayString = today.toISOString().split('T')[0];
+    
+    // 다음 달 1일 계산 함수
+    const getNextMonthFirstDay = () => {
+      const nextMonth = new Date(today);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      nextMonth.setDate(1);
+      nextMonth.setHours(0, 0, 0, 0);
+      return nextMonth.toISOString().split('T')[0]; // 'YYYY-MM-01'
+    };
     
     // 1️⃣ 기존 사용자 조회
     const { data: existingUser, error: selectError } = await supabase
@@ -1057,25 +1066,24 @@ app.post('/api/auth/sync', async (c) => {
       
       // 무료 회원만 월간 리셋 (tier === 'free')
       if (existingUser.tier === 'free') {
-        const userResetMonth = existingUser.monthly_reset_date 
-          ? existingUser.monthly_reset_date.substring(0, 7) 
-          : null;
+        const resetDate = existingUser.monthly_reset_date ? new Date(existingUser.monthly_reset_date) : null;
+        const needsReset = !resetDate || todayString >= existingUser.monthly_reset_date;
         
         console.log('🔍 월간 리셋 확인:', {
-          userResetMonth,
-          currentMonth,
           monthly_reset_date: existingUser.monthly_reset_date,
+          todayString,
           currentCredits: existingUser.credits,
-          needsReset: !userResetMonth || userResetMonth < currentMonth
+          needsReset,
+          계산로직: '리셋 날짜가 현재 날짜보다 작거나 같으면 리셋 필요'
         });
         
-        const needsReset = !userResetMonth || userResetMonth < currentMonth;
-        
         if (needsReset) {
+          const nextResetDate = getNextMonthFirstDay();
           console.log('📅 무료 회원 월간 크레딧 리셋 실행!', { 
-            userResetMonth, 
-            currentMonth,
-            oldCredits: existingUser.credits
+            oldResetDate: existingUser.monthly_reset_date,
+            newResetDate: nextResetDate,
+            oldCredits: existingUser.credits,
+            newCredits: 10
           });
           
           const { data: updatedUser, error: updateError } = await supabase
@@ -1084,7 +1092,7 @@ app.post('/api/auth/sync', async (c) => {
               email,
               name: name || existingUser.name,
               credits: 10, // ✅ 무료 회원 월 10크레딧 리셋
-              monthly_reset_date: today, // ✅ 기존 컬럼 사용
+              monthly_reset_date: nextResetDate, // ✅ 다음 달 1일로 설정
               updated_at: new Date().toISOString()
             })
             .eq('id', user_id)
@@ -1127,7 +1135,13 @@ app.post('/api/auth/sync', async (c) => {
       }
     } else {
       // 3️⃣ 신규 사용자: 무료 회원으로 생성
-      console.log('🆕 신규 무료 회원 생성:', email);
+      const nextResetDate = getNextMonthFirstDay();
+      console.log('🆕 신규 무료 회원 생성:', {
+        email,
+        credits: 10,
+        monthly_reset_date: nextResetDate,
+        설명: '다음 달 1일에 크레딧이 리셋됩니다'
+      });
       
       const { data: newUser, error: insertError } = await supabase
         .from('users')
@@ -1137,7 +1151,7 @@ app.post('/api/auth/sync', async (c) => {
           name: name || null,
           tier: 'free', // ✅ 무료 회원
           credits: 10, // ✅ 월 10크레딧
-          monthly_reset_date: today // ✅ 기존 컬럼 사용
+          monthly_reset_date: nextResetDate // ✅ 다음 달 1일로 설정
         })
         .select()
         .single();
