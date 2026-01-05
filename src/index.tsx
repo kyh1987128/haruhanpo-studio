@@ -1072,8 +1072,8 @@ app.post('/api/auth/sync', async (c) => {
           : null;
         const currentMonth = todayString.substring(0, 7); // 'YYYY-MM'
         
-        // 리셋 필요 조건: 리셋 월이 현재 월보다 이전이거나 없을 때
-        const needsReset = !userResetMonth || currentMonth > userResetMonth;
+        // ✅ 리셋 필요 조건: 현재 월이 리셋 월과 같거나 나중일 때
+        const needsReset = !userResetMonth || currentMonth >= userResetMonth;
         
         console.log('🔍 월간 리셋 확인:', {
           monthly_reset_date: existingUser.monthly_reset_date,
@@ -1081,7 +1081,7 @@ app.post('/api/auth/sync', async (c) => {
           currentMonth,
           currentCredits: existingUser.credits,
           needsReset,
-          계산로직: '현재 월(YYYY-MM)이 리셋 월보다 나중이면 리셋'
+          계산로직: '현재 월이 리셋 월과 같거나 나중이면 리셋 (>= 비교)'
         });
         
         if (needsReset) {
