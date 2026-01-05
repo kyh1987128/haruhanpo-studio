@@ -1066,15 +1066,22 @@ app.post('/api/auth/sync', async (c) => {
       
       // 무료 회원만 월간 리셋 (tier === 'free')
       if (existingUser.tier === 'free') {
-        const resetDate = existingUser.monthly_reset_date ? new Date(existingUser.monthly_reset_date) : null;
-        const needsReset = !resetDate || todayString >= existingUser.monthly_reset_date;
+        // 연월(YYYY-MM)로만 비교
+        const userResetMonth = existingUser.monthly_reset_date 
+          ? existingUser.monthly_reset_date.substring(0, 7) 
+          : null;
+        const currentMonth = todayString.substring(0, 7); // 'YYYY-MM'
+        
+        // 리셋 필요 조건: 리셋 월이 현재 월보다 이전이거나 없을 때
+        const needsReset = !userResetMonth || currentMonth > userResetMonth;
         
         console.log('🔍 월간 리셋 확인:', {
           monthly_reset_date: existingUser.monthly_reset_date,
-          todayString,
+          userResetMonth,
+          currentMonth,
           currentCredits: existingUser.credits,
           needsReset,
-          계산로직: '리셋 날짜가 현재 날짜보다 작거나 같으면 리셋 필요'
+          계산로직: '현재 월(YYYY-MM)이 리셋 월보다 나중이면 리셋'
         });
         
         if (needsReset) {
