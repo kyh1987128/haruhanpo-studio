@@ -1991,6 +1991,9 @@ async function handleGenerate() {
         // 4️⃣ 전체 UI 업데이트
         updateAuthUI();
         
+        // 5️⃣ 하단 크레딧 박스 업데이트 (즉시 반영)
+        updateCostEstimate();
+        
         showToast(`✅ 콘텐츠 생성 완료! (1크레딧 사용, 남은 크레딧: ${result.usage.credits_remaining})`, 'success');
       } else {
         showToast('✅ 콘텐츠 생성 완료!', 'success');
@@ -2589,6 +2592,9 @@ async function forceGenerate() {
         
         // 4️⃣ 전체 UI 업데이트
         updateAuthUI();
+        
+        // 5️⃣ 하단 크레딧 박스 업데이트 (즉시 반영)
+        updateCostEstimate();
         
         showToast(`✅ 콘텐츠 생성 완료! (1크레딧 사용, 남은 크레딧: ${result.usage.credits_remaining})`, 'success');
       } else {
