@@ -1061,10 +1061,18 @@ app.post('/api/auth/sync', async (c) => {
           ? existingUser.monthly_reset_date.substring(0, 7) 
           : null;
         
+        console.log('🔍 월간 리셋 확인:', {
+          userResetMonth,
+          currentMonth,
+          monthly_reset_date: existingUser.monthly_reset_date,
+          currentCredits: existingUser.credits,
+          needsReset: !userResetMonth || userResetMonth < currentMonth
+        });
+        
         const needsReset = !userResetMonth || userResetMonth < currentMonth;
         
         if (needsReset) {
-          console.log('📅 무료 회원 월간 크레딧 리셋:', { 
+          console.log('📅 무료 회원 월간 크레딧 리셋 실행!', { 
             userResetMonth, 
             currentMonth,
             oldCredits: existingUser.credits
