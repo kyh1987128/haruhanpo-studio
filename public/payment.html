@@ -3,298 +3,179 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>크레딧 충전소 - 하루한포 스튜디오</title>
+  <title>크레딧 충전소 | 하루한포 스튜디오</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
-  <script src="https://js.tosspayments.com/v1"></script>
+  <script src="https://js.tosspayments.com/v1/payment"></script>
   <style>
-    .product-card {
-      transition: all 0.3s;
-    }
-    .product-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    }
-    .product-card.selected {
-      border-color: #667eea;
-      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-    }
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    body { font-family: "Pretendard", sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .product-card:hover { transform: translateY(-5px); transition: all 0.3s ease; }
   </style>
 </head>
-<body class="bg-gray-50">
-  <!-- Header -->
-  <header class="bg-white shadow-sm border-b border-gray-200">
-    <div class="max-w-7xl mx-auto px-4 py-4">
-      <div class="flex justify-between items-center">
-        <a href="/" class="flex items-center space-x-2">
-          <i class="fas fa-arrow-left text-gray-600"></i>
-          <span class="text-lg font-bold text-gray-800">하루한포 스튜디오</span>
-        </a>
-        <div id="userInfo" class="text-sm text-gray-600">
-          <!-- 로그인 정보 -->
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <!-- Main Content -->
-  <main class="max-w-7xl mx-auto px-4 py-8">
-    <!-- 현재 크레딧 정보 -->
-    <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-8 text-white mb-8 shadow-lg">
-      <div class="flex justify-between items-center">
-        <div>
-          <h2 class="text-3xl font-bold mb-2">크레딧 충전소</h2>
-          <p class="text-blue-100">필요한 크레딧을 선택하고 충전하세요</p>
-        </div>
-        <div class="text-right">
-          <div class="text-sm text-blue-100 mb-1">보유 크레딧</div>
-          <div id="currentCredits" class="text-4xl font-bold">0</div>
-          <div id="creditDetail" class="text-sm text-blue-100 mt-1"></div>
-        </div>
+<body class="min-h-screen flex items-center justify-center p-4">
+  <div class="max-w-6xl w-full">
+    <!-- 헤더 -->
+    <div class="text-center mb-12">
+      <h1 class="text-4xl font-bold text-white mb-4">⚡ 크레딧 충전소</h1>
+      <p class="text-white/80 text-lg">차등 과금으로 더 합리적인 콘텐츠 생성</p>
+      <div class="mt-6 bg-white/10 backdrop-blur-sm rounded-2xl p-4 inline-block">
+        <p class="text-white/90 text-sm">
+          💡 <strong>차등 과금 안내:</strong> 1개=1크레딧 | 2-3개=2크레딧 | 4-9개=4크레딧
+        </p>
       </div>
     </div>
 
-    <!-- 크레딧 상품 -->
-    <div class="mb-12">
-      <h3 class="text-2xl font-bold text-gray-800 mb-6">
-        <i class="fas fa-coins text-yellow-500 mr-2"></i>
-        크레딧 상품
-      </h3>
-      <div class="grid md:grid-cols-3 gap-6" id="creditProducts">
-        <!-- 동적으로 로드 -->
-      </div>
+    <!-- 로딩 -->
+    <div id="loading" class="text-center py-20">
+      <div class="animate-spin rounded-full h-16 w-16 border-4 border-white/30 border-t-white mx-auto"></div>
+      <p class="mt-6 text-white/80 text-lg">상품 정보를 불러오는 중...</p>
     </div>
 
-    <!-- 차등 과금 안내 -->
-    <div class="bg-white rounded-xl p-6 shadow-md border border-gray-200 mb-8">
-      <h3 class="text-xl font-bold text-gray-800 mb-4">
-        <i class="fas fa-info-circle text-blue-500 mr-2"></i>
-        차등 과금 안내
-      </h3>
-      <div class="grid md:grid-cols-3 gap-4">
-        <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
-          <div class="text-3xl font-bold text-blue-600 mb-2">1크레딧</div>
-          <div class="text-sm text-gray-600">플랫폼 1개 선택</div>
-          <div class="text-xs text-gray-500 mt-2">
-            예: 블로그만 생성
-          </div>
-        </div>
-        <div class="bg-purple-50 rounded-lg p-4 border border-purple-200">
-          <div class="text-3xl font-bold text-purple-600 mb-2">2크레딧</div>
-          <div class="text-sm text-gray-600">플랫폼 2-3개 선택</div>
-          <div class="text-xs text-gray-500 mt-2">
-            예: 블로그 + 인스타
-          </div>
-        </div>
-        <div class="bg-pink-50 rounded-lg p-4 border border-pink-200">
-          <div class="text-3xl font-bold text-pink-600 mb-2">4크레딧</div>
-          <div class="text-sm text-gray-600">플랫폼 4-9개 선택</div>
-          <div class="text-xs text-gray-500 mt-2">
-            예: 전체 플랫폼 생성
-          </div>
-        </div>
-      </div>
+    <!-- 상품 목록 -->
+    <div id="products-container" class="grid md:grid-cols-3 gap-8 hidden">
+      <!-- 자바스크립트로 동적 생성 -->
     </div>
 
-    <!-- 무료 크레딧 안내 -->
-    <div class="bg-gradient-to-r from-green-400 to-blue-500 rounded-xl p-6 text-white shadow-md">
-      <div class="flex items-start space-x-4">
-        <i class="fas fa-gift text-3xl mt-1"></i>
-        <div>
-          <h3 class="text-xl font-bold mb-2">무료 크레딧 안내</h3>
-          <p class="text-sm text-green-50 mb-3">
-            매월 1일 자동으로 10크레딧이 무료로 지급됩니다. 무료 크레딧은 유료 크레딧보다 먼저 사용됩니다.
-          </p>
-          <div class="flex items-center space-x-4 text-sm">
-            <div class="flex items-center space-x-2">
-              <i class="fas fa-calendar-alt"></i>
-              <span>매월 1일 자동 지급</span>
-            </div>
-            <div class="flex items-center space-x-2">
-              <i class="fas fa-bolt"></i>
-              <span>우선 사용</span>
-            </div>
-          </div>
-        </div>
-      </div>
+    <!-- 하단 링크 -->
+    <div class="mt-16 text-center">
+      <a href="/" class="text-white/80 hover:text-white font-medium text-lg transition-colors">
+        ← 메인으로 돌아가기
+      </a>
     </div>
-  </main>
+  </div>
 
   <script>
-    let currentUser = null;
-    let selectedProduct = null;
+    // 토스페이먼츠 초기화 (테스트 키)
     let tossPayments = null;
-
-    // 초기화
-    async function init() {
-      // 사용자 정보 로드
-      const userData = localStorage.getItem('postflow_user');
-      if (userData) {
-        currentUser = JSON.parse(userData);
-        updateUserInfo();
-      } else {
-        alert('로그인이 필요합니다.');
-        window.location.href = '/';
-        return;
-      }
-
-      // 토스페이먼츠 초기화
-      const clientKey = 'test_ck_4yKeq5bgrpWzRPzkLdLVrGX0lzW6'; // TODO: 환경변수로 변경
+    try {
+      const clientKey = 'test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq'; // 임시 테스트 키
       tossPayments = TossPayments(clientKey);
-
-      // 크레딧 상품 로드
-      await loadProducts();
+      console.log('✅ 토스페이먼츠 초기화 성공');
+    } catch (e) {
+      console.warn('⚠️ 토스페이먼츠 초기화 실패:', e.message);
     }
 
-    // 사용자 정보 업데이트
-    function updateUserInfo() {
-      const freeCredits = currentUser.free_credits ?? 0;
-      const paidCredits = currentUser.paid_credits ?? 0;
-      const totalCredits = freeCredits + paidCredits;
-
-      document.getElementById('currentCredits').textContent = totalCredits;
-
-      let creditDetail = '';
-      if (freeCredits > 0 && paidCredits > 0) {
-        creditDetail = `(무료 ${freeCredits} + 유료 ${paidCredits})`;
-      } else if (freeCredits > 0) {
-        creditDetail = `(무료)`;
-      } else if (paidCredits > 0) {
-        creditDetail = `(유료)`;
-      }
-      document.getElementById('creditDetail').textContent = creditDetail;
-
-      document.getElementById('userInfo').innerHTML = `
-        <div class="flex items-center space-x-2">
-          <i class="fas fa-user-circle text-lg"></i>
-          <span>${currentUser.name || currentUser.email}</span>
-        </div>
-      `;
-    }
-
-    // 크레딧 상품 로드
+    // 상품 목록 불러오기
     async function loadProducts() {
       try {
         const response = await fetch('/api/products');
         const data = await response.json();
 
-        if (data.success && data.products) {
+        console.log('📦 상품 API 응답:', data);
+
+        if (data.success && data.products && data.products.length > 0) {
           renderProducts(data.products);
+          console.log(`✅ 상품 목록 로드 성공: ${data.products.length}개`);
+        } else {
+          showError('판매 중인 상품이 없습니다. DB에서 상품을 추가해주세요.');
         }
       } catch (error) {
-        console.error('상품 로드 실패:', error);
-        // 기본 상품 표시
-        renderProducts([
-          { id: 1, name: 'STARTER', credits: 10, price: 2000, discount_percent: 0 },
-          { id: 2, name: 'PRO', credits: 50, price: 9000, discount_percent: 10 },
-          { id: 3, name: 'BUSINESS', credits: 100, price: 17000, discount_percent: 15 }
-        ]);
+        console.error('❌ 상품 로딩 실패:', error);
+        showError('상품 정보를 불러오지 못했습니다.');
       }
     }
 
-    // 상품 렌더링
+    // 상품 카드 렌더링
     function renderProducts(products) {
-      const container = document.getElementById('creditProducts');
-      container.innerHTML = products.map((product, index) => {
+      const container = document.getElementById('products-container');
+      const loading = document.getElementById('loading');
+      
+      container.innerHTML = products.map(product => {
+        const isPopular = product.name === 'PRO';
         const pricePerCredit = Math.round(product.price / product.credits);
-        const badges = [];
         
-        if (index === 0) badges.push('<span class="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">시작하기 좋은</span>');
-        if (index === 1) badges.push('<span class="bg-purple-500 text-white text-xs px-2 py-1 rounded-full">인기</span>');
-        if (index === 2) badges.push('<span class="bg-pink-500 text-white text-xs px-2 py-1 rounded-full">최고 할인</span>');
-
         return `
-          <div class="product-card bg-white rounded-xl p-6 border-2 border-gray-200 cursor-pointer shadow-md" 
-               onclick="selectProduct(${JSON.stringify(product).replace(/"/g, '&quot;')})">
-            <div class="flex justify-between items-start mb-4">
-              <h4 class="text-xl font-bold text-gray-800">${product.name}</h4>
-              ${badges.join('')}
+          <div class="product-card bg-white rounded-3xl shadow-xl overflow-hidden ${isPopular ? 'ring-4 ring-yellow-400' : ''}">
+            ${isPopular ? '<div class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-center py-2 font-bold">🔥 가장 인기</div>' : ''}
+            
+            <div class="p-8">
+              <div class="text-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">${product.name}</h3>
+                <div class="text-5xl font-bold text-indigo-600 mb-1">${product.credits}</div>
+                <div class="text-gray-500">크레딧</div>
+              </div>
+              
+              <div class="mb-6">
+                <p class="text-gray-600 text-center mb-4">${product.description || '크레딧을 충전하고 콘텐츠를 생성하세요'}</p>
+                <div class="bg-gray-50 rounded-xl p-4">
+                  <div class="text-sm text-gray-600 space-y-2">
+                    <div class="flex justify-between">
+                      <span>개당 가격:</span>
+                      <span class="font-semibold">${pricePerCredit}원</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span>유효기간:</span>
+                      <span class="font-semibold text-green-600">무제한</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <button 
+                onclick="requestPayment('${product.name}', ${product.credits}, ${product.price})" 
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition duration-200 text-lg">
+                ${product.price.toLocaleString()}원 결제하기
+              </button>
             </div>
-            <div class="mb-4">
-              <div class="text-4xl font-bold text-gray-900 mb-1">
-                ${product.credits}<span class="text-lg text-gray-500">크레딧</span>
-              </div>
-              <div class="text-2xl font-bold text-purple-600">
-                ₩${product.price.toLocaleString()}
-              </div>
-              <div class="text-sm text-gray-500 mt-1">
-                개당 ₩${pricePerCredit}
-              </div>
-            </div>
-            ${product.discount_percent > 0 ? `
-              <div class="bg-red-50 text-red-600 text-sm font-semibold px-3 py-2 rounded-lg mb-3">
-                <i class="fas fa-tag mr-1"></i>
-                ${product.discount_percent}% 할인
-              </div>
-            ` : ''}
-            <button class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 rounded-lg hover:from-blue-600 hover:to-purple-700 transition">
-              <i class="fas fa-shopping-cart mr-2"></i>
-              구매하기
-            </button>
           </div>
         `;
       }).join('');
+
+      loading.classList.add('hidden');
+      container.classList.remove('hidden');
     }
 
-    // 상품 선택
-    function selectProduct(product) {
-      selectedProduct = product;
-      
-      // 모든 카드 선택 해제
-      document.querySelectorAll('.product-card').forEach(card => {
-        card.classList.remove('selected');
-      });
-      
-      // 선택된 카드 강조
-      event.currentTarget.classList.add('selected');
-      
-      // 결제 진행
-      proceedToPayment();
-    }
+    // 결제 요청
+    async function requestPayment(productName, credits, price) {
+      // 로그인 체크
+      const userStr = localStorage.getItem('postflow_user');
+      if (!userStr) {
+        alert('로그인이 필요합니다.');
+        location.href = '/';
+        return;
+      }
 
-    // 결제 진행
-    async function proceedToPayment() {
-      if (!selectedProduct) return;
+      if (!tossPayments) {
+        alert('결제 시스템 준비 중입니다. (토스 API 키 설정 필요)');
+        return;
+      }
+
+      const user = JSON.parse(userStr);
+      const orderId = 'ORDER-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+
+      console.log('💳 결제 요청:', { productName, credits, price, orderId });
 
       try {
-        // 결제 요청 생성
-        const response = await fetch('/api/payments/create', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('postflow_token')}`
-          },
-          body: JSON.stringify({
-            paymentType: 'credit_pack',
-            amount: selectedProduct.price,
-            creditPackSize: selectedProduct.credits
-          })
+        await tossPayments.requestPayment('카드', {
+          amount: price,
+          orderId: orderId,
+          orderName: `하루한포 ${productName} ${credits}크레딧`,
+          customerName: user.name || user.email || '사용자',
+          successUrl: window.location.origin + '/payment-success.html',
+          failUrl: window.location.origin + '/payment-fail.html',
         });
-
-        const data = await response.json();
-
-        if (data.success && data.paymentData) {
-          // 토스페이먼츠 결제창 호출
-          await tossPayments.requestPayment('카드', {
-            amount: data.paymentData.amount,
-            orderId: data.paymentData.orderId,
-            orderName: data.paymentData.orderName,
-            customerName: data.paymentData.customerName,
-            customerEmail: data.paymentData.customerEmail,
-            successUrl: data.paymentData.successUrl,
-            failUrl: data.paymentData.failUrl
-          });
-        } else {
-          alert('결제 요청에 실패했습니다: ' + (data.message || '알 수 없는 오류'));
-        }
       } catch (error) {
-        console.error('결제 오류:', error);
-        alert('결제 처리 중 오류가 발생했습니다.');
+        if (error.code === 'USER_CANCEL') {
+          console.log('사용자가 결제를 취소했습니다.');
+        } else {
+          console.error('결제 오류:', error);
+          alert('결제 중 오류가 발생했습니다: ' + error.message);
+        }
       }
     }
 
-    // 페이지 로드 시 초기화
-    document.addEventListener('DOMContentLoaded', init);
+    // 에러 표시
+    function showError(message) {
+      document.getElementById('loading').innerHTML = 
+        `<div class="text-center py-20">
+          <div class="text-6xl mb-4">⚠️</div>
+          <p class="text-white text-xl">${message}</p>
+          <p class="text-white/60 text-sm mt-4">관리자에게 문의해주세요.</p>
+        </div>`;
+    }
+
+    // 초기화
+    document.addEventListener('DOMContentLoaded', loadProducts);
   </script>
 </body>
 </html>
