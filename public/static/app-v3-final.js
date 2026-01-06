@@ -3539,110 +3539,119 @@ function setElementValue(id, value) {
   return false;
 }
 
-function openLoadProfileModal() {
+// ✅ DB 기반 프로필 불러오기 모달 (localStorage 제거)
+async function openLoadProfileModal() {
   const modal = document.getElementById('profileModal');
   const profileList = document.getElementById('profileList');
   
-  if (savedProfiles.length === 0) {
-    profileList.innerHTML = '<p class="text-gray-500 text-center py-8">저장된 프로필이 없습니다</p>';
-  } else {
-    profileList.innerHTML = savedProfiles.map(profile => {
-      const platformNames = {
-        blog: '블로그',
-        instagram: '인스타',
-        threads: '스레드',
-        youtube: '유튜브'
-      };
-      const platformsText = profile.selectedPlatforms 
-        ? profile.selectedPlatforms.map(p => platformNames[p] || p).join(', ')
-        : '플랫폼 정보 없음';
-      
-      return `
+  // 로그인 확인
+  const userData = localStorage.getItem('postflow_user');
+  if (!userData) {
+    profileList.innerHTML = '<p class="text-red-500 text-center py-8">❌ 로그인이 필요합니다</p>';
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    return;
+  }
+  
+  const user = JSON.parse(userData);
+  const userId = user.id;
+  
+  if (!userId) {
+    profileList.innerHTML = '<p class="text-red-500 text-center py-8">❌ 사용자 정보를 찾을 수 없습니다</p>';
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    return;
+  }
+  
+  // 로딩 표시
+  profileList.innerHTML = '<p class="text-gray-500 text-center py-8">🔄 프로필 불러오는 중...</p>';
+  modal.classList.remove('hidden');
+  modal.style.display = 'flex';
+  
+  try {
+    console.log('📖 프로필 조회 시작:', userId);
+    
+    // DB에서 프로필 조회
+    const response = await fetch(`/api/profile?user_id=${userId}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('✅ DB 프로필:', result);
+    
+    if (!result.success || !result.data) {
+      profileList.innerHTML = '<p class="text-gray-500 text-center py-8">저장된 프로필이 없습니다</p>';
+      return;
+    }
+    
+    const profile = result.data;
+    
+    // 프로필 표시 (하나만 표시)
+    profileList.innerHTML = `
       <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
         <div class="flex justify-between items-start mb-2">
           <div class="flex-1">
-            <h4 class="font-bold text-gray-800">${profile.name}</h4>
-            <p class="text-sm text-gray-600">${profile.brand}</p>
+            <h4 class="font-bold text-gray-800">${profile.name || '이름 없음'}</h4>
+            <p class="text-sm text-gray-600">${profile.brand || '브랜드 정보 없음'}</p>
             <p class="text-xs text-gray-500 mt-1">
-              ${profile.industry || '산업분야 미설정'} | ${profile.targetAge || '연령대 미설정'} | ${profile.tone || '톤 미설정'}
-            </p>
-            <p class="text-xs text-purple-600 font-semibold mt-1">
-              📱 ${platformsText}
+              ${profile.industry || '산업분야 미설정'} | ${profile.target_age || '연령대 미설정'} | ${profile.tone || '톤 미설정'}
             </p>
           </div>
-          <div class="space-x-2">
+          <div>
             <button
-              onclick="loadProfile(${profile.id})"
-              class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm"
+              onclick="applyStoredProfile()"
+              class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm"
             >
-              불러오기
-            </button>
-            <button
-              onclick="deleteProfile(${profile.id})"
-              class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition text-sm"
-            >
-              삭제
+              이 프로필 불러오기
             </button>
           </div>
         </div>
-        <p class="text-xs text-gray-500">${new Date(profile.createdAt).toLocaleString()}</p>
+        <p class="text-xs text-gray-500">${new Date(profile.updated_at || Date.now()).toLocaleString()}</p>
       </div>
-    `}).join('');
+    `;
+    
+  } catch (error) {
+    console.error('❌ 프로필 조회 실패:', error);
+    profileList.innerHTML = '<p class="text-red-500 text-center py-8">❌ 프로필을 불러올 수 없습니다</p>';
   }
-  
-  modal.classList.remove('hidden');
-  modal.style.display = 'flex';
 }
 
+// ✅ DB 프로필을 폼에 적용 (loadProfileFromDB 재사용)
+async function applyStoredProfile() {
+  const userData = localStorage.getItem('postflow_user');
+  if (!userData) {
+    showToast('로그인이 필요합니다', 'error');
+    return;
+  }
+  
+  const user = JSON.parse(userData);
+  const userId = user.id;
+  
+  // 기존 loadProfileFromDB 재사용
+  await loadProfileFromDB(userId);
+  
+  // 모달 닫기
+  closeProfileModal();
+  
+  showToast('프로필을 불러왔습니다!', 'success');
+}
+
+// ✅ 프로필 모달 닫기
+function closeProfileModal() {
+  const modal = document.getElementById('profileModal');
+  modal.classList.add('hidden');
+  modal.style.display = 'none';
+}
+
+// ⚠️ 구버전 함수 (DB 기반으로 교체됨, 호환성을 위해 유지)
 function loadProfile(id) {
-  const profile = savedProfiles.find(p => p.id === id);
-  if (!profile) return;
-  
-  // 기본 필드 (옵셔널 체이닝 추가)
-  const brandEl = document.getElementById('brand');
-  const keywordsEl = document.getElementById('keywords');
-  
-  if (brandEl) brandEl.value = profile.brand || '';
-  if (document.getElementById('companyName')) document.getElementById('companyName').value = profile.companyName || '';
-  if (document.getElementById('businessType')) document.getElementById('businessType').value = profile.businessType || '';
-  if (document.getElementById('location')) document.getElementById('location').value = profile.location || '';
-  if (document.getElementById('targetGender')) document.getElementById('targetGender').value = profile.targetGender || '';
-  if (document.getElementById('contact')) document.getElementById('contact').value = profile.contact || '';
-  if (document.getElementById('website')) document.getElementById('website').value = profile.website || '';
-  if (document.getElementById('sns')) document.getElementById('sns').value = profile.sns || '';
-  if (keywordsEl) keywordsEl.value = profile.keywords || '';
-  if (document.getElementById('tone')) document.getElementById('tone').value = profile.tone || '친근한';
-  if (document.getElementById('targetAge')) document.getElementById('targetAge').value = profile.targetAge || '20대';
-  if (document.getElementById('industry')) document.getElementById('industry').value = profile.industry || '라이프스타일';
-  
-  // 플랫폼 체크박스 복원 ⭐
-  const platformCheckboxes = document.querySelectorAll('input[name="platform"]');
-  platformCheckboxes.forEach(checkbox => {
-    if (profile.selectedPlatforms && profile.selectedPlatforms.includes(checkbox.value)) {
-      checkbox.checked = true;
-    } else {
-      checkbox.checked = false;
-    }
-  });
-  
-  // 비용 재계산
-  updateCostEstimate();
-  
-  closeModal('profileModal');
-  showToast('✅ 프로필이 불러와졌습니다', 'success');
+  console.warn('⚠️ loadProfile() is deprecated. Use applyStoredProfile() instead.');
 }
 
 function deleteProfile(id) {
-  if (!confirm('이 프로필을 삭제하시겠습니까?')) return;
-  
-  savedProfiles = savedProfiles.filter(p => p.id !== id);
-  
-  // ✅ 사용자별 프로필 저장
-  const profileKey = `${STORAGE_KEYS.PROFILES}_${currentUser.id}`;
-  localStorage.setItem(profileKey, JSON.stringify(savedProfiles));
-  
-  openLoadProfileModal();
-  showToast('✅ 프로필이 삭제되었습니다', 'success');
+  console.warn('⚠️ deleteProfile() is deprecated.');
 }
 
 function exportProfiles() {
