@@ -779,18 +779,18 @@ app.post('/api/generate', async (c) => {
     }
 
     // 유튜브 쇼츠: Gemini Flash
-    if (platforms.includes('youtube')) {
+    if (platforms.includes('youtube_shorts') || platforms.includes('youtube')) {
       if (geminiApiKey) {
         console.log('  🎬 유튜브 숏폼: Gemini Flash (70% 절감)');
         generationTasks.push(
           generateContentWithGemini(geminiApiKey, getYouTubePrompt(promptParams))
             .then(content => {
               totalCost.gemini += 0.023; // 약 23원
-              return { platform: 'youtube', content };
+              return { platform: 'youtube_shorts', content };
             })
         );
       } else {
-        generationTasks.push(generateContent(openai, 'youtube', getYouTubePrompt(promptParams), aiModel));
+        generationTasks.push(generateContent(openai, 'youtube_shorts', getYouTubePrompt(promptParams), aiModel));
       }
     }
     
