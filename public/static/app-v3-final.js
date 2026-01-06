@@ -2008,17 +2008,27 @@ async function handleGenerate() {
       displayResults(result.data, result.generatedPlatforms);
       saveToHistory(formData, result.data);
       
-      // ✅ 크레딧 정보 업데이트 (2지갑 시스템)
+      // ✅ 크레딧 정보 업데이트 (키 매핑 + 2지갑 시스템)
       if (result.usage) {
-        // 1️⃣ currentUser 객체 업데이트
-        if (result.usage.free_credits !== undefined) {
-          currentUser.free_credits = result.usage.free_credits;
+        console.log('🔍 백엔드 응답 usage:', result.usage);
+        
+        const usage = result.usage;
+        
+        // 1️⃣ 무료 크레딧 업데이트 (여러 키 지원)
+        if (usage.free_credits !== undefined || usage.free_remaining !== undefined) {
+          currentUser.free_credits = usage.free_credits ?? usage.free_remaining ?? 0;
         }
-        if (result.usage.paid_credits !== undefined) {
-          currentUser.paid_credits = result.usage.paid_credits;
+        
+        // 2️⃣ 유료 크레딧 업데이트 (여러 키 지원)
+        if (usage.paid_credits !== undefined || usage.paid_remaining !== undefined) {
+          currentUser.paid_credits = usage.paid_credits ?? usage.paid_remaining ?? 0;
         }
-        if (result.usage.credits_remaining !== undefined) {
-          currentUser.credits = result.usage.credits_remaining;
+        
+        // 3️⃣ 총 크레딧 계산
+        if (usage.credits_remaining !== undefined) {
+          currentUser.credits = usage.credits_remaining;
+        } else {
+          currentUser.credits = (currentUser.free_credits || 0) + (currentUser.paid_credits || 0);
         }
         
         // 2️⃣ 로컬스토리지 업데이트
@@ -2034,7 +2044,7 @@ async function handleGenerate() {
         const freeCredits = currentUser.free_credits || 0;
         const paidCredits = currentUser.paid_credits || 0;
         const totalCredits = freeCredits + paidCredits;
-        const creditsUsed = result.usage.credits_used || 1;
+        const creditsUsed = usage.credits_used || 1;
         
         let creditInfo = `남은 크레딧: ${totalCredits}`;
         if (freeCredits > 0 && paidCredits > 0) {
@@ -2049,6 +2059,7 @@ async function handleGenerate() {
           free: currentUser.free_credits,
           paid: currentUser.paid_credits,
           total: totalCredits,
+          used: creditsUsed,
           display: creditInfo
         });
         
@@ -2636,17 +2647,27 @@ async function forceGenerate() {
       // 🔥 히스토리 자동저장 (await 추가)
       await saveToHistory(formDataWithForce, result.data);
       
-      // ✅ 크레딧 정보 업데이트 (2지갑 시스템)
+      // ✅ 크레딧 정보 업데이트 (키 매핑 + 2지갑 시스템)
       if (result.usage) {
-        // 1️⃣ currentUser 객체 업데이트
-        if (result.usage.free_credits !== undefined) {
-          currentUser.free_credits = result.usage.free_credits;
+        console.log('🔍 백엔드 응답 usage:', result.usage);
+        
+        const usage = result.usage;
+        
+        // 1️⃣ 무료 크레딧 업데이트 (여러 키 지원)
+        if (usage.free_credits !== undefined || usage.free_remaining !== undefined) {
+          currentUser.free_credits = usage.free_credits ?? usage.free_remaining ?? 0;
         }
-        if (result.usage.paid_credits !== undefined) {
-          currentUser.paid_credits = result.usage.paid_credits;
+        
+        // 2️⃣ 유료 크레딧 업데이트 (여러 키 지원)
+        if (usage.paid_credits !== undefined || usage.paid_remaining !== undefined) {
+          currentUser.paid_credits = usage.paid_credits ?? usage.paid_remaining ?? 0;
         }
-        if (result.usage.credits_remaining !== undefined) {
-          currentUser.credits = result.usage.credits_remaining;
+        
+        // 3️⃣ 총 크레딧 계산
+        if (usage.credits_remaining !== undefined) {
+          currentUser.credits = usage.credits_remaining;
+        } else {
+          currentUser.credits = (currentUser.free_credits || 0) + (currentUser.paid_credits || 0);
         }
         
         // 2️⃣ 로컬스토리지 업데이트
@@ -2662,7 +2683,7 @@ async function forceGenerate() {
         const freeCredits = currentUser.free_credits || 0;
         const paidCredits = currentUser.paid_credits || 0;
         const totalCredits = freeCredits + paidCredits;
-        const creditsUsed = result.usage.credits_used || 1;
+        const creditsUsed = usage.credits_used || 1;
         
         let creditInfo = `남은 크레딧: ${totalCredits}`;
         if (freeCredits > 0 && paidCredits > 0) {
@@ -2677,6 +2698,7 @@ async function forceGenerate() {
           free: currentUser.free_credits,
           paid: currentUser.paid_credits,
           total: totalCredits,
+          used: creditsUsed,
           display: creditInfo
         });
         
@@ -4428,7 +4450,14 @@ async function syncUserToBackend(session, isNewUser = false) {
       currentUser.tier = data.tier || 'free'; // 'guest' | 'free' | 'paid'
       currentUser.free_credits = data.free_credits ?? 0; // ✅ 무료 크레딧
       currentUser.paid_credits = data.paid_credits ?? 0; // ✅ 유료 크레딧
-      currentUser.credits = data.credits ?? 10; // ✅ 총 크레딧 (하위 호환)
+      currentUser.credits = (data.free_credits ?? 0) + (data.paid_credits ?? 0); // ✅ 총 크레딧 계산
+      
+      console.log('📊 currentUser 업데이트:', {
+        tier: currentUser.tier,
+        free_credits: currentUser.free_credits,
+        paid_credits: currentUser.paid_credits,
+        total_credits: currentUser.credits
+      });
       
       localStorage.setItem('postflow_user', JSON.stringify(currentUser));
       updateAuthUI();
@@ -4593,9 +4622,25 @@ function updateAuthUI() {
       creditText = `${totalCredits}크레딧 (무료)`;
     } else if (paidCredits > 0) {
       creditText = `${totalCredits}크레딧 (유료)`;
+    } else {
+      creditText = '0크레딧';
     }
     
     userCredits.textContent = creditText;
+    
+    // 시각적 효과
+    userCredits.style.transition = 'color 0.3s ease';
+    userCredits.style.color = '#4f46e5';
+    setTimeout(() => {
+      userCredits.style.color = '';
+    }, 500);
+    
+    console.log('✅ updateAuthUI 크레딧 표시 업데이트:', {
+      free: freeCredits,
+      paid: paidCredits,
+      total: totalCredits,
+      display: creditText
+    });
   } else {
     // 비회원/게스트 상태
     userInfoArea.classList.add('hidden');
