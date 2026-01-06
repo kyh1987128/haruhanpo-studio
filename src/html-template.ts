@@ -946,23 +946,39 @@ export const htmlTemplate = `
                         </button>
                     </div>
                     
-                    <div class="flex gap-2 items-center">
-                        <span class="text-sm text-gray-600 font-semibold">플랫폼:</span>
+                    <div class="flex gap-2 items-center flex-wrap">
+                        <span class="text-sm text-gray-600 font-semibold">콘텐츠 유형:</span>
                         <label class="flex items-center gap-1 cursor-pointer">
                             <input type="checkbox" value="blog" checked onchange="filterHistory()" class="history-platform-filter">
-                            <span class="text-sm">블로그</span>
+                            <span class="text-sm">📝 블로그</span>
                         </label>
                         <label class="flex items-center gap-1 cursor-pointer">
-                            <input type="checkbox" value="instagram" checked onchange="filterHistory()" class="history-platform-filter">
-                            <span class="text-sm">인스타</span>
+                            <input type="checkbox" value="instagram_feed" checked onchange="filterHistory()" class="history-platform-filter">
+                            <span class="text-sm">📸 인스타 피드</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" value="instagram_reels" checked onchange="filterHistory()" class="history-platform-filter">
+                            <span class="text-sm">🎬 인스타 릴스</span>
                         </label>
                         <label class="flex items-center gap-1 cursor-pointer">
                             <input type="checkbox" value="threads" checked onchange="filterHistory()" class="history-platform-filter">
-                            <span class="text-sm">스레드</span>
+                            <span class="text-sm">🧵 스레드</span>
                         </label>
                         <label class="flex items-center gap-1 cursor-pointer">
-                            <input type="checkbox" value="youtube" checked onchange="filterHistory()" class="history-platform-filter">
-                            <span class="text-sm">유튜브</span>
+                            <input type="checkbox" value="tiktok" checked onchange="filterHistory()" class="history-platform-filter">
+                            <span class="text-sm">🎵 틱톡</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" value="youtube_shorts" checked onchange="filterHistory()" class="history-platform-filter">
+                            <span class="text-sm">🎬 유튜브 쇼츠</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" value="youtube_longform" checked onchange="filterHistory()" class="history-platform-filter">
+                            <span class="text-sm">🎥 유튜브 롱폼</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" value="shortform_multi" checked onchange="filterHistory()" class="history-platform-filter">
+                            <span class="text-sm">📱 숏폼 통합</span>
                         </label>
                         <span class="mx-2 text-gray-300">|</span>
                         <span class="text-sm text-gray-600 font-semibold">정렬:</span>
