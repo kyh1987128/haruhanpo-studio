@@ -1079,13 +1079,16 @@ app.post('/api/auth/sync', async (c) => {
       // 무료 회원만 월간 리셋 (tier === 'free')
       if (existingUser.tier === 'free') {
         // 연월(YYYY-MM)로만 비교
-        const userResetMonth = existingUser.monthly_reset_date 
-          ? existingUser.monthly_reset_date.substring(0, 7) 
+        const userResetDate = existingUser.monthly_reset_date 
+          ? new Date(existingUser.monthly_reset_date)
+          : null;
+        const userResetMonth = userResetDate 
+          ? userResetDate.toISOString().substring(0, 7) 
           : null;
         const currentMonth = todayString.substring(0, 7); // 'YYYY-MM'
         
-        // ✅ 리셋 필요 조건: 현재 월이 리셋 월과 같거나 나중일 때
-        const needsReset = !userResetMonth || currentMonth >= userResetMonth;
+        // ✅ 리셋 필요 조건: 리셋 날짜가 없거나, 현재 월이 리셋 월보다 나중일 때
+        const needsReset = !userResetMonth || currentMonth > userResetMonth;
         
         console.log('🔍 월간 리셋 확인:', {
           monthly_reset_date: existingUser.monthly_reset_date,
@@ -1093,7 +1096,7 @@ app.post('/api/auth/sync', async (c) => {
           currentMonth,
           currentCredits: existingUser.credits,
           needsReset,
-          계산로직: '현재 월이 리셋 월과 같거나 나중이면 리셋 (>= 비교)'
+          계산로직: '현재 월이 리셋 월보다 나중이면 리셋 (> 비교)'
         });
         
         if (needsReset) {
@@ -1195,7 +1198,7 @@ app.post('/api/auth/sync', async (c) => {
       email: user.email,
       name: user.name,
       tier: user.tier || 'free', // 'guest' | 'free' | 'paid'
-      credits: user.credits ?? 10,
+      credits: user.credits !== null && user.credits !== undefined ? user.credits : 0,
       message: existingUser ? '로그인 성공' : '회원가입 완료'
     });
   } catch (error: any) {
