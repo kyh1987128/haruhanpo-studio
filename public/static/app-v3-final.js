@@ -4119,14 +4119,51 @@ function viewHistory(id) {
   showToast('✅ 히스토리를 불러왔습니다', 'success');
 }
 
-function deleteHistory(id) {
+// 🔥 DB 기반 히스토리 삭제 (실제 삭제)
+async function deleteHistory(id) {
   if (!confirm('이 히스토리를 삭제하시겠습니까?')) return;
   
-  contentHistory = contentHistory.filter(h => h.id !== id);
-  localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(contentHistory));
+  const userData = localStorage.getItem('postflow_user');
+  if (!userData) {
+    showToast('❌ 로그인이 필요합니다', 'error');
+    return;
+  }
   
-  openHistoryModal();
-  showToast('✅ 히스토리가 삭제되었습니다', 'success');
+  const user = JSON.parse(userData);
+  const userId = user.id;
+  
+  try {
+    console.log('🗑️ 히스토리 삭제 시작:', id);
+    
+    // 🔥 실제 DB 삭제 API 호출
+    const response = await fetch(`/api/history?id=${id}&user_id=${userId}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('📡 삭제 API 응답:', result);
+    
+    if (!result.success) {
+      showToast('❌ 삭제 실패: ' + result.error, 'error');
+      return;
+    }
+    
+    // ✅ DB 삭제 성공 후에만 로컬 배열 업데이트
+    contentHistory = contentHistory.filter(h => h.id !== id);
+    filterHistory();
+    showToast('✅ 히스토리가 삭제되었습니다', 'success');
+    
+    console.log('✅ 히스토리 삭제 완료:', id);
+    
+  } catch (error) {
+    console.error('❌ 히스토리 삭제 오류:', error);
+    showToast('❌ 네트워크 오류가 발생했습니다', 'error');
+  }
 }
 
 // ===================================

@@ -1566,6 +1566,49 @@ app.post('/api/history', async (c) => {
   }
 });
 
+// 히스토리 삭제 API
+app.delete('/api/history', async (c) => {
+  try {
+    const user_id = c.req.query('user_id');
+    const id = c.req.query('id');
+    
+    if (!user_id || !id) {
+      console.error('❌ user_id 또는 id 누락');
+      return c.json({ error: 'user_id와 id는 필수입니다' }, 400);
+    }
+    
+    console.log('🗑️ 히스토리 삭제:', { id, user_id });
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // 🔒 보안: 본인이 생성한 히스토리만 삭제 가능
+    const { error: deleteError } = await supabase
+      .from('generations')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user_id);
+    
+    if (deleteError) {
+      console.error('❌ 히스토리 삭제 실패:', deleteError);
+      return c.json({ success: false, error: deleteError.message }, 500);
+    }
+    
+    console.log('✅ 히스토리 삭제 완료:', id);
+    
+    return c.json({
+      success: true,
+      id,
+      message: '히스토리가 삭제되었습니다'
+    });
+  } catch (error: any) {
+    console.error('❌ 히스토리 삭제 예외:', error);
+    return c.json({ error: '히스토리 삭제 중 오류가 발생했습니다', details: error.message }, 500);
+  }
+});
+
 // 메인 페이지
 app.get('/', (c) => {
   return c.html(htmlTemplate);
