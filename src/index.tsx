@@ -1153,27 +1153,36 @@ app.post('/api/auth/sync', async (c) => {
       // 2️⃣ 기존 사용자: 업데이트
       console.log('📌 기존 사용자 로그인:', existingUser.email);
       
-      // 💰 월간 무료 크레딧 리셋 (모든 회원)
-      // last_reset_date와 오늘 날짜의 연월(YYYY-MM) 비교
+      // 💰 월간 무료 크레딧 리셋 (가입일 기준 1개월 주기)
+      // last_reset_date + 1개월 <= 오늘 날짜면 리셋
       const userResetDate = existingUser.last_reset_date 
-        ? new Date(existingUser.last_reset_date)
+        ? new Date(existingUser.last_reset_date + 'T00:00:00Z')
         : null;
-      const userResetMonth = userResetDate 
-        ? userResetDate.toISOString().substring(0, 7) 
-        : null;
-      const currentMonth = todayString.substring(0, 7); // 'YYYY-MM'
       
-      // ✅ 리셋 필요 조건: 리셋 날짜가 없거나, 현재 월이 리셋 월보다 나중일 때
-      const needsReset = !userResetMonth || currentMonth > userResetMonth;
+      let needsReset = false;
+      let nextResetDate = null;
+      
+      if (userResetDate) {
+        // 다음 리셋 날짜 계산: last_reset_date + 1개월
+        nextResetDate = new Date(userResetDate);
+        nextResetDate.setUTCMonth(nextResetDate.getUTCMonth() + 1);
+        
+        // 오늘이 다음 리셋 날짜와 같거나 이후면 리셋
+        const today = new Date(todayString + 'T00:00:00Z');
+        needsReset = today >= nextResetDate;
+      } else {
+        // last_reset_date가 없으면 무조건 리셋
+        needsReset = true;
+      }
       
       console.log('🔍 월간 무료 크레딧 리셋 확인:', {
         last_reset_date: existingUser.last_reset_date,
-        userResetMonth,
-        currentMonth,
+        next_reset_date: nextResetDate ? nextResetDate.toISOString().split('T')[0] : null,
+        today: todayString,
         free_credits: existingUser.free_credits,
         paid_credits: existingUser.paid_credits,
         needsReset,
-        계산로직: '현재 월이 리셋 월보다 나중이면 리셋 (> 비교)'
+        계산로직: 'last_reset_date + 1개월 <= 오늘 날짜면 리셋'
       });
       
       if (needsReset) {
