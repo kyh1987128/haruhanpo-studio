@@ -4342,7 +4342,7 @@ async function syncUserToBackend(session, isNewUser = false) {
       
       // 서버에서 받은 정보 업데이트
       currentUser.tier = data.tier || 'free'; // 'guest' | 'free' | 'paid'
-      currentUser.credits = data.credits || 10;
+      currentUser.credits = data.credits ?? 10; // ✅ 0은 유지, null/undefined만 10으로 대체
       
       localStorage.setItem('postflow_user', JSON.stringify(currentUser));
       updateAuthUI();
