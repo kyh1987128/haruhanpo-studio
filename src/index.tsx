@@ -253,7 +253,7 @@ app.post('/api/generate/batch', async (c) => {
 
           if (platforms.includes('youtube') || platforms.includes('youtube_shorts')) {
             generationTasks.push(
-              generateContent(openai, 'youtube', getYouTubePrompt(promptParams), aiModel)
+              generateContent(openai, 'youtube_shorts', getYouTubePrompt(promptParams), aiModel)
             );
           }
           
@@ -264,10 +264,17 @@ app.post('/api/generate/batch', async (c) => {
             );
           }
           
-          // 새로운 플랫폼: 숏폼 (틱톡/릴스/쇼츠 통합)
-          if (platforms.includes('shortform_multi') || platforms.includes('tiktok') || platforms.includes('instagram_reels')) {
+          // 틱톡
+          if (platforms.includes('tiktok')) {
             generationTasks.push(
-              generateContent(openai, 'shortform_multi', getShortformPrompt(promptParams), aiModel)
+              generateContent(openai, 'tiktok', getShortformPrompt(promptParams), aiModel)
+            );
+          }
+          
+          // 인스타그램 릴스
+          if (platforms.includes('instagram_reels')) {
+            generationTasks.push(
+              generateContent(openai, 'instagram_reels', getShortformPrompt(promptParams), aiModel)
             );
           }
           
