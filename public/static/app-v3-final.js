@@ -3984,25 +3984,29 @@ function filterHistory() {
       ? item.keywords.join(', ') 
       : (item.keywords || '');
     
+    // 🔥 UX 개선: 브랜드명 + 키워드 미리보기 (가독성 향상)
+    const titleDisplay = keywordsDisplay 
+      ? `${item.brand || '브랜드명 없음'} (${keywordsDisplay.substring(0, 30)}${keywordsDisplay.length > 30 ? '...' : ''})`
+      : (item.brand || '브랜드명 없음');
+    
     return `
     <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
       <div class="flex justify-between items-start mb-2">
         <div class="flex-1">
-          <h4 class="font-bold text-gray-800 text-lg">${item.brand || '브랜드명 없음'}</h4>
+          <h4 class="font-bold text-gray-800 text-lg">${titleDisplay}</h4>
           <div class="flex flex-wrap gap-1 mt-1">
             ${itemPlatforms.map(p => `<span class="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded">${platformNames[p] || p}</span>`).join('')}
           </div>
-          ${keywordsDisplay ? `<p class="text-sm text-gray-600 mt-1">키워드: ${keywordsDisplay}</p>` : ''}
         </div>
         <div class="flex gap-2 ml-4">
           <button
-            onclick="viewHistory(${item.id})"
+            onclick="viewHistory('${item.id}')"
             class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm whitespace-nowrap"
           >
             👁 보기
           </button>
           <button
-            onclick="deleteHistory(${item.id})"
+            onclick="deleteHistory('${item.id}')"
             class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition text-sm whitespace-nowrap"
           >
             🗑 삭제
