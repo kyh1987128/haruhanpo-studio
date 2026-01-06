@@ -1972,6 +1972,10 @@ async function handleGenerate() {
     }
 
     const result = await response.json();
+    
+    // 🔍 디버깅: 백엔드 응답 전체 로그
+    console.log('🔍 [CRITICAL] 백엔드 응답 전체:', JSON.stringify(result, null, 2));
+    console.log('🔍 [CRITICAL] result.usage:', result.usage);
 
     // 검증 실패 시 확인 모달 표시
     if (result.requireConfirmation && result.validation) {

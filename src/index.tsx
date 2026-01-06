@@ -1048,11 +1048,18 @@ app.post('/api/generate', async (c) => {
         total: totalCost.openai + totalCost.gemini,
         savings: geminiApiKey ? '약 52% 절감 (하이브리드 전략)' : '절감 없음',
       },
-      // ✅ 사용량 정보 추가 (하이브리드 플랜)
+      // ✅ 사용량 정보 추가 (2지갑 시스템 + 차등 과금)
       usage: {
         type: deducted.type, // 'included' | 'credit' | 'none'
         monthly_remaining: deducted.monthly_remaining,
-        credits_remaining: deducted.credits_remaining
+        credits_used: deducted.credits_used, // ✅ 사용된 크레딧
+        free_used: deducted.free_used, // ✅ 무료에서 사용
+        paid_used: deducted.paid_used, // ✅ 유료에서 사용
+        free_credits: deducted.free_credits, // ✅ 남은 무료 크레딧
+        paid_credits: deducted.paid_credits, // ✅ 남은 유료 크레딧
+        free_remaining: deducted.free_remaining, // ✅ 하위 호환
+        paid_remaining: deducted.paid_remaining, // ✅ 하위 호환
+        credits_remaining: deducted.credits_remaining // ✅ 총 크레딧
       }
     });
   } catch (error: any) {
