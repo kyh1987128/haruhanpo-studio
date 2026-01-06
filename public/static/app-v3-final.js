@@ -1974,27 +1974,43 @@ async function handleGenerate() {
       displayResults(result.data, result.generatedPlatforms);
       saveToHistory(formData, result.data);
       
-      // ✅ 크레딧 정보 업데이트 (수정: usage 객체 사용)
-      if (result.usage && result.usage.credits_remaining !== undefined) {
+      // ✅ 크레딧 정보 업데이트 (2지갑 시스템)
+      if (result.usage) {
         // 1️⃣ currentUser 객체 업데이트
-        currentUser.credits = result.usage.credits_remaining;
+        if (result.usage.free_credits !== undefined) {
+          currentUser.free_credits = result.usage.free_credits;
+        }
+        if (result.usage.paid_credits !== undefined) {
+          currentUser.paid_credits = result.usage.paid_credits;
+        }
+        if (result.usage.credits_remaining !== undefined) {
+          currentUser.credits = result.usage.credits_remaining;
+        }
         
         // 2️⃣ 로컬스토리지 업데이트
         localStorage.setItem('postflow_user', JSON.stringify(currentUser));
         
-        // 3️⃣ UI 즉시 업데이트
-        const userCreditsEl = document.getElementById('userCredits');
-        if (userCreditsEl) {
-          userCreditsEl.textContent = `${result.usage.credits_remaining}크레딧`;
-        }
-        
-        // 4️⃣ 전체 UI 업데이트
+        // 3️⃣ UI 즉시 업데이트 (2지갑 표시)
         updateAuthUI();
         
-        // 5️⃣ 하단 크레딧 박스 업데이트 (즉시 반영)
+        // 4️⃣ 하단 크레딧 박스 업데이트 (즉시 반영)
         updateCostEstimate();
         
-        showToast(`✅ 콘텐츠 생성 완료! (1크레딧 사용, 남은 크레딧: ${result.usage.credits_remaining})`, 'success');
+        // 5️⃣ 토스트 메시지 (2지갑 정보)
+        const freeCredits = currentUser.free_credits || 0;
+        const paidCredits = currentUser.paid_credits || 0;
+        const totalCredits = freeCredits + paidCredits;
+        
+        let creditInfo = `남은 크레딧: ${totalCredits}`;
+        if (freeCredits > 0 && paidCredits > 0) {
+          creditInfo = `남은 크레딧: ${totalCredits} (무료 ${freeCredits} + 유료 ${paidCredits})`;
+        } else if (freeCredits > 0) {
+          creditInfo = `남은 크레딧: ${totalCredits} (무료)`;
+        } else if (paidCredits > 0) {
+          creditInfo = `남은 크레딧: ${totalCredits} (유료)`;
+        }
+        
+        showToast(`✅ 콘텐츠 생성 완료! (1크레딧 사용, ${creditInfo})`, 'success');
       } else {
         showToast('✅ 콘텐츠 생성 완료!', 'success');
       }
@@ -2578,27 +2594,43 @@ async function forceGenerate() {
       // 🔥 히스토리 자동저장 (await 추가)
       await saveToHistory(formDataWithForce, result.data);
       
-      // ✅ 크레딧 정보 업데이트 (수정: usage 객체 사용)
-      if (result.usage && result.usage.credits_remaining !== undefined) {
+      // ✅ 크레딧 정보 업데이트 (2지갑 시스템)
+      if (result.usage) {
         // 1️⃣ currentUser 객체 업데이트
-        currentUser.credits = result.usage.credits_remaining;
+        if (result.usage.free_credits !== undefined) {
+          currentUser.free_credits = result.usage.free_credits;
+        }
+        if (result.usage.paid_credits !== undefined) {
+          currentUser.paid_credits = result.usage.paid_credits;
+        }
+        if (result.usage.credits_remaining !== undefined) {
+          currentUser.credits = result.usage.credits_remaining;
+        }
         
         // 2️⃣ 로컬스토리지 업데이트
         localStorage.setItem('postflow_user', JSON.stringify(currentUser));
         
-        // 3️⃣ UI 즉시 업데이트
-        const userCreditsEl = document.getElementById('userCredits');
-        if (userCreditsEl) {
-          userCreditsEl.textContent = `${result.usage.credits_remaining}크레딧`;
-        }
-        
-        // 4️⃣ 전체 UI 업데이트
+        // 3️⃣ UI 즉시 업데이트 (2지갑 표시)
         updateAuthUI();
         
-        // 5️⃣ 하단 크레딧 박스 업데이트 (즉시 반영)
+        // 4️⃣ 하단 크레딧 박스 업데이트 (즉시 반영)
         updateCostEstimate();
         
-        showToast(`✅ 콘텐츠 생성 완료! (1크레딧 사용, 남은 크레딧: ${result.usage.credits_remaining})`, 'success');
+        // 5️⃣ 토스트 메시지 (2지갑 정보)
+        const freeCredits = currentUser.free_credits || 0;
+        const paidCredits = currentUser.paid_credits || 0;
+        const totalCredits = freeCredits + paidCredits;
+        
+        let creditInfo = `남은 크레딧: ${totalCredits}`;
+        if (freeCredits > 0 && paidCredits > 0) {
+          creditInfo = `남은 크레딧: ${totalCredits} (무료 ${freeCredits} + 유료 ${paidCredits})`;
+        } else if (freeCredits > 0) {
+          creditInfo = `남은 크레딧: ${totalCredits} (무료)`;
+        } else if (paidCredits > 0) {
+          creditInfo = `남은 크레딧: ${totalCredits} (유료)`;
+        }
+        
+        showToast(`✅ 콘텐츠 생성 완료! (1크레딧 사용, ${creditInfo})`, 'success');
       } else {
         showToast('✅ 콘텐츠 생성 완료!', 'success');
       }
@@ -4229,7 +4261,9 @@ let currentUser = {
   monthly_included_count: 50, // 월 50회 포함
   monthly_used_count: 0, // 이번 달 사용 횟수
   monthly_remaining: 50, // 남은 포함 횟수
-  credits: 0 // 추가 크레딧
+  credits: 0, // 추가 크레딧 (하위 호환)
+  free_credits: 0, // ✅ 무료 크레딧 (월간 지급)
+  paid_credits: 0  // ✅ 유료 크레딧 (구매분)
 };
 
 // Supabase 클라이언트 초기화
@@ -4340,9 +4374,11 @@ async function syncUserToBackend(session, isNewUser = false) {
       const data = await response.json();
       console.log('✅ /api/auth/sync 성공:', data);
       
-      // 서버에서 받은 정보 업데이트
+      // 서버에서 받은 정보 업데이트 (2지갑 시스템)
       currentUser.tier = data.tier || 'free'; // 'guest' | 'free' | 'paid'
-      currentUser.credits = data.credits ?? 10; // ✅ 0은 유지, null/undefined만 10으로 대체
+      currentUser.free_credits = data.free_credits ?? 0; // ✅ 무료 크레딧
+      currentUser.paid_credits = data.paid_credits ?? 0; // ✅ 유료 크레딧
+      currentUser.credits = data.credits ?? 10; // ✅ 총 크레딧 (하위 호환)
       
       localStorage.setItem('postflow_user', JSON.stringify(currentUser));
       updateAuthUI();
@@ -4494,7 +4530,22 @@ function updateAuthUI() {
       'paid': '유료'
     };
     userTier.textContent = tierLabels[currentUser.tier] || '무료';
-    userCredits.textContent = `${currentUser.credits}크레딧`;
+    
+    // ✅ 2지갑 크레딧 표시 개선
+    const freeCredits = currentUser.free_credits || 0;
+    const paidCredits = currentUser.paid_credits || 0;
+    const totalCredits = freeCredits + paidCredits;
+    
+    let creditText = `${totalCredits}크레딧`;
+    if (freeCredits > 0 && paidCredits > 0) {
+      creditText = `${totalCredits}크레딧 (무료 ${freeCredits} + 유료 ${paidCredits})`;
+    } else if (freeCredits > 0) {
+      creditText = `${totalCredits}크레딧 (무료)`;
+    } else if (paidCredits > 0) {
+      creditText = `${totalCredits}크레딧 (유료)`;
+    }
+    
+    userCredits.textContent = creditText;
   } else {
     // 비회원/게스트 상태
     userInfoArea.classList.add('hidden');
