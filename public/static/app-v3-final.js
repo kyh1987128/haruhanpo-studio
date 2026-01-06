@@ -3406,18 +3406,105 @@ function saveProfile() {
     tone: document.getElementById('tone')?.value || '친근한',
     targetAge: document.getElementById('targetAge')?.value || '20대',
     industry: document.getElementById('industry')?.value || '라이프스타일',
-    contentStrategy: document.querySelector('input[name="contentStrategy"]:checked')?.value || 'auto', // 🔥 NEW v6.1
-    selectedPlatforms: selectedPlatforms, // 선택한 플랫폼 저장 ⭐
+    contentStrategy: document.querySelector('input[name="contentStrategy"]:checked')?.value || 'auto',
+    selectedPlatforms: selectedPlatforms,
     createdAt: new Date().toISOString()
   };
   
+  // 로컬스토리지에 저장 (기존 기능 유지)
   savedProfiles.unshift(profile);
   if (savedProfiles.length > 50) {
     savedProfiles = savedProfiles.slice(0, 50);
   }
-  
   localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(savedProfiles));
+  
+  // 🔥 DB에도 저장 (새로 추가)
+  saveProfileToDB(profile);
+  
   showToast('✅ 프로필이 저장되었습니다', 'success');
+}
+
+// 🔥 DB 저장 함수 추가
+async function saveProfileToDB(profile) {
+  try {
+    const currentUser = supabaseClient?.auth?.getUser ? await supabaseClient.auth.getUser() : null;
+    const userId = currentUser?.data?.user?.id;
+    
+    if (!userId) {
+      console.log('비회원은 로컬스토리지에만 저장됩니다');
+      return;
+    }
+    
+    const response = await fetch('/api/profile', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        brand: profile.brand,
+        company_name: profile.companyName,
+        business_type: profile.businessType,
+        location: profile.location,
+        target_gender: profile.targetGender,
+        contact: profile.contact,
+        website: profile.website,
+        sns: profile.sns,
+        keywords: profile.keywords,
+        tone: profile.tone,
+        target_age: profile.targetAge,
+        industry: profile.industry
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      console.log('✅ 프로필 DB 저장 완료');
+    } else {
+      console.error('❌ 프로필 DB 저장 실패:', result.error);
+    }
+  } catch (error) {
+    console.error('❌ 프로필 DB 저장 예외:', error);
+  }
+}
+
+// 🔥 DB에서 프로필 로드 함수 추가
+async function loadProfileFromDB(userId) {
+  try {
+    const response = await fetch(`/api/profile?user_id=${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const result = await response.json();
+    
+    if (result.success && result.profile) {
+      const profile = result.profile;
+      
+      // 프로필 폼에 자동 입력
+      if (profile.brand) document.getElementById('brand').value = profile.brand;
+      if (profile.company_name) document.getElementById('companyName').value = profile.company_name;
+      if (profile.business_type) document.getElementById('businessType').value = profile.business_type;
+      if (profile.location) document.getElementById('location').value = profile.location;
+      if (profile.target_gender) document.getElementById('targetGender').value = profile.target_gender;
+      if (profile.contact) document.getElementById('contact').value = profile.contact;
+      if (profile.website) document.getElementById('website').value = profile.website;
+      if (profile.sns) document.getElementById('sns').value = profile.sns;
+      if (profile.keywords) document.getElementById('keywords').value = Array.isArray(profile.keywords) ? profile.keywords.join(', ') : profile.keywords;
+      if (profile.tone) document.getElementById('tone').value = profile.tone;
+      if (profile.target_age) document.getElementById('targetAge').value = profile.target_age;
+      if (profile.industry) document.getElementById('industry').value = profile.industry;
+      
+      console.log('✅ 프로필 DB 자동 로드 완료');
+    } else {
+      console.log('저장된 프로필이 없습니다');
+    }
+  } catch (error) {
+    console.error('❌ 프로필 로드 예외:', error);
+  }
 }
 
 function openLoadProfileModal() {
@@ -4026,6 +4113,9 @@ async function syncUserToBackend(session, isNewUser = false) {
       
       localStorage.setItem('postflow_user', JSON.stringify(currentUser));
       updateAuthUI();
+      
+      // 🔥 프로필 자동 로드 추가
+      loadProfileFromDB(session.user.id);
       
       // 신규 사용자 / 기존 사용자 환영 메시지
       if (isNewUser) {

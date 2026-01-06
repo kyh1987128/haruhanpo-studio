@@ -1356,6 +1356,123 @@ app.get('/api/auth/me', async (c) => {
   }
 });
 
+// 프로필 저장 API
+app.post('/api/profile', async (c) => {
+  try {
+    console.log('💾 /api/profile 저장 요청');
+    
+    const body = await c.req.json();
+    const { user_id, brand, company_name, business_type, location, target_gender, contact, website, sns, keywords, tone, target_age, industry } = body;
+    
+    if (!user_id) {
+      return c.json({ error: 'user_id는 필수입니다' }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // users 테이블에 프로필 저장
+    const { data: updatedUser, error: updateError } = await supabase
+      .from('users')
+      .update({
+        name: brand || company_name,
+        company_name,
+        business_type,
+        location,
+        target_gender,
+        contact,
+        website,
+        sns,
+        brand_keywords: keywords ? (Array.isArray(keywords) ? keywords : [keywords]) : null,
+        tone,
+        target_age,
+        industry,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', user_id)
+      .select()
+      .single();
+    
+    if (updateError) {
+      console.error('❌ 프로필 저장 실패:', updateError);
+      return c.json({ success: false, error: updateError.message }, 500);
+    }
+    
+    console.log('✅ 프로필 DB 저장 완료:', updatedUser.email);
+    
+    return c.json({
+      success: true,
+      profile: {
+        brand: updatedUser.name,
+        company_name: updatedUser.company_name,
+        business_type: updatedUser.business_type,
+        location: updatedUser.location,
+        target_gender: updatedUser.target_gender,
+        contact: updatedUser.contact,
+        website: updatedUser.website,
+        sns: updatedUser.sns,
+        keywords: updatedUser.brand_keywords,
+        tone: updatedUser.tone,
+        target_age: updatedUser.target_age,
+        industry: updatedUser.industry
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ 프로필 저장 예외:', error);
+    return c.json({ error: '프로필 저장 중 오류가 발생했습니다', details: error.message }, 500);
+  }
+});
+
+// 프로필 조회 API
+app.get('/api/profile', async (c) => {
+  try {
+    const user_id = c.req.query('user_id');
+    
+    if (!user_id) {
+      return c.json({ error: 'user_id는 필수입니다' }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('name, company_name, business_type, location, target_gender, contact, website, sns, brand_keywords, tone, target_age, industry')
+      .eq('id', user_id)
+      .single();
+    
+    if (error) {
+      console.error('❌ 프로필 조회 실패:', error);
+      return c.json({ success: false, error: error.message }, 500);
+    }
+    
+    return c.json({
+      success: true,
+      profile: {
+        brand: user.name,
+        company_name: user.company_name,
+        business_type: user.business_type,
+        location: user.location,
+        target_gender: user.target_gender,
+        contact: user.contact,
+        website: user.website,
+        sns: user.sns,
+        keywords: user.brand_keywords,
+        tone: user.tone,
+        target_age: user.target_age,
+        industry: user.industry
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ 프로필 조회 예외:', error);
+    return c.json({ error: '프로필 조회 중 오류가 발생했습니다', details: error.message }, 500);
+  }
+});
+
 // 메인 페이지
 app.get('/', (c) => {
   return c.html(htmlTemplate);
