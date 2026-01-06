@@ -448,10 +448,10 @@ app.post('/api/generate', async (c) => {
 
     // ✅ 회원 크레딧 체크
     if (!is_guest && user_id) {
-      // 사용자 정보 조회
+      // 사용자 정보 조회 (2지갑 시스템)
       const { data: user, error: userError } = await supabase
         .from('users')
-        .select('tier, credits, monthly_reset_date')
+        .select('tier, free_credits, paid_credits, last_reset_date')
         .eq('id', user_id)
         .single();
       
@@ -464,41 +464,29 @@ app.post('/api/generate', async (c) => {
         }, 404);
       }
       
-      console.log(`📊 사용자 상태: ${user_id} | tier: ${user.tier} | 크레딧: ${user.credits}`);
+      const freeCredits = user.free_credits || 0;
+      const paidCredits = user.paid_credits || 0;
+      const totalCredits = freeCredits + paidCredits;
       
-      // 무료 회원 월간 리셋 체크
-      if (user.tier === 'free') {
-        const today = new Date().toISOString().split('T')[0];
-        const currentMonth = new Date(today).getMonth();
-        const resetMonth = user.monthly_reset_date ? new Date(user.monthly_reset_date).getMonth() : -1;
-        
-        if (currentMonth !== resetMonth) {
-          await supabase
-            .from('users')
-            .update({ 
-              credits: 10,
-              monthly_reset_date: today
-            })
-            .eq('id', user_id);
-          
-          user.credits = 10;
-          console.log(`📅 무료 회원 월간 크레딧 리셋 완료`);
-        }
-      }
+      console.log(`📊 사용자 크레딧 상태: ${user_id}`, {
+        tier: user.tier,
+        free_credits: freeCredits,
+        paid_credits: paidCredits,
+        total: totalCredits
+      });
       
-      // 크레딧 확인
-      if ((user.credits || 0) <= 0) {
+      // 크레딧 확인 (둘 다 0이면 403)
+      if (totalCredits <= 0) {
         return c.json({
           error: '크레딧 부족',
-          message: user.tier === 'free' 
-            ? '이번 달 무료 크레딧을 모두 사용했습니다. 다음 달에 다시 이용하거나 유료 플랜으로 업그레이드하세요.'
-            : '크레딧이 부족합니다. 크레딧을 충전해주세요.',
-          credits: user.credits || 0,
+          message: '크레딧이 부족합니다. 크레딧을 충전해주세요.',
+          free_credits: freeCredits,
+          paid_credits: paidCredits,
           redirect: '/payment'
         }, 403);
       }
       
-      console.log(`✅ 크레딧 사용 가능: ${user.credits}개 남음`);
+      console.log(`✅ 크레딧 사용 가능: 무료 ${freeCredits}개 + 유료 ${paidCredits}개 = 총 ${totalCredits}개`);
     }
 
     // OpenAI API 키 확인 (환경변수에서만 읽기)
@@ -651,28 +639,46 @@ app.post('/api/generate', async (c) => {
 
     console.log(`전략 결정: ${contentStrategy}. 콘텐츠 생성 시작...`);
 
-    // ✅ 크레딧 차감 (콘텐츠 생성 전에 차감)
-    let initialCredits = 0;
+    // ✅ 크레딧 차감 (콘텐츠 생성 전에 차감) - 2지갑 시스템
+    let initialFreeCredits = 0;
+    let initialPaidCredits = 0;
     if (!is_guest && user_id) {
       const { data: user, error: userError } = await supabase
         .from('users')
-        .select('tier, credits')
+        .select('tier, free_credits, paid_credits')
         .eq('id', user_id)
         .single();
       
       if (!userError && user) {
-        initialCredits = user.credits || 0;
+        initialFreeCredits = user.free_credits || 0;
+        initialPaidCredits = user.paid_credits || 0;
+        const totalCredits = initialFreeCredits + initialPaidCredits;
         
-        if (initialCredits > 0) {
+        if (totalCredits > 0) {
+          // 💰 2지갑 차감 로직: 무료 우선 차감
+          let newFreeCredits = initialFreeCredits;
+          let newPaidCredits = initialPaidCredits;
+          
+          if (newFreeCredits > 0) {
+            // 무료 크레딧이 있으면 무료부터 차감
+            newFreeCredits -= 1;
+            console.log(`💳 무료 크레딧 차감: ${initialFreeCredits} → ${newFreeCredits}`);
+          } else {
+            // 무료가 없으면 유료 차감
+            newPaidCredits -= 1;
+            console.log(`💎 유료 크레딧 차감: ${initialPaidCredits} → ${newPaidCredits}`);
+          }
+          
           // 크레딧 차감 실행
           const { data: updatedUser, error: updateError } = await supabase
             .from('users')
             .update({ 
-              credits: initialCredits - 1,
+              free_credits: newFreeCredits,
+              paid_credits: newPaidCredits,
               updated_at: new Date().toISOString()
             })
             .eq('id', user_id)
-            .select('tier, credits')
+            .select('tier, free_credits, paid_credits')
             .single();
           
           if (!updateError && updatedUser) {
@@ -680,13 +686,19 @@ app.post('/api/generate', async (c) => {
             await supabase.from('credit_transactions').insert({
               user_id,
               amount: -1,
-              balance_after: updatedUser.credits,
+              balance_after: (updatedUser.free_credits || 0) + (updatedUser.paid_credits || 0),
               type: 'usage',
               description: `콘텐츠 생성 (${platforms.join(', ')})`
             });
             
-            console.log(`✅ 크레딧 차감 완료: ${user_id} | ${updatedUser.credits}개 남음`);
-            initialCredits = updatedUser.credits;
+            console.log(`✅ 크레딧 차감 완료: ${user_id}`, {
+              free: `${initialFreeCredits} → ${updatedUser.free_credits}`,
+              paid: `${initialPaidCredits} → ${updatedUser.paid_credits}`,
+              total: (updatedUser.free_credits || 0) + (updatedUser.paid_credits || 0)
+            });
+            
+            initialFreeCredits = updatedUser.free_credits || 0;
+            initialPaidCredits = updatedUser.paid_credits || 0;
           } else {
             console.error('❌ 크레딧 차감 실패:', updateError);
           }
@@ -899,11 +911,13 @@ app.post('/api/generate', async (c) => {
     console.log('콘텐츠 생성 완료!');
     console.log(`💰 비용 추정: OpenAI $${totalCost.openai.toFixed(3)}, Gemini $${totalCost.gemini.toFixed(3)}, 총 $${(totalCost.openai + totalCost.gemini).toFixed(3)}`);
 
-    // ✅ 사용량 정보 반환 (이미 차감 완료)
+    // ✅ 사용량 정보 반환 (이미 차감 완료) - 2지갑 시스템
     let deducted = {
       type: 'credit',
       monthly_remaining: 0,
-      credits_remaining: initialCredits // 이미 차감된 크레딧
+      free_credits: initialFreeCredits, // ✅ 무료 크레딧
+      paid_credits: initialPaidCredits, // ✅ 유료 크레딧
+      credits_remaining: initialFreeCredits + initialPaidCredits // ✅ 총 크레딧 (하위 호환)
     };
     
     if (is_guest) {
@@ -1076,71 +1090,56 @@ app.post('/api/auth/sync', async (c) => {
       // 2️⃣ 기존 사용자: 업데이트
       console.log('📌 기존 사용자 로그인:', existingUser.email);
       
-      // 무료 회원만 월간 리셋 (tier === 'free')
-      if (existingUser.tier === 'free') {
-        // 연월(YYYY-MM)로만 비교
-        const userResetDate = existingUser.monthly_reset_date 
-          ? new Date(existingUser.monthly_reset_date)
-          : null;
-        const userResetMonth = userResetDate 
-          ? userResetDate.toISOString().substring(0, 7) 
-          : null;
-        const currentMonth = todayString.substring(0, 7); // 'YYYY-MM'
-        
-        // ✅ 리셋 필요 조건: 리셋 날짜가 없거나, 현재 월이 리셋 월보다 나중일 때
-        const needsReset = !userResetMonth || currentMonth > userResetMonth;
-        
-        console.log('🔍 월간 리셋 확인:', {
-          monthly_reset_date: existingUser.monthly_reset_date,
-          userResetMonth,
-          currentMonth,
-          currentCredits: existingUser.credits,
-          needsReset,
-          계산로직: '현재 월이 리셋 월보다 나중이면 리셋 (> 비교)'
+      // 💰 월간 무료 크레딧 리셋 (모든 회원)
+      // last_reset_date와 오늘 날짜의 연월(YYYY-MM) 비교
+      const userResetDate = existingUser.last_reset_date 
+        ? new Date(existingUser.last_reset_date)
+        : null;
+      const userResetMonth = userResetDate 
+        ? userResetDate.toISOString().substring(0, 7) 
+        : null;
+      const currentMonth = todayString.substring(0, 7); // 'YYYY-MM'
+      
+      // ✅ 리셋 필요 조건: 리셋 날짜가 없거나, 현재 월이 리셋 월보다 나중일 때
+      const needsReset = !userResetMonth || currentMonth > userResetMonth;
+      
+      console.log('🔍 월간 무료 크레딧 리셋 확인:', {
+        last_reset_date: existingUser.last_reset_date,
+        userResetMonth,
+        currentMonth,
+        free_credits: existingUser.free_credits,
+        paid_credits: existingUser.paid_credits,
+        needsReset,
+        계산로직: '현재 월이 리셋 월보다 나중이면 리셋 (> 비교)'
+      });
+      
+      if (needsReset) {
+        console.log('📅 월간 무료 크레딧 리셋 실행!', { 
+          oldResetDate: existingUser.last_reset_date,
+          newResetDate: todayString,
+          oldFreeCredits: existingUser.free_credits,
+          newFreeCredits: 10,
+          paidCredits: existingUser.paid_credits + ' (유지)'
         });
         
-        if (needsReset) {
-          const nextResetDate = getNextMonthFirstDay();
-          console.log('📅 무료 회원 월간 크레딧 리셋 실행!', { 
-            oldResetDate: existingUser.monthly_reset_date,
-            newResetDate: nextResetDate,
-            oldCredits: existingUser.credits,
-            newCredits: 10
-          });
-          
-          const { data: updatedUser, error: updateError } = await supabase
-            .from('users')
-            .update({ 
-              email,
-              name: name || existingUser.name,
-              credits: 10, // ✅ 무료 회원 월 10크레딧 리셋
-              monthly_reset_date: nextResetDate, // ✅ 다음 달 1일로 설정
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', user_id)
-            .select()
-            .single();
-          
-          if (updateError) throw updateError;
-          user = updatedUser;
-        } else {
-          // 리셋 불필요: 이름만 업데이트
-          const { data: updatedUser, error: updateError } = await supabase
-            .from('users')
-            .update({ 
-              email,
-              name: name || existingUser.name,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', user_id)
-            .select()
-            .single();
-          
-          if (updateError) throw updateError;
-          user = updatedUser;
-        }
+        const { data: updatedUser, error: updateError } = await supabase
+          .from('users')
+          .update({ 
+            email,
+            name: name || existingUser.name,
+            free_credits: 10, // ✅ 무료 크레딧만 리셋
+            // paid_credits는 절대 건드리지 않음!
+            last_reset_date: todayString, // ✅ 오늘 날짜로 설정
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', user_id)
+          .select()
+          .single();
+        
+        if (updateError) throw updateError;
+        user = updatedUser;
       } else {
-        // 유료 회원: 이름만 업데이트 (리셋 없음)
+        // 리셋 불필요: 이름만 업데이트
         const { data: updatedUser, error: updateError } = await supabase
           .from('users')
           .update({ 
@@ -1157,12 +1156,12 @@ app.post('/api/auth/sync', async (c) => {
       }
     } else {
       // 3️⃣ 신규 사용자: 무료 회원으로 생성
-      const nextResetDate = getNextMonthFirstDay();
       console.log('🆕 신규 무료 회원 생성:', {
         email,
-        credits: 10,
-        monthly_reset_date: nextResetDate,
-        설명: '다음 달 1일에 크레딧이 리셋됩니다'
+        free_credits: 10,
+        paid_credits: 0,
+        last_reset_date: todayString,
+        설명: '다음 달에 무료 크레딧이 리셋됩니다'
       });
       
       const { data: newUser, error: insertError } = await supabase
@@ -1172,8 +1171,9 @@ app.post('/api/auth/sync', async (c) => {
           email,
           name: name || null,
           tier: 'free', // ✅ 무료 회원
-          credits: 10, // ✅ 월 10크레딧
-          monthly_reset_date: nextResetDate // ✅ 다음 달 1일로 설정
+          free_credits: 10, // ✅ 월간 무료 크레딧
+          paid_credits: 0, // ✅ 유료 크레딧 0
+          last_reset_date: todayString // ✅ 오늘 날짜로 설정
         })
         .select()
         .single();
@@ -1189,7 +1189,9 @@ app.post('/api/auth/sync', async (c) => {
     console.log('✅ 사용자 동기화 완료:', {
       email: user.email,
       tier: user.tier,
-      credits: user.credits
+      free_credits: user.free_credits,
+      paid_credits: user.paid_credits,
+      total_credits: (user.free_credits || 0) + (user.paid_credits || 0)
     });
     
     return c.json({
@@ -1198,7 +1200,9 @@ app.post('/api/auth/sync', async (c) => {
       email: user.email,
       name: user.name,
       tier: user.tier || 'free', // 'guest' | 'free' | 'paid'
-      credits: user.credits !== null && user.credits !== undefined ? user.credits : 0,
+      free_credits: user.free_credits ?? 0, // ✅ 무료 크레딧
+      paid_credits: user.paid_credits ?? 0, // ✅ 유료 크레딧
+      credits: (user.free_credits || 0) + (user.paid_credits || 0), // ✅ 총 크레딧 (하위 호환)
       message: existingUser ? '로그인 성공' : '회원가입 완료'
     });
   } catch (error: any) {
