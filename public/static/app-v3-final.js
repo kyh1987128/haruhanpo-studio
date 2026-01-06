@@ -3496,32 +3496,34 @@ async function loadProfileFromDB(userId) {
     });
     
     const result = await response.json();
+    console.log('🔍 API 응답 (11개 필드 확인):', result);
     
     if (result.success && result.profile) {
       const p = result.profile;
       
-      // ID 매핑 수정 (HTML ID와 정확히 일치)
-      if (p.brand) setElementValue('brand', p.brand);
-      if (p.company_name) setElementValue('companyName', p.company_name);
-      if (p.business_type) setElementValue('businessType', p.business_type);
-      if (p.location) setElementValue('location', p.location);
-      if (p.target_gender) setElementValue('targetGender', p.target_gender);
-      if (p.contact) setElementValue('contact', p.contact);
-      if (p.website) setElementValue('website', p.website);
-      if (p.sns) setElementValue('sns', p.sns);
-      if (p.keywords) {
-        const keywordsStr = Array.isArray(p.keywords) 
-          ? p.keywords.join(', ') 
-          : p.keywords;
-        setElementValue('keywords', keywordsStr);
-      }
-      if (p.tone) setElementValue('tone', p.tone);
-      if (p.target_age) setElementValue('targetAge', p.target_age);
-      if (p.industry) setElementValue('industry', p.industry);
+      // 🔥 11개 필드 정확한 매핑 (NULL 체크 없이 모두 적용)
+      setElementValue('brand', p.brand || '');
+      setElementValue('companyName', p.company_name || '');
+      setElementValue('businessType', p.business_type || '선택 안 함');
+      setElementValue('location', p.location || '선택 안 함');
+      setElementValue('targetGender', p.target_gender || '전체');
+      setElementValue('contact', p.contact || '');
+      setElementValue('website', p.website || '');
+      setElementValue('sns', p.sns || '');
       
-      console.log('✅ 프로필 자동 로드 완료');
+      // 키워드 배열 처리
+      const keywordsStr = Array.isArray(p.keywords) 
+        ? p.keywords.join(', ') 
+        : (p.keywords || '');
+      setElementValue('keywords', keywordsStr);
+      
+      setElementValue('tone', p.tone || '친근한');
+      setElementValue('targetAge', p.target_age || '20-30대');
+      setElementValue('industry', p.industry || '선택안함 (AI가 자동 판단)');
+      
+      console.log('✅ 11개 필드 모두 자동 입력 완료');
     } else {
-      console.log('저장된 프로필이 없습니다');
+      console.log('⚠️ 저장된 프로필이 없습니다');
     }
   } catch (error) {
     console.error('❌ 프로필 로드 예외:', error);

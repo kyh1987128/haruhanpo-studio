@@ -1450,21 +1450,22 @@ app.get('/api/profile', async (c) => {
       return c.json({ success: false, error: error.message }, 500);
     }
     
+    // 🔥 11개 필드 모두 응답에 포함 (NULL 안전 처리 + 기본값)
     return c.json({
       success: true,
       profile: {
-        brand: user.name,
-        company_name: user.company_name,
-        business_type: user.business_type,
-        location: user.location,
-        target_gender: user.target_gender,
-        contact: user.contact,
-        website: user.website,
-        sns: user.sns,
-        keywords: user.brand_keywords,
-        tone: user.tone,
-        target_age: user.target_age,
-        industry: user.industry
+        brand: user.name || '',
+        company_name: user.company_name || '',
+        business_type: user.business_type || '선택 안 함',
+        location: user.location || '선택 안 함',
+        target_gender: user.target_gender || '전체',
+        contact: user.contact || '',
+        website: user.website || '',
+        sns: user.sns || '',
+        keywords: user.brand_keywords || [],
+        tone: user.tone || '친근한',
+        target_age: user.target_age || '20-30대',
+        industry: user.industry || '선택안함 (AI가 자동 판단)'
       }
     });
   } catch (error: any) {
@@ -1513,6 +1514,55 @@ app.get('/api/history', async (c) => {
   } catch (error: any) {
     console.error('❌ 히스토리 조회 예외:', error);
     return c.json({ error: '히스토리 조회 중 오류가 발생했습니다', details: error.message }, 500);
+  }
+});
+
+// 히스토리 저장 API
+app.post('/api/history', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { user_id, brand, keywords, results, platforms } = body;
+    
+    if (!user_id) {
+      console.error('❌ user_id 누락');
+      return c.json({ error: 'user_id는 필수입니다' }, 400);
+    }
+    
+    console.log('💾 히스토리 저장:', user_id);
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // 🔥 generations 테이블에 저장 (brand, keywords, results 포함)
+    const { data: newHistory, error: insertError } = await supabase
+      .from('generations')
+      .insert({
+        user_id,
+        brand: brand || '',
+        keywords: Array.isArray(keywords) ? keywords : [],
+        results: results || {},
+        platforms: Array.isArray(platforms) ? platforms : [],
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+    
+    if (insertError) {
+      console.error('❌ 히스토리 저장 실패:', insertError);
+      return c.json({ success: false, error: insertError.message }, 500);
+    }
+    
+    console.log('✅ 히스토리 저장 완료:', newHistory.id);
+    
+    return c.json({
+      success: true,
+      id: newHistory.id
+    });
+  } catch (error: any) {
+    console.error('❌ 히스토리 저장 예외:', error);
+    return c.json({ error: '히스토리 저장 중 오류가 발생했습니다', details: error.message }, 500);
   }
 });
 
