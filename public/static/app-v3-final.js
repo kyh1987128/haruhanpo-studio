@@ -3905,16 +3905,44 @@ function filterHistory() {
     return;
   }
   
+  // 🔥 플랫폼 매핑 테이블 (문제 2 해결: instagram_reels → instagram 매칭)
+  const PLATFORM_GROUPS = {
+    instagram: ['instagram', 'instagram_reels', 'instagram_feed'],
+    youtube: ['youtube', 'youtube_shorts', 'youtube_longform'],
+    blog: ['blog'],
+    threads: ['threads'],
+    tiktok: ['tiktok']
+  };
+  
   // 필터링
   let filtered = contentHistory.filter(item => {
-    // 검색어 필터
-    const matchesSearch = !searchTerm || 
-      item.brand.toLowerCase().includes(searchTerm) ||
-      (item.keywords && item.keywords.toLowerCase().includes(searchTerm));
+    // 🔥 keywords 안전 처리 (문제 1 해결: 배열 → 문자열 변환)
+    let keywordsText = '';
+    if (Array.isArray(item.keywords)) {
+      keywordsText = item.keywords.join(', ');
+    } else if (typeof item.keywords === 'string') {
+      keywordsText = item.keywords;
+    }
     
-    // 플랫폼 필터
+    // 검색어 필터 (에러 없는 안전한 처리)
+    const brandText = item.brand || '';
+    const matchesSearch = !searchTerm || 
+      brandText.toLowerCase().includes(searchTerm) ||
+      keywordsText.toLowerCase().includes(searchTerm);
+    
+    // 🔥 플랫폼 그룹 매칭 (문제 2 해결)
+    const itemPlatforms = Array.isArray(item.platforms) ? item.platforms : [item.platforms];
+    
     const matchesPlatform = selectedPlatforms.length === 0 ||
-      item.platforms.some(p => selectedPlatforms.includes(p));
+      itemPlatforms.some(itemPlatform => 
+        selectedPlatforms.some(selectedPlatform => {
+          // 직접 매칭
+          if (itemPlatform === selectedPlatform) return true;
+          // 그룹 매칭 (instagram → instagram_reels 포함)
+          const group = PLATFORM_GROUPS[selectedPlatform];
+          return group && group.includes(itemPlatform);
+        })
+      );
     
     return matchesSearch && matchesPlatform;
   });
@@ -3926,7 +3954,7 @@ function filterHistory() {
     } else if (sortOrder === 'oldest') {
       return new Date(a.createdAt) - new Date(b.createdAt);
     } else if (sortOrder === 'brand') {
-      return a.brand.localeCompare(b.brand);
+      return (a.brand || '').localeCompare(b.brand || '');
     }
     return 0;
   });
@@ -3937,22 +3965,34 @@ function filterHistory() {
     return;
   }
   
+  // 🔥 플랫폼 표시명 확장 (instagram_reels 등 지원)
   const platformNames = {
     blog: '📝 블로그',
     instagram: '📸 인스타',
+    instagram_reels: '📸 인스타 릴스',
+    instagram_feed: '📸 인스타 피드',
     threads: '🧵 스레드',
-    youtube: '🎬 유튜브'
+    youtube: '🎬 유튜브',
+    youtube_shorts: '🎬 유튜브 쇼츠',
+    youtube_longform: '🎬 유튜브 롱폼',
+    tiktok: '🎵 틱톡'
   };
   
-  historyList.innerHTML = filtered.map(item => `
+  historyList.innerHTML = filtered.map(item => {
+    const itemPlatforms = Array.isArray(item.platforms) ? item.platforms : [item.platforms];
+    const keywordsDisplay = Array.isArray(item.keywords) 
+      ? item.keywords.join(', ') 
+      : (item.keywords || '');
+    
+    return `
     <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
       <div class="flex justify-between items-start mb-2">
         <div class="flex-1">
-          <h4 class="font-bold text-gray-800 text-lg">${item.brand}</h4>
+          <h4 class="font-bold text-gray-800 text-lg">${item.brand || '브랜드명 없음'}</h4>
           <div class="flex flex-wrap gap-1 mt-1">
-            ${item.platforms.map(p => `<span class="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded">${platformNames[p]}</span>`).join('')}
+            ${itemPlatforms.map(p => `<span class="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded">${platformNames[p] || p}</span>`).join('')}
           </div>
-          ${item.keywords ? `<p class="text-sm text-gray-600 mt-1">키워드: ${item.keywords}</p>` : ''}
+          ${keywordsDisplay ? `<p class="text-sm text-gray-600 mt-1">키워드: ${keywordsDisplay}</p>` : ''}
         </div>
         <div class="flex gap-2 ml-4">
           <button
@@ -3973,7 +4013,8 @@ function filterHistory() {
         <i class="fas fa-clock mr-1"></i>${new Date(item.createdAt).toLocaleString()}
       </p>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function exportHistoryAsExcel() {
