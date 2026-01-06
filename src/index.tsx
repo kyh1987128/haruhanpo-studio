@@ -1473,6 +1473,49 @@ app.get('/api/profile', async (c) => {
   }
 });
 
+// 히스토리 조회 API (보안 강화)
+app.get('/api/history', async (c) => {
+  try {
+    const user_id = c.req.query('user_id');
+    
+    if (!user_id) {
+      console.error('❌ user_id 누락');
+      return c.json({ error: 'user_id는 필수입니다' }, 400);
+    }
+    
+    console.log('📜 히스토리 조회:', user_id);
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // 🔒 핵심: 본인 데이터만 조회
+    const { data, error } = await supabase
+      .from('generations')
+      .select('*')
+      .eq('user_id', user_id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    
+    if (error) {
+      console.error('❌ 히스토리 조회 실패:', error);
+      return c.json({ success: false, error: error.message }, 500);
+    }
+    
+    console.log(`✅ 히스토리 조회 완료: ${data.length}개`);
+    
+    return c.json({
+      success: true,
+      data,
+      count: data.length
+    });
+  } catch (error: any) {
+    console.error('❌ 히스토리 조회 예외:', error);
+    return c.json({ error: '히스토리 조회 중 오류가 발생했습니다', details: error.message }, 500);
+  }
+});
+
 // 메인 페이지
 app.get('/', (c) => {
   return c.html(htmlTemplate);
