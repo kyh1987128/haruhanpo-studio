@@ -2574,7 +2574,9 @@ async function forceGenerate() {
       hideLoadingOverlay();
       resultData = result.data;
       displayResults(result.data, result.generatedPlatforms);
-      saveToHistory(formDataWithForce, result.data);
+      
+      // 🔥 히스토리 자동저장 (await 추가)
+      await saveToHistory(formDataWithForce, result.data);
       
       // ✅ 크레딧 정보 업데이트 (수정: usage 객체 사용)
       if (result.usage && result.usage.credits_remaining !== undefined) {
@@ -3814,6 +3816,13 @@ async function saveToHistory(formData, results) {
   
   try {
     console.log('💾 히스토리 저장 시작:', historyItem);
+    console.log('📊 상세 데이터:', {
+      user_id: userId,
+      brand: formData.brand,
+      keywords: formData.keywords,
+      platforms: formData.platforms,
+      results_keys: Object.keys(results || {})
+    });
     
     const response = await fetch('/api/history', {
       method: 'POST',
@@ -3821,8 +3830,12 @@ async function saveToHistory(formData, results) {
       body: JSON.stringify(historyItem)
     });
     
+    console.log('📡 API 응답 상태:', response.status, response.statusText);
+    
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      const errorData = await response.json();
+      console.error('❌ API 에러 응답:', errorData);
+      throw new Error(`HTTP ${response.status}: ${errorData.error || '알 수 없는 오류'}`);
     }
     
     const result = await response.json();
