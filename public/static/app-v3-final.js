@@ -3579,14 +3579,14 @@ async function openLoadProfileModal() {
     }
     
     const result = await response.json();
-    console.log('✅ DB 프로필:', result);
+    console.log('🔍 API 응답 확인:', result);
     
-    if (!result.success || !result.data) {
+    if (!result.success || !result.profile) {
       profileList.innerHTML = '<p class="text-gray-500 text-center py-8">저장된 프로필이 없습니다</p>';
       return;
     }
     
-    const profile = result.data;
+    const profile = result.profile;
     
     // 프로필 표시 (하나만 표시)
     profileList.innerHTML = `
@@ -3739,48 +3739,132 @@ function importProfiles(event) {
 // ===================================
 // 히스토리 관리
 // ===================================
-function loadHistory() {
-  const stored = localStorage.getItem(STORAGE_KEYS.HISTORY);
-  if (stored) {
-    try {
-      contentHistory = JSON.parse(stored);
-    } catch (e) {
-      console.error('히스토리 로드 실패:', e);
-      contentHistory = [];
+// ✅ DB 기반 히스토리 로드 (보안 적용)
+async function loadHistory() {
+  const userData = localStorage.getItem('postflow_user');
+  if (!userData) {
+    console.warn('⚠️ 로그인 정보 없음 - 히스토리 로드 불가');
+    contentHistory = [];
+    return;
+  }
+  
+  const user = JSON.parse(userData);
+  const userId = user.id;
+  
+  if (!userId) {
+    console.warn('⚠️ 사용자 ID 없음 - 히스토리 로드 불가');
+    contentHistory = [];
+    return;
+  }
+  
+  try {
+    console.log('📖 히스토리 조회 시작:', userId);
+    
+    const response = await fetch(`/api/history?user_id=${userId}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
     }
+    
+    const result = await response.json();
+    console.log('✅ DB 히스토리:', result);
+    
+    if (!result.success) {
+      console.warn('⚠️ 히스토리 조회 실패:', result.error);
+      contentHistory = [];
+      return;
+    }
+    
+    // ✅ result.data 사용 (백엔드가 { success: true, data: [...] } 반환)
+    contentHistory = result.data || [];
+    console.log(`✅ 히스토리 로드 완료: ${contentHistory.length}개`);
+    
+  } catch (error) {
+    console.error('❌ 히스토리 로드 실패:', error);
+    contentHistory = [];
   }
 }
 
-function saveToHistory(formData, results) {
+// ✅ DB 기반 히스토리 저장 (보안 적용)
+async function saveToHistory(formData, results) {
+  const userData = localStorage.getItem('postflow_user');
+  if (!userData) {
+    console.warn('⚠️ 로그인 정보 없음 - 히스토리 저장 불가');
+    return;
+  }
+  
+  const user = JSON.parse(userData);
+  const userId = user.id;
+  
+  if (!userId) {
+    console.warn('⚠️ 사용자 ID 없음 - 히스토리 저장 불가');
+    return;
+  }
+  
   const historyItem = {
-    id: Date.now(),
+    user_id: userId, // ✅ 보안: user_id 추가
     brand: formData.brand,
     keywords: formData.keywords,
     platforms: formData.platforms,
     results: results,
-    createdAt: new Date().toISOString()
+    created_at: new Date().toISOString()
   };
   
-  contentHistory.unshift(historyItem);
-  if (contentHistory.length > 50) {
-    contentHistory = contentHistory.slice(0, 50);
+  try {
+    console.log('💾 히스토리 저장 시작:', historyItem);
+    
+    const response = await fetch('/api/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(historyItem)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('✅ 히스토리 저장 완료:', result);
+    
+    // 로컬 배열 업데이트 (UI 즉시 반영)
+    contentHistory.unshift({
+      id: result.id || Date.now(),
+      brand: formData.brand,
+      keywords: formData.keywords,
+      platforms: formData.platforms,
+      results: results,
+      createdAt: new Date().toISOString()
+    });
+    
+    if (contentHistory.length > 50) {
+      contentHistory = contentHistory.slice(0, 50);
+    }
+    
+  } catch (error) {
+    console.error('❌ 히스토리 저장 실패:', error);
   }
-  
-  localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(contentHistory));
 }
 
-function openHistoryModal() {
+// ✅ DB 기반 히스토리 모달 (자동 로드)
+async function openHistoryModal() {
   const modal = document.getElementById('historyModal');
+  const historyList = document.getElementById('historyList');
   
   // 검색/필터 초기화
   document.getElementById('historySearch').value = '';
   document.querySelectorAll('.history-platform-filter').forEach(cb => cb.checked = true);
   document.getElementById('historySortOrder').value = 'newest';
   
-  filterHistory(); // 초기 렌더링
-  
+  // 로딩 표시
+  historyList.innerHTML = '<p class="text-gray-500 text-center py-8">🔄 히스토리 불러오는 중...</p>';
   modal.classList.remove('hidden');
   modal.style.display = 'flex';
+  
+  // DB에서 히스토리 로드
+  await loadHistory();
+  
+  // 렌더링
+  filterHistory();
 }
 
 function filterHistory() {
