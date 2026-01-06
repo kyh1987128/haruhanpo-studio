@@ -252,9 +252,11 @@ app.post('/api/generate/batch', async (c) => {
           }
 
           if (platforms.includes('youtube') || platforms.includes('youtube_shorts')) {
+            console.log('🎬 YouTube Shorts 생성 시작...');
             generationTasks.push(
               generateContent(openai, 'youtube_shorts', getYouTubePrompt(promptParams), aiModel)
             );
+            console.log('✅ YouTube Shorts 태스크 추가 완료');
           }
           
           // 새로운 플랫폼: 유튜브 롱폼
@@ -286,11 +288,14 @@ app.post('/api/generate/batch', async (c) => {
           }
 
           const results = await Promise.all(generationTasks);
+          console.log('📊 생성된 콘텐츠 플랫폼:', results.map(r => r.platform));
 
           const data: Record<string, string> = {};
           results.forEach(({ platform, content }) => {
+            console.log(`✅ ${platform} 콘텐츠 저장:`, content.substring(0, 50) + '...');
             data[platform] = content;
           });
+          console.log('📦 최종 data 키:', Object.keys(data));
 
           return {
             success: true,
