@@ -7,6 +7,7 @@ import { htmlTemplate } from './html-template';
 import { analyzeImageWithGemini, generateContentWithGemini, calculateGeminiCost, estimateTokens } from './gemini';
 import { createSupabaseAdmin, createSupabaseClient, grantMilestoneCredit, updateConsecutiveLogin, checkAndUseMonthlyQuota } from './lib/supabase';
 import { parseMultipleDocuments, combineDocumentTexts, truncateText } from './document-parser';
+import payments from './routes/payments';
 
 type Bindings = {
   OPENAI_API_KEY: string;
@@ -21,8 +22,9 @@ const app = new Hono<{ Bindings: Bindings }>();
 // CORS 설정
 app.use('/api/*', cors());
 
-// 정적 파일 서빙
+// 정적 파일 서빙 (결제 페이지 포함)
 app.use('/static/*', serveStatic({ root: './public' }));
+app.use('/payment*', serveStatic({ root: './public' }));
 
 // API 라우트: 템플릿 저장 (LocalStorage 사용, 프론트엔드에서 관리)
 app.post('/api/templates/save', async (c) => {
@@ -639,70 +641,126 @@ app.post('/api/generate', async (c) => {
 
     console.log(`전략 결정: ${contentStrategy}. 콘텐츠 생성 시작...`);
 
-    // ✅ 크레딧 차감 (콘텐츠 생성 전에 차감) - 2지갑 시스템
+    // ✅ 차등 과금 시스템 (플랫폼 개수별 크레딧 차감)
+    
+    // 1. 필요 크레딧 계산 함수
+    const calculateRequiredCredits = (platformCount: number): number => {
+      if (platformCount === 0) return 0;
+      if (platformCount === 1) return 1;
+      if (platformCount <= 3) return 2;    // 2-3개: 2크레딧
+      if (platformCount <= 6) return 4;    // 4-6개: 4크레딧
+      return 4;                            // 7-9개: 4크레딧 (최대 할인)
+    };
+    
+    const requiredCredits = calculateRequiredCredits(platforms.length);
+    console.log(`📊 선택된 플랫폼: ${platforms.length}개 → 필요 크레딧: ${requiredCredits}개`);
+    
     let initialFreeCredits = 0;
     let initialPaidCredits = 0;
+    let freeUsed = 0;
+    let paidUsed = 0;
+    
     if (!is_guest && user_id) {
+      // 2. 사용자 크레딧 조회
       const { data: user, error: userError } = await supabase
         .from('users')
         .select('tier, free_credits, paid_credits')
         .eq('id', user_id)
         .single();
       
-      if (!userError && user) {
-        initialFreeCredits = user.free_credits || 0;
-        initialPaidCredits = user.paid_credits || 0;
-        const totalCredits = initialFreeCredits + initialPaidCredits;
+      if (userError || !user) {
+        console.error('❌ 사용자 조회 실패:', userError);
+        return c.json({
+          success: false,
+          error: '사용자 정보 조회 실패',
+          message: '사용자를 찾을 수 없습니다. 다시 로그인해주세요.'
+        }, 404);
+      }
+      
+      initialFreeCredits = user.free_credits || 0;
+      initialPaidCredits = user.paid_credits || 0;
+      const totalCredits = initialFreeCredits + initialPaidCredits;
+      
+      console.log(`💰 현재 보유 크레딧:`, {
+        free: initialFreeCredits,
+        paid: initialPaidCredits,
+        total: totalCredits,
+        required: requiredCredits
+      });
+      
+      // 3. 크레딧 부족 검사
+      if (totalCredits < requiredCredits) {
+        console.error(`❌ 크레딧 부족: 필요 ${requiredCredits}, 보유 ${totalCredits}`);
+        return c.json({
+          success: false,
+          error: '크레딧 부족',
+          message: `${requiredCredits}크레딧이 필요합니다. 현재 ${totalCredits}크레딧 보유중입니다.`,
+          required_credits: requiredCredits,
+          free_credits: initialFreeCredits,
+          paid_credits: initialPaidCredits,
+          total_credits: totalCredits
+        }, 403);
+      }
+      
+      // 4. 우선순위 차감: 무료 → 유료
+      let newFreeCredits = initialFreeCredits;
+      let newPaidCredits = initialPaidCredits;
+      let remaining = requiredCredits;
+      
+      // 무료 크레딧부터 차감
+      if (newFreeCredits > 0) {
+        const deductFromFree = Math.min(newFreeCredits, remaining);
+        newFreeCredits -= deductFromFree;
+        freeUsed = deductFromFree;
+        remaining -= deductFromFree;
+        console.log(`💳 무료 크레딧 차감: ${initialFreeCredits} → ${newFreeCredits} (${deductFromFree}크레딧 사용)`);
+      }
+      
+      // 남은 금액은 유료 크레딧에서 차감
+      if (remaining > 0) {
+        newPaidCredits -= remaining;
+        paidUsed = remaining;
+        console.log(`💎 유료 크레딧 차감: ${initialPaidCredits} → ${newPaidCredits} (${remaining}크레딧 사용)`);
+      }
+      
+      // 5. DB 업데이트
+      const { data: updatedUser, error: updateError } = await supabase
+        .from('users')
+        .update({ 
+          free_credits: newFreeCredits,
+          paid_credits: newPaidCredits,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user_id)
+        .select('tier, free_credits, paid_credits')
+        .single();
+      
+      if (!updateError && updatedUser) {
+        // credit_transactions 기록
+        await supabase.from('credit_transactions').insert({
+          user_id,
+          amount: -requiredCredits,
+          balance_after: (updatedUser.free_credits || 0) + (updatedUser.paid_credits || 0),
+          type: 'usage',
+          description: `콘텐츠 생성 ${platforms.length}개 (${platforms.join(', ')})`
+        });
         
-        if (totalCredits > 0) {
-          // 💰 2지갑 차감 로직: 무료 우선 차감
-          let newFreeCredits = initialFreeCredits;
-          let newPaidCredits = initialPaidCredits;
-          
-          if (newFreeCredits > 0) {
-            // 무료 크레딧이 있으면 무료부터 차감
-            newFreeCredits -= 1;
-            console.log(`💳 무료 크레딧 차감: ${initialFreeCredits} → ${newFreeCredits}`);
-          } else {
-            // 무료가 없으면 유료 차감
-            newPaidCredits -= 1;
-            console.log(`💎 유료 크레딧 차감: ${initialPaidCredits} → ${newPaidCredits}`);
-          }
-          
-          // 크레딧 차감 실행
-          const { data: updatedUser, error: updateError } = await supabase
-            .from('users')
-            .update({ 
-              free_credits: newFreeCredits,
-              paid_credits: newPaidCredits,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', user_id)
-            .select('tier, free_credits, paid_credits')
-            .single();
-          
-          if (!updateError && updatedUser) {
-            // credit_transactions 기록
-            await supabase.from('credit_transactions').insert({
-              user_id,
-              amount: -1,
-              balance_after: (updatedUser.free_credits || 0) + (updatedUser.paid_credits || 0),
-              type: 'usage',
-              description: `콘텐츠 생성 (${platforms.join(', ')})`
-            });
-            
-            console.log(`✅ 크레딧 차감 완료: ${user_id}`, {
-              free: `${initialFreeCredits} → ${updatedUser.free_credits}`,
-              paid: `${initialPaidCredits} → ${updatedUser.paid_credits}`,
-              total: (updatedUser.free_credits || 0) + (updatedUser.paid_credits || 0)
-            });
-            
-            initialFreeCredits = updatedUser.free_credits || 0;
-            initialPaidCredits = updatedUser.paid_credits || 0;
-          } else {
-            console.error('❌ 크레딧 차감 실패:', updateError);
-          }
-        }
+        console.log(`✅ 크레딧 차감 완료:`, {
+          used: `${requiredCredits}크레딧 (무료 ${freeUsed} + 유료 ${paidUsed})`,
+          free: `${initialFreeCredits} → ${updatedUser.free_credits}`,
+          paid: `${initialPaidCredits} → ${updatedUser.paid_credits}`,
+          total: (updatedUser.free_credits || 0) + (updatedUser.paid_credits || 0)
+        });
+        
+        initialFreeCredits = updatedUser.free_credits || 0;
+        initialPaidCredits = updatedUser.paid_credits || 0;
+      } else {
+        console.error('❌ 크레딧 차감 실패:', updateError);
+        return c.json({
+          success: false,
+          error: '크레딧 차감 실패',
+          message: '크레딧 차감 중 오류가 발생했습니다.'
+        }, 500);
       }
     }
 
@@ -911,12 +969,17 @@ app.post('/api/generate', async (c) => {
     console.log('콘텐츠 생성 완료!');
     console.log(`💰 비용 추정: OpenAI $${totalCost.openai.toFixed(3)}, Gemini $${totalCost.gemini.toFixed(3)}, 총 $${(totalCost.openai + totalCost.gemini).toFixed(3)}`);
 
-    // ✅ 사용량 정보 반환 (이미 차감 완료) - 2지갑 시스템
+    // ✅ 사용량 정보 반환 (차등 과금 정보 포함)
     let deducted = {
       type: 'credit',
       monthly_remaining: 0,
-      free_credits: initialFreeCredits, // ✅ 무료 크레딧
-      paid_credits: initialPaidCredits, // ✅ 유료 크레딧
+      credits_used: requiredCredits || 0, // ✅ 실제 사용된 크레딧
+      free_used: freeUsed, // ✅ 무료에서 사용
+      paid_used: paidUsed, // ✅ 유료에서 사용
+      free_remaining: initialFreeCredits, // ✅ 남은 무료 크레딧
+      paid_remaining: initialPaidCredits, // ✅ 남은 유료 크레딧
+      free_credits: initialFreeCredits, // ✅ 하위 호환
+      paid_credits: initialPaidCredits, // ✅ 하위 호환
       credits_remaining: initialFreeCredits + initialPaidCredits // ✅ 총 크레딧 (하위 호환)
     };
     
@@ -1617,5 +1680,125 @@ app.delete('/api/history', async (c) => {
 app.get('/', (c) => {
   return c.html(htmlTemplate);
 });
+
+// ===================================
+// 크레딧 상품 목록 API
+// ===================================
+app.get('/api/products', async (c) => {
+  try {
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    const { data: products, error } = await supabase
+      .from('credit_products')
+      .select('*')
+      .eq('is_active', true)
+      .order('display_order');
+
+    if (error) {
+      console.error('❌ 상품 조회 실패:', error);
+      throw error;
+    }
+
+    console.log(`✅ 상품 목록 조회 완료: ${products?.length || 0}개`);
+    
+    return c.json({
+      success: true,
+      products: products || [],
+      message: '상품 목록을 성공적으로 조회했습니다'
+    });
+  } catch (error: any) {
+    console.error('❌ 상품 조회 예외:', error);
+    return c.json({ 
+      success: false, 
+      error: error.message || '상품 조회 중 오류가 발생했습니다'
+    }, 500);
+  }
+});
+
+// ===================================
+// 관리자 수동 충전 API (임시 - 결제 연동 전)
+// ===================================
+app.post('/api/admin/charge-credits', async (c) => {
+  try {
+    const { user_email, credits, admin_key } = await c.req.json();
+    
+    // 관리자 키 검증
+    if (!admin_key || admin_key !== c.env.ADMIN_SECRET_KEY) {
+      console.error('❌ 관리자 권한 없음');
+      return c.json({ 
+        success: false, 
+        error: '권한이 없습니다' 
+      }, 403);
+    }
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // 사용자 조회
+    const { data: user, error: selectError } = await supabase
+      .from('users')
+      .select('id, email, paid_credits')
+      .eq('email', user_email)
+      .single();
+    
+    if (selectError || !user) {
+      console.error('❌ 사용자 조회 실패:', selectError);
+      return c.json({ 
+        success: false, 
+        error: '사용자를 찾을 수 없습니다' 
+      }, 404);
+    }
+    
+    const newPaidCredits = (user.paid_credits || 0) + credits;
+    
+    // 유료 크레딧 추가
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ 
+        paid_credits: newPaidCredits,
+        updated_at: new Date().toISOString()
+      })
+      .eq('email', user_email);
+    
+    if (updateError) {
+      console.error('❌ 크레딧 충전 실패:', updateError);
+      throw updateError;
+    }
+    
+    // credit_transactions 기록
+    await supabase.from('credit_transactions').insert({
+      user_id: user.id,
+      amount: credits,
+      balance_after: newPaidCredits,
+      type: 'purchase',
+      description: `관리자 수동 충전 (${credits}크레딧)`
+    });
+    
+    console.log(`✅ 관리자 충전 완료: ${user_email}에게 ${credits}크레딧 지급 (총 ${newPaidCredits})`);
+    
+    return c.json({
+      success: true,
+      user_email,
+      credits_added: credits,
+      new_paid_credits: newPaidCredits,
+      message: `${user_email}에게 ${credits}크레딧을 성공적으로 충전했습니다`
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 관리자 충전 예외:', error);
+    return c.json({ 
+      success: false, 
+      error: error.message || '충전 중 오류가 발생했습니다'
+    }, 500);
+  }
+});
+
+// 결제 라우트 연결
+app.route('/api/payments', payments);
 
 export default app;

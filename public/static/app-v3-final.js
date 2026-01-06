@@ -1178,8 +1178,20 @@ function updateCostEstimate() {
   const totalTimeMinutes = Math.ceil(totalTimeSeconds / 60);
 
   // ===================================
-  // NEW v7.7: 크레딧 기반 비용 표시
+  // NEW v11.34.0: 차등 과금 크레딧 계산
   // ===================================
+  
+  // 차등 과금 로직: 1개=1크레딧, 2-3개=2크레딧, 4-9개=4크레딧
+  let creditsNeeded = 1;
+  if (platformCount >= 4) {
+    creditsNeeded = 4;
+  } else if (platformCount >= 2) {
+    creditsNeeded = 2;
+  }
+  
+  const freeCredits = currentUser.free_credits ?? 0;
+  const paidCredits = currentUser.paid_credits ?? 0;
+  const totalCredits = freeCredits + paidCredits;
   
   let costInfoHTML = '';
   let statusBadge = '';
@@ -1196,30 +1208,41 @@ function updateCostEstimate() {
           무료 체험 1회 사용 가능
         </div>
         <p style="font-size: 0.95rem; opacity: 0.9; margin: 0;">
-          로그인하면 매달 <strong>10회 무료</strong> + 크레딧으로 무제한 사용!
+          로그인하면 매달 <strong>10크레딧 무료</strong> + 크레딧으로 무제한 사용!
         </p>
       </div>
     `;
   } else if (currentUser.tier === 'free' || currentUser.subscription_status === 'free') {
-    // 무료 회원 - 크레딧 시스템 사용
+    // 무료 회원 - 2지갑 크레딧 시스템
     gradientColor = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
     statusBadge = '<span style="background: rgba(255,255,255,0.3); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">🎉 무료 회원</span>';
+    
+    let creditDisplayText = '';
+    if (freeCredits === 0 && paidCredits > 0) {
+      creditDisplayText = `${totalCredits}개 (유료)`;
+    } else if (paidCredits === 0 && freeCredits > 0) {
+      creditDisplayText = `${totalCredits}개 (무료)`;
+    } else if (freeCredits > 0 && paidCredits > 0) {
+      creditDisplayText = `${totalCredits}개 (무료 ${freeCredits} + 유료 ${paidCredits})`;
+    } else {
+      creditDisplayText = `0개`;
+    }
     
     costInfoHTML = `
       <div style="background: rgba(255,255,255,0.2); padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem; text-align: center;">
         <div style="font-size: 1.3rem; font-weight: 600; margin-bottom: 0.8rem; opacity: 0.9;">
-          1 크레딧 차감
+          ${creditsNeeded} 크레딧 차감
         </div>
         <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.3rem;">
-          현재 보유: ${currentUser.credits || 0}크레딧
+          현재 보유: ${creditDisplayText}
         </div>
         <p style="font-size: 0.9rem; opacity: 0.9; margin: 0;">
           💡 무료 회원은 월 초 10크레딧이 자동 지급됩니다
         </p>
-        ${currentUser.credits <= 3 ? `
+        ${totalCredits < creditsNeeded ? `
           <div style="background: rgba(239, 68, 68, 0.3); border: 1px solid rgba(239, 68, 68, 0.5); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
             <p style="margin: 0; font-size: 0.95rem;">
-              ⚠️ 크레딧이 부족합니다. <a href="/payment" style="color: white; text-decoration: underline; font-weight: 600;">충전하기</a>
+              ⚠️ 크레딧이 부족합니다 (필요: ${creditsNeeded}개). <a href="/payment" style="color: white; text-decoration: underline; font-weight: 600;">충전하기</a>
             </p>
           </div>
         ` : ''}
@@ -1230,18 +1253,29 @@ function updateCostEstimate() {
     gradientColor = 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)';
     statusBadge = '<span style="background: rgba(255,255,255,0.3); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">⭐ 유료 회원</span>';
     
+    let creditDisplayText = '';
+    if (freeCredits === 0 && paidCredits > 0) {
+      creditDisplayText = `${totalCredits}개 (유료)`;
+    } else if (paidCredits === 0 && freeCredits > 0) {
+      creditDisplayText = `${totalCredits}개 (무료)`;
+    } else if (freeCredits > 0 && paidCredits > 0) {
+      creditDisplayText = `${totalCredits}개 (무료 ${freeCredits} + 유료 ${paidCredits})`;
+    } else {
+      creditDisplayText = `0개`;
+    }
+    
     costInfoHTML = `
       <div style="background: rgba(255,255,255,0.2); padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem; text-align: center;">
         <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.3rem;">
-          1 크레딧 차감
+          ${creditsNeeded} 크레딧 차감
         </div>
         <p style="font-size: 1.1rem; opacity: 0.9; margin: 0;">
-          현재 보유: <strong>${currentUser.credits || 0}크레딧</strong>
+          현재 보유: <strong>${creditDisplayText}</strong>
         </p>
-        ${currentUser.credits === 0 ? `
+        ${totalCredits < creditsNeeded ? `
           <div style="background: rgba(239, 68, 68, 0.3); border: 1px solid rgba(239, 68, 68, 0.5); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
             <p style="margin: 0; font-size: 0.95rem;">
-              ⚠️ 크레딧이 부족합니다. <a href="/payment" style="color: white; text-decoration: underline; font-weight: 600;">충전하기</a>
+              ⚠️ 크레딧이 부족합니다 (필요: ${creditsNeeded}개). <a href="/payment" style="color: white; text-decoration: underline; font-weight: 600;">충전하기</a>
             </p>
           </div>
         ` : ''}
@@ -1279,7 +1313,7 @@ function updateCostEstimate() {
       </div>
       
       <p style="font-size: 0.85rem; opacity: 0.9; margin-top: 1rem; text-align: center; margin-bottom: 0;">
-        모델: GPT-4o + Gemini Flash (하이브리드 전략) | 1회 생성 = 1크레딧
+        모델: GPT-4o + Gemini Flash (하이브리드 전략) | 차등 과금: 1개=1크레딧, 2-3개=2크레딧, 4-9개=4크레딧
       </p>
     </div>
   `;
@@ -1996,10 +2030,13 @@ async function handleGenerate() {
         // 4️⃣ 하단 크레딧 박스 업데이트 (즉시 반영)
         updateCostEstimate();
         
-        // 5️⃣ 토스트 메시지 (2지갑 정보)
+        // 5️⃣ 토스트 메시지 (2지갑 정보 + 차등 과금)
         const freeCredits = currentUser.free_credits || 0;
         const paidCredits = currentUser.paid_credits || 0;
         const totalCredits = freeCredits + paidCredits;
+        
+        // 사용된 크레딧 정보
+        const creditsUsed = result.usage.credits_used || 1;
         
         let creditInfo = `남은 크레딧: ${totalCredits}`;
         if (freeCredits > 0 && paidCredits > 0) {
@@ -2010,7 +2047,7 @@ async function handleGenerate() {
           creditInfo = `남은 크레딧: ${totalCredits} (유료)`;
         }
         
-        showToast(`✅ 콘텐츠 생성 완료! (1크레딧 사용, ${creditInfo})`, 'success');
+        showToast(`✅ 콘텐츠 생성 완료! (${creditsUsed}크레딧 사용, ${creditInfo})`, 'success');
       } else {
         showToast('✅ 콘텐츠 생성 완료!', 'success');
       }
@@ -2616,10 +2653,13 @@ async function forceGenerate() {
         // 4️⃣ 하단 크레딧 박스 업데이트 (즉시 반영)
         updateCostEstimate();
         
-        // 5️⃣ 토스트 메시지 (2지갑 정보)
+        // 5️⃣ 토스트 메시지 (2지갑 정보 + 차등 과금)
         const freeCredits = currentUser.free_credits || 0;
         const paidCredits = currentUser.paid_credits || 0;
         const totalCredits = freeCredits + paidCredits;
+        
+        // 사용된 크레딧 정보
+        const creditsUsed = result.usage.credits_used || 1;
         
         let creditInfo = `남은 크레딧: ${totalCredits}`;
         if (freeCredits > 0 && paidCredits > 0) {
@@ -2630,7 +2670,7 @@ async function forceGenerate() {
           creditInfo = `남은 크레딧: ${totalCredits} (유료)`;
         }
         
-        showToast(`✅ 콘텐츠 생성 완료! (1크레딧 사용, ${creditInfo})`, 'success');
+        showToast(`✅ 콘텐츠 생성 완료! (${creditsUsed}크레딧 사용, ${creditInfo})`, 'success');
       } else {
         showToast('✅ 콘텐츠 생성 완료!', 'success');
       }

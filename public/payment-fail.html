@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>결제 실패 - 하루한포 스튜디오</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+  <div class="min-h-screen flex items-center justify-center px-4">
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+      <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+        <i class="fas fa-exclamation-triangle text-4xl text-red-600"></i>
+      </div>
+      
+      <h1 class="text-3xl font-bold text-gray-800 mb-3">결제가 취소되었습니다</h1>
+      
+      <p class="text-gray-600 mb-2">결제가 정상적으로 완료되지 않았습니다.</p>
+      <p id="failReason" class="text-sm text-gray-500 mb-6"></p>
+      
+      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-left">
+        <h3 class="font-semibold text-gray-800 mb-2">
+          <i class="fas fa-lightbulb text-yellow-600 mr-2"></i>
+          결제 실패 원인
+        </h3>
+        <ul class="text-sm text-gray-600 space-y-1">
+          <li>• 카드 정보 입력 오류</li>
+          <li>• 결제 한도 초과</li>
+          <li>• 사용자 취소</li>
+          <li>• 네트워크 오류</li>
+        </ul>
+      </div>
+
+      <div class="space-y-3">
+        <button onclick="goToPayment()" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 rounded-lg hover:from-blue-600 hover:to-purple-700 transition">
+          <i class="fas fa-redo mr-2"></i>
+          다시 시도
+        </button>
+        <button onclick="goToHome()" class="w-full bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-300 transition">
+          <i class="fas fa-home mr-2"></i>
+          홈으로 돌아가기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function init() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      const message = urlParams.get('message');
+
+      if (message) {
+        document.getElementById('failReason').textContent = decodeURIComponent(message);
+      }
+
+      console.log('결제 실패:', { code, message });
+    }
+
+    function goToHome() {
+      window.location.href = '/';
+    }
+
+    function goToPayment() {
+      window.location.href = '/payment.html';
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

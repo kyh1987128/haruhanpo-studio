@@ -5,7 +5,7 @@
 
 import { Hono } from 'hono';
 import { Context } from 'hono';
-import { createSupabaseAdminClient, addCredits } from '../lib/supabase';
+import { createSupabaseAdmin } from '../lib/supabase';
 import { authMiddleware, Env, AuthUser } from '../middleware/auth';
 
 const payments = new Hono<{ Bindings: Env }>();
@@ -63,7 +63,7 @@ payments.post('/create', authMiddleware, async (c: Context<{ Bindings: Env }>) =
     }
     
     // Supabase에 결제 기록 생성 (pending 상태)
-    const adminClient = createSupabaseAdminClient(
+    const adminClient = createSupabaseAdmin(
       c.env.SUPABASE_URL,
       c.env.SUPABASE_SERVICE_KEY
     );
@@ -158,7 +158,7 @@ payments.post('/confirm', async (c: Context<{ Bindings: Env }>) => {
       console.error('토스페이먼츠 결제 검증 실패:', errorData);
       
       // 결제 실패 처리
-      const adminClient = createSupabaseAdminClient(
+      const adminClient = createSupabaseAdmin(
         c.env.SUPABASE_URL,
         c.env.SUPABASE_SERVICE_KEY
       );
@@ -266,7 +266,7 @@ payments.get('/history', authMiddleware, async (c: Context<{ Bindings: Env }>) =
       }, 401);
     }
     
-    const adminClient = createSupabaseAdminClient(
+    const adminClient = createSupabaseAdmin(
       c.env.SUPABASE_URL,
       c.env.SUPABASE_SERVICE_KEY
     );
@@ -308,7 +308,7 @@ async function confirmPaymentAndChargeCredits(
     paymentData: any;
   }
 ) {
-  const adminClient = createSupabaseAdminClient(
+  const adminClient = createSupabaseAdmin(
     c.env.SUPABASE_URL,
     c.env.SUPABASE_SERVICE_KEY
   );
@@ -367,15 +367,26 @@ async function confirmPaymentAndChargeCredits(
     }
   }
   
-  // 3. 크레딧 충전 (PostgreSQL 함수 사용)
+  // 3. 크레딧 충전 (직접 DB 업데이트)
   if (creditsToAdd > 0) {
-    await addCredits(
-      adminClient,
-      payment.user_id,
-      creditsToAdd,
-      description,
-      payment.id
-    );
+    // paid_credits 업데이트
+    await adminClient
+      .from('users')
+      .update({
+        paid_credits: adminClient.rpc('increment', { x: creditsToAdd })
+      })
+      .eq('id', payment.user_id);
+
+    // credit_transactions 기록
+    await adminClient
+      .from('credit_transactions')
+      .insert({
+        user_id: payment.user_id,
+        amount: creditsToAdd,
+        type: 'purchase',
+        description: description,
+        payment_id: payment.id
+      });
   }
 }
 
@@ -404,7 +415,7 @@ async function handlePaymentStatusChange(c: Context<{ Bindings: Env }>, data: an
   console.log('결제 상태 변경:', data);
   
   // 실제 구현에서는 orderId로 결제 조회 후 상태 업데이트
-  const adminClient = createSupabaseAdminClient(
+  const adminClient = createSupabaseAdmin(
     c.env.SUPABASE_URL,
     c.env.SUPABASE_SERVICE_KEY
   );
@@ -425,7 +436,7 @@ async function handleVirtualAccountIssued(c: Context<{ Bindings: Env }>, data: a
   console.log('가상계좌 발급:', data);
   
   // 가상계좌 정보 저장 (선택사항)
-  const adminClient = createSupabaseAdminClient(
+  const adminClient = createSupabaseAdmin(
     c.env.SUPABASE_URL,
     c.env.SUPABASE_SERVICE_KEY
   );
@@ -445,7 +456,7 @@ async function handleVirtualAccountIssued(c: Context<{ Bindings: Env }>, data: a
 async function handlePaymentCancelled(c: Context<{ Bindings: Env }>, data: any) {
   console.log('결제 취소:', data);
   
-  const adminClient = createSupabaseAdminClient(
+  const adminClient = createSupabaseAdmin(
     c.env.SUPABASE_URL,
     c.env.SUPABASE_SERVICE_KEY
   );

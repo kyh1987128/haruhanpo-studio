@@ -4,7 +4,7 @@
  */
 
 import { Context, Next } from 'hono';
-import { createSupabaseClient, createSupabaseAdminClient } from '../lib/supabase';
+import { createSupabaseClient, createSupabaseAdmin } from '../lib/supabase';
 
 /**
  * 환경 변수 타입 정의
@@ -64,7 +64,7 @@ export async function authMiddleware(c: Context<{ Bindings: Env }>, next: Next) 
     }
     
     // 사용자 상세 정보 조회 (관리자 권한 필요)
-    const adminClient = createSupabaseAdminClient(
+    const adminClient = createSupabaseAdmin(
       c.env.SUPABASE_URL,
       c.env.SUPABASE_SERVICE_KEY
     );
@@ -103,7 +103,7 @@ export async function authMiddleware(c: Context<{ Bindings: Env }>, next: Next) 
  */
 export async function checkTrialLimit(c: Context<{ Bindings: Env }>, next: Next) {
   try {
-    const adminClient = createSupabaseAdminClient(
+    const adminClient = createSupabaseAdmin(
       c.env.SUPABASE_URL,
       c.env.SUPABASE_SERVICE_KEY
     );
