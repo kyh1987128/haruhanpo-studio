@@ -3779,9 +3779,20 @@ async function loadHistory() {
       return;
     }
     
-    // ✅ result.data 사용 (백엔드가 { success: true, data: [...] } 반환)
-    contentHistory = result.data || [];
-    console.log(`✅ 히스토리 로드 완료: ${contentHistory.length}개`);
+    // 🔥 핵심 수정: DB 데이터를 프론트엔드 형식으로 변환
+    contentHistory = (result.data || []).map(item => {
+      return {
+        id: item.id,
+        brand: item.brand || '',
+        keywords: item.keywords || '',
+        platforms: Array.isArray(item.platforms) ? item.platforms : (item.platforms ? [item.platforms] : []),
+        results: item.results || {},
+        createdAt: item.created_at || item.createdAt || new Date().toISOString()  // ← 스네이크 케이스 → 카멜 케이스
+      };
+    });
+    
+    console.log(`✅ 히스토리 변환 완료: ${contentHistory.length}개`);
+    console.log('📊 변환된 데이터 샘플:', contentHistory[0]);
     
   } catch (error) {
     console.error('❌ 히스토리 로드 실패:', error);
