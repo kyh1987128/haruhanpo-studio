@@ -2024,33 +2024,16 @@ async function handleGenerate() {
         // 2️⃣ 로컬스토리지 업데이트
         localStorage.setItem('postflow_user', JSON.stringify(currentUser));
         
-        // 3️⃣ ⭐ 상단 헤더 크레딧 표시 즉시 업데이트 (핵심 수정)
+        // 3️⃣ updateAuthUI() 호출 (전체 UI 업데이트 - 2지갑 표시 포함)
+        updateAuthUI();
+        
+        // 4️⃣ 하단 크레딧 박스 업데이트 (즉시 반영)
+        updateCostEstimate();
+        
+        // 5️⃣ 토스트 메시지 (2지갑 정보 + 차등 과금)
         const freeCredits = currentUser.free_credits || 0;
         const paidCredits = currentUser.paid_credits || 0;
         const totalCredits = freeCredits + paidCredits;
-        
-        // userCreditsEl 직접 업데이트
-        const userCreditsEl = document.getElementById('userCredits');
-        if (userCreditsEl) {
-          let creditText = `${totalCredits}크레딧`;
-          if (freeCredits > 0 && paidCredits > 0) {
-            creditText = `${totalCredits}크레딧 (무료 ${freeCredits} + 유료 ${paidCredits})`;
-          } else if (freeCredits > 0) {
-            creditText = `${totalCredits}크레딧 (무료)`;
-          } else if (paidCredits > 0) {
-            creditText = `${totalCredits}크레딧 (유료)`;
-          }
-          userCreditsEl.textContent = creditText;
-          console.log('✅ 상단 크레딧 표시 업데이트:', creditText);
-        }
-        
-        // 4️⃣ updateAuthUI() 호출 (전체 UI 업데이트)
-        updateAuthUI();
-        
-        // 5️⃣ 하단 크레딧 박스 업데이트 (즉시 반영)
-        updateCostEstimate();
-        
-        // 6️⃣ 토스트 메시지 (2지갑 정보 + 차등 과금)
         const creditsUsed = result.usage.credits_used || 1;
         
         let creditInfo = `남은 크레딧: ${totalCredits}`;
@@ -2061,6 +2044,13 @@ async function handleGenerate() {
         } else if (paidCredits > 0) {
           creditInfo = `남은 크레딧: ${totalCredits} (유료)`;
         }
+        
+        console.log('✅ 크레딧 UI 업데이트 완료:', {
+          free: currentUser.free_credits,
+          paid: currentUser.paid_credits,
+          total: totalCredits,
+          display: creditInfo
+        });
         
         showToast(`✅ 콘텐츠 생성 완료! (${creditsUsed}크레딧 사용, ${creditInfo})`, 'success');
       } else {
@@ -2662,33 +2652,16 @@ async function forceGenerate() {
         // 2️⃣ 로컬스토리지 업데이트
         localStorage.setItem('postflow_user', JSON.stringify(currentUser));
         
-        // 3️⃣ ⭐ 상단 헤더 크레딧 표시 즉시 업데이트 (핵심 수정)
+        // 3️⃣ updateAuthUI() 호출 (전체 UI 업데이트 - 2지갑 표시 포함)
+        updateAuthUI();
+        
+        // 4️⃣ 하단 크레딧 박스 업데이트 (즉시 반영)
+        updateCostEstimate();
+        
+        // 5️⃣ 토스트 메시지 (2지갑 정보 + 차등 과금)
         const freeCredits = currentUser.free_credits || 0;
         const paidCredits = currentUser.paid_credits || 0;
         const totalCredits = freeCredits + paidCredits;
-        
-        // userCreditsEl 직접 업데이트
-        const userCreditsEl = document.getElementById('userCredits');
-        if (userCreditsEl) {
-          let creditText = `${totalCredits}크레딧`;
-          if (freeCredits > 0 && paidCredits > 0) {
-            creditText = `${totalCredits}크레딧 (무료 ${freeCredits} + 유료 ${paidCredits})`;
-          } else if (freeCredits > 0) {
-            creditText = `${totalCredits}크레딧 (무료)`;
-          } else if (paidCredits > 0) {
-            creditText = `${totalCredits}크레딧 (유료)`;
-          }
-          userCreditsEl.textContent = creditText;
-          console.log('✅ 상단 크레딧 표시 업데이트:', creditText);
-        }
-        
-        // 4️⃣ updateAuthUI() 호출 (전체 UI 업데이트)
-        updateAuthUI();
-        
-        // 5️⃣ 하단 크레딧 박스 업데이트 (즉시 반영)
-        updateCostEstimate();
-        
-        // 6️⃣ 토스트 메시지 (2지갑 정보 + 차등 과금)
         const creditsUsed = result.usage.credits_used || 1;
         
         let creditInfo = `남은 크레딧: ${totalCredits}`;
@@ -2699,6 +2672,13 @@ async function forceGenerate() {
         } else if (paidCredits > 0) {
           creditInfo = `남은 크레딧: ${totalCredits} (유료)`;
         }
+        
+        console.log('✅ 크레딧 UI 업데이트 완료:', {
+          free: currentUser.free_credits,
+          paid: currentUser.paid_credits,
+          total: totalCredits,
+          display: creditInfo
+        });
         
         showToast(`✅ 콘텐츠 생성 완료! (${creditsUsed}크레딧 사용, ${creditInfo})`, 'success');
       } else {
