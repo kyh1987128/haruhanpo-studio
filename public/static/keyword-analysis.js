@@ -774,7 +774,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       paid_credits: user.paid_credits
     });
     
-    // 즉시 크레딧 UI 업데이트
+    // 🔥 핵심: 비로그인 화면이면 전체 카드 교체
+    const card = document.querySelector('[data-keyword-analysis-card]');
+    if (card && card.innerHTML.includes('로그인하고 무료')) {
+      console.log('🔄 비로그인 화면을 로그인 화면으로 교체');
+      card.outerHTML = renderKeywordAnalysisCard();
+      console.log('✅ 키워드 카드 교체 완료');
+      return; // 교체 후 종료 (renderKeywordAnalysisCard에서 크레딧 값 설정됨)
+    }
+    
+    // 이미 로그인 화면이면 크레딧 숫자만 업데이트
     const freeCredits = user.free_credits ?? 0;
     const paidCredits = user.paid_credits ?? 0;
     

@@ -4601,15 +4601,29 @@ async function syncUserToBackend(session, isNewUser = false) {
 function showWelcomeMessage(type) {
   const user = window.currentUser; // ✅ 전역 객체 참조
   
+  // ✅ 안전한 이름 가져오기
+  if (!user || !user.id || user.isGuest) {
+    console.log('⚠️ 유효한 사용자 정보 없음, 환영 메시지 스킵');
+    return;
+  }
+  
+  const displayName = user.name || user.email?.split('@')[0] || '회원';
+  
+  // null, undefined 체크
+  if (!displayName || displayName === 'null' || displayName === 'undefined') {
+    console.log('⚠️ 유효한 사용자 이름 없음, 환영 메시지 스킵');
+    return;
+  }
+  
   const messages = {
     signup: {
       title: '🎉 회원가입 완료!',
-      message: `환영합니다, ${user.name}님!<br><br>🎁 무료 회원 혜택<br>• 매월 10크레딧 자동 지급<br>• 1크레딧 = 1회 생성<br><br>💎 크레딧 충전 옵션<br>• STARTER: ₩2,000 (10크레딧)<br>• PRO: ₩9,000 (50크레딧, 10% 할인) 🔥<br>• BUSINESS: ₩17,000 (100크레딧, 15% 할인)`,
+      message: `환영합니다, ${displayName}님!<br><br>🎁 무료 회원 혜택<br>• 매월 10크레딧 자동 지급<br>• 1크레딧 = 1회 생성<br><br>💎 크레딧 충전 옵션<br>• STARTER: ₩2,000 (10크레딧)<br>• PRO: ₩9,000 (50크레딧, 10% 할인) 🔥<br>• BUSINESS: ₩17,000 (100크레딧, 15% 할인)`,
       duration: 6000
     },
     login: {
       title: '👋 다시 오신 것을 환영합니다!',
-      message: `${user.name}님, 반갑습니다!<br><br>${user.tier === 'free' ? '🎁 무료 회원' : '💎 유료 회원'}<br>• 남은 크레딧: <strong>${user.credits}개</strong><br>• 1크레딧 = 1회 생성`,
+      message: `${displayName}님, 반갑습니다!<br><br>${user.tier === 'free' ? '🎁 무료 회원' : '💎 유료 회원'}<br>• 남은 크레딧: <strong>${user.credits}개</strong><br>• 1크레딧 = 1회 생성`,
       duration: 4000
     }
   };
@@ -4916,7 +4930,7 @@ function updateAuthUI() {
       heroSection.classList.add('hidden');
     }
     
-    userName.textContent = user.name || '사용자';
+    userName.textContent = user.name || user.email?.split('@')[0] || '회원';
     // Tier 표시
     const tierLabels = {
       'guest': '비회원',
