@@ -56,7 +56,7 @@ function renderKeywordAnalysisCard() {
   const info = window.userCreditsInfo || {};
   const freeCredits = info.free_credits ?? user.free_credits ?? 0;
   const paidCredits = info.paid_credits ?? user.paid_credits ?? 0;
-  const dailyRemaining = info.daily_free_remaining ?? 3;
+  const dailyRemaining = info.daily_free_remaining ?? 0; // 서버에서만 받음, 기본값 0
   const isDailyFreeAvailable = dailyRemaining > 0;
   
   return `
@@ -224,15 +224,14 @@ async function loadKeywordCreditStatus() {
     }
   } catch (error) {
     console.error('❌ 크레딧 조회 실패:', error);
-    // 실패 시 전역 상태의 값 사용
+    // 실패 시 전역 상태의 값 사용 (daily_free는 설정 안 함)
     const user = window.currentUser;
     if (user && user.id) {
-      window.userCreditsInfo = {
-        free_credits: user.free_credits || 0,
-        paid_credits: user.paid_credits || 0,
-        daily_free_remaining: 3,
-        total_credits: (user.free_credits || 0) + (user.paid_credits || 0)
-      };
+      window.userCreditsInfo = window.userCreditsInfo || {};
+      window.userCreditsInfo.free_credits = user.free_credits || 0;
+      window.userCreditsInfo.paid_credits = user.paid_credits || 0;
+      window.userCreditsInfo.total_credits = (user.free_credits || 0) + (user.paid_credits || 0);
+      // daily_free 정보는 서버 응답 실패 시 설정하지 않음
     }
   }
 }
@@ -919,15 +918,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.log('✅ 유료 크레딧 UI 업데이트:', paidCredits);
     }
     
-    // 전역 변수도 업데이트
-    window.userCreditsInfo = {
-      daily_free_used: 0, // 일일 무료는 별도 API로 조회
-      daily_free_limit: 3,
-      daily_free_remaining: 3,
-      free_credits: freeCredits,
-      paid_credits: paidCredits,
-      total_credits: freeCredits + paidCredits
-    };
+    // 전역 변수도 업데이트 (daily_free는 서버에서만 받음, 초기화 안 함)
+    window.userCreditsInfo = window.userCreditsInfo || {};
+    window.userCreditsInfo.free_credits = freeCredits;
+    window.userCreditsInfo.paid_credits = paidCredits;
+    window.userCreditsInfo.total_credits = freeCredits + paidCredits;
+    // daily_free 정보는 loadKeywordCreditStatus()에서만 설정
     
     console.log('📊 userCreditsInfo 업데이트:', window.userCreditsInfo);
   });
@@ -956,12 +952,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         freeEl.textContent = user.free_credits;
         if (paidEl) paidEl.textContent = user.paid_credits;
         
-        window.userCreditsInfo = {
-          free_credits: user.free_credits,
-          paid_credits: user.paid_credits,
-          daily_free_remaining: 3,
-          total_credits: user.free_credits + user.paid_credits
-        };
+        window.userCreditsInfo = window.userCreditsInfo || {};
+        window.userCreditsInfo.free_credits = user.free_credits;
+        window.userCreditsInfo.paid_credits = user.paid_credits;
+        window.userCreditsInfo.total_credits = user.free_credits + user.paid_credits;
+        // daily_free 정보는 loadKeywordCreditStatus()에서만 설정
       }
     }
   }, 5000);
