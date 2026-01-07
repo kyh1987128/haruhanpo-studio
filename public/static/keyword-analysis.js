@@ -639,6 +639,32 @@ function showKeywordQualityModal(analysis, isCached = false) {
           </ul>
         </div>
       ` : ''}
+
+      ${kw.related_keywords && kw.related_keywords.length > 0 ? `
+        <div style="margin-top: 1rem;">
+          <div style="font-weight: 600; color: #1f2937; margin-bottom: 0.5rem; font-size: 0.95rem;">
+            🔗 관련 키워드 추천:
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+            ${kw.related_keywords.map(rel => `
+              <span style="background: #e0e7ff; color: #4338ca; padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.85rem; font-weight: 500;">${rel}</span>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
+
+      ${kw.better_alternatives && kw.better_alternatives.length > 0 ? `
+        <div style="margin-top: 1rem;">
+          <div style="font-weight: 600; color: #1f2937; margin-bottom: 0.5rem; font-size: 0.95rem;">
+            ⭐ 더 나은 대체 키워드:
+          </div>
+          <ul style="margin: 0; padding-left: 1.5rem; color: #4b5563; line-height: 1.8;">
+            ${kw.better_alternatives.map(alt => `
+              <li><strong style="color: #059669;">${alt.keyword}</strong> - ${alt.reason}</li>
+            `).join('')}
+          </ul>
+        </div>
+      ` : ''}
     </div>
   `).join('');
 

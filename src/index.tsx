@@ -2498,6 +2498,12 @@ app.post('/api/analyze-keywords-quality', async (c) => {
 6. competition_level: 경쟁 강도
 7. saturation_level: 시장 포화도
 
+[추가 요구사항]
+- analysis: 각 키워드에 대한 **구체적이고 상세한** 마케팅 분석 (3-5문장, 타겟층, 시장 상황, 활용 전략 포함)
+- recommendations: 실행 가능한 **구체적인** 마케팅 전략 3개 이상
+- related_keywords: 관련 추천 키워드 5개 (검색량, 경쟁도 고려)
+- better_alternatives: 더 나은 대체 키워드 3개 (이유 포함)
+
 [JSON 형식]
 {
   "keywords": [
@@ -2513,13 +2519,19 @@ app.post('/api/analyze-keywords-quality', async (c) => {
       "saturation_level": 80,
       "market_size": "대형 키워드",
       "total_score": 81,
-      "analysis": "분석 내용",
-      "recommendations": ["추천1", "추천2"]
+      "analysis": "**구체적이고 상세한 분석** (3-5문장)",
+      "recommendations": ["구체적 전략1", "구체적 전략2", "구체적 전략3"],
+      "related_keywords": ["관련키워드1", "관련키워드2", "관련키워드3", "관련키워드4", "관련키워드5"],
+      "better_alternatives": [
+        {"keyword": "대체키워드1", "reason": "더 나은 이유"},
+        {"keyword": "대체키워드2", "reason": "더 나은 이유"},
+        {"keyword": "대체키워드3", "reason": "더 나은 이유"}
+      ]
     }
   ],
   "overall_score": 81,
-  "market_insights": ["인사이트"],
-  "strategic_recommendations": ["전략"]
+  "market_insights": ["구체적 시장 인사이트 3개 이상"],
+  "strategic_recommendations": ["실행 가능한 전략 3개 이상"]
 }
     `;
     
@@ -2615,7 +2627,13 @@ app.post('/api/analyze-keywords-quality', async (c) => {
             market_size: marketSizes[Math.floor(Math.random() * marketSizes.length)],
             total_score: Math.round((marketing + seo + viral + conversion) / 4),
             analysis: `"${keyword}"는 마케팅 활용 가능한 키워드입니다. 타겟 고객층 정의와 차별화 전략이 필요합니다.`,
-            recommendations: ['타겟 고객층 명확화', '차별화 포인트 강조', '콘텐츠 품질 향상']
+            recommendations: ['타겟 고객층 명확화', '차별화 포인트 강조', '콘텐츠 품질 향상'],
+            related_keywords: [`${keyword} 후기`, `${keyword} 추천`, `${keyword} 비교`, `${keyword} 가격`, `${keyword} 리뷰`],
+            better_alternatives: [
+              { keyword: `${keyword} 전문가`, reason: '전문성 강조로 신뢰도 향상' },
+              { keyword: `${keyword} 가이드`, reason: '정보성 콘텐츠로 SEO 유리' },
+              { keyword: `${keyword} 솔루션`, reason: '문제 해결 중심으로 전환율 향상' }
+            ]
           };
         }),
         overall_score: Math.round(70 + Math.random() * 15),
