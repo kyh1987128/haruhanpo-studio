@@ -1036,7 +1036,8 @@ app.post('/api/generate', async (c) => {
             device_fingerprint: deviceFingerprint,
             user_agent: userAgent,
             usage_count: 1,
-            last_used_at: new Date().toISOString()
+            last_used_at: new Date().toISOString(),
+            user_id: user_id || null  // 향후 사용자별 추적용
           });
       }
       

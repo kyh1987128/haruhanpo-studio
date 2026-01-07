@@ -159,7 +159,8 @@ export async function checkTrialLimit(c: Context<{ Bindings: Env }>, next: Next)
           ip_address: ipAddress,
           device_fingerprint: deviceFingerprint,
           user_agent: userAgent,
-          usage_count: 0
+          usage_count: 0,
+          user_id: null  // 비회원이므로 null
         });
     }
     

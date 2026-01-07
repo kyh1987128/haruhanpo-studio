@@ -202,15 +202,32 @@ async function analyzeKeywordsQuality() {
     return;
   }
   
-  // currentUser 재확인 (5초 대기)
-  let attempts = 0;
-  while ((!window.currentUser || window.currentUser.isGuest) && attempts < 10) {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    attempts++;
+  // currentUser 재확인 (localStorage 또는 window.currentUser)
+  let currentUser = null;
+  
+  // 1. localStorage에서 직접 읽기 (syncUserToBackend 결과)
+  try {
+    const storedUser = localStorage.getItem('postflow_user');
+    if (storedUser) {
+      const parsed = JSON.parse(storedUser);
+      if (parsed && parsed.id && !parsed.isGuest) {
+        currentUser = parsed;
+        console.log('✅ localStorage에서 currentUser 로드:', currentUser);
+      }
+    }
+  } catch (e) {
+    console.warn('localStorage 읽기 실패:', e);
   }
   
-  if (!window.currentUser || window.currentUser.isGuest) {
-    console.error('❌ currentUser 없음:', window.currentUser);
+  // 2. window.currentUser fallback
+  if (!currentUser && window.currentUser && !window.currentUser.isGuest) {
+    currentUser = window.currentUser;
+    console.log('✅ window.currentUser 사용:', currentUser);
+  }
+  
+  // 3. 최종 검증
+  if (!currentUser || !currentUser.id || currentUser.isGuest) {
+    console.error('❌ 로그인 정보 없음:', { localStorage: localStorage.getItem('postflow_user'), window: window.currentUser });
     if (typeof window.showToast === 'function') {
       window.showToast('⚠️ 로그인 후 이용 가능합니다', 'warning');
     } else {
@@ -220,9 +237,9 @@ async function analyzeKeywordsQuality() {
   }
   
   console.log('✅ currentUser 확인:', {
-    id: window.currentUser.id,
-    email: window.currentUser.email,
-    isGuest: window.currentUser.isGuest
+    id: currentUser.id,
+    email: currentUser.email,
+    isGuest: currentUser.isGuest
   });
 
   // 일일 무료 소진 상태에서 크레딧도 0이면 바로 모달
