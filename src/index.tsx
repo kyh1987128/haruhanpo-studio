@@ -2602,7 +2602,19 @@ app.post('/api/analyze-keywords-quality', async (c) => {
         analysis: item.analysis || `"${item.keyword}"에 대한 마케팅 분석입니다.`,
         recommendations: Array.isArray(item.recommendations)
           ? item.recommendations
-          : ['타겟 고객층 명확화', '차별화 포인트 강조', '콘텐츠 품질 향상']
+          : ['타겟 고객층 명확화', '차별화 포인트 강조', '콘텐츠 품질 향상'],
+        related_keywords: Array.isArray(item.related_keywords) && item.related_keywords.length > 0
+          ? item.related_keywords
+          : [`${item.keyword} 후기`, `${item.keyword} 추천`, `${item.keyword} 비교`, `${item.keyword} 가격`, `${item.keyword} 리뷰`, `${item.keyword} 순위`, `${item.keyword} 브랜드`],
+        better_alternatives: Array.isArray(item.better_alternatives) && item.better_alternatives.length > 0
+          ? item.better_alternatives
+          : [
+            { keyword: `${item.keyword} 전문가`, reason: '전문성 강조로 신뢰도 향상 및 고객 전환율 증가' },
+            { keyword: `${item.keyword} 가이드`, reason: '정보성 콘텐츠로 SEO 우위 확보 및 유입 증가' },
+            { keyword: `${item.keyword} 솔루션`, reason: '문제 해결 중심 접근으로 전환율 향상' },
+            { keyword: `${item.keyword} 프리미엄`, reason: '고가 시장 타겟으로 수익성 개선' },
+            { keyword: `${item.keyword} 최신`, reason: '최신 트렌드 반영으로 검색량 증가' }
+          ]
       }));
       
       analysis.keywords.sort((a: any, b: any) => (b.total_score || 0) - (a.total_score || 0));
@@ -2613,8 +2625,24 @@ app.post('/api/analyze-keywords-quality', async (c) => {
         Math.max(1, analysis.keywords.length)
       );
       
-      analysis.market_insights = analysis.market_insights || [];
-      analysis.strategic_recommendations = analysis.strategic_recommendations || [];
+      analysis.market_insights = Array.isArray(analysis.market_insights) && analysis.market_insights.length >= 5
+        ? analysis.market_insights
+        : [
+          '시장 경쟁이 존재하지만 차별화 전략으로 충분히 대응 가능합니다',
+          '타겟 고객층의 명확한 세분화를 통해 효율적인 마케팅이 가능합니다',
+          '디지털 채널을 활용한 브랜드 인지도 향상 기회가 있습니다',
+          '고객 후기 및 평판 관리가 전환율에 큰 영향을 미칩니다',
+          '지속적인 콘텐츠 마케팅을 통해 장기적 성장이 가능합니다'
+        ];
+      analysis.strategic_recommendations = Array.isArray(analysis.strategic_recommendations) && analysis.strategic_recommendations.length >= 5
+        ? analysis.strategic_recommendations
+        : [
+          '롱테일 키워드 전략을 병행하여 경쟁을 우회하세요',
+          'SEO 최적화를 통해 자연 유입을 증가시키세요',
+          '소셜 미디어 마케팅으로 바이럴 효과를 극대화하세요',
+          '고객 리뷰 및 사례 연구를 적극 활용하세요',
+          '데이터 기반 A/B 테스트로 전환율을 지속 개선하세요'
+        ];
       
     } catch (aiError) {
       console.error('AI 분석 실패, 폴백 응답 생성:', aiError);
