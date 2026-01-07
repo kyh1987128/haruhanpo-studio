@@ -1318,9 +1318,9 @@ export const htmlTemplate = `
         
         // 크레딧 충전 모달
         function showCreditPurchaseModal() {
-            const confirmed = confirm(\`크레딧 충전 페이지로 이동하시겠습니까?\\n\\n충전 옵션:\\n- 10 크레딧: 10,000원\\n- 50 크레딧: 45,000원 (10% 할인)\\n- 100 크레딧: 80,000원 (20% 할인)\`);
+            const confirmed = confirm(\`크레딧 충전 페이지로 이동하시겠습니까?\\n\\n충전 옵션:\\n- STARTER (10크레딧): ₩2,000\\n- PRO (50크레딧): ₩9,000 (10% 할인) 🔥\\n- BUSINESS (100크레딧): ₩17,000 (15% 할인)\`);
             if (confirmed) {
-                alert(\`크레딧 충전 시스템은 개발 중입니다.\\n\\n문의: contentitda@naver.com\\n고객센터: 055-606-0826\`);
+                window.location.href = '/static/payment.html';
             }
         }
     </script>
