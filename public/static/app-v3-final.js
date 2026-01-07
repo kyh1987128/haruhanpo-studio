@@ -4395,8 +4395,8 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // Supabase 클라이언트 (CDN에서 로드)
 let supabaseClient = null;
 
-// 사용자 상태 (하이브리드 플랜)
-let currentUser = {
+// 사용자 상태 (하이브리드 플랜) - 전역 객체로 변경
+window.currentUser = {
   id: null,
   isLoggedIn: false,
   isGuest: true,
@@ -4410,6 +4410,9 @@ let currentUser = {
   free_credits: 0, // ✅ 무료 크레딧 (월간 지급)
   paid_credits: 0  // ✅ 유료 크레딧 (구매분)
 };
+
+// 하위 호환성을 위한 로컬 참조
+let currentUser = window.currentUser;
 
 // Supabase 클라이언트 초기화
 async function initSupabase() {
@@ -4525,23 +4528,30 @@ async function syncUserToBackend(session, isNewUser = false) {
       console.log('✅ /api/auth/sync 성공:', data);
       
       // 서버에서 받은 정보 업데이트 (2지갑 시스템)
-      currentUser.tier = data.tier || 'free'; // 'guest' | 'free' | 'paid'
-      currentUser.free_credits = data.free_credits ?? 0; // ✅ 무료 크레딧
-      currentUser.paid_credits = data.paid_credits ?? 0; // ✅ 유료 크레딧
-      currentUser.credits = (data.free_credits ?? 0) + (data.paid_credits ?? 0); // ✅ 총 크레딧 계산
-      currentUser.registration_completed = data.registration_completed ?? true; // ✅ 회원가입 완료 여부
-      currentUser.phone = data.phone || null; // ✅ 연락처
+      window.currentUser.tier = data.tier || 'free'; // 'guest' | 'free' | 'paid'
+      window.currentUser.free_credits = data.free_credits ?? 0; // ✅ 무료 크레딧
+      window.currentUser.paid_credits = data.paid_credits ?? 0; // ✅ 유료 크레딧
+      window.currentUser.credits = (data.free_credits ?? 0) + (data.paid_credits ?? 0); // ✅ 총 크레딧 계산
+      window.currentUser.registration_completed = data.registration_completed ?? true; // ✅ 회원가입 완료 여부
+      window.currentUser.phone = data.phone || null; // ✅ 연락처
       
-      console.log('📊 currentUser 업데이트:', {
-        tier: currentUser.tier,
-        free_credits: currentUser.free_credits,
-        paid_credits: currentUser.paid_credits,
-        total_credits: currentUser.credits,
-        registration_completed: currentUser.registration_completed,
-        phone: currentUser.phone
+      console.log('📊 window.currentUser 업데이트:', {
+        tier: window.currentUser.tier,
+        free_credits: window.currentUser.free_credits,
+        paid_credits: window.currentUser.paid_credits,
+        total_credits: window.currentUser.credits,
+        registration_completed: window.currentUser.registration_completed,
+        phone: window.currentUser.phone
       });
       
-      localStorage.setItem('postflow_user', JSON.stringify(currentUser));
+      localStorage.setItem('postflow_user', JSON.stringify(window.currentUser));
+      
+      // 🔔 모든 컴포넌트에 알림 (핵심!)
+      window.dispatchEvent(new CustomEvent('userUpdated', {
+        detail: window.currentUser
+      }));
+      console.log('🔔 userUpdated 이벤트 발생!');
+      
       updateAuthUI();
       
       // 🔥 프로필 자동 로드 추가
@@ -4822,13 +4832,13 @@ function initializeAuth() {
   // 로컬 스토리지에서 사용자 정보 확인
   const savedUser = localStorage.getItem('postflow_user');
   if (savedUser) {
-    currentUser = JSON.parse(savedUser);
+    window.currentUser = JSON.parse(savedUser);
     updateAuthUI();
   } else {
     // 비회원 상태로 시작
-    currentUser.isGuest = true;
-    currentUser.tier = 'guest';
-    currentUser.credits = 1;
+    window.currentUser.isGuest = true;
+    window.currentUser.tier = 'guest';
+    window.currentUser.credits = 1;
     updateAuthUI();
   }
 }
@@ -4844,7 +4854,7 @@ async function checkAuthStatus() {
     
     if (response.ok) {
       const data = await response.json();
-      currentUser = {
+      window.currentUser = {
         id: data.user?.id || null,  // ✅ 추가: 사용자 ID
         isLoggedIn: !data.is_guest,
         isGuest: data.is_guest,
@@ -4855,7 +4865,7 @@ async function checkAuthStatus() {
         subscription_status: data.user?.subscription_status
       };
       
-      localStorage.setItem('postflow_user', JSON.stringify(currentUser));
+      localStorage.setItem('postflow_user', JSON.stringify(window.currentUser));
       updateAuthUI();
     } else {
       // 토큰 만료 또는 유효하지 않음

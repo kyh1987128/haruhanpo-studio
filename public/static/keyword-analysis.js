@@ -202,32 +202,12 @@ async function analyzeKeywordsQuality() {
     return;
   }
   
-  // currentUser 재확인 (localStorage 또는 window.currentUser)
-  let currentUser = null;
-  
-  // 1. localStorage에서 직접 읽기 (syncUserToBackend 결과)
-  try {
-    const storedUser = localStorage.getItem('postflow_user');
-    if (storedUser) {
-      const parsed = JSON.parse(storedUser);
-      if (parsed && parsed.id && !parsed.isGuest) {
-        currentUser = parsed;
-        console.log('✅ localStorage에서 currentUser 로드:', currentUser);
-      }
-    }
-  } catch (e) {
-    console.warn('localStorage 읽기 실패:', e);
-  }
-  
-  // 2. window.currentUser fallback
-  if (!currentUser && window.currentUser && !window.currentUser.isGuest) {
-    currentUser = window.currentUser;
-    console.log('✅ window.currentUser 사용:', currentUser);
-  }
-  
-  // 3. 최종 검증
-  if (!currentUser || !currentUser.id || currentUser.isGuest) {
-    console.error('❌ 로그인 정보 없음:', { localStorage: localStorage.getItem('postflow_user'), window: window.currentUser });
+  // ✅ window.currentUser 직접 사용 (전역 상태)
+  if (!window.currentUser || !window.currentUser.id || window.currentUser.isGuest) {
+    console.error('❌ 로그인 정보 없음:', { 
+      window_currentUser: window.currentUser, 
+      localStorage: localStorage.getItem('postflow_user') 
+    });
     if (typeof window.showToast === 'function') {
       window.showToast('⚠️ 로그인 후 이용 가능합니다', 'warning');
     } else {
@@ -237,9 +217,22 @@ async function analyzeKeywordsQuality() {
   }
   
   console.log('✅ currentUser 확인:', {
-    id: currentUser.id,
-    email: currentUser.email,
-    isGuest: currentUser.isGuest
+    id: window.currentUser.id,
+    email: window.currentUser.email,
+    isGuest: window.currentUser.isGuest,
+    free_credits: window.currentUser.free_credits,
+    paid_credits: window.currentUser.paid_credits
+  });
+    }
+    return;
+  }
+  
+  console.log('✅ currentUser 확인:', {
+    id: window.currentUser.id,
+    email: window.currentUser.email,
+    isGuest: window.currentUser.isGuest,
+    free_credits: window.currentUser.free_credits,
+    paid_credits: window.currentUser.paid_credits
   });
 
   // 일일 무료 소진 상태에서 크레딧도 0이면 바로 모달
@@ -692,6 +685,45 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.log('✅ 키워드 분석 카드 삽입 완료 (body 상단)');
     }
   }
+  
+  // 🔔 사용자 정보 변경 감지 리스너 추가 (핵심!)
+  window.addEventListener('userUpdated', (event) => {
+    console.log('🔔 [키워드 분석] 사용자 정보 업데이트 감지!', event.detail);
+    
+    // 즉시 크레딧 UI 업데이트
+    const user = event.detail;
+    if (user && !user.isGuest) {
+      const freeCredits = user.free_credits ?? 0;
+      const paidCredits = user.paid_credits ?? 0;
+      
+      // 크레딧 표시 업데이트
+      const freeCreditEl = document.getElementById('freeKeywordCredits');
+      const paidCreditEl = document.getElementById('paidKeywordCredits');
+      
+      if (freeCreditEl) {
+        freeCreditEl.textContent = freeCredits;
+        console.log('✅ 무료 크레딧 UI 업데이트:', freeCredits);
+      }
+      if (paidCreditEl) {
+        paidCreditEl.textContent = paidCredits;
+        console.log('✅ 유료 크레딧 UI 업데이트:', paidCredits);
+      }
+      
+      // 전역 변수도 업데이트
+      window.userCreditsInfo = {
+        daily_free_used: 0, // 일일 무료는 별도 API로 조회
+        daily_free_limit: 3,
+        daily_free_remaining: 3,
+        free_credits: freeCredits,
+        paid_credits: paidCredits,
+        total_credits: freeCredits + paidCredits
+      };
+      
+      console.log('📊 userCreditsInfo 업데이트:', window.userCreditsInfo);
+    }
+  });
+  
+  console.log('✅ userUpdated 이벤트 리스너 등록 완료');
   
   // 사용자 크레딧 정보 로드 (3초 후 - 인증 완료 충분히 대기)
   setTimeout(async () => {
