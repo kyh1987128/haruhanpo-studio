@@ -6,6 +6,21 @@
 */
 
 // ===================================
+// 안전 문자열 처리 헬퍼 함수
+// ===================================
+function safeString(value, defaultValue = '') {
+  if (value === null || value === undefined) return defaultValue;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  try {
+    return String(value);
+  } catch (e) {
+    console.warn('safeString 변환 실패:', value, e);
+    return defaultValue;
+  }
+}
+
+// ===================================
 // 1. 분석 기록 조회 UI
 // ===================================
 async function showKeywordHistory() {
@@ -24,13 +39,28 @@ async function showKeywordHistory() {
   
   try {
     const response = await fetch(`/api/keyword-history?user_id=${window.currentUser.id}&limit=30`);
-    const data = await response.json();
+    
+    // HTTP 에러 체크
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    let data;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      console.error('JSON 파싱 실패:', parseError);
+      const textResponse = await response.text();
+      console.error('응답 내용:', textResponse.substring(0, 200));
+      throw new Error('서버 응답을 파싱할 수 없습니다');
+    }
     
     if (!data.success) {
+      const errorMsg = safeString(data.error, '알 수 없는 오류');
       if (typeof window.showToast === 'function') {
-        window.showToast('❌ 기록 조회 실패: ' + data.error, 'error');
+        window.showToast('❌ 기록 조회 실패: ' + errorMsg, 'error');
       } else {
-        alert('기록 조회 실패: ' + data.error);
+        alert('기록 조회 실패: ' + errorMsg);
       }
       return;
     }
@@ -179,13 +209,28 @@ async function showMonthlyReport() {
   
   try {
     const response = await fetch(`/api/keyword-monthly-report?user_id=${window.currentUser.id}`);
-    const data = await response.json();
+    
+    // HTTP 에러 체크
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    let data;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      console.error('JSON 파싱 실패:', parseError);
+      const textResponse = await response.text();
+      console.error('응답 내용:', textResponse.substring(0, 200));
+      throw new Error('서버 응답을 파싱할 수 없습니다');
+    }
     
     if (!data.success) {
+      const errorMsg = safeString(data.error, '알 수 없는 오류');
       if (typeof window.showToast === 'function') {
-        window.showToast('❌ 리포트 생성 실패: ' + data.error, 'error');
+        window.showToast('❌ 리포트 생성 실패: ' + errorMsg, 'error');
       } else {
-        alert('리포트 생성 실패: ' + data.error);
+        alert('리포트 생성 실패: ' + errorMsg);
       }
       return;
     }

@@ -624,23 +624,81 @@ function applyAnalyzedKeywords() {
     // 상위 3개 키워드를 콘텐츠 폼에 적용
     const topKeywords = keywords.slice(0, 3).join(', ');
     
-    // 키워드 입력 필드 찾기
-    const keywordInput = document.querySelector('input[name="keywords"]') ||
-                         document.getElementById('keywords') ||
-                         document.querySelector('#keywords-0');
+    // 키워드 입력 필드 찾기 (다양한 후보 필드 탐색)
+    const possibleSelectors = [
+      'input[name="keywords"]',
+      'input[id="keywords"]',
+      'input[placeholder*="키워드"]',
+      'input[placeholder*="keyword"]',
+      'textarea[name="keywords"]',
+      'textarea[id="keywords"]',
+      '#keywords-0',
+      'input[name="brand_name"]',
+      'input[name="product_name"]',
+      'input[id*="keyword"]',
+      'textarea[id*="keyword"]'
+    ];
     
-    if (keywordInput) {
-      keywordInput.value = topKeywords;
-      keywordInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      
-      if (typeof window.showToast === 'function') {
-        window.showToast(`✅ 상위 ${Math.min(3, keywords.length)}개 키워드가 적용되었습니다!`, 'success');
-      } else {
-        alert(`상위 ${Math.min(3, keywords.length)}개 키워드가 적용되었습니다!`);
+    let targetInput = null;
+    for (const selector of possibleSelectors) {
+      targetInput = document.querySelector(selector);
+      if (targetInput) {
+        console.log(`✅ 입력 필드 발견: ${selector}`);
+        break;
       }
     }
     
-    modal.remove();
+    if (targetInput) {
+      // 기존 값에 추가할지 대체할지 결정
+      const currentValue = targetInput.value.trim();
+      if (currentValue && currentValue.length > 0) {
+        // 기존 값이 있으면 추가
+        targetInput.value = currentValue + ', ' + topKeywords;
+      } else {
+        // 기존 값이 없으면 대체
+        targetInput.value = topKeywords;
+      }
+      
+      // 포커스 + 스크롤
+      targetInput.focus();
+      targetInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // 토스트 메시지
+      if (typeof window.showToast === 'function') {
+        window.showToast(`✅ 상위 ${Math.min(3, keywords.length)}개 키워드가 적용되었습니다!`, 'success');
+      } else {
+        alert(`✅ 상위 ${Math.min(3, keywords.length)}개 키워드가 적용되었습니다!`);
+      }
+      
+      modal.remove();
+    } else {
+      // 입력 필드를 찾지 못한 경우 클립보드에 복사
+      console.warn('❌ 키워드 입력 필드를 찾지 못했습니다. 클립보드에 복사합니다.');
+      
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(topKeywords)
+          .then(() => {
+            if (typeof window.showToast === 'function') {
+              window.showToast('📋 키워드가 클립보드에 복사되었습니다!', 'info');
+            } else {
+              alert('📋 키워드가 클립보드에 복사되었습니다: ' + topKeywords);
+            }
+          })
+          .catch(err => {
+            console.error('클립보드 복사 실패:', err);
+            if (typeof window.showToast === 'function') {
+              window.showToast('❌ 클립보드 복사 실패. 키워드: ' + topKeywords, 'error');
+            } else {
+              alert('키워드를 수동으로 복사해주세요: ' + topKeywords);
+            }
+          });
+      } else {
+        // 클립보드 API가 없으면 모달로 표시
+        alert('📋 다음 키워드를 복사해주세요:\n\n' + topKeywords);
+      }
+      
+      modal.remove();
+    }
   }
 }
 
