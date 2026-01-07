@@ -746,46 +746,50 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   // 🔔 사용자 정보 변경 감지 리스너 추가 (핵심!)
   window.addEventListener('userUpdated', (event) => {
-    const user = event.detail;
+    // ✅ 전역 상태를 직접 확인 (이벤트 데이터 무시)
+    const user = window.currentUser;
     
-    // ✅ 게스트/무효 이벤트 필터링 (타이밍 문제 해결)
+    // 게스트 상태 체크
     if (!user || !user.id || user.isGuest) {
-      console.warn('⚠️ [키워드 분석] 게스트/무효 userUpdated 이벤트 무시:', user);
+      console.warn('⚠️ [키워드 분석] 게스트 상태 - 크레딧 업데이트 스킵');
       return;
     }
     
-    console.log('🔔 [키워드 분석] 로그인 사용자 업데이트 감지!', event.detail);
+    console.log('🔔 [키워드 분석] 로그인 사용자 감지!', {
+      id: user.id,
+      email: user.email,
+      free_credits: user.free_credits,
+      paid_credits: user.paid_credits
+    });
     
     // 즉시 크레딧 UI 업데이트
-    if (user && !user.isGuest) {
-      const freeCredits = user.free_credits ?? 0;
-      const paidCredits = user.paid_credits ?? 0;
-      
-      // 크레딧 표시 업데이트
-      const freeCreditEl = document.getElementById('freeKeywordCredits');
-      const paidCreditEl = document.getElementById('paidKeywordCredits');
-      
-      if (freeCreditEl) {
-        freeCreditEl.textContent = freeCredits;
-        console.log('✅ 무료 크레딧 UI 업데이트:', freeCredits);
-      }
-      if (paidCreditEl) {
-        paidCreditEl.textContent = paidCredits;
-        console.log('✅ 유료 크레딧 UI 업데이트:', paidCredits);
-      }
-      
-      // 전역 변수도 업데이트
-      window.userCreditsInfo = {
-        daily_free_used: 0, // 일일 무료는 별도 API로 조회
-        daily_free_limit: 3,
-        daily_free_remaining: 3,
-        free_credits: freeCredits,
-        paid_credits: paidCredits,
-        total_credits: freeCredits + paidCredits
-      };
-      
-      console.log('📊 userCreditsInfo 업데이트:', window.userCreditsInfo);
+    const freeCredits = user.free_credits ?? 0;
+    const paidCredits = user.paid_credits ?? 0;
+    
+    // 크레딧 표시 업데이트
+    const freeCreditEl = document.getElementById('freeKeywordCredits');
+    const paidCreditEl = document.getElementById('paidKeywordCredits');
+    
+    if (freeCreditEl) {
+      freeCreditEl.textContent = freeCredits;
+      console.log('✅ 무료 크레딧 UI 업데이트:', freeCredits);
     }
+    if (paidCreditEl) {
+      paidCreditEl.textContent = paidCredits;
+      console.log('✅ 유료 크레딧 UI 업데이트:', paidCredits);
+    }
+    
+    // 전역 변수도 업데이트
+    window.userCreditsInfo = {
+      daily_free_used: 0, // 일일 무료는 별도 API로 조회
+      daily_free_limit: 3,
+      daily_free_remaining: 3,
+      free_credits: freeCredits,
+      paid_credits: paidCredits,
+      total_credits: freeCredits + paidCredits
+    };
+    
+    console.log('📊 userCreditsInfo 업데이트:', window.userCreditsInfo);
   });
   
   console.log('✅ userUpdated 이벤트 리스너 등록 완료');
