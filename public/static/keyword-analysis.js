@@ -19,6 +19,12 @@ function renderKeywordAnalysisCard() {
   const user = window.currentUser;
   const isLoggedIn = !!(user && user.id && !user.isGuest);
   
+  // ✅ 로그인 시 크레딧 정보 즉시 로드
+  if (isLoggedIn && (!window.userCreditsInfo || !window.userCreditsInfo.daily_free_limit)) {
+    console.log('🔄 [렌더링] 크레딧 정보 즉시 로드');
+    loadKeywordCreditStatus();
+  }
+  
   // ✅ 비로그인 시 안내 메시지만 표시
   if (!isLoggedIn) {
     return `
@@ -930,11 +936,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   console.log('✅ userUpdated 이벤트 리스너 등록 완료');
   
-  // 사용자 크레딧 정보 로드 (3초 후 - 인증 완료 충분히 대기)
-  setTimeout(async () => {
-    console.log('🔄 크레딧 정보 로드 시작...');
-    await loadKeywordCreditStatus();
-  }, 3000);
+  // 사용자 크레딧 정보 로드 (즉시 + 1초 후 재시도)
+  loadKeywordCreditStatus(); // 즉시 호출
+  setTimeout(() => {
+    console.log('🔄 크레딧 정보 재로드...');
+    loadKeywordCreditStatus();
+  }, 1000);
   
   // 🔥 추가: 5초마다 강제 동기화 (이벤트 실패 백업)
   setInterval(() => {
