@@ -749,9 +749,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ✅ 전역 상태를 직접 확인 (이벤트 데이터 무시)
     const user = window.currentUser;
     
-    // 게스트 상태 체크
-    if (!user || !user.id || user.isGuest) {
-      console.warn('⚠️ [키워드 분석] 게스트 상태 - 크레딧 업데이트 스킵');
+    console.log('🔍 [키워드 분석] userUpdated 이벤트 수신:', {
+      user: user,
+      hasId: !!user?.id,
+      isGuest: user?.isGuest,
+      free_credits: user?.free_credits,
+      paid_credits: user?.paid_credits
+    });
+    
+    // 게스트 상태 체크 (더 엄격하게)
+    if (!user || !user.id || user.isGuest === true) {
+      console.warn('⚠️ [키워드 분석] 게스트 상태 - 크레딧 업데이트 스킵', {
+        hasUser: !!user,
+        hasId: !!user?.id,
+        isGuest: user?.isGuest
+      });
       return;
     }
     
@@ -799,6 +811,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('🔄 크레딧 정보 로드 시작...');
     await loadKeywordCreditStatus();
   }, 3000);
+  
+  // 🔥 추가: 5초마다 강제 동기화 (이벤트 실패 백업)
+  setInterval(() => {
+    const user = window.currentUser;
+    if (user && user.id && user.isGuest === false && user.free_credits !== undefined) {
+      const freeEl = document.getElementById('freeKeywordCredits');
+      const paidEl = document.getElementById('paidKeywordCredits');
+      
+      // UI가 0인데 데이터는 있으면 강제 업데이트
+      if (freeEl && (freeEl.textContent === '0' || freeEl.textContent === '') && user.free_credits > 0) {
+        console.log('🔄 [백업 동기화] 크레딧 강제 업데이트:', {
+          free: user.free_credits,
+          paid: user.paid_credits
+        });
+        freeEl.textContent = user.free_credits;
+        if (paidEl) paidEl.textContent = user.paid_credits;
+        
+        window.userCreditsInfo = {
+          free_credits: user.free_credits,
+          paid_credits: user.paid_credits,
+          daily_free_remaining: 3,
+          total_credits: user.free_credits + user.paid_credits
+        };
+      }
+    }
+  }, 5000);
 });
 
 // 전역 함수 노출

@@ -4535,6 +4535,10 @@ async function syncUserToBackend(session, isNewUser = false) {
       window.currentUser.registration_completed = Boolean(data.registration_completed ?? true); // ✅ 명시적 Boolean 변환
       window.currentUser.phone = data.phone || null; // ✅ 연락처
       
+      // 🔥 핵심: 로그인 상태 명시적 설정
+      window.currentUser.isGuest = false;
+      window.currentUser.isLoggedIn = true;
+      
       console.log('📊 window.currentUser 업데이트:', {
         tier: window.currentUser.tier,
         free_credits: window.currentUser.free_credits,
