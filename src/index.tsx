@@ -2477,8 +2477,16 @@ app.post('/api/analyze-keywords-quality', async (c) => {
     
     if (updateError) {
       console.error(`❌ [${user_id}] 크레딧 차감 실패:`, updateError);
-      return c.json({ success: false, error: '크레딧 차감 실패' }, 500);
+      console.error('❌ updateData:', updateData);
+      console.error('❌ 차감 전 값:', { free: user.free_credits, paid: user.paid_credits, daily_used: dailyFreeUsed });
+      return c.json({ success: false, error: '크레딧 차감 실패', details: updateError.message }, 500);
     }
+    
+    console.log(`✅ [${user_id}] 크레딧 차감 완료:`, {
+      costType,
+      before: { free: user.free_credits, paid: user.paid_credits, daily_used: dailyFreeUsed },
+      after: { free: newFreeCredits, paid: newPaidCredits, daily_used: newDailyFreeUsed }
+    });
     
     console.log(`✅ [${user_id}] 크레딧 차감 완료, 이제 AI 호출 시작`);
     console.log(`🔍 키워드 심층 분석 시작: ${keywordArray.join(', ')}`);
@@ -2489,20 +2497,24 @@ app.post('/api/analyze-keywords-quality', async (c) => {
 
 분석 키워드: ${keywordArray.join(', ')}
 
+**CRITICAL: 성의없는 답변 금지! 반드시 구체적이고 상세하게 작성하세요.**
+
 [필수 분석 지표 - 모두 0~100점]
-1. marketing_score: 마케팅 효과성
-2. seo_score: SEO 난이도
+1. marketing_score: 마케팅 효과성 (정확한 점수, 랜덤 금지)
+2. seo_score: SEO 난이도 (실제 검색량/경쟁도 반영)
 3. viral_potential: 바이럴 확산 가능성
 4. conversion_potential: 전환율 예상
 5. trend_score: 트렌드 강도
 6. competition_level: 경쟁 강도
 7. saturation_level: 시장 포화도
 
-[추가 요구사항]
-- analysis: 각 키워드에 대한 **구체적이고 상세한** 마케팅 분석 (3-5문장, 타겟층, 시장 상황, 활용 전략 포함)
-- recommendations: 실행 가능한 **구체적인** 마케팅 전략 3개 이상
-- related_keywords: 관련 추천 키워드 5개 (검색량, 경쟁도 고려)
-- better_alternatives: 더 나은 대체 키워드 3개 (이유 포함)
+[필수 작성 규칙 - 위반 시 재작성]
+✅ analysis: **반드시 5문장 이상**, 타겟층/시장상황/활용전략/경쟁분석/수익성 포함
+✅ recommendations: **반드시 5개 이상**, 실행 가능한 구체적 전략 (예: "20-30대 여성 타겟 인스타그램 릴스 제작")
+✅ related_keywords: **반드시 7개 이상**, 실제 검색되는 연관 키워드
+✅ better_alternatives: **반드시 5개 이상**, 더 나은 키워드 + 구체적 이유
+✅ market_insights: **반드시 5개 이상**, 시장 데이터 기반 인사이트
+✅ strategic_recommendations: **반드시 5개 이상**, 단계별 실행 전략
 
 [JSON 형식]
 {
@@ -2519,20 +2531,24 @@ app.post('/api/analyze-keywords-quality', async (c) => {
       "saturation_level": 80,
       "market_size": "대형 키워드",
       "total_score": 81,
-      "analysis": "**구체적이고 상세한 분석** (3-5문장)",
-      "recommendations": ["구체적 전략1", "구체적 전략2", "구체적 전략3"],
-      "related_keywords": ["관련키워드1", "관련키워드2", "관련키워드3", "관련키워드4", "관련키워드5"],
+      "analysis": "**5문장 이상 필수** 타겟층 + 시장상황 + 활용전략 + 경쟁분석 + 수익성",
+      "recommendations": ["구체적전략1 (실행방법포함)", "구체적전략2", "구체적전략3", "구체적전략4", "구체적전략5"],
+      "related_keywords": ["연관1", "연관2", "연관3", "연관4", "연관5", "연관6", "연관7"],
       "better_alternatives": [
-        {"keyword": "대체키워드1", "reason": "더 나은 이유"},
-        {"keyword": "대체키워드2", "reason": "더 나은 이유"},
-        {"keyword": "대체키워드3", "reason": "더 나은 이유"}
+        {"keyword": "대체1", "reason": "구체적 이유 (데이터 기반)"},
+        {"keyword": "대체2", "reason": "구체적 이유"},
+        {"keyword": "대체3", "reason": "구체적 이유"},
+        {"keyword": "대체4", "reason": "구체적 이유"},
+        {"keyword": "대체5", "reason": "구체적 이유"}
       ]
     }
   ],
   "overall_score": 81,
-  "market_insights": ["구체적 시장 인사이트 3개 이상"],
-  "strategic_recommendations": ["실행 가능한 전략 3개 이상"]
+  "market_insights": ["인사이트1 (데이터포함)", "인사이트2", "인사이트3", "인사이트4", "인사이트5"],
+  "strategic_recommendations": ["실행전략1 (구체적)", "실행전략2", "실행전략3", "실행전략4", "실행전략5"]
 }
+
+**WARNING: 일반적이고 추상적인 답변 금지! 반드시 구체적 데이터와 실행방법 포함!**
     `;
     
     let analysis: any;
