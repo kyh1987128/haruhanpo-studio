@@ -1639,10 +1639,10 @@ export const htmlTemplate = `
       </div>
     </div>
 
-    <script src="/static/i18n.js?v=5.3.2"></script>
-    <script src="/static/app-v3-final.js?v=11.17.0"></script>
-    <script src="/static/keyword-analysis.js?v=13.0.0"></script>
-    <script src="/static/keyword-extended.js?v=13.1.0"></script>
+    <script src="/static/i18n.js?v=13.11.0"></script>
+    <script src="/static/app-v3-final.js?v=13.11.0"></script>
+    <script src="/static/keyword-analysis.js?v=13.11.0"></script>
+    <script src="/static/keyword-extended.js?v=13.11.0"></script>
     </div><!-- max-w-7xl container -->
 </body>
 </html>
