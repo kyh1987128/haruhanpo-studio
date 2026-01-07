@@ -16,8 +16,48 @@ let userCreditsInfo = {
 // 키워드 분석 카드 렌더링
 // ===================================
 function renderKeywordAnalysisCard() {
-  const isDailyFreeAvailable = userCreditsInfo.daily_remaining > 0;
-  const totalCredits = userCreditsInfo.free_credits + userCreditsInfo.paid_credits;
+  const user = window.currentUser;
+  const isLoggedIn = !!(user && user.id && !user.isGuest);
+  
+  // ✅ 비로그인 시 안내 메시지만 표시
+  if (!isLoggedIn) {
+    return `
+      <div data-keyword-analysis-card style="
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 3rem 2rem; border-radius: 20px; color: white;
+        margin-bottom: 2rem; box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        text-align: center;
+      ">
+        <h2 style="font-size: 2rem; font-weight: 800; margin-bottom: 1rem;">
+          🔐 키워드 AI 심층 분석
+        </h2>
+        <p style="font-size: 1.1rem; margin-bottom: 2rem; line-height: 1.6; opacity: 0.95;">
+          로그인하시면 하루 <strong>3회</strong>까지 무료로<br>
+          키워드 심층 분석을 이용하실 수 있습니다.
+        </p>
+        <button
+          onclick="window.location.href='/'"
+          style="
+            background: white; color: #667eea; border: none;
+            padding: 1rem 2.5rem; border-radius: 15px; font-size: 1.1rem;
+            font-weight: bold; cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+          "
+          onmouseover="this.style.transform='translateY(-2px)'"
+          onmouseout="this.style.transform='translateY(0)'"
+        >
+          로그인하고 무료 분석 시작하기
+        </button>
+      </div>
+    `;
+  }
+  
+  // ✅ 로그인 시에만 크레딧 정보 표시
+  const info = window.userCreditsInfo || {};
+  const freeCredits = info.free_credits ?? user.free_credits ?? 0;
+  const paidCredits = info.paid_credits ?? user.paid_credits ?? 0;
+  const dailyRemaining = info.daily_free_remaining ?? 3;
+  const isDailyFreeAvailable = dailyRemaining > 0;
   
   return `
     <div data-keyword-analysis-card style="
@@ -44,14 +84,14 @@ function renderKeywordAnalysisCard() {
               font-size: 0.85rem; font-weight: 600;
             ">
               ${isDailyFreeAvailable 
-                ? `🆓 오늘 무료 ${userCreditsInfo.daily_remaining}회`
+                ? `🆓 오늘 무료 ${dailyRemaining}회`
                 : '💎 무료 소진 · 크레딧 사용'}
             </span>
             <span style="
               background: rgba(255,255,255,0.2); padding: 0.4rem 1rem;
               border-radius: 20px; font-size: 0.85rem; font-weight: 600;
             ">
-              무료 ${userCreditsInfo.free_credits} · 유료 ${userCreditsInfo.paid_credits}
+              무료 <span id="freeKeywordCredits">${freeCredits}</span> · 유료 <span id="paidKeywordCredits">${paidCredits}</span>
             </span>
           </div>
         </div>
@@ -147,39 +187,68 @@ function setKeywordSample(text) {
 // 크레딧 상태 로드
 // ===================================
 async function loadKeywordCreditStatus() {
-  // currentUser가 로드될 때까지 대기 (최대 5초)
+  // ✅ 로그인 정보 로드 대기 (최대 3초, 0.3초 간격)
   let attempts = 0;
-  while ((!window.currentUser || window.currentUser.isGuest) && attempts < 10) {
-    await new Promise(resolve => setTimeout(resolve, 500));
+  while ((!window.currentUser || !window.currentUser.id || window.currentUser.isGuest) && attempts < 10) {
+    await new Promise(resolve => setTimeout(resolve, 300));
     attempts++;
   }
   
-  if (!window.currentUser || window.currentUser.isGuest) {
-    console.log('⚠️ 비회원 또는 로그인 필요 - 크레딧 조회 스킵');
+  // 비회원 상태 처리
+  if (!window.currentUser || !window.currentUser.id || window.currentUser.isGuest) {
+    console.log('⚠️ 비회원 상태로 크레딧 조회 스킵');
     return;
   }
   
+  console.log('✅ 로그인 확인됨, 크레딧 조회 시작:', window.currentUser.email);
+  
   try {
     const response = await fetch(`/api/user-credits-status?user_id=${window.currentUser.id}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
     const data = await response.json();
     
     if (data.success) {
-      userCreditsInfo = {
+      // 전역 상태 업데이트
+      window.userCreditsInfo = {
         free_credits: data.free_credits,
         paid_credits: data.paid_credits,
-        daily_remaining: data.daily_remaining
+        daily_free_used: data.daily_free_used || 0,
+        daily_free_limit: data.daily_free_limit || 3,
+        daily_free_remaining: data.daily_free_remaining || 3,
+        total_credits: data.total_credits || 0
       };
       
-      // 카드 UI 업데이트
-      const cardEl = document.querySelector('[data-keyword-analysis-card]');
-      if (cardEl) {
-        cardEl.outerHTML = renderKeywordAnalysisCard();
+      // UI 업데이트
+      const freeEl = document.getElementById('freeKeywordCredits');
+      const paidEl = document.getElementById('paidKeywordCredits');
+      
+      if (freeEl) {
+        freeEl.textContent = data.free_credits;
+        console.log('✅ 무료 크레딧 UI 업데이트:', data.free_credits);
+      }
+      if (paidEl) {
+        paidEl.textContent = data.paid_credits;
+        console.log('✅ 유료 크레딧 UI 업데이트:', data.paid_credits);
       }
       
-      console.log('✅ 크레딧 정보 로드 완료:', userCreditsInfo);
+      console.log('✅ 크레딧 동기화 완료:', window.userCreditsInfo);
     }
   } catch (error) {
-    console.error('❌ 크레딧 정보 로드 실패:', error);
+    console.error('❌ 크레딧 조회 실패:', error);
+    // 실패 시 전역 상태의 값 사용
+    const user = window.currentUser;
+    if (user && user.id) {
+      window.userCreditsInfo = {
+        free_credits: user.free_credits || 0,
+        paid_credits: user.paid_credits || 0,
+        daily_free_remaining: 3,
+        total_credits: (user.free_credits || 0) + (user.paid_credits || 0)
+      };
+    }
   }
 }
 
@@ -677,10 +746,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   // 🔔 사용자 정보 변경 감지 리스너 추가 (핵심!)
   window.addEventListener('userUpdated', (event) => {
-    console.log('🔔 [키워드 분석] 사용자 정보 업데이트 감지!', event.detail);
+    const user = event.detail;
+    
+    // ✅ 게스트/무효 이벤트 필터링 (타이밍 문제 해결)
+    if (!user || !user.id || user.isGuest) {
+      console.warn('⚠️ [키워드 분석] 게스트/무효 userUpdated 이벤트 무시:', user);
+      return;
+    }
+    
+    console.log('🔔 [키워드 분석] 로그인 사용자 업데이트 감지!', event.detail);
     
     // 즉시 크레딧 UI 업데이트
-    const user = event.detail;
     if (user && !user.isGuest) {
       const freeCredits = user.free_credits ?? 0;
       const paidCredits = user.paid_credits ?? 0;
