@@ -4459,24 +4459,29 @@ async function checkSupabaseSession() {
       const lastSignInAt = new Date(session.user.last_sign_in_at).getTime();
       const isNewUser = Math.abs(createdAt - lastSignInAt) < 5000; // 5초 이내면 신규
       
-      // 로그인 상태
+      // 로그인 상태 (초기값은 0으로 설정, 서버 동기화 후 업데이트)
       currentUser = {
         id: session.user.id,  // ✅ 추가: 사용자 ID
         isLoggedIn: true,
         isGuest: false,
         name: session.user.user_metadata.full_name || session.user.email,
         email: session.user.email,
-        credits: 3, // TODO: 서버에서 실제 크레딧 조회
-        tier: 'free', // TODO: 서버에서 실제 등급 조회
+        free_credits: 0, // ✅ 서버 동기화 후 업데이트
+        paid_credits: 0, // ✅ 서버 동기화 후 업데이트
+        credits: 0, // ✅ 서버 동기화 후 업데이트
+        tier: 'free', // ✅ 서버에서 실제 등급 조회
         subscription_status: 'free'
       };
       
-      localStorage.setItem('postflow_user', JSON.stringify(currentUser));
+      // ⚠️ 주의: localStorage에 저장하지 않음 (서버 동기화 후에만 저장)
+      // localStorage.setItem('postflow_user', JSON.stringify(currentUser));
       localStorage.setItem('postflow_token', session.access_token);
       
+      // ✅ UI는 일단 기본 상태로 업데이트
       updateAuthUI();
       
-      // 서버에 사용자 정보 동기화 (신규 여부 전달)
+      // 🔥 서버에 사용자 정보 동기화 (신규 여부 전달)
+      // syncUserToBackend에서 최신 DB 데이터를 받아 currentUser 업데이트 + localStorage 저장
       syncUserToBackend(session, isNewUser);
     } else {
       // 비로그인 상태
