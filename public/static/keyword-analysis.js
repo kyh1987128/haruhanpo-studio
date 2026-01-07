@@ -71,6 +71,7 @@ function renderKeywordAnalysisCard() {
               width: 100%; padding: 1.2rem 120px 1.2rem 1.2rem; border: none; border-radius: 15px;
               font-size: 1rem; outline: none; box-sizing: border-box;
               box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+              color: #111827; background: white;
             "
             onkeydown="if(event.key === 'Enter') analyzeKeywordsQuality()"
           />
@@ -146,6 +147,13 @@ function setKeywordSample(text) {
 // 크레딧 상태 로드
 // ===================================
 async function loadKeywordCreditStatus() {
+  // currentUser가 로드될 때까지 대기 (최대 5초)
+  let attempts = 0;
+  while ((!window.currentUser || window.currentUser.isGuest) && attempts < 10) {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    attempts++;
+  }
+  
   if (!window.currentUser || window.currentUser.isGuest) {
     console.log('⚠️ 비회원 또는 로그인 필요 - 크레딧 조회 스킵');
     return;
@@ -194,7 +202,15 @@ async function analyzeKeywordsQuality() {
     return;
   }
   
+  // currentUser 재확인 (5초 대기)
+  let attempts = 0;
+  while ((!window.currentUser || window.currentUser.isGuest) && attempts < 10) {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    attempts++;
+  }
+  
   if (!window.currentUser || window.currentUser.isGuest) {
+    console.error('❌ currentUser 없음:', window.currentUser);
     if (typeof window.showToast === 'function') {
       window.showToast('⚠️ 로그인 후 이용 가능합니다', 'warning');
     } else {
@@ -202,6 +218,12 @@ async function analyzeKeywordsQuality() {
     }
     return;
   }
+  
+  console.log('✅ currentUser 확인:', {
+    id: window.currentUser.id,
+    email: window.currentUser.email,
+    isGuest: window.currentUser.isGuest
+  });
 
   // 일일 무료 소진 상태에서 크레딧도 0이면 바로 모달
   const totalCredits = userCreditsInfo.free_credits + userCreditsInfo.paid_credits;
@@ -654,10 +676,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
   
-  // 사용자 크레딧 정보 로드 (1초 후 - 인증 완료 대기)
+  // 사용자 크레딧 정보 로드 (3초 후 - 인증 완료 충분히 대기)
   setTimeout(async () => {
+    console.log('🔄 크레딧 정보 로드 시작...');
     await loadKeywordCreditStatus();
-  }, 1000);
+  }, 3000);
 });
 
 // 전역 함수 노출
