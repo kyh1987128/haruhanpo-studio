@@ -255,7 +255,19 @@ async function loadKeywordCreditStatus() {
 // ===================================
 // 키워드 분석 실행
 // ===================================
+// 🔒 중복 실행 방지 플래그
+let isAnalyzing = false;
+
 async function analyzeKeywordsQuality() {
+  // ✅ 중복 실행 방지
+  if (isAnalyzing) {
+    console.log('⏳ 이미 분석 중입니다');
+    if (typeof window.showToast === 'function') {
+      window.showToast('⏳ 이미 분석 중입니다. 잠시만 기다려주세요.', 'warning');
+    }
+    return;
+  }
+  
   const input = document.getElementById('keywordAnalysisInput');
   if (!input) return;
   
@@ -313,6 +325,15 @@ async function analyzeKeywordsQuality() {
   
   if (typeof window.showToast === 'function') {
     window.showToast('🔍 AI가 키워드를 심층 분석 중입니다...', 'info');
+  }
+  
+  // ✅ 분석 시작 - 버튼 비활성화
+  isAnalyzing = true;
+  const analyzeButton = document.querySelector('button[onclick*="analyzeKeywordsQuality"]');
+  if (analyzeButton) {
+    analyzeButton.disabled = true;
+    analyzeButton.textContent = '⏳ AI 분석 중...';
+    analyzeButton.classList.add('opacity-50', 'cursor-not-allowed');
   }
   
   try {
@@ -394,6 +415,14 @@ async function analyzeKeywordsQuality() {
       window.showToast('❌ 분석 중 오류가 발생했습니다', 'error');
     } else {
       alert('분석 중 오류가 발생했습니다');
+    }
+  } finally {
+    // ✅ 분석 완료 - 버튼 상태 복구
+    isAnalyzing = false;
+    if (analyzeButton) {
+      analyzeButton.disabled = false;
+      analyzeButton.textContent = '🎯 분석';
+      analyzeButton.classList.remove('opacity-50', 'cursor-not-allowed');
     }
   }
 }
