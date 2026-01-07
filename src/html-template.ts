@@ -217,7 +217,7 @@ export const htmlTemplate = `
                     <div class="text-sm opacity-80">무료 회원 (매월 리셋)</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-3xl font-bold mb-1">₩9,900</div>
+                    <div class="text-3xl font-bold mb-1">₩9,000</div>
                     <div class="text-sm opacity-80">50크레딧 구매</div>
                 </div>
             </div>
@@ -234,14 +234,14 @@ export const htmlTemplate = `
                     <div>
                         <div class="text-2xl mb-2">💎</div>
                         <div class="font-semibold mb-1">유료 플랜</div>
-                        <div class="text-sm opacity-90">₩9,900 → 50크레딧</div>
-                        <div class="text-xs opacity-75">(소진 시까지 유지)</div>
+                        <div class="text-sm opacity-90">₩9,000 = 50크레딧</div>
+                        <div class="text-xs opacity-75">(10% 할인, 소진 시까지 유지)</div>
                     </div>
                     <div>
                         <div class="text-2xl mb-2">➕</div>
                         <div class="font-semibold mb-1">추가 충전</div>
-                        <div class="text-sm opacity-90">1크레딧 = ₩200</div>
-                        <div class="text-xs opacity-75">(필요 시)</div>
+                        <div class="text-sm opacity-90">₩2,000 / ₩17,000</div>
+                        <div class="text-xs opacity-75">(10개 / 100개)</div>
                     </div>
                 </div>
             </div>
