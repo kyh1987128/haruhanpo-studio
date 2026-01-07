@@ -4532,7 +4532,7 @@ async function syncUserToBackend(session, isNewUser = false) {
       window.currentUser.free_credits = data.free_credits ?? 0; // ✅ 무료 크레딧
       window.currentUser.paid_credits = data.paid_credits ?? 0; // ✅ 유료 크레딧
       window.currentUser.credits = (data.free_credits ?? 0) + (data.paid_credits ?? 0); // ✅ 총 크레딧 계산
-      window.currentUser.registration_completed = data.registration_completed ?? true; // ✅ 회원가입 완료 여부
+      window.currentUser.registration_completed = Boolean(data.registration_completed ?? true); // ✅ 명시적 Boolean 변환
       window.currentUser.phone = data.phone || null; // ✅ 연락처
       
       console.log('📊 window.currentUser 업데이트:', {
@@ -4557,11 +4557,12 @@ async function syncUserToBackend(session, isNewUser = false) {
       // 🔥 프로필 자동 로드 추가
       loadProfileFromDB(session.user.id);
       
-      // 🚨 회원가입 완료 여부 체크
-      if (!currentUser.registration_completed) {
+      // 🚨 회원가입 완료 여부 체크 (window.currentUser만 참조!)
+      if (!window.currentUser.registration_completed) {
         console.log('🔔 회원가입 미완료 → 모달 표시');
         showRegistrationCompleteModal(session.user.id);
       } else {
+        console.log('✅ 회원가입 이미 완료 - 모달 표시 안 함');
         // 신규 사용자 / 기존 사용자 환영 메시지
         if (isNewUser) {
           showWelcomeMessage('signup');
@@ -4584,15 +4585,17 @@ async function syncUserToBackend(session, isNewUser = false) {
 
 // 환영 메시지 표시 (하이브리드 플랜)
 function showWelcomeMessage(type) {
+  const user = window.currentUser; // ✅ 전역 객체 참조
+  
   const messages = {
     signup: {
       title: '🎉 회원가입 완료!',
-      message: `환영합니다, ${currentUser.name}님!<br><br>🎁 무료 회원 혜택<br>• 매월 10크레딧 자동 지급<br>• 1크레딧 = 1회 생성<br><br>💎 크레딧 충전 옵션<br>• STARTER: ₩2,000 (10크레딧)<br>• PRO: ₩9,000 (50크레딧, 10% 할인) 🔥<br>• BUSINESS: ₩17,000 (100크레딧, 15% 할인)`,
+      message: `환영합니다, ${user.name}님!<br><br>🎁 무료 회원 혜택<br>• 매월 10크레딧 자동 지급<br>• 1크레딧 = 1회 생성<br><br>💎 크레딧 충전 옵션<br>• STARTER: ₩2,000 (10크레딧)<br>• PRO: ₩9,000 (50크레딧, 10% 할인) 🔥<br>• BUSINESS: ₩17,000 (100크레딧, 15% 할인)`,
       duration: 6000
     },
     login: {
       title: '👋 다시 오신 것을 환영합니다!',
-      message: `${currentUser.name}님, 반갑습니다!<br><br>${currentUser.tier === 'free' ? '🎁 무료 회원' : '💎 유료 회원'}<br>• 남은 크레딧: <strong>${currentUser.credits}개</strong><br>• 1크레딧 = 1회 생성`,
+      message: `${user.name}님, 반갑습니다!<br><br>${user.tier === 'free' ? '🎁 무료 회원' : '💎 유료 회원'}<br>• 남은 크레딧: <strong>${user.credits}개</strong><br>• 1크레딧 = 1회 생성`,
       duration: 4000
     }
   };
@@ -4878,6 +4881,8 @@ async function checkAuthStatus() {
 
 // UI 업데이트
 function updateAuthUI() {
+  const user = window.currentUser; // ✅ 전역 객체만 참조
+  
   const userInfoArea = document.getElementById('userInfoArea');
   const guestArea = document.getElementById('guestArea');
   const memberFeaturesArea = document.getElementById('memberFeaturesArea');
@@ -4886,7 +4891,7 @@ function updateAuthUI() {
   const userTier = document.getElementById('userTier');
   const userCredits = document.getElementById('userCredits');
   
-  if (currentUser.isLoggedIn && !currentUser.isGuest) {
+  if (user.isLoggedIn && !user.isGuest) {
     // 로그인 상태 (하이브리드 플랜)
     userInfoArea.classList.remove('hidden');
     guestArea.classList.add('hidden');
@@ -4897,18 +4902,18 @@ function updateAuthUI() {
       heroSection.classList.add('hidden');
     }
     
-    userName.textContent = currentUser.name || '사용자';
+    userName.textContent = user.name || '사용자';
     // Tier 표시
     const tierLabels = {
       'guest': '비회원',
       'free': '무료',
       'paid': '유료'
     };
-    userTier.textContent = tierLabels[currentUser.tier] || '무료';
+    userTier.textContent = tierLabels[user.tier] || '무료';
     
     // ✅ 2지갑 크레딧 표시 개선
-    const freeCredits = currentUser.free_credits || 0;
-    const paidCredits = currentUser.paid_credits || 0;
+    const freeCredits = user.free_credits || 0;
+    const paidCredits = user.paid_credits || 0;
     const totalCredits = freeCredits + paidCredits;
     
     let creditText = `${totalCredits}크레딧`;
@@ -4954,14 +4959,16 @@ function updateAuthUI() {
 function handleAuthError() {
   localStorage.removeItem('postflow_token');
   localStorage.removeItem('postflow_user');
-  currentUser = {
+  window.currentUser = {
     id: null,
     isLoggedIn: false,
     isGuest: true,
     name: null,
     email: null,
     tier: 'guest', // 'guest' | 'free' | 'paid'
-    credits: 1 // 비회원 1크레딧
+    credits: 1, // 비회원 1크레딧
+    free_credits: 0,
+    paid_credits: 0
   };
   updateAuthUI();
 }

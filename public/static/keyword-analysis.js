@@ -223,17 +223,6 @@ async function analyzeKeywordsQuality() {
     free_credits: window.currentUser.free_credits,
     paid_credits: window.currentUser.paid_credits
   });
-    }
-    return;
-  }
-  
-  console.log('✅ currentUser 확인:', {
-    id: window.currentUser.id,
-    email: window.currentUser.email,
-    isGuest: window.currentUser.isGuest,
-    free_credits: window.currentUser.free_credits,
-    paid_credits: window.currentUser.paid_credits
-  });
 
   // 일일 무료 소진 상태에서 크레딧도 0이면 바로 모달
   const totalCredits = userCreditsInfo.free_credits + userCreditsInfo.paid_credits;
