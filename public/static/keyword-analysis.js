@@ -960,5 +960,5 @@ document.addEventListener('DOMContentLoaded', async () => {
 window.analyzeKeywordsQuality = analyzeKeywordsQuality;
 window.setKeywordSample = setKeywordSample;
 window.showKeywordQualityModal = showKeywordQualityModal;
-window.applyAnalyzedKeywords = applyAnalyzedKeywords;
+// 함수는 copyAnalysisResult로 변경되었고 inline onclick으로 직접 호출됨
 window.loadKeywordCreditStatus = loadKeywordCreditStatus;
