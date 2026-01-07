@@ -629,21 +629,28 @@ function applyAnalyzedKeywords() {
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('🚀 하이브리드 크레딧 시스템 초기화 중...');
   
-  // 카드 렌더링
-  const targetSection = document.querySelector('#brand-section, .brand-container, [data-section="brand"]');
-  if (targetSection) {
+  // 카드 렌더링 - 콘텐츠 생성 폼 위에 삽입
+  const contentForm = document.querySelector('#contentForm, .content-form, form');
+  if (contentForm && contentForm.parentNode) {
     const cardContainer = document.createElement('div');
     cardContainer.setAttribute('data-keyword-analysis-section', '');
     cardContainer.innerHTML = renderKeywordAnalysisCard();
-    targetSection.parentNode.insertBefore(cardContainer, targetSection);
+    
+    // 폼 바로 위에 삽입
+    contentForm.parentNode.insertBefore(cardContainer, contentForm);
+    console.log('✅ 키워드 분석 카드 삽입 완료 (폼 위)');
   } else {
-    // 대안: 메인 컨테이너에 삽입
-    const mainContainer = document.querySelector('.main-content, #main, .container');
-    if (mainContainer) {
+    // 대안: body 맨 위에 삽입
+    const body = document.body;
+    if (body) {
       const cardContainer = document.createElement('div');
       cardContainer.setAttribute('data-keyword-analysis-section', '');
       cardContainer.innerHTML = renderKeywordAnalysisCard();
-      mainContainer.insertAdjacentHTML('afterbegin', cardContainer.outerHTML);
+      cardContainer.style.maxWidth = '1200px';
+      cardContainer.style.margin = '2rem auto';
+      cardContainer.style.padding = '0 1rem';
+      body.insertAdjacentElement('afterbegin', cardContainer);
+      console.log('✅ 키워드 분석 카드 삽입 완료 (body 상단)');
     }
   }
   
