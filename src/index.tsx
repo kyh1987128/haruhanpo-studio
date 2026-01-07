@@ -2429,21 +2429,29 @@ app.post('/api/analyze-keywords-quality', async (c) => {
     let newPaidCredits = user.paid_credits || 0;
     let newDailyFreeUsed = dailyFreeUsed;
     let costType: string;
+    let creditsUsed = 0;
+    let usedFree = 0;
+    let usedPaid = 0;
     
     if (canUseFreeToday) {
-      // 일일 무료 사용
+      // 일일 무료 사용 (크레딧 차감 없음)
       newDailyFreeUsed += 1;
       costType = 'daily_free';
+      creditsUsed = 0;
       console.log(`✅ [${user_id}] 일일 무료 사용: ${newDailyFreeUsed}/${dailyFreeLimit}회`);
     } else if (newFreeCredits > 0) {
       // 무료 크레딧 차감
       newFreeCredits -= 1;
       costType = 'free_credit';
+      creditsUsed = 1;
+      usedFree = 1;
       console.log(`💎 [${user_id}] 무료 크레딧 차감: ${user.free_credits} → ${newFreeCredits}개`);
     } else if (newPaidCredits > 0) {
       // 유료 크레딧 차감
       newPaidCredits -= 1;
       costType = 'paid_credit';
+      creditsUsed = 1;
+      usedPaid = 1;
       console.log(`💳 [${user_id}] 유료 크레딧 차감: ${user.paid_credits} → ${newPaidCredits}개`);
     } else {
       // 이 경우는 위에서 402 반환했으므로 도달하지 않음
