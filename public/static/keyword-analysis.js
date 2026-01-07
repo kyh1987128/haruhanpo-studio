@@ -346,16 +346,54 @@ async function analyzeKeywordsQuality() {
     const data = await response.json();
     
     if (data.success) {
-      // 상태 업데이트
+      // 🔥 크레딧 즉시 동기화 (전역 상태 + localStorage + UI)
       if (data.cost_info) {
         const ci = data.cost_info;
+        
+        // 전역 변수 업데이트
         userCreditsInfo = {
           free_credits: ci.remaining_free_credits ?? userCreditsInfo.free_credits,
           paid_credits: ci.remaining_paid_credits ?? userCreditsInfo.paid_credits,
-          daily_remaining: ci.daily_remaining ?? userCreditsInfo.daily_remaining
+          daily_free_used: ci.daily_free_used ?? 0,
+          daily_free_limit: ci.daily_free_limit ?? 3,
+          daily_free_remaining: ci.daily_free_remaining ?? 3,
+          total_credits: (ci.remaining_free_credits ?? 0) + (ci.remaining_paid_credits ?? 0)
         };
         
-        // UI 업데이트
+        // window.userCreditsInfo 동기화
+        window.userCreditsInfo = { ...userCreditsInfo };
+        
+        // window.currentUser 동기화
+        if (window.currentUser) {
+          window.currentUser.free_credits = ci.remaining_free_credits ?? window.currentUser.free_credits;
+          window.currentUser.paid_credits = ci.remaining_paid_credits ?? window.currentUser.paid_credits;
+          
+          // localStorage 업데이트
+          const storedUser = JSON.parse(localStorage.getItem('postflow_user') || '{}');
+          storedUser.free_credits = ci.remaining_free_credits;
+          storedUser.paid_credits = ci.remaining_paid_credits;
+          localStorage.setItem('postflow_user', JSON.stringify(storedUser));
+          
+          console.log('💎 크레딧 차감 완료:', {
+            free: ci.remaining_free_credits,
+            paid: ci.remaining_paid_credits,
+            daily_used: ci.daily_free_used,
+            daily_remaining: ci.daily_free_remaining,
+            cost_type: ci.type
+          });
+        }
+        
+        // 상단 크레딧 표시 즉시 업데이트
+        if (typeof window.updateAuthUI === 'function') {
+          window.updateAuthUI();
+        }
+        
+        // 하단 크레딧 표시 즉시 업데이트
+        if (typeof window.updateCostEstimate === 'function') {
+          window.updateCostEstimate();
+        }
+        
+        // 키워드 분석 카드 UI 업데이트
         const cardEl = document.querySelector('[data-keyword-analysis-card]');
         if (cardEl) {
           cardEl.outerHTML = renderKeywordAnalysisCard();
@@ -366,12 +404,11 @@ async function analyzeKeywordsQuality() {
         if (ci.type === 'cached') {
           message = '⚡ 캐시된 결과입니다 (크레딧 미차감)';
         } else if (ci.type === 'daily_free') {
-          message = `✅ 일일 무료 분석! (남은 무료: ${ci.daily_remaining}회)`;
-        } else if (ci.type === 'free_credit' || ci.type === 'paid_credit') {
-          const parts = [];
-          if (ci.used_free_credits) parts.push(`무료 ${ci.used_free_credits}개`);
-          if (ci.used_paid_credits) parts.push(`유료 ${ci.used_paid_credits}개`);
-          message = `✅ 분석 완료! (${parts.join(' + ')} 사용)`;
+          message = `✅ 일일 무료 분석! (남은 무료: ${ci.daily_free_remaining}회)`;
+        } else if (ci.type === 'free_credit') {
+          message = `✅ 분석 완료! (무료 크레딧 1개 사용, 남은 무료: ${ci.remaining_free_credits}개)`;
+        } else if (ci.type === 'paid_credit') {
+          message = `✅ 분석 완료! (유료 크레딧 1개 사용, 남은 유료: ${ci.remaining_paid_credits}개)`;
         }
         
         if (typeof window.showToast === 'function') {

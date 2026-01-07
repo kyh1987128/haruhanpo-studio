@@ -2725,12 +2725,11 @@ app.get('/api/keyword-history', async (c) => {
     
     const supabase = createSupabaseAdmin(c.env);
     
-    // generations 테이블에서 키워드 분석 기록만 조회
+    // generations 테이블에서 모든 기록 조회 (analysis_type 컬럼 없음)
     const { data, error } = await supabase
       .from('generations')
       .select('id, keywords, content, created_at, cost_source')
       .eq('user_id', user_id)
-      .eq('analysis_type', 'keyword_analysis')
       .order('created_at', { ascending: false })
       .limit(limit);
     
@@ -2742,7 +2741,7 @@ app.get('/api/keyword-history', async (c) => {
       }, 500);
     }
     
-    // 데이터 가공 (JSON 파싱 및 요약 정보 추출)
+    // 데이터 가공 (JSON 파싱 및 요약 정보 추출) - 안전한 문자열 처리
     const history = (data || []).map(item => {
       let parsedContent = null;
       try {
@@ -2754,11 +2753,19 @@ app.get('/api/keyword-history', async (c) => {
         parsedContent = { overall_score: 0, keywords: [] };
       }
       
+      // 안전한 문자열 추출 함수
+      const safeString = (value: any): string => {
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'string') return value.trim();
+        if (typeof value === 'object' && value.keyword) return String(value.keyword).trim();
+        return String(value).trim();
+      };
+      
       return {
         id: item.id,
         keywords: item.keywords,
         overall_score: parsedContent?.overall_score || 0,
-        top_keyword: parsedContent?.keywords?.[0]?.keyword || '',
+        top_keyword: safeString(parsedContent?.keywords?.[0]?.keyword || parsedContent?.keywords?.[0] || ''),
         top_keyword_score: parsedContent?.keywords?.[0]?.total_score || 0,
         cost_source: item.cost_source,
         created_at: item.created_at,
@@ -2804,12 +2811,11 @@ app.get('/api/keyword-monthly-report', async (c) => {
     endDate.setMonth(endDate.getMonth() + 1);
     const endDateStr = endDate.toISOString();
     
-    // 월간 분석 데이터 조회
+    // 월간 분석 데이터 조회 (analysis_type 컬럼 제거)
     const { data, error } = await supabase
       .from('generations')
       .select('keywords, content, cost_source, created_at')
       .eq('user_id', user_id)
-      .eq('analysis_type', 'keyword_analysis')
       .gte('created_at', startDate)
       .lt('created_at', endDateStr)
       .order('created_at', { ascending: false });
@@ -2853,7 +2859,22 @@ app.get('/api/keyword-monthly-report', async (c) => {
           
           if (content.overall_score > highestScore) {
             highestScore = content.overall_score;
-            bestKeyword = content.keywords?.[0]?.keyword || item.keywords.split(',')[0]?.trim() || '-';
+            // 안전한 키워드 추출
+            const safeKeyword = (() => {
+              if (content.keywords?.[0]?.keyword) {
+                return String(content.keywords[0].keyword).trim();
+              }
+              if (item.keywords) {
+                if (typeof item.keywords === 'string') {
+                  return item.keywords.split(',')[0]?.trim() || '-';
+                }
+                if (Array.isArray(item.keywords) && item.keywords[0]) {
+                  return String(item.keywords[0]).trim();
+                }
+              }
+              return '-';
+            })();
+            bestKeyword = safeKeyword;
           }
         }
         
@@ -2861,11 +2882,12 @@ app.get('/api/keyword-monthly-report', async (c) => {
         if (content?.keywords && Array.isArray(content.keywords)) {
           content.keywords.forEach((kw: any) => {
             if (kw.keyword && typeof kw.total_score === 'number') {
-              if (!keywordScores[kw.keyword]) {
-                keywordScores[kw.keyword] = { scores: [], count: 0 };
+              const kwString = String(kw.keyword).trim();
+              if (!keywordScores[kwString]) {
+                keywordScores[kwString] = { scores: [], count: 0 };
               }
-              keywordScores[kw.keyword].scores.push(kw.total_score);
-              keywordScores[kw.keyword].count++;
+              keywordScores[kwString].scores.push(kw.total_score);
+              keywordScores[kwString].count++;
             }
           });
         }
