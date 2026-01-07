@@ -4547,10 +4547,13 @@ async function syncUserToBackend(session, isNewUser = false) {
       localStorage.setItem('postflow_user', JSON.stringify(window.currentUser));
       
       // 🔔 모든 컴포넌트에 알림 (핵심!)
-      window.dispatchEvent(new CustomEvent('userUpdated', {
-        detail: window.currentUser
-      }));
-      console.log('🔔 userUpdated 이벤트 발생!');
+      // ✅ setTimeout으로 이벤트 발생 지연 (DOM 업데이트 대기)
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('userUpdated', {
+          detail: window.currentUser
+        }));
+        console.log('🔔 userUpdated 이벤트 발생! (지연 실행)');
+      }, 100);  // 0.1초 지연
       
       updateAuthUI();
       
