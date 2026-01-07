@@ -1317,6 +1317,36 @@ function updateCostEstimate() {
       </p>
     </div>
   `;
+  
+  // 🚨 크리티컬: 생성 버튼 실시간 비활성화 (API 비용 낭비 방지)
+  const generateBtn = document.querySelector('button[type="submit"]');
+  const batchGenerateBtn = document.getElementById('batchGenerateBtn');
+  
+  const isInsufficientCredits = !currentUser.isGuest && currentUser.id && totalCredits < creditsNeeded;
+  
+  if (generateBtn) {
+    generateBtn.disabled = isInsufficientCredits;
+    generateBtn.style.opacity = isInsufficientCredits ? '0.5' : '1';
+    generateBtn.style.cursor = isInsufficientCredits ? 'not-allowed' : 'pointer';
+    
+    if (isInsufficientCredits) {
+      generateBtn.title = `크레딧 부족 (필요: ${creditsNeeded}, 보유: ${totalCredits})`;
+    } else {
+      generateBtn.title = '';
+    }
+  }
+  
+  if (batchGenerateBtn) {
+    batchGenerateBtn.disabled = isInsufficientCredits;
+    batchGenerateBtn.style.opacity = isInsufficientCredits ? '0.5' : '1';
+    batchGenerateBtn.style.cursor = isInsufficientCredits ? 'not-allowed' : 'pointer';
+    
+    if (isInsufficientCredits) {
+      batchGenerateBtn.title = `크레딧 부족 (필요: ${creditsNeeded}, 보유: ${totalCredits})`;
+    } else {
+      batchGenerateBtn.title = '';
+    }
+  }
 }
 
 // ===================================
@@ -1876,6 +1906,41 @@ async function handleGenerate() {
     return;
   }
   const platforms = Array.from(platformCheckboxes).map((cb) => cb.value);
+  
+  // 🚨 크리티컬: 서버 요청 전 크레딧 사전 검증 (API 비용 낭비 방지)
+  const platformCount = platforms.length;
+  let creditsNeeded = 1;
+  if (platformCount >= 4) {
+    creditsNeeded = 4;
+  } else if (platformCount >= 2) {
+    creditsNeeded = 2;
+  }
+  
+  // 현재 보유 크레딧 확인 (로그인 사용자만)
+  if (!currentUser.isGuest && currentUser.id) {
+    const freeCredits = currentUser.free_credits || 0;
+    const paidCredits = currentUser.paid_credits || 0;
+    const totalCredits = freeCredits + paidCredits;
+    
+    // 🚨 크레딧 부족 시 즉시 차단 (서버 요청 없음 = API 비용 0원)
+    if (totalCredits < creditsNeeded) {
+      console.error(`❌ [프론트엔드 차단] 크레딧 부족: 필요 ${creditsNeeded}, 보유 ${totalCredits}`);
+      
+      const goToPayment = confirm(
+        `⛔ 크레딧이 부족합니다!\n\n` +
+        `• 필요: ${creditsNeeded}크레딧\n` +
+        `• 보유: ${totalCredits}크레딧 (무료 ${freeCredits} + 유료 ${paidCredits})\n\n` +
+        `충전 페이지로 이동하시겠습니까?`
+      );
+      
+      if (goToPayment) {
+        window.location.href = '/static/payment.html';
+      }
+      return; // ✅ 함수 종료 - 서버 요청 없음!
+    }
+    
+    console.log(`✅ [프론트엔드 검증 통과] 필요: ${creditsNeeded}, 보유: ${totalCredits}`);
+  }
   
   // 콘텐츠 블록 검증
   const contentCount = Object.keys(contentBlocks).length;

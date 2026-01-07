@@ -448,8 +448,17 @@ app.post('/api/generate', async (c) => {
       console.log(`✅ 비회원 체험 허용: ${ipAddress}`);
     }
 
-    // ✅ 회원 크레딧 체크
+    // ✅ 회원 크레딧 체크 (차등 과금 적용)
     if (!is_guest && user_id) {
+      // 🚨 크리티컬: 차등 과금 계산 (플랫폼 수에 따라)
+      const platformCount = platforms.length;
+      let requiredCredits = 1;
+      if (platformCount >= 4) {
+        requiredCredits = 4;
+      } else if (platformCount >= 2) {
+        requiredCredits = 2;
+      }
+      
       // 사용자 정보 조회 (2지갑 시스템)
       const { data: user, error: userError } = await supabase
         .from('users')
@@ -474,21 +483,25 @@ app.post('/api/generate', async (c) => {
         tier: user.tier,
         free_credits: freeCredits,
         paid_credits: paidCredits,
-        total: totalCredits
+        total: totalCredits,
+        required: requiredCredits // ✅ 필요한 크레딧 추가
       });
       
-      // 크레딧 확인 (둘 다 0이면 403)
-      if (totalCredits <= 0) {
+      // 🚨 크리티컬: OpenAI/Gemini API 호출 전 크레딧 검증 (API 비용 낭비 방지)
+      if (totalCredits < requiredCredits) {
+        console.error(`❌ [백엔드 차단] 크레딧 부족: 필요 ${requiredCredits}, 보유 ${totalCredits}`);
         return c.json({
           error: '크레딧 부족',
-          message: '크레딧이 부족합니다. 크레딧을 충전해주세요.',
+          message: `${requiredCredits}크레딧이 필요합니다. 현재 ${totalCredits}크레딧 보유중입니다.`,
+          required_credits: requiredCredits,
           free_credits: freeCredits,
           paid_credits: paidCredits,
+          total_credits: totalCredits,
           redirect: '/payment'
         }, 403);
       }
       
-      console.log(`✅ 크레딧 사용 가능: 무료 ${freeCredits}개 + 유료 ${paidCredits}개 = 총 ${totalCredits}개`);
+      console.log(`✅ [백엔드 검증 통과] 크레딧 사용 가능: 무료 ${freeCredits}개 + 유료 ${paidCredits}개 = 총 ${totalCredits}개 (필요: ${requiredCredits}개)`);
     }
 
     // OpenAI API 키 확인 (환경변수에서만 읽기)
@@ -1812,6 +1825,21 @@ app.post('/api/admin/charge-credits', async (c) => {
       error: error.message || '충전 중 오류가 발생했습니다'
     }, 500);
   }
+});
+
+// ===================================
+// 결제 페이지 라우팅 (Cloudflare Workers 호환)
+// ===================================
+app.get('/payment', (c) => {
+  return c.redirect('/static/payment.html');
+});
+
+app.get('/payment/success', (c) => {
+  return c.redirect('/static/payment-success.html');
+});
+
+app.get('/payment/fail', (c) => {
+  return c.redirect('/static/payment-fail.html');
 });
 
 // 결제 라우트 연결
