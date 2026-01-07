@@ -227,6 +227,13 @@ async function loadKeywordCreditStatus() {
       }
       
       console.log('✅ 크레딧 동기화 완료:', window.userCreditsInfo);
+      
+      // 🔥 중요: daily_free 정보를 받았으므로 카드 다시 렌더링
+      const cardContainer = document.querySelector('[data-keyword-analysis-card]');
+      if (cardContainer && cardContainer.parentElement) {
+        console.log('🔄 카드 다시 렌더링 (daily_free 반영)');
+        cardContainer.parentElement.innerHTML = renderKeywordAnalysisCard();
+      }
     }
   } catch (error) {
     console.error('❌ 크레딧 조회 실패:', error);
