@@ -4529,12 +4529,16 @@ async function syncUserToBackend(session, isNewUser = false) {
       currentUser.free_credits = data.free_credits ?? 0; // ✅ 무료 크레딧
       currentUser.paid_credits = data.paid_credits ?? 0; // ✅ 유료 크레딧
       currentUser.credits = (data.free_credits ?? 0) + (data.paid_credits ?? 0); // ✅ 총 크레딧 계산
+      currentUser.registration_completed = data.registration_completed ?? true; // ✅ 회원가입 완료 여부
+      currentUser.phone = data.phone || null; // ✅ 연락처
       
       console.log('📊 currentUser 업데이트:', {
         tier: currentUser.tier,
         free_credits: currentUser.free_credits,
         paid_credits: currentUser.paid_credits,
-        total_credits: currentUser.credits
+        total_credits: currentUser.credits,
+        registration_completed: currentUser.registration_completed,
+        phone: currentUser.phone
       });
       
       localStorage.setItem('postflow_user', JSON.stringify(currentUser));
@@ -4543,11 +4547,17 @@ async function syncUserToBackend(session, isNewUser = false) {
       // 🔥 프로필 자동 로드 추가
       loadProfileFromDB(session.user.id);
       
-      // 신규 사용자 / 기존 사용자 환영 메시지
-      if (isNewUser) {
-        showWelcomeMessage('signup');
+      // 🚨 회원가입 완료 여부 체크
+      if (!currentUser.registration_completed) {
+        console.log('🔔 회원가입 미완료 → 모달 표시');
+        showRegistrationCompleteModal(session.user.id);
       } else {
-        showWelcomeMessage('login');
+        // 신규 사용자 / 기존 사용자 환영 메시지
+        if (isNewUser) {
+          showWelcomeMessage('signup');
+        } else {
+          showWelcomeMessage('login');
+        }
       }
     } else {
       const errorData = await response.json().catch(() => ({ error: '응답 파싱 실패' }));
@@ -4604,6 +4614,204 @@ function showWelcomeMessage(type) {
       setTimeout(() => messageDiv.remove(), 300);
     }
   }, msg.duration);
+}
+
+// ===================================
+// 회원가입 완료 모달 (연락처 + 동의)
+// ===================================
+function showRegistrationCompleteModal(userId) {
+  // 기존 모달이 있으면 제거
+  const existingModal = document.getElementById('registrationModal');
+  if (existingModal) {
+    existingModal.remove();
+  }
+  
+  const modalHTML = `
+    <div id="registrationModal" style="
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+      background: rgba(0,0,0,0.8); z-index: 10000; 
+      display: flex; align-items: center; justify-content: center;
+    ">
+      <div style="
+        background: white; border-radius: 20px; padding: 2rem; 
+        max-width: 480px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      ">
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
+          <h2 style="font-size: 1.8rem; font-weight: bold; color: #1f2937; margin-bottom: 0.5rem;">
+            환영합니다!
+          </h2>
+          <p style="color: #6b7280; font-size: 1rem;">
+            서비스 이용을 위해 연락처를 입력해주세요
+          </p>
+        </div>
+        
+        <form id="registrationCompleteForm">
+          <!-- 연락처 입력 -->
+          <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">
+              연락처 <span style="color: #ef4444;">*</span>
+            </label>
+            <input 
+              type="tel" 
+              id="userPhone" 
+              placeholder="010-1234-5678" 
+              required
+              style="
+                width: 100%; padding: 0.875rem; border: 2px solid #e5e7eb; 
+                border-radius: 10px; font-size: 1rem; outline: none;
+              "
+            />
+            <p style="font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">
+              고객문의, 환불 처리를 위해 필요합니다
+            </p>
+          </div>
+          
+          <!-- 약관 동의 -->
+          <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-radius: 12px;">
+            <label style="
+              display: flex; align-items: flex-start; margin-bottom: 1rem; 
+              cursor: pointer; font-size: 0.95rem;
+            ">
+              <input 
+                type="checkbox" 
+                id="agreePrivacy" 
+                required 
+                style="width: 18px; height: 18px; margin-right: 0.75rem; margin-top: 0.1rem; cursor: pointer;"
+              >
+              <span style="color: #374151; line-height: 1.5;">
+                <strong>[필수]</strong> 개인정보 처리방침에 동의합니다<br>
+                <small style="color: #6b7280;">연락처는 고객지원 및 환불 처리 목적으로만 사용됩니다</small>
+              </span>
+            </label>
+            
+            <label style="
+              display: flex; align-items: flex-start; cursor: pointer; 
+              font-size: 0.95rem;
+            ">
+              <input 
+                type="checkbox" 
+                id="agreeMarketing" 
+                style="width: 18px; height: 18px; margin-right: 0.75rem; margin-top: 0.1rem; cursor: pointer;"
+              >
+              <span style="color: #6b7280; line-height: 1.5;">
+                <strong>[선택]</strong> 마케팅 정보 수신에 동의합니다<br>
+                <small>이벤트, 할인 혜택 등의 안내를 받아보실 수 있습니다</small>
+              </span>
+            </label>
+          </div>
+          
+          <!-- 제출 버튼 -->
+          <button 
+            type="submit" 
+            id="registrationSubmitBtn"
+            style="
+              width: 100%; padding: 1rem; 
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+              color: white; font-weight: bold; font-size: 1.1rem; 
+              border: none; border-radius: 12px; cursor: pointer;
+              transition: transform 0.2s ease;
+            "
+            onmouseover="this.style.transform='translateY(-2px)'"
+            onmouseout="this.style.transform='translateY(0)'"
+          >
+            저장하고 시작하기
+          </button>
+        </form>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  
+  // 폼 제출 이벤트 처리
+  document.getElementById('registrationCompleteForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const phone = document.getElementById('userPhone').value.trim();
+    const privacyAgreed = document.getElementById('agreePrivacy').checked;
+    const marketingAgreed = document.getElementById('agreeMarketing').checked;
+    
+    // 입력값 검증
+    if (!phone) {
+      showToast('❌ 연락처를 입력해주세요', 'error');
+      document.getElementById('userPhone').focus();
+      return;
+    }
+    
+    if (!privacyAgreed) {
+      showToast('❌ 개인정보 처리방침에 동의해주세요', 'error');
+      return;
+    }
+    
+    // 로딩 상태
+    const submitBtn = document.getElementById('registrationSubmitBtn');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = '저장 중...';
+    submitBtn.disabled = true;
+    submitBtn.style.opacity = '0.6';
+    submitBtn.style.cursor = 'not-allowed';
+    
+    try {
+      console.log('📝 회원가입 완료 처리 시작:', { userId, phone, privacyAgreed, marketingAgreed });
+      
+      const response = await fetch('/api/auth/complete-registration', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          phone: phone,
+          privacy_agreed: privacyAgreed,
+          marketing_agreed: marketingAgreed
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log('✅ 회원가입 완료 성공:', data.user);
+        
+        // 사용자 정보 업데이트
+        currentUser = {
+          ...currentUser,
+          ...data.user,
+          isLoggedIn: true,
+          isGuest: false,
+          registration_completed: true
+        };
+        localStorage.setItem('postflow_user', JSON.stringify(currentUser));
+        
+        // 모달 닫기
+        document.getElementById('registrationModal').remove();
+        
+        // 성공 메시지
+        showToast('🎉 회원가입이 완료되었습니다! 서비스를 이용해보세요.', 'success');
+        
+        // UI 업데이트
+        updateAuthUI();
+        updateCostEstimate();
+        
+      } else {
+        console.error('❌ 회원가입 완료 실패:', data.error);
+        showToast(`❌ ${data.error}`, 'error');
+      }
+    } catch (error) {
+      console.error('❌ 회원가입 완료 예외:', error);
+      showToast('❌ 회원가입 완료 중 오류가 발생했습니다', 'error');
+    } finally {
+      // 버튼 상태 복원
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '1';
+      submitBtn.style.cursor = 'pointer';
+    }
+  });
+  
+  // 연락처 입력 필드에 자동 포커스
+  setTimeout(() => {
+    const phoneInput = document.getElementById('userPhone');
+    if (phoneInput) phoneInput.focus();
+  }, 100);
 }
 
 // UI 초기화

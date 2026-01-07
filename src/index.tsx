@@ -1265,7 +1265,11 @@ app.post('/api/auth/sync', async (c) => {
           tier: 'free', // ✅ 무료 회원
           free_credits: 10, // ✅ 월간 무료 크레딧
           paid_credits: 0, // ✅ 유료 크레딧 0
-          last_reset_date: todayString // ✅ 오늘 날짜로 설정
+          last_reset_date: todayString, // ✅ 오늘 날짜로 설정
+          registration_completed: false, // ✅ 신규 사용자는 회원가입 미완료 상태
+          phone: null,
+          privacy_agreed: false,
+          marketing_agreed: false
         })
         .select()
         .single();
@@ -1295,6 +1299,8 @@ app.post('/api/auth/sync', async (c) => {
       free_credits: user.free_credits ?? 0, // ✅ 무료 크레딧
       paid_credits: user.paid_credits ?? 0, // ✅ 유료 크레딧
       credits: (user.free_credits || 0) + (user.paid_credits || 0), // ✅ 총 크레딧 (하위 호환)
+      registration_completed: user.registration_completed ?? false, // ✅ 회원가입 완료 여부
+      phone: user.phone || null, // ✅ 연락처
       message: existingUser ? '로그인 성공' : '회원가입 완료'
     });
   } catch (error: any) {
@@ -1311,6 +1317,127 @@ app.post('/api/auth/sync', async (c) => {
       },
       500
     );
+  }
+});
+
+// ===================================
+// 회원가입 완료 여부 확인 API
+// ===================================
+app.get('/api/auth/check-registration-status', async (c) => {
+  try {
+    const user_id = c.req.query('user_id');
+    
+    if (!user_id) {
+      return c.json({ success: false, error: '사용자 ID가 필요합니다' }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, email, registration_completed, phone, marketing_agreed')
+      .eq('id', user_id)
+      .single();
+    
+    if (error || !user) {
+      return c.json({ success: false, error: '사용자를 찾을 수 없습니다' }, 404);
+    }
+    
+    return c.json({
+      success: true,
+      registration_completed: user.registration_completed ?? false,
+      needs_phone: !user.phone,
+      user: {
+        id: user.id,
+        email: user.email,
+        phone: user.phone,
+        marketing_agreed: user.marketing_agreed
+      }
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 회원가입 상태 확인 실패:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// ===================================
+// 회원가입 완료 처리 API (연락처 + 동의)
+// ===================================
+app.post('/api/auth/complete-registration', async (c) => {
+  try {
+    const { user_id, phone, privacy_agreed, marketing_agreed } = await c.req.json();
+    
+    // 입력값 검증
+    if (!user_id || !phone || !privacy_agreed) {
+      return c.json({ 
+        success: false, 
+        error: '필수 정보(사용자ID, 연락처, 개인정보 동의)를 모두 입력해주세요' 
+      }, 400);
+    }
+    
+    // 연락처 형식 간단 검증
+    const phoneRegex = /^01[0-9]-?[0-9]{3,4}-?[0-9]{4}$/;
+    if (!phoneRegex.test(phone.replace(/-/g, ''))) {
+      return c.json({ 
+        success: false, 
+        error: '올바른 연락처 형식을 입력해주세요 (예: 010-1234-5678)' 
+      }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // 사용자 정보 업데이트
+    const { data: updatedUser, error } = await supabase
+      .from('users')
+      .update({
+        phone: phone,
+        privacy_agreed: privacy_agreed,
+        marketing_agreed: marketing_agreed || false,
+        registration_completed: true,
+        registration_completed_at: new Date().toISOString(),
+        terms_agreed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', user_id)
+      .select('id, email, name, phone, tier, free_credits, paid_credits, registration_completed')
+      .single();
+    
+    if (error) {
+      console.error('❌ 회원가입 완료 처리 실패:', error);
+      throw error;
+    }
+    
+    console.log(`✅ 회원가입 완료: ${updatedUser.email} (연락처: ${phone})`);
+    
+    return c.json({
+      success: true,
+      message: '회원가입이 완료되었습니다',
+      user: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        name: updatedUser.name,
+        phone: updatedUser.phone,
+        tier: updatedUser.tier,
+        free_credits: updatedUser.free_credits,
+        paid_credits: updatedUser.paid_credits,
+        credits: (updatedUser.free_credits || 0) + (updatedUser.paid_credits || 0),
+        registration_completed: updatedUser.registration_completed
+      }
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 회원가입 완료 처리 예외:', error);
+    return c.json({ 
+      success: false, 
+      error: error.message || '회원가입 완료 처리 중 오류가 발생했습니다'
+    }, 500);
   }
 });
 
