@@ -2603,10 +2603,10 @@ app.post('/api/analyze-keywords-quality', async (c) => {
         recommendations: Array.isArray(item.recommendations)
           ? item.recommendations
           : ['타겟 고객층 명확화', '차별화 포인트 강조', '콘텐츠 품질 향상'],
-        related_keywords: Array.isArray(item.related_keywords) && item.related_keywords.length > 0
+        related_keywords: Array.isArray(item.related_keywords) && item.related_keywords.length >= 7
           ? item.related_keywords
           : [`${item.keyword} 후기`, `${item.keyword} 추천`, `${item.keyword} 비교`, `${item.keyword} 가격`, `${item.keyword} 리뷰`, `${item.keyword} 순위`, `${item.keyword} 브랜드`],
-        better_alternatives: Array.isArray(item.better_alternatives) && item.better_alternatives.length > 0
+        better_alternatives: Array.isArray(item.better_alternatives) && item.better_alternatives.length >= 5
           ? item.better_alternatives
           : [
             { keyword: `${item.keyword} 전문가`, reason: '전문성 강조로 신뢰도 향상 및 고객 전환율 증가' },
