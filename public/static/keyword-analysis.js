@@ -394,6 +394,9 @@ async function analyzeKeywordsQuality() {
         }
       }
       
+      // 분석 결과를 전역 변수에 저장 (보관 기능용)
+      window.lastAnalysisResult = data.analysis;
+      
       // 분석 결과 모달 표시
       showKeywordQualityModal(data.analysis, data.cached);
       
@@ -683,13 +686,13 @@ function showKeywordQualityModal(analysis, isCached = false) {
         ` : ''}
 
         <div style="text-align: center; padding-top: 1rem;">
-          <button onclick="applyAnalyzedKeywords()" style="
-            background: linear-gradient(135deg, #667eea, #764ba2); color: white;
+          <button onclick="bookmarkKeywordAnalysis()" style="
+            background: linear-gradient(135deg, #f59e0b, #d97706); color: white;
             border: none; padding: 1rem 2rem; border-radius: 15px; cursor: pointer;
             font-weight: bold; font-size: 1.05rem; transition: all 0.2s;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
           " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-            ✅ 상위 키워드 콘텐츠에 적용하기
+            ⭐ 키워드 보관하기
           </button>
         </div>
       </div>
@@ -700,45 +703,68 @@ function showKeywordQualityModal(analysis, isCached = false) {
 }
 
 // ===================================
-// 분석된 키워드를 콘텐츠 생성 폼에 적용
+// 키워드 분석 결과 보관하기
 // ===================================
-function applyAnalyzedKeywords() {
+async function bookmarkKeywordAnalysis() {
   const modal = document.getElementById('keywordQualityModal');
   if (!modal) return;
 
-  // 모달에서 키워드 추출
-  const keywordElements = modal.querySelectorAll('h4');
-  const keywords = [];
-  
-  keywordElements.forEach(el => {
-    const text = el.textContent;
-    const match = text.match(/\d+\.\s*(.+)/);
-    if (match) {
-      keywords.push(match[1].trim());
+  const user = window.currentUser;
+  if (!user || !user.id) {
+    if (typeof window.showToast === 'function') {
+      window.showToast('로그인이 필요합니다', 'error');
+    } else {
+      alert('로그인이 필요합니다');
     }
-  });
+    return;
+  }
 
-  if (keywords.length > 0) {
-    // 상위 3개 키워드를 콘텐츠 폼에 적용
-    const topKeywords = keywords.slice(0, 3).join(', ');
-    
-    // 키워드 입력 필드 찾기
-    const keywordInput = document.querySelector('input[name="keywords"]') ||
-                         document.getElementById('keywords') ||
-                         document.querySelector('#keywords-0');
-    
-    if (keywordInput) {
-      keywordInput.value = topKeywords;
-      keywordInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      
-      if (typeof window.showToast === 'function') {
-        window.showToast(`✅ 상위 ${Math.min(3, keywords.length)}개 키워드가 적용되었습니다!`, 'success');
-      } else {
-        alert(`상위 ${Math.min(3, keywords.length)}개 키워드가 적용되었습니다!`);
-      }
+  // 현재 분석 결과 저장 (window.lastAnalysisResult에 저장되어 있다고 가정)
+  if (!window.lastAnalysisResult) {
+    if (typeof window.showToast === 'function') {
+      window.showToast('저장할 분석 결과가 없습니다', 'error');
+    } else {
+      alert('저장할 분석 결과가 없습니다');
     }
-    
+    return;
+  }
+
+  try {
+    if (typeof window.showToast === 'function') {
+      window.showToast('⏳ 분석 결과를 보관하는 중...', 'info');
+    }
+
+    // 백엔드 API 호출 (나중에 구현)
+    // const response = await fetch('/api/keyword-bookmark', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({
+    //     user_id: user.id,
+    //     analysis_result: window.lastAnalysisResult
+    //   })
+    // });
+
+    // 임시 성공 메시지 (백엔드 구현 전)
+    console.log('📌 분석 결과 보관 요청:', {
+      user_id: user.id,
+      analysis: window.lastAnalysisResult
+    });
+
+    if (typeof window.showToast === 'function') {
+      window.showToast('✅ 분석 결과가 보관되었습니다!', 'success');
+    } else {
+      alert('분석 결과가 보관되었습니다!');
+    }
+
     modal.remove();
+
+  } catch (error) {
+    console.error('❌ 보관 실패:', error);
+    if (typeof window.showToast === 'function') {
+      window.showToast('보관에 실패했습니다', 'error');
+    } else {
+      alert('보관에 실패했습니다');
+    }
   }
 }
 

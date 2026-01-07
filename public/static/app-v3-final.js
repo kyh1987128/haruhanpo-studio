@@ -1149,6 +1149,17 @@ async function fetchExchangeRate() {
 }
 
 function updateCostEstimate() {
+  // 💎 최신 크레딧 정보 동기화 (window.userCreditsInfo 우선 사용)
+  if (window.userCreditsInfo && window.currentUser) {
+    window.currentUser.free_credits = window.userCreditsInfo.free_credits ?? window.currentUser.free_credits ?? 0;
+    window.currentUser.paid_credits = window.userCreditsInfo.paid_credits ?? window.currentUser.paid_credits ?? 0;
+    console.log('💎 하단 크레딧 표시 동기화:', {
+      free: window.currentUser.free_credits,
+      paid: window.currentUser.paid_credits,
+      total: window.currentUser.free_credits + window.currentUser.paid_credits
+    });
+  }
+  
   // 개별 콘텐츠 블록의 총 이미지 수 계산
   let totalImageCount = 0;
   const contentCount = Object.keys(contentBlocks).length;
