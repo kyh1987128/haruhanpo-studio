@@ -2372,10 +2372,10 @@ app.post('/api/analyze-keywords-quality', async (c) => {
       });
     }
     
-    // ✅ 사용자 크레딧 조회 (daily_free_used, daily_free_limit 포함)
+    // ✅ 사용자 크레딧 조회 (daily_free_used, daily_free_limit, last_reset_date 포함)
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('free_credits, paid_credits, daily_free_used, daily_free_limit')
+      .select('free_credits, paid_credits, daily_free_used, daily_free_limit, last_reset_date')
       .eq('id', user_id)
       .single();
     
@@ -2386,12 +2386,29 @@ app.post('/api/analyze-keywords-quality', async (c) => {
       }, 404);
     }
     
-    const dailyFreeUsed = user.daily_free_used || 0;
+    // 🔒 날짜 체크 및 자동 리셋 (서버 시간 기준)
+    const today = new Date().toISOString().split('T')[0]; // "2026-01-07"
+    let dailyFreeUsed = user.daily_free_used || 0;
     const dailyFreeLimit = user.daily_free_limit || 3;
+    
+    if (user.last_reset_date !== today) {
+      // 날짜가 바뀌었으면 DB에서 강제 리셋
+      await supabase
+        .from('users')
+        .update({ 
+          daily_free_used: 0, 
+          last_reset_date: today 
+        })
+        .eq('id', user_id);
+      
+      dailyFreeUsed = 0;
+      console.log(`🔄 [${user_id}] 일일 무료 자동 리셋 (${user.last_reset_date} → ${today})`);
+    }
+    
     const canUseFreeToday = dailyFreeUsed < dailyFreeLimit;
     const totalCredits = (user.free_credits || 0) + (user.paid_credits || 0);
     
-    // 사용 권한 확인
+    // 🚨 사용 권한 확인 (AI 호출 전)
     if (!canUseFreeToday && totalCredits <= 0) {
       return c.json({
         success: false,
@@ -2404,9 +2421,58 @@ app.post('/api/analyze-keywords-quality', async (c) => {
           paid_credits: user.paid_credits || 0
         },
         redirect: '/payment'
-      }, 403);
+      }, 402);
     }
     
+    // 🔒 AI 호출 전 DB 차감 먼저 (비용 보호)
+    let newFreeCredits = user.free_credits || 0;
+    let newPaidCredits = user.paid_credits || 0;
+    let newDailyFreeUsed = dailyFreeUsed;
+    let costType: string;
+    
+    if (canUseFreeToday) {
+      // 일일 무료 사용
+      newDailyFreeUsed += 1;
+      costType = 'daily_free';
+      console.log(`✅ [${user_id}] 일일 무료 사용: ${newDailyFreeUsed}/${dailyFreeLimit}회`);
+    } else if (newFreeCredits > 0) {
+      // 무료 크레딧 차감
+      newFreeCredits -= 1;
+      costType = 'free_credit';
+      console.log(`💎 [${user_id}] 무료 크레딧 차감: ${user.free_credits} → ${newFreeCredits}개`);
+    } else if (newPaidCredits > 0) {
+      // 유료 크레딧 차감
+      newPaidCredits -= 1;
+      costType = 'paid_credit';
+      console.log(`💳 [${user_id}] 유료 크레딧 차감: ${user.paid_credits} → ${newPaidCredits}개`);
+    } else {
+      // 이 경우는 위에서 402 반환했으므로 도달하지 않음
+      costType = 'error';
+    }
+    
+    // 🚨 중요: AI API 호출 **전에** DB 차감
+    const updateData: any = {
+      free_credits: newFreeCredits,
+      paid_credits: newPaidCredits,
+      daily_free_used: newDailyFreeUsed,
+      updated_at: new Date().toISOString()
+    };
+    
+    if (costType === 'daily_free') {
+      updateData.last_reset_date = today;
+    }
+    
+    const { error: updateError } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', user_id);
+    
+    if (updateError) {
+      console.error(`❌ [${user_id}] 크레딧 차감 실패:`, updateError);
+      return c.json({ success: false, error: '크레딧 차감 실패' }, 500);
+    }
+    
+    console.log(`✅ [${user_id}] 크레딧 차감 완료, 이제 AI 호출 시작`);
     console.log(`🔍 키워드 심층 분석 시작: ${keywordArray.join(', ')}`);
     
     const analysisPrompt = `
@@ -2548,61 +2614,6 @@ app.post('/api/analyze-keywords-quality', async (c) => {
         market_insights: ['시장 경쟁이 존재하지만 차별화 전략으로 충분히 대응 가능합니다'],
         strategic_recommendations: ['롱테일 키워드 전략을 병행하여 경쟁을 우회하세요']
       };
-    }
-    
-    // ✅ 크레딧 차감 및 업데이트 (DB에 반영)
-    let newFreeCredits = user.free_credits || 0;
-    let newPaidCredits = user.paid_credits || 0;
-    let newDailyFreeUsed = dailyFreeUsed;
-    let costType: string;
-    let creditsUsed = 0;
-    let usedFree = 0;
-    let usedPaid = 0;
-    
-    if (canUseFreeToday) {
-      // 일일 무료 사용
-      newDailyFreeUsed += 1;
-      costType = 'daily_free';
-      console.log(`✅ 일일 무료 분석 (${newDailyFreeUsed}/${dailyFreeLimit}회)`);
-    } else if (newFreeCredits > 0) {
-      // 무료 크레딧 차감
-      newFreeCredits -= 1;
-      creditsUsed = 1;
-      usedFree = 1;
-      costType = 'free_credit';
-      console.log(`💎 무료 크레딧 차감 (남은 무료: ${newFreeCredits}개)`);
-    } else if (newPaidCredits > 0) {
-      // 유료 크레딧 차감
-      newPaidCredits -= 1;
-      creditsUsed = 1;
-      usedPaid = 1;
-      costType = 'paid_credit';
-      console.log(`💎 유료 크레딧 차감 (남은 유료: ${newPaidCredits}개)`);
-    } else {
-      // 이 경우는 위에서 403 반환했으므로 도달하지 않음
-      costType = 'error';
-    }
-    
-    // ✅ DB 업데이트 (Service Role 권한으로 즉시 반영)
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({
-        free_credits: newFreeCredits,
-        paid_credits: newPaidCredits,
-        daily_free_used: newDailyFreeUsed,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', user_id);
-    
-    if (updateError) {
-      console.error('❌ 크레딧 차감 실패:', updateError);
-      // 에러 발생 시에도 분석 결과는 반환하지만 경고 로그 남김
-    } else {
-      console.log('✅ 크레딧 차감 완료:', {
-        free: `${user.free_credits} → ${newFreeCredits}`,
-        paid: `${user.paid_credits} → ${newPaidCredits}`,
-        daily_free_used: `${dailyFreeUsed} → ${newDailyFreeUsed}`
-      });
     }
     
     // 캐싱 및 히스토리 저장

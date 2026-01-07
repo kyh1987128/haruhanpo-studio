@@ -723,13 +723,13 @@ function showKeywordQualityModal(analysis, isCached = false) {
         ` : ''}
 
         <div style="text-align: center; padding-top: 1rem;">
-          <button onclick="bookmarkKeywordAnalysis()" style="
-            background: linear-gradient(135deg, #f59e0b, #d97706); color: white;
+          <button onclick="copyAnalysisToClipboard()" style="
+            background: linear-gradient(135deg, #10b981, #059669); color: white;
             border: none; padding: 1rem 2rem; border-radius: 15px; cursor: pointer;
             font-weight: bold; font-size: 1.05rem; transition: all 0.2s;
-            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
           " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-            ⭐ 키워드 보관하기
+            📋 분석 결과 복사하기
           </button>
         </div>
       </div>
@@ -742,65 +742,81 @@ function showKeywordQualityModal(analysis, isCached = false) {
 // ===================================
 // 키워드 분석 결과 보관하기
 // ===================================
-async function bookmarkKeywordAnalysis() {
+// ===================================
+// 분석 결과 클립보드 복사
+// ===================================
+async function copyAnalysisToClipboard() {
   const modal = document.getElementById('keywordQualityModal');
   if (!modal) return;
 
-  const user = window.currentUser;
-  if (!user || !user.id) {
-    if (typeof window.showToast === 'function') {
-      window.showToast('로그인이 필요합니다', 'error');
-    } else {
-      alert('로그인이 필요합니다');
-    }
-    return;
-  }
-
-  // 현재 분석 결과 저장 (window.lastAnalysisResult에 저장되어 있다고 가정)
   if (!window.lastAnalysisResult) {
     if (typeof window.showToast === 'function') {
-      window.showToast('저장할 분석 결과가 없습니다', 'error');
+      window.showToast('복사할 분석 결과가 없습니다', 'error');
     } else {
-      alert('저장할 분석 결과가 없습니다');
+      alert('복사할 분석 결과가 없습니다');
     }
     return;
   }
 
   try {
+    // 분석 결과를 읽기 쉬운 텍스트로 변환
+    const analysis = window.lastAnalysisResult;
+    const text = `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 키워드 분석 결과
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 종합 점수: ${analysis.overall_score}점
+
+${analysis.keywords.map((kw, idx) => `
+${idx + 1}. ${kw.keyword} (${kw.total_score}점)
+   • 마케팅 효과: ${kw.marketing_score}점
+   • SEO 난이도: ${kw.seo_score}점
+   • 바이럴 가능성: ${kw.viral_potential}점
+   • 전환 가능성: ${kw.conversion_potential}점
+   • 트렌드: ${kw.trend_score}점 (${kw.trend_direction})
+   • 경쟁도: ${kw.competition_level}점
+   • 포화도: ${kw.saturation_level}점
+   • 시장 규모: ${kw.market_size}
+   
+   💡 분석: ${kw.analysis}
+   
+   ✨ 추천사항:
+${kw.recommendations.map(r => `      - ${r}`).join('\n')}
+`).join('\n')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔍 시장 인사이트
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${analysis.market_insights.map(insight => `• ${insight}`).join('\n')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📈 전략 추천
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${analysis.strategic_recommendations.map(rec => `• ${rec}`).join('\n')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+생성 시간: ${new Date().toLocaleString('ko-KR')}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    `.trim();
+
+    // 클립보드에 복사
+    await navigator.clipboard.writeText(text);
+    
     if (typeof window.showToast === 'function') {
-      window.showToast('⏳ 분석 결과를 보관하는 중...', 'info');
-    }
-
-    // 백엔드 API 호출 (나중에 구현)
-    // const response = await fetch('/api/keyword-bookmark', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     user_id: user.id,
-    //     analysis_result: window.lastAnalysisResult
-    //   })
-    // });
-
-    // 임시 성공 메시지 (백엔드 구현 전)
-    console.log('📌 분석 결과 보관 요청:', {
-      user_id: user.id,
-      analysis: window.lastAnalysisResult
-    });
-
-    if (typeof window.showToast === 'function') {
-      window.showToast('✅ 분석 결과가 보관되었습니다!', 'success');
+      window.showToast('✅ 분석 결과가 클립보드에 복사되었습니다!', 'success');
     } else {
-      alert('분석 결과가 보관되었습니다!');
+      alert('✅ 분석 결과가 클립보드에 복사되었습니다!\n메모장 등에 붙여넣기(Ctrl+V)하여 저장하세요.');
     }
-
+    
     modal.remove();
 
   } catch (error) {
-    console.error('❌ 보관 실패:', error);
+    console.error('❌ 복사 실패:', error);
     if (typeof window.showToast === 'function') {
-      window.showToast('보관에 실패했습니다', 'error');
+      window.showToast('복사에 실패했습니다. 브라우저 설정을 확인해주세요.', 'error');
     } else {
-      alert('보관에 실패했습니다');
+      alert('복사에 실패했습니다. 브라우저 설정을 확인해주세요.');
     }
   }
 }
