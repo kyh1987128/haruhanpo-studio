@@ -2637,4 +2637,226 @@ app.get('/api/user-credits-status', async (c) => {
   }
 });
 
+// ===================================
+// 키워드 분석 확장 기능 - 3가지 핵심 API
+// ===================================
+
+// 1. 분석 기록 조회 API (무료 제공)
+app.get('/api/keyword-history', async (c) => {
+  try {
+    const user_id = c.req.query('user_id');
+    const limit = parseInt(c.req.query('limit') || '20');
+    
+    if (!user_id) {
+      return c.json({
+        success: false,
+        error: '사용자 ID가 필요합니다'
+      }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(c.env);
+    
+    // generations 테이블에서 키워드 분석 기록만 조회
+    const { data, error } = await supabase
+      .from('generations')
+      .select('id, keywords, content, created_at, cost_source')
+      .eq('user_id', user_id)
+      .eq('analysis_type', 'keyword_analysis')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    
+    if (error) {
+      console.error('히스토리 조회 실패:', error);
+      return c.json({
+        success: false,
+        error: '히스토리 조회 중 오류가 발생했습니다'
+      }, 500);
+    }
+    
+    // 데이터 가공 (JSON 파싱 및 요약 정보 추출)
+    const history = (data || []).map(item => {
+      let parsedContent = null;
+      try {
+        parsedContent = typeof item.content === 'string' 
+          ? JSON.parse(item.content) 
+          : item.content;
+      } catch (e) {
+        console.error('JSON 파싱 실패:', e);
+        parsedContent = { overall_score: 0, keywords: [] };
+      }
+      
+      return {
+        id: item.id,
+        keywords: item.keywords,
+        overall_score: parsedContent?.overall_score || 0,
+        top_keyword: parsedContent?.keywords?.[0]?.keyword || '',
+        top_keyword_score: parsedContent?.keywords?.[0]?.total_score || 0,
+        cost_source: item.cost_source,
+        created_at: item.created_at,
+        full_result: parsedContent // 모달 재사용을 위한 전체 데이터
+      };
+    });
+    
+    console.log(`✅ 히스토리 조회 완료: ${history.length}건`);
+    
+    return c.json({
+      success: true,
+      history,
+      total: history.length
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 히스토리 조회 실패:', error);
+    return c.json({
+      success: false,
+      error: error.message
+    }, 500);
+  }
+});
+
+// 2. 월간 리포트 API (통계 요약)
+app.get('/api/keyword-monthly-report', async (c) => {
+  try {
+    const user_id = c.req.query('user_id');
+    const month = c.req.query('month') || new Date().toISOString().slice(0, 7); // YYYY-MM 형식
+    
+    if (!user_id) {
+      return c.json({
+        success: false,
+        error: '사용자 ID가 필요합니다'
+      }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(c.env);
+    
+    // 해당 월의 시작일과 종료일 계산
+    const startDate = `${month}-01T00:00:00Z`;
+    const endDate = new Date(`${month}-01`);
+    endDate.setMonth(endDate.getMonth() + 1);
+    const endDateStr = endDate.toISOString();
+    
+    // 월간 분석 데이터 조회
+    const { data, error } = await supabase
+      .from('generations')
+      .select('keywords, content, cost_source, created_at')
+      .eq('user_id', user_id)
+      .eq('analysis_type', 'keyword_analysis')
+      .gte('created_at', startDate)
+      .lt('created_at', endDateStr)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('월간 리포트 조회 실패:', error);
+      return c.json({
+        success: false,
+        error: '월간 리포트 조회 중 오류가 발생했습니다'
+      }, 500);
+    }
+    
+    // 통계 계산
+    const totalAnalyses = data?.length || 0;
+    const costBreakdown = {
+      daily_free: 0,
+      free_credit: 0,
+      paid_credit: 0,
+      cached: 0
+    };
+    
+    let totalScore = 0;
+    let highestScore = 0;
+    let bestKeyword = '-';
+    const keywordScores: { [key: string]: { scores: number[]; count: number } } = {};
+    
+    (data || []).forEach(item => {
+      // 비용 타입별 집계
+      if (item.cost_source && costBreakdown.hasOwnProperty(item.cost_source)) {
+        costBreakdown[item.cost_source as keyof typeof costBreakdown]++;
+      }
+      
+      // 분석 결과 파싱 및 통계 계산
+      try {
+        const content = typeof item.content === 'string' 
+          ? JSON.parse(item.content) 
+          : item.content;
+        
+        if (content?.overall_score) {
+          totalScore += content.overall_score;
+          
+          if (content.overall_score > highestScore) {
+            highestScore = content.overall_score;
+            bestKeyword = content.keywords?.[0]?.keyword || item.keywords.split(',')[0]?.trim() || '-';
+          }
+        }
+        
+        // 키워드별 점수 집계 (TOP 10 계산용)
+        if (content?.keywords && Array.isArray(content.keywords)) {
+          content.keywords.forEach((kw: any) => {
+            if (kw.keyword && typeof kw.total_score === 'number') {
+              if (!keywordScores[kw.keyword]) {
+                keywordScores[kw.keyword] = { scores: [], count: 0 };
+              }
+              keywordScores[kw.keyword].scores.push(kw.total_score);
+              keywordScores[kw.keyword].count++;
+            }
+          });
+        }
+      } catch (e) {
+        console.error('JSON 파싱 실패:', e);
+      }
+    });
+    
+    const avgScore = totalAnalyses > 0 ? Math.round(totalScore / totalAnalyses) : 0;
+    
+    // TOP 10 키워드 (평균 점수 기준)
+    const topKeywords = Object.entries(keywordScores)
+      .map(([keyword, data]) => ({
+        keyword,
+        avg_score: Math.round(data.scores.reduce((a, b) => a + b, 0) / data.scores.length),
+        analysis_count: data.count
+      }))
+      .sort((a, b) => b.avg_score - a.avg_score)
+      .slice(0, 10);
+    
+    // AI 인사이트 생성
+    const insights = [
+      totalAnalyses > 10 
+        ? `이번 달 ${totalAnalyses}회 분석으로 활발한 키워드 연구를 진행하셨습니다.`
+        : totalAnalyses > 0 
+          ? '더 많은 키워드 분석으로 마케팅 인사이트를 확보하세요.'
+          : '아직 이번 달 분석 기록이 없습니다.',
+      
+      topKeywords.length > 0
+        ? `"${topKeywords[0].keyword}"가 가장 높은 평균 점수(${topKeywords[0].avg_score}점)를 기록했습니다.`
+        : '분석된 키워드가 없습니다.',
+      
+      (costBreakdown.daily_free + costBreakdown.cached) / Math.max(1, totalAnalyses) > 0.5
+        ? '무료 할당량과 캐시를 효율적으로 활용하고 계십니다.'
+        : '유료 크레딧 사용 비중이 높습니다. 일일 무료 분석을 더 활용해보세요.'
+    ];
+    
+    console.log(`✅ 월간 리포트 생성 완료: ${month} (${totalAnalyses}건 분석)`);
+    
+    return c.json({
+      success: true,
+      report: {
+        month,
+        total_analyses: totalAnalyses,
+        avg_score: avgScore,
+        highest_score: highestScore,
+        best_keyword: bestKeyword,
+        cost_breakdown: costBreakdown,
+        top_keywords: topKeywords,
+        insights
+      }
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 월간 리포트 생성 실패:', error);
+    return c.json({
+      success: false,
+      error: error.message
+    }, 500);
+  }
+});
+
 export default app;

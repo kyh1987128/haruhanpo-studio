@@ -97,6 +97,28 @@ function renderKeywordAnalysisCard() {
           <button onclick="setKeywordSample('반려동물 용품, 강아지 간식, 고양이 장난감')" class="sample-btn">🐕 펫케어</button>
         </div>
 
+        <!-- 확장 기능 버튼 -->
+        <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.2);">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <button onclick="showKeywordHistory()" style="
+              padding: 0.8rem; background: rgba(255,255,255,0.15); border: none; 
+              border-radius: 10px; color: white; cursor: pointer; font-size: 0.9rem;
+              font-weight: 600; transition: all 0.2s;
+            " onmouseover="this.style.background='rgba(255,255,255,0.25)'"
+               onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+              📜 분석 기록
+            </button>
+            <button onclick="showMonthlyReport()" style="
+              padding: 0.8rem; background: rgba(255,255,255,0.15); border: none; 
+              border-radius: 10px; color: white; cursor: pointer; font-size: 0.9rem;
+              font-weight: 600; transition: all 0.2s;
+            " onmouseover="this.style.background='rgba(255,255,255,0.25)'"
+               onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+              📊 월간 리포트
+            </button>
+          </div>
+        </div>
+
         <style>
           .sample-btn {
             background: rgba(255,255,255,0.2); border: none; padding: 0.4rem 0.8rem;
