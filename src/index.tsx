@@ -2485,8 +2485,30 @@ app.post('/api/analyze-keywords-quality', async (c) => {
     console.log(`✅ [${user_id}] 크레딧 차감 완료:`, {
       costType,
       before: { free: user.free_credits, paid: user.paid_credits, daily_used: dailyFreeUsed },
-      after: { free: newFreeCredits, paid: newPaidCredits, daily_used: newDailyFreeUsed }
+      after: { free: newFreeCredits, paid: newPaidCredits, daily_used: newDailyFreeUsed },
+      updateData
     });
+    
+    // 🔍 DB 업데이트 검증
+    const { data: verifyUser, error: verifyError } = await supabase
+      .from('users')
+      .select('free_credits, paid_credits, daily_free_used')
+      .eq('id', user_id)
+      .single();
+    
+    if (verifyError) {
+      console.error(`❌ [${user_id}] DB 검증 실패:`, verifyError);
+    } else {
+      console.log(`🔍 [${user_id}] DB 검증 성공:`, verifyUser);
+      if (verifyUser.daily_free_used !== newDailyFreeUsed || 
+          verifyUser.free_credits !== newFreeCredits || 
+          verifyUser.paid_credits !== newPaidCredits) {
+        console.error(`⚠️ [${user_id}] DB 불일치 감지!`, {
+          expected: { free: newFreeCredits, paid: newPaidCredits, daily_used: newDailyFreeUsed },
+          actual: verifyUser
+        });
+      }
+    }
     
     console.log(`✅ [${user_id}] 크레딧 차감 완료, 이제 AI 호출 시작`);
     console.log(`🔍 키워드 심층 분석 시작: ${keywordArray.join(', ')}`);
