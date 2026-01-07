@@ -4528,6 +4528,9 @@ async function syncUserToBackend(session, isNewUser = false) {
       console.log('✅ /api/auth/sync 성공:', data);
       
       // 서버에서 받은 정보 업데이트 (2지갑 시스템)
+      // 🔥 가장 중요: ID와 이메일 먼저 설정!
+      window.currentUser.id = session.user.id;
+      window.currentUser.email = session.user.email;
       window.currentUser.tier = data.tier || 'free'; // 'guest' | 'free' | 'paid'
       window.currentUser.free_credits = data.free_credits ?? 0; // ✅ 무료 크레딧
       window.currentUser.paid_credits = data.paid_credits ?? 0; // ✅ 유료 크레딧
@@ -4540,10 +4543,14 @@ async function syncUserToBackend(session, isNewUser = false) {
       window.currentUser.isLoggedIn = true;
       
       console.log('📊 window.currentUser 업데이트:', {
+        id: window.currentUser.id,
+        email: window.currentUser.email,
         tier: window.currentUser.tier,
         free_credits: window.currentUser.free_credits,
         paid_credits: window.currentUser.paid_credits,
         total_credits: window.currentUser.credits,
+        isGuest: window.currentUser.isGuest,
+        isLoggedIn: window.currentUser.isLoggedIn,
         registration_completed: window.currentUser.registration_completed,
         phone: window.currentUser.phone
       });
