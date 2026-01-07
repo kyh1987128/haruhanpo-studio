@@ -20,7 +20,7 @@ function renderKeywordAnalysisCard() {
   const isLoggedIn = !!(user && user.id && !user.isGuest);
   
   // ✅ 로그인 시 크레딧 정보 즉시 로드
-  if (isLoggedIn && (!window.userCreditsInfo || !window.userCreditsInfo.daily_free_limit)) {
+  if (isLoggedIn && (!window.userCreditsInfo || !window.userCreditsInfo.free_credits)) {
     console.log('🔄 [렌더링] 크레딧 정보 즉시 로드');
     loadKeywordCreditStatus();
   }
@@ -62,8 +62,6 @@ function renderKeywordAnalysisCard() {
   const info = window.userCreditsInfo || {};
   const freeCredits = info.free_credits ?? user.free_credits ?? 0;
   const paidCredits = info.paid_credits ?? user.paid_credits ?? 0;
-  const dailyRemaining = info.daily_free_remaining ?? 0; // 서버에서만 받음, 기본값 0
-  const isDailyFreeAvailable = dailyRemaining > 0;
   
   return `
     <div data-keyword-analysis-card style="
@@ -84,15 +82,6 @@ function renderKeywordAnalysisCard() {
             📊 키워드 AI 심층 분석
           </h3>
           <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
-            <span id="dailyStatus" style="
-              background: ${isDailyFreeAvailable ? 'rgba(16, 185, 129, 0.3)' : 'rgba(249, 115, 22, 0.3)'};
-              padding: 0.4rem 1rem; border-radius: 20px;
-              font-size: 0.85rem; font-weight: 600;
-            ">
-              ${isDailyFreeAvailable 
-                ? `🆓 오늘 무료 ${dailyRemaining}회`
-                : '💎 무료 소진 · 크레딧 사용'}
-            </span>
             <span style="
               background: rgba(255,255,255,0.2); padding: 0.4rem 1rem;
               border-radius: 20px; font-size: 0.85rem; font-weight: 600;
@@ -207,9 +196,6 @@ async function loadKeywordCreditStatus() {
       window.userCreditsInfo = {
         free_credits: data.free_credits,
         paid_credits: data.paid_credits,
-        daily_free_used: data.daily_free_used || 0,
-        daily_free_limit: data.daily_free_limit || 3,
-        daily_free_remaining: data.daily_free_remaining || 3,
         total_credits: data.total_credits || 0
       };
       
@@ -228,10 +214,10 @@ async function loadKeywordCreditStatus() {
       
       console.log('✅ 크레딧 동기화 완료:', window.userCreditsInfo);
       
-      // 🔥 중요: daily_free 정보를 받았으므로 카드 다시 렌더링
+      // 🔥 중요: 크레딧 정보를 받았으므로 카드 다시 렌더링
       const cardContainer = document.querySelector('[data-keyword-analysis-card]');
       if (cardContainer && cardContainer.parentElement) {
-        console.log('🔄 카드 다시 렌더링 (daily_free 반영)');
+        console.log('🔄 카드 다시 렌더링 (크레딧 반영)');
         cardContainer.parentElement.innerHTML = renderKeywordAnalysisCard();
       }
     }
@@ -351,9 +337,6 @@ async function analyzeKeywordsQuality() {
         userCreditsInfo = {
           free_credits: ci.remaining_free_credits ?? userCreditsInfo.free_credits,
           paid_credits: ci.remaining_paid_credits ?? userCreditsInfo.paid_credits,
-          daily_free_used: ci.daily_free_used ?? 0,
-          daily_free_limit: ci.daily_free_limit ?? 3,
-          daily_free_remaining: ci.daily_free_remaining ?? 3,
           total_credits: (ci.remaining_free_credits ?? 0) + (ci.remaining_paid_credits ?? 0)
         };
         
@@ -374,8 +357,6 @@ async function analyzeKeywordsQuality() {
           console.log('💎 크레딧 차감 완료:', {
             free: ci.remaining_free_credits,
             paid: ci.remaining_paid_credits,
-            daily_used: ci.daily_free_used,
-            daily_remaining: ci.daily_free_remaining,
             cost_type: ci.type
           });
         }
@@ -400,8 +381,6 @@ async function analyzeKeywordsQuality() {
         let message = '✅ 분석 완료!';
         if (ci.type === 'cached') {
           message = '⚡ 캐시된 결과입니다 (크레딧 미차감)';
-        } else if (ci.type === 'daily_free') {
-          message = `✅ 일일 무료 분석! (남은 무료: ${ci.daily_free_remaining}회)`;
         } else if (ci.type === 'free_credit') {
           message = `✅ 분석 완료! (무료 크레딧 1개 사용, 남은 무료: ${ci.remaining_free_credits}개)`;
         } else if (ci.type === 'paid_credit') {
@@ -970,7 +949,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.userCreditsInfo.free_credits = user.free_credits;
         window.userCreditsInfo.paid_credits = user.paid_credits;
         window.userCreditsInfo.total_credits = user.free_credits + user.paid_credits;
-        // daily_free 정보는 loadKeywordCreditStatus()에서만 설정
       }
     }
   }, 5000);
