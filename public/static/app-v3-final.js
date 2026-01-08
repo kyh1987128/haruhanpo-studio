@@ -1646,7 +1646,7 @@ function updateCostEstimate() {
       </div>
       
       <p style="font-size: 0.85rem; opacity: 0.9; margin-top: 1rem; text-align: center; margin-bottom: 0;">
-        차등 과금: 1개 플랫폼=1크레딧, 2-3개=2크레딧, 4-9개=4크레딧
+        차등 과금: 1개 플랫폼=1크레딧, 2-3개=2크레딧, 4-9개=4크레딧, 10-13개=5크레딧
       </p>
     </div>
   `;
@@ -3245,7 +3245,7 @@ function displayResults(data, platforms) {
     instagram: '📸 인스타그램',
     instagram_feed: '📸 인스타그램 피드',
     threads: '🧵 스레드',
-    twitter: '🐦 트위터',
+    twitter: '🐦 트위터(X)',
     linkedin: '💼 LinkedIn',
     kakaotalk: '💬 카카오톡',
     youtube: '🎬 유튜브',
@@ -3463,7 +3463,7 @@ function downloadAsText(platform) {
     tiktok: '틱톡',
     instagram_reels: '인스타 릴스',
     metadata_generation: '메타데이터',
-    twitter: '트위터' // ✅ 신규 추가
+    twitter: '트위터(X)' // ✅ 신규 추가
   };
   
   const brand = document.getElementById('brand').value.trim() || 'content';
@@ -3501,7 +3501,7 @@ function downloadAsWord(platform) {
     tiktok: '틱톡',
     instagram_reels: '인스타 릴스',
     metadata_generation: '메타데이터',
-    twitter: '트위터' // ✅ 신규 추가
+    twitter: '트위터(X)' // ✅ 신규 추가
   };
   
   const brand = document.getElementById('brand').value.trim() || 'content';
@@ -3585,7 +3585,7 @@ function downloadAllAsExcel() {
     tiktok: '틱톡',
     instagram_reels: '인스타 릴스',
     metadata_generation: '메타데이터',
-    twitter: '트위터' // ✅ 신규 추가
+    twitter: '트위터(X)' // ✅ 신규 추가
   };
   
   // HTML 테이블 형식으로 변환 (Excel이 읽을 수 있는 형식)
@@ -3684,7 +3684,7 @@ function downloadBatchExcel() {
     tiktok: '틱톡',
     instagram_reels: '인스타 릴스',
     metadata_generation: '메타데이터',
-    twitter: '트위터' // ✅ 신규 추가
+    twitter: '트위터(X)' // ✅ 신규 추가
   };
   
   // HTML 테이블 형식으로 변환
@@ -3827,7 +3827,7 @@ function openTemplateModal() {
     instagram: '📸 인스타그램 (기존)',
     instagram_feed: '📸 인스타그램 피드',
     threads: '🧵 스레드',
-    twitter: '🐦 트위터',
+    twitter: '🐦 트위터(X)',
     linkedin: '💼 LinkedIn',
     kakaotalk: '💬 카카오톡',
     tiktok: '🎵 틱톡',
@@ -4556,7 +4556,7 @@ function filterHistory() {
     instagram_reels: '📸 인스타 릴스',
     instagram_feed: '📸 인스타 피드',
     threads: '🧵 스레드',
-    twitter: '🐦 트위터',
+    twitter: '🐦 트위터(X)',
     linkedin: '💼 LinkedIn',
     kakaotalk: '💬 카카오톡',
     youtube: '🎬 유튜브',
@@ -4628,7 +4628,7 @@ function exportHistoryAsExcel() {
     tiktok: '틱톡',
     instagram_reels: '인스타 릴스',
     metadata_generation: '메타데이터',
-    twitter: '트위터' // ✅ 신규 추가
+    twitter: '트위터(X)' // ✅ 신규 추가
   };
   
   // HTML 테이블 형식
@@ -5633,7 +5633,7 @@ function openTemplateEditor() {
     instagram: '📸 인스타그램 (기존)',
     instagram_feed: '📸 인스타그램 피드',
     threads: '🧵 스레드',
-    twitter: '🐦 트위터',
+    twitter: '🐦 트위터(X)',
     linkedin: '💼 LinkedIn',
     kakaotalk: '💬 카카오톡',
     tiktok: '🎵 틱톡',

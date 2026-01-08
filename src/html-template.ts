@@ -722,7 +722,7 @@ export const htmlTemplate = `
                             </label>
                             <label class="flex items-center space-x-3 border-2 rounded-lg p-3 cursor-pointer hover:bg-blue-50 transition">
                                 <input type="checkbox" name="platform" value="twitter" class="w-5 h-5 text-blue-400">
-                                <span class="font-medium text-sm">🐦 트위터</span>
+                                <span class="font-medium text-sm">🐦 트위터(X)</span>
                             </label>
                             <label class="flex items-center space-x-3 border-2 rounded-lg p-3 cursor-pointer hover:bg-blue-50 transition">
                                 <input type="checkbox" name="platform" value="linkedin" class="w-5 h-5 text-blue-600">
@@ -1021,7 +1021,7 @@ export const htmlTemplate = `
                         </label>
                         <label class="flex items-center gap-1 cursor-pointer">
                             <input type="checkbox" value="twitter" checked onchange="filterHistory()" class="history-platform-filter">
-                            <span class="text-sm">🐦 트위터</span>
+                            <span class="text-sm">🐦 트위터(X)</span>
                         </label>
                         <label class="flex items-center gap-1 cursor-pointer">
                             <input type="checkbox" value="linkedin" checked onchange="filterHistory()" class="history-platform-filter">
