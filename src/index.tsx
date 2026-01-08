@@ -2617,6 +2617,9 @@ app.post('/api/analyze-keywords-quality', async (c) => {
           '고객 후기 및 평판 관리가 전환율에 큰 영향을 미칩니다',
           '지속적인 콘텐츠 마케팅을 통해 장기적 성장이 가능합니다'
         ];
+      
+      console.log(`🔍 [${user_id}] market_insights 개수:`, analysis.market_insights.length);
+      
       analysis.strategic_recommendations = Array.isArray(analysis.strategic_recommendations) && analysis.strategic_recommendations.length >= 5
         ? analysis.strategic_recommendations
         : [
@@ -2626,6 +2629,8 @@ app.post('/api/analyze-keywords-quality', async (c) => {
           '고객 리뷰 및 사례 연구를 적극 활용하세요',
           '데이터 기반 A/B 테스트로 전환율을 지속 개선하세요'
         ];
+      
+      console.log(`🔍 [${user_id}] strategic_recommendations 개수:`, analysis.strategic_recommendations.length);
       
     } catch (aiError) {
       console.error('AI 분석 실패, 폴백 응답 생성:', aiError);
