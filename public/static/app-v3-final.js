@@ -1223,17 +1223,17 @@ function updateCostEstimate() {
   let gradientColor = '';
   
   if (currentUser.isGuest) {
-    // 비회원: 체험 1회 사용
+    // 비회원: 로그인 유도
     gradientColor = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
-    statusBadge = '<span style="background: rgba(255,255,255,0.3); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">🎁 무료 체험</span>';
+    statusBadge = '<span style="background: rgba(255,255,255,0.3); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; font-weight: 600;">🔐 로그인 필요</span>';
     
     costInfoHTML = `
       <div style="background: rgba(255,255,255,0.2); padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem; text-align: center;">
         <div style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem;">
-          무료 체험 1회 사용 가능
+          로그인이 필요한 서비스입니다
         </div>
         <p style="font-size: 0.95rem; opacity: 0.9; margin: 0;">
-          로그인하면 매달 <strong>10크레딧 무료</strong> + 크레딧으로 무제한 사용!
+          가입만 해도 <strong>월 30크레딧 무료</strong> + 크레딧으로 무제한 사용!
         </p>
       </div>
     `;
@@ -1261,9 +1261,6 @@ function updateCostEstimate() {
         <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 0.3rem;">
           현재 보유: ${creditDisplayText}
         </div>
-        <p style="font-size: 0.9rem; opacity: 0.9; margin: 0;">
-          💡 무료 회원은 월 초 10크레딧이 자동 지급됩니다
-        </p>
         ${totalCredits < creditsNeeded ? `
           <div style="background: rgba(239, 68, 68, 0.3); border: 1px solid rgba(239, 68, 68, 0.5); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
             <p style="margin: 0; font-size: 0.95rem;">
@@ -1916,6 +1913,22 @@ function addKeyword(keyword) {
 // 콘텐츠 생성
 // ===================================
 async function handleGenerate() {
+  // 🔒 로그인 체크 (최우선)
+  if (!window.currentUser || window.currentUser.isGuest || !window.currentUser.id) {
+    const goToLogin = confirm(
+      '🔐 로그인이 필요한 서비스입니다\n\n' +
+      '• 가입만 해도 월 30크레딧 무료 지급\n' +
+      '• 5개 플랫폼 맞춤 콘텐츠 자동 생성\n' +
+      '• 30초 안에 완성되는 AI 콘텐츠\n\n' +
+      '로그인 페이지로 이동하시겠습니까?'
+    );
+    
+    if (goToLogin) {
+      window.location.href = '/';
+    }
+    return;
+  }
+  
   // 기본 정보 수집
   const brand = document.getElementById('brand').value.trim();
   

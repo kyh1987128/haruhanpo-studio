@@ -33,23 +33,13 @@ function renderKeywordAnalysisCard() {
         <h2 style="font-size: 2rem; font-weight: 800; margin-bottom: 1rem;">
           🔐 키워드 AI 심층 분석
         </h2>
-        <p style="font-size: 1.1rem; margin-bottom: 2rem; line-height: 1.6; opacity: 0.95;">
-          로그인하시면 하루 <strong>3회</strong>까지 무료로<br>
-          키워드 심층 분석을 이용하실 수 있습니다.
+        <p style="font-size: 1.1rem; margin-bottom: 1.5rem; line-height: 1.6; opacity: 0.95;">
+          AI가 키워드의 시장성, 경쟁도, 트렌드를 분석하고<br>
+          최적의 마케팅 전략을 추천해드립니다.
         </p>
-        <button
-          onclick="window.location.href='/'"
-          style="
-            background: white; color: #667eea; border: none;
-            padding: 1rem 2.5rem; border-radius: 15px; font-size: 1.1rem;
-            font-weight: bold; cursor: pointer; transition: all 0.2s;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-          "
-          onmouseover="this.style.transform='translateY(-2px)'"
-          onmouseout="this.style.transform='translateY(0)'"
-        >
-          로그인하고 무료 분석 시작하기
-        </button>
+        <p style="font-size: 1rem; margin-bottom: 1.5rem; opacity: 0.9;">
+          💎 가입만 해도 <strong>월 30크레딧 무료</strong> 제공!
+        </p>
       </div>
     `;
   }

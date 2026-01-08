@@ -209,16 +209,16 @@ export const htmlTemplate = `
             
             <div class="flex justify-center space-x-8 mb-8">
                 <div class="text-center">
-                    <div class="text-3xl font-bold mb-1">1회</div>
-                    <div class="text-sm opacity-80">비회원 무료 체험</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-3xl font-bold mb-1">10회/월</div>
-                    <div class="text-sm opacity-80">무료 회원 (매월 리셋)</div>
+                    <div class="text-3xl font-bold mb-1">30회/월</div>
+                    <div class="text-sm opacity-80">가입만 해도 무료!</div>
                 </div>
                 <div class="text-center">
                     <div class="text-3xl font-bold mb-1">₩9,000</div>
                     <div class="text-sm opacity-80">50크레딧 구매</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold mb-1">무제한</div>
+                    <div class="text-sm opacity-80">크레딧으로 자유롭게</div>
                 </div>
             </div>
             
@@ -228,8 +228,8 @@ export const htmlTemplate = `
                     <div>
                         <div class="text-2xl mb-2">🎁</div>
                         <div class="font-semibold mb-1">무료 회원</div>
-                        <div class="text-sm opacity-90">월 10크레딧 자동 지급</div>
-                        <div class="text-xs opacity-75">(매월 1일 리셋)</div>
+                        <div class="text-sm opacity-90">월 30크레딧 자동 지급</div>
+                        <div class="text-xs opacity-75">(가입일 기준 매월)</div>
                     </div>
                     <div>
                         <div class="text-2xl mb-2">💎</div>
