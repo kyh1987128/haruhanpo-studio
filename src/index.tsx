@@ -807,6 +807,13 @@ app.post('/api/generate', async (c) => {
     const getPromptForPlatform = (platform: string) => {
       // 1️⃣ 사용자 템플릿 우선 (customPrompt가 있고 유효한 경우)
       if (customPrompt && customPrompt.length > 100) {
+        // ✅ 보안: 최대 8000자 제한 (프론트엔드와 동일)
+        if (customPrompt.length > 8000) {
+          console.warn(`⚠️ 사용자 템플릿이 너무 깁니다 (${customPrompt.length}자). 8000자로 자릅니다.`);
+          const truncatedPrompt = customPrompt.substring(0, 8000);
+          console.log(`  💾 사용자 템플릿 사용 (${platform}, 잘림): ${truncatedPrompt.substring(0, 50)}...`);
+          return truncatedPrompt;
+        }
         console.log(`  💾 사용자 템플릿 사용 (${platform}): ${customPrompt.substring(0, 50)}...`);
         return customPrompt;
       }
