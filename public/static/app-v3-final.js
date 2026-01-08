@@ -41,6 +41,17 @@ const COSTS = {
 let EXCHANGE_RATE = 1300; // 기본값
 let lastExchangeUpdate = null;
 
+// ===================================
+// Feature Flags (안전 배포용)
+// ===================================
+const FEATURE_FLAGS = {
+  ENABLE_CUSTOM_TEMPLATES: true, // 템플릿 저장 기능
+  ENABLE_TWITTER: false,          // Twitter 플랫폼
+  ENABLE_LINKEDIN: false,         // LinkedIn 플랫폼
+  ENABLE_KAKAOTALK: false,        // KakaoTalk 플랫폼
+  ENABLE_SCHEDULE: false,         // 발행 예정 기능
+};
+
 // 기본 템플릿
 const DEFAULT_TEMPLATES = {
   blog: `당신은 네이버 블로그 SEO 최적화 및 마케팅 콘텐츠 전문가입니다.
@@ -906,7 +917,13 @@ function setupEventListeners() {
   // 템플릿 관리
   const templateBtn = document.getElementById('templateBtn');
   if (templateBtn) {
-    templateBtn.addEventListener('click', openTemplateModal);
+    templateBtn.addEventListener('click', () => {
+      if (FEATURE_FLAGS.ENABLE_CUSTOM_TEMPLATES) {
+        openTemplateEditor();
+      } else {
+        showToast('⚠️ 템플릿 기능은 현재 준비 중입니다', 'warning');
+      }
+    });
   }
 
   // 플랫폼 선택 변경 시 비용 재계산 및 배치 계산
@@ -5170,6 +5187,185 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+// ===================================
+// 템플릿 저장 기능
+// ===================================
+
+// 템플릿 로드
+function loadCustomTemplates() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.TEMPLATES);
+    customTemplates = stored ? JSON.parse(stored) : [];
+    console.log(`✅ 템플릿 로드 완료: ${customTemplates.length}개`);
+    return customTemplates;
+  } catch (error) {
+    console.error('❌ 템플릿 로드 실패:', error);
+    customTemplates = [];
+    return [];
+  }
+}
+
+// 템플릿 저장
+function saveCustomTemplate(name, platform, content) {
+  try {
+    if (!name || !platform || !content) {
+      showToast('❌ 템플릿 이름, 플랫폼, 내용을 모두 입력해주세요', 'error');
+      return false;
+    }
+    
+    // 최대 길이 체크 (8000자)
+    if (content.length > 8000) {
+      showToast('❌ 템플릿이 너무 깁니다 (최대 8000자)', 'error');
+      return false;
+    }
+    
+    const template = {
+      id: Date.now().toString(),
+      name,
+      platform,
+      content,
+      created_at: new Date().toISOString()
+    };
+    
+    customTemplates.push(template);
+    localStorage.setItem(STORAGE_KEYS.TEMPLATES, JSON.stringify(customTemplates));
+    
+    console.log(`✅ 템플릿 저장 완료: ${name}`);
+    showToast(`✅ "${name}" 템플릿 저장 완료`, 'success');
+    return true;
+  } catch (error) {
+    console.error('❌ 템플릿 저장 실패:', error);
+    showToast('❌ 템플릿 저장 중 오류가 발생했습니다', 'error');
+    return false;
+  }
+}
+
+// 템플릿 삭제
+function deleteCustomTemplate(templateId) {
+  try {
+    const index = customTemplates.findIndex(t => t.id === templateId);
+    if (index === -1) {
+      showToast('❌ 템플릿을 찾을 수 없습니다', 'error');
+      return false;
+    }
+    
+    const templateName = customTemplates[index].name;
+    customTemplates.splice(index, 1);
+    localStorage.setItem(STORAGE_KEYS.TEMPLATES, JSON.stringify(customTemplates));
+    
+    console.log(`✅ 템플릿 삭제 완료: ${templateName}`);
+    showToast(`✅ "${templateName}" 템플릿 삭제 완료`, 'success');
+    return true;
+  } catch (error) {
+    console.error('❌ 템플릿 삭제 실패:', error);
+    showToast('❌ 템플릿 삭제 중 오류가 발생했습니다', 'error');
+    return false;
+  }
+}
+
+// 템플릿 에디터 열기
+function openTemplateEditor() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7); display: flex; align-items: center;
+    justify-content: center; z-index: 10000;
+  `;
+  
+  const templates = loadCustomTemplates();
+  const platformOptions = ['blog', 'instagram', 'threads', 'youtube'].map(p => 
+    `<option value="${p}">${p}</option>`
+  ).join('');
+  
+  modal.innerHTML = `
+    <div style="background: white; border-radius: 20px; padding: 2rem; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0;">💾 템플릿 관리</h2>
+        <button onclick="this.closest('.modal-overlay').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">✕</button>
+      </div>
+      
+      <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f3f4f6; border-radius: 12px;">
+        <h3 style="margin-top: 0;">➕ 새 템플릿 만들기</h3>
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">템플릿 이름</label>
+          <input type="text" id="templateName" placeholder="예: 블로그 전문가 톤" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">플랫폼</label>
+          <select id="templatePlatform" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+            ${platformOptions}
+          </select>
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">프롬프트 내용 (최대 8000자)</label>
+          <textarea id="templateContent" placeholder="당신은 전문가입니다...&#10;&#10;【브랜드 정보】&#10;- 브랜드명: {브랜드명}&#10;- 키워드: {키워드}&#10;..." style="width: 100%; height: 300px; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-family: monospace; font-size: 0.9rem;"></textarea>
+          <div style="text-align: right; margin-top: 0.25rem; color: #666; font-size: 0.85rem;">
+            <span id="charCount">0</span> / 8000자
+          </div>
+        </div>
+        <button onclick="handleSaveTemplate()" style="width: 100%; padding: 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer;">
+          💾 템플릿 저장
+        </button>
+      </div>
+      
+      <div>
+        <h3>📚 저장된 템플릿 (${templates.length}개)</h3>
+        <div id="templateList" style="max-height: 300px; overflow-y: auto;">
+          ${templates.length === 0 ? 
+            '<p style="text-align: center; color: #666; padding: 2rem;">저장된 템플릿이 없습니다</p>' :
+            templates.map(t => `
+              <div style="padding: 1rem; background: #f9fafb; border-radius: 8px; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+                <div style="flex: 1;">
+                  <div style="font-weight: 600; margin-bottom: 0.25rem;">${t.name}</div>
+                  <div style="font-size: 0.85rem; color: #666;">플랫폼: ${t.platform} | ${new Date(t.created_at).toLocaleDateString('ko-KR')}</div>
+                </div>
+                <button onclick="handleDeleteTemplate('${t.id}')" style="padding: 0.5rem 1rem; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                  🗑️ 삭제
+                </button>
+              </div>
+            `).join('')
+          }
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // 글자 수 카운터
+  const textarea = document.getElementById('templateContent');
+  const charCount = document.getElementById('charCount');
+  textarea.addEventListener('input', () => {
+    charCount.textContent = textarea.value.length;
+    if (textarea.value.length > 8000) {
+      charCount.style.color = '#ef4444';
+    } else {
+      charCount.style.color = '#666';
+    }
+  });
+}
+
+// 템플릿 저장 핸들러
+function handleSaveTemplate() {
+  const name = document.getElementById('templateName').value.trim();
+  const platform = document.getElementById('templatePlatform').value;
+  const content = document.getElementById('templateContent').value.trim();
+  
+  if (saveCustomTemplate(name, platform, content)) {
+    openTemplateEditor(); // 모달 새로고침
+  }
+}
+
+// 템플릿 삭제 핸들러
+function handleDeleteTemplate(templateId) {
+  if (confirm('정말 이 템플릿을 삭제하시겠습니까?')) {
+    if (deleteCustomTemplate(templateId)) {
+      openTemplateEditor(); // 모달 새로고침
+    }
+  }
+}
+
 // 전역 노출
 window.initializeAuth = initializeAuth;
 window.initSupabase = initSupabase;
@@ -5181,4 +5377,7 @@ window.handleLogout = handleLogout;
 window.handleTrial = handleTrial;
 window.currentUser = currentUser;
 window.supabaseClient = null; // 초기화 후 접근 가능
+window.openTemplateEditor = openTemplateEditor;
+window.handleSaveTemplate = handleSaveTemplate;
+window.handleDeleteTemplate = handleDeleteTemplate;
 
