@@ -826,6 +826,24 @@ ${analysis.strategic_recommendations.map(rec => `• ${rec}`).join('\n')}
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('🚀 하이브리드 크레딧 시스템 초기화 중...');
   
+  // 🔥 로그인 상태 확인 대기 (최대 2초)
+  let retryCount = 0;
+  while (!window.currentUser && retryCount < 10) {
+    console.log(`⏳ [초기화] window.currentUser 대기 중... (${retryCount + 1}/10)`);
+    await new Promise(resolve => setTimeout(resolve, 200));
+    retryCount++;
+  }
+  
+  if (window.currentUser) {
+    console.log('✅ [초기화] 로그인 사용자 감지:', {
+      id: window.currentUser.id,
+      email: window.currentUser.email,
+      isGuest: window.currentUser.isGuest
+    });
+  } else {
+    console.log('ℹ️ [초기화] 비로그인 상태로 카드 렌더링');
+  }
+  
   // 카드 렌더링 - 콘텐츠 생성 폼 위에 삽입
   const contentForm = document.querySelector('#contentForm, .content-form, form');
   if (contentForm && contentForm.parentNode) {
@@ -883,7 +901,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // 🔥 핵심: 비로그인 화면이면 전체 카드 교체
     const card = document.querySelector('[data-keyword-analysis-card]');
-    if (card && card.innerHTML.includes('로그인하고 무료')) {
+    if (card && card.innerHTML.includes('가입만 해도')) {
       console.log('🔄 비로그인 화면을 로그인 화면으로 교체');
       card.outerHTML = renderKeywordAnalysisCard();
       console.log('✅ 키워드 카드 교체 완료');
