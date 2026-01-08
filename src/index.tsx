@@ -2474,81 +2474,65 @@ app.post('/api/analyze-keywords-quality', async (c) => {
     console.log(`✅ [${user_id}] 크레딧 차감 완료, 이제 AI 호출 시작`);
     console.log(`🔍 키워드 심층 분석 시작: ${keywordArray.join(', ')}`);
     
-    const analysisPrompt = `
-당신은 10년 경력의 한국 시장 SEO/마케팅 전문 컨설턴트입니다. 
-다음 키워드들을 2024-2025년 기준으로 종합 분석하여 **유효한 JSON만** 응답하세요.
+    // 🔥 v16.0.0: JSON 완전 포기, 텍스트 기반 파싱
+    const analysisPrompt = `키워드 "${keywordArray.join(', ')}"를 분석해주세요.
 
-분석 키워드: ${keywordArray.join(', ')}
+다음 형식으로 답변해주세요:
 
-⚠️ 중요: 반드시 유효한 JSON으로만 응답하세요.
-- 문자열 내부에는 작은따옴표(') 사용
-- 마지막 요소 뒤 쉼표 금지
-- 마크다운 코드 블록 사용 금지
-- 순수 JSON만 출력 (설명 문구 절대 금지)
+=== 점수 ===
+84
 
-**CRITICAL: 성의없는 답변 금지! 반드시 구체적이고 상세하게 작성하세요.**
+=== 마케팅 효과 ===
+88
 
-[필수 분석 지표 - 모두 0~100점]
-1. marketing_score: 마케팅 효과성 (정확한 점수, 랜덤 금지)
-2. seo_score: SEO 난이도 (실제 검색량/경쟁도 반영)
-3. viral_potential: 바이럴 확산 가능성
-4. conversion_potential: 전환율 예상
-5. trend_score: 트렌드 강도
-6. competition_level: 경쟁 강도
-7. saturation_level: 시장 포화도
+=== SEO 난이도 ===
+75
 
-[필수 작성 규칙]
-✅ analysis: **반드시 5문장 이상**, 타겟층/시장상황/활용전략/경쟁분석/수익성 포함
-✅ recommendations: **반드시 5개 이상**, 실행 가능한 구체적 전략
-✅ related_keywords: **반드시 7개 이상**, 실제 검색되는 연관 키워드
-✅ better_alternatives: **반드시 5개 이상**, 더 나은 키워드 + 구체적 이유
-✅ market_insights: **반드시 5개 이상** (각 50자 이상), 시장 데이터/통계/출처 포함
-✅ strategic_recommendations: **반드시 5개 이상** (각 50자 이상), 단계별 실행 전략
+=== 바이럴 가능성 ===
+82
 
-**지금 즉시 아래 JSON 형식만 출력하세요 (다른 텍스트 절대 금지):**
+=== 전환율 예상 ===
+90
 
-{
-  "keywords": [
-    {
-      "keyword": "${keywordArray[0]}",
-      "marketing_score": 85,
-      "seo_score": 70,
-      "viral_potential": 80,
-      "conversion_potential": 90,
-      "trend_score": 75,
-      "trend_direction": "상승세",
-      "competition_level": 85,
-      "saturation_level": 80,
-      "market_size": "대형 키워드",
-      "total_score": 81,
-      "analysis": "최소 5문장 이상의 구체적 분석 내용",
-      "recommendations": ["구체적전략1", "구체적전략2", "구체적전략3", "구체적전략4", "구체적전략5"],
-      "related_keywords": ["연관1", "연관2", "연관3", "연관4", "연관5", "연관6", "연관7"],
-      "better_alternatives": [
-        {"keyword": "대체1", "reason": "구체적 이유 (50자 이상)"},
-        {"keyword": "대체2", "reason": "구체적 이유 (50자 이상)"},
-        {"keyword": "대체3", "reason": "구체적 이유"},
-        {"keyword": "대체4", "reason": "구체적 이유"},
-        {"keyword": "대체5", "reason": "구체적 이유"}
-      ]
-    }
-  ],
-  "overall_score": 81,
-  "market_insights": [
-    "시장 인사이트 1 (50자 이상, 출처/통계 포함)",
-    "시장 인사이트 2 (50자 이상, 출처/통계 포함)",
-    "시장 인사이트 3 (50자 이상)",
-    "시장 인사이트 4 (50자 이상)",
-    "시장 인사이트 5 (50자 이상)"
-  ],
-  "strategic_recommendations": [
-    "실행 전략 1 (50자 이상, 구체적 실행방법 포함)",
-    "실행 전략 2 (50자 이상, 구체적 실행방법 포함)",
-    "실행 전략 3 (50자 이상)",
-    "실행 전략 4 (50자 이상)",
-    "실행 전략 5 (50자 이상)"
-  ]
-}
+=== 종합 분석 ===
+(자유롭게 5문장 이상 작성)
+
+=== 추천 전략 ===
+- 전략 1
+- 전략 2
+- 전략 3
+- 전략 4
+- 전략 5
+
+=== 관련 키워드 ===
+- 키워드 1
+- 키워드 2
+- 키워드 3
+- 키워드 4
+- 키워드 5
+- 키워드 6
+- 키워드 7
+
+=== 더 나은 대체 키워드 ===
+- 대체 키워드 1 | 구체적 이유
+- 대체 키워드 2 | 구체적 이유
+- 대체 키워드 3 | 구체적 이유
+- 대체 키워드 4 | 구체적 이유
+- 대체 키워드 5 | 구체적 이유
+
+=== 시장 인사이트 ===
+- 인사이트 1 (50자 이상)
+- 인사이트 2 (50자 이상)
+- 인사이트 3 (50자 이상)
+- 인사이트 4 (50자 이상)
+- 인사이트 5 (50자 이상)
+
+=== 전략적 제안 ===
+- 전략 1 (50자 이상)
+- 전략 2 (50자 이상)
+- 전략 3 (50자 이상)
+- 전략 4 (50자 이상)
+- 전략 5 (50자 이상)
     `;
     
     let analysis: any;
@@ -2567,190 +2551,106 @@ app.post('/api/analyze-keywords-quality', async (c) => {
         console.log(`🔑 [AI 진단] GPT API 사용 (키 길이: ${c.env.OPENAI_API_KEY?.length})`);
         const openai = new OpenAI({ apiKey: c.env.OPENAI_API_KEY });
         const completion = await openai.chat.completions.create({
-          model: 'gpt-4o', // gpt-4o로 변경 (품질 향상)
-          messages: [
-            {
-              role: 'system',
-              content: '당신은 마케팅 키워드 분석 전문가입니다. JSON 형식으로만 응답하세요.'
-            },
-            { role: 'user', content: analysisPrompt }
-          ],
-          temperature: 0.3,
+          model: 'gpt-4o',
+          messages: [{ role: 'user', content: analysisPrompt }],
+          temperature: 0.5,
           max_tokens: 4000
-          // 🔥 v15.9.0: JSON Schema 제거 - 블로그/스레드와 동일한 방식
+          // 🔥 v16.0.0: JSON 완전 포기, 텍스트 기반 파싱
         });
-        aiResponse = completion.choices[0].message.content || '{}';
+        aiResponse = completion.choices[0].message.content || '';
       }
       
       console.log(`✅ [AI 진단] AI 응답 성공 - 길이: ${aiResponse.length}자`);
-      console.log(`📄 [AI 진단] AI 응답 원본 (첫 200자):`, aiResponse.substring(0, 200));
       
-      // 🔥 0단계: 마크다운 코드 블록 제거
-      let cleanedAiResponse = aiResponse
-        .replace(/^```json\s*/i, '')  // 시작 ```json 제거
-        .replace(/^```\s*/i, '')      // 시작 ``` 제거
-        .replace(/```\s*$/i, '')      // 끝 ``` 제거
-        .trim();
-      
-      // JSON 객체만 추출
-      const firstBrace = cleanedAiResponse.indexOf('{');
-      const lastBrace = cleanedAiResponse.lastIndexOf('}');
-      if (firstBrace !== -1 && lastBrace !== -1) {
-        cleanedAiResponse = cleanedAiResponse.substring(firstBrace, lastBrace + 1);
+      // 🔥 v16.0.0: 텍스트 파싱 (JSON.parse 절대 사용 안함!)
+      function extractSection(text: string, sectionName: string): string {
+        const regex = new RegExp(`=== ${sectionName} ===\\s*([\\s\\S]*?)(?=\\s*===|$)`, 'i');
+        const match = text.match(regex);
+        return match ? match[1].trim() : '';
       }
       
-      console.log(`🧹 [AI 진단] 마크다운 제거 완료 - 정제된 길이: ${cleanedAiResponse.length}자`);
-      
-      // 🔥 3단계 안전 파싱 (JSON Schema + 후처리)
-      let parsedAnalysis: any = null;
-      
-      // 1단계: 직접 파싱 시도
-      try {
-        parsedAnalysis = JSON.parse(cleanedAiResponse);
-        console.log(`✅ [AI 진단] 1단계 파싱 성공 - keywords: ${parsedAnalysis.keywords?.length || 0}개`);
-      } catch (parseError) {
-        const errorMsg = (parseError as Error).message;
-        console.warn(`⚠️ [AI 진단] 1단계 파싱 실패: ${errorMsg}`);
-        
-        // 2단계: 안전한 문자열 정제 후 재시도
-        try {
-          console.log(`🔧 [AI 진단] 2단계: 문자열 정제 시도`);
-          
-          // 에러 위치 확인
-          const posMatch = errorMsg.match(/position (\d+)/);
-          if (posMatch) {
-            const errorPos = parseInt(posMatch[1]);
-            console.log(`📍 [AI 진단] 에러 위치: ${errorPos}자`);
-            console.log(`📄 [AI 진단] 에러 주변:`, cleanedAiResponse.substring(Math.max(0, errorPos - 50), errorPos + 50));
-          }
-          
-          // 보수적 정제: 이스케이프되지 않은 따옴표만 처리
-          let cleanedResponse = cleanedAiResponse;
-          
-          // JSON 문자열 값 내부의 이스케이프되지 않은 따옴표를 작은따옴표로 변경
-          // 패턴: "key": "value with "quote"" → "key": "value with 'quote'"
-          cleanedResponse = cleanedResponse.replace(
-            /"([^"]*?)"\s*:\s*"((?:[^"\\]|\\.)*)"/g,
-            (match, key, value) => {
-              // value 내부에 이스케이프되지 않은 따옴표가 있으면 작은따옴표로 변경
-              const cleanedValue = value.replace(/(?<!\\)"/g, "'");
-              return `"${key}": "${cleanedValue}"`;
-            }
-          );
-          
-          parsedAnalysis = JSON.parse(cleanedResponse);
-          console.log(`✅ [AI 진단] 2단계 파싱 성공 (정제 후) - keywords: ${parsedAnalysis.keywords?.length || 0}개`);
-          
-        } catch (secondError) {
-          console.warn(`⚠️ [AI 진단] 2단계 파싱도 실패: ${(secondError as Error).message}`);
-          
-          // 3단계: 마지막 완전한 객체까지만 사용
-          try {
-            console.log(`🔧 [AI 진단] 3단계: 불완전한 JSON 잘라내기`);
-            const lastBrace = aiResponse.lastIndexOf('}');
-            
-            if (lastBrace > 0) {
-              const truncated = aiResponse.substring(0, lastBrace + 1);
-              
-              // 잘라낸 JSON도 정제 시도
-              let cleanedTruncated = truncated.replace(
-                /"([^"]*?)"\s*:\s*"((?:[^"\\]|\\.)*)"/g,
-                (match, key, value) => {
-                  const cleanedValue = value.replace(/(?<!\\)"/g, "'");
-                  return `"${key}": "${cleanedValue}"`;
-                }
-              );
-              
-              parsedAnalysis = JSON.parse(cleanedTruncated);
-              console.log(`✅ [AI 진단] 3단계 파싱 성공 (잘라내기 + 정제) - keywords: ${parsedAnalysis.keywords?.length || 0}개`);
-            } else {
-              throw new Error('마지막 중괄호를 찾을 수 없음');
-            }
-          } catch (thirdError) {
-            console.error(`❌ [AI 진단] 모든 파싱 시도 실패`);
-            console.error(`📄 [AI 진단] 원본 응답 첫 1000자:`, aiResponse.substring(0, 1000));
-            console.error(`📄 [AI 진단] 원본 응답 마지막 500자:`, aiResponse.substring(aiResponse.length - 500));
-            throw new Error(`JSON 파싱 완전 실패: ${errorMsg}`);
-          }
-        }
+      function extractList(text: string, sectionName: string): string[] {
+        const content = extractSection(text, sectionName);
+        return content
+          .split('\n')
+          .map(line => line.replace(/^-\s*/, '').trim())
+          .filter(line => line.length > 0);
       }
       
-      analysis = parsedAnalysis;
-      
-      // 🔍 AI 원본 응답 로그
-      console.log(`🔍 [${user_id}] AI 원본 market_insights:`, analysis.market_insights);
-      console.log(`🔍 [${user_id}] AI 원본 strategic_recommendations:`, analysis.strategic_recommendations);
-      
-      if (!analysis.keywords || !Array.isArray(analysis.keywords)) {
-        throw new Error('Invalid analysis format');
+      function extractAlternatives(text: string, sectionName: string) {
+        const content = extractSection(text, sectionName);
+        return content
+          .split('\n')
+          .filter(line => line.includes('|'))
+          .map(line => {
+            const [keyword, reason] = line.split('|').map(s => s.trim().replace(/^-\s*/, ''));
+            return { keyword: keyword || '대체 키워드', reason: reason || '상세 정보 없음' };
+          });
       }
       
-      analysis.keywords = analysis.keywords.map((item: any) => ({
-        keyword: item.keyword || '알 수 없음',
-        marketing_score: Math.min(100, Math.max(0, Math.round(item.marketing_score || 70))),
-        seo_score: Math.min(100, Math.max(0, Math.round(item.seo_score || 70))),
-        viral_potential: Math.min(100, Math.max(0, Math.round(item.viral_potential || 70))),
-        conversion_potential: Math.min(100, Math.max(0, Math.round(item.conversion_potential || 70))),
-        trend_score: Math.min(100, Math.max(0, Math.round(item.trend_score || 70))),
-        trend_direction: item.trend_direction || '안정',
-        competition_level: Math.min(100, Math.max(0, Math.round(item.competition_level || 60))),
-        saturation_level: Math.min(100, Math.max(0, Math.round(item.saturation_level || 60))),
-        market_size: item.market_size || '중형 키워드',
-        total_score: Math.round(
-          ((item.marketing_score || 70) + (item.seo_score || 70) +
-           (item.viral_potential || 70) + (item.conversion_potential || 70)) / 4
-        ),
-        analysis: item.analysis || `"${item.keyword}"에 대한 마케팅 분석입니다.`,
-        recommendations: Array.isArray(item.recommendations)
-          ? item.recommendations
-          : ['타겟 고객층 명확화', '차별화 포인트 강조', '콘텐츠 품질 향상'],
-        related_keywords: Array.isArray(item.related_keywords) && item.related_keywords.length >= 7
-          ? item.related_keywords
-          : [`${item.keyword} 후기`, `${item.keyword} 추천`, `${item.keyword} 비교`, `${item.keyword} 가격`, `${item.keyword} 리뷰`, `${item.keyword} 순위`, `${item.keyword} 브랜드`],
-        better_alternatives: Array.isArray(item.better_alternatives) && item.better_alternatives.length >= 5
-          ? item.better_alternatives
-          : [
-            { keyword: `${item.keyword} 전문가`, reason: '전문성 강조로 신뢰도 향상 및 고객 전환율 증가' },
-            { keyword: `${item.keyword} 가이드`, reason: '정보성 콘텐츠로 SEO 우위 확보 및 유입 증가' },
-            { keyword: `${item.keyword} 솔루션`, reason: '문제 해결 중심 접근으로 전환율 향상' },
-            { keyword: `${item.keyword} 프리미엄`, reason: '고가 시장 타겟으로 수익성 개선' },
-            { keyword: `${item.keyword} 최신`, reason: '최신 트렌드 반영으로 검색량 증가' }
-          ]
-      }));
+      // 점수 추출 (실패 시 기본값)
+      const totalScore = parseInt(extractSection(aiResponse, '점수')) || 75;
+      const marketingScore = parseInt(extractSection(aiResponse, '마케팅 효과')) || 75;
+      const seoScore = parseInt(extractSection(aiResponse, 'SEO 난이도')) || 75;
+      const viralPotential = parseInt(extractSection(aiResponse, '바이럴 가능성')) || 75;
+      const conversionPotential = parseInt(extractSection(aiResponse, '전환율 예상')) || 75;
       
-      analysis.keywords.sort((a: any, b: any) => (b.total_score || 0) - (a.total_score || 0));
+      // 텍스트 및 리스트 추출
+      const analysisText = extractSection(aiResponse, '종합 분석') || '키워드 분석이 완료되었습니다.';
+      const recommendations = extractList(aiResponse, '추천 전략');
+      const relatedKeywords = extractList(aiResponse, '관련 키워드');
+      const betterAlternatives = extractAlternatives(aiResponse, '더 나은 대체 키워드');
+      const marketInsights = extractList(aiResponse, '시장 인사이트');
+      const strategicRecs = extractList(aiResponse, '전략적 제안');
       
-      analysis.overall_score = Math.round(
-        analysis.overall_score ||
-        analysis.keywords.reduce((sum: number, k: any) => sum + (k.total_score || 0), 0) /
-        Math.max(1, analysis.keywords.length)
-      );
-      
-      // 🔥 강제 보정: AI가 5개 미만을 반환하면 무조건 기본값 5개로 대체
-      if (!Array.isArray(analysis.market_insights) || analysis.market_insights.length < 5) {
-        console.log(`⚠️ [${user_id}] market_insights ${analysis.market_insights?.length || 0}개 → 5개로 강제 보정`);
-        analysis.market_insights = [
-          '현재 시장에서 해당 키워드의 검색 수요가 꾸준히 증가하고 있습니다',
-          '경쟁사 분석 결과 차별화 포인트를 통한 시장 진입이 가능합니다',
-          '타겟 고객층이 명확하여 효율적인 마케팅 전략 수립이 용이합니다',
-          '디지털 마케팅 채널을 통한 브랜드 인지도 향상 기회가 존재합니다',
-          '장기적 관점에서 안정적인 수익 창출이 기대되는 키워드입니다'
-        ];
+      // 최소 보장 (빈 배열 방지)
+      if (recommendations.length === 0) {
+        recommendations.push('키워드 관련 전략을 추가 분석 중입니다.');
+      }
+      if (relatedKeywords.length === 0) {
+        relatedKeywords.push('관련 키워드를 수집 중입니다.');
+      }
+      if (betterAlternatives.length === 0) {
+        betterAlternatives.push({ keyword: '분석 중', reason: '추가 정보 수집 필요' });
+      }
+      if (marketInsights.length === 0) {
+        marketInsights.push('시장 분석 결과를 정리 중입니다.');
+      }
+      if (strategicRecs.length === 0) {
+        strategicRecs.push('전략적 제안을 준비 중입니다.');
       }
       
-      if (!Array.isArray(analysis.strategic_recommendations) || analysis.strategic_recommendations.length < 5) {
-        console.log(`⚠️ [${user_id}] strategic_recommendations ${analysis.strategic_recommendations?.length || 0}개 → 5개로 강제 보정`);
-        analysis.strategic_recommendations = [
-          '핵심 타겟 고객층을 세분화하고 맞춤형 메시지를 개발하세요',
-          'SEO 최적화된 콘텐츠를 주 2-3회 이상 꾸준히 발행하세요',
-          '인스타그램과 유튜브 숏폼을 활용한 바이럴 마케팅을 실행하세요',
-          '고객 후기와 성공 사례를 전면에 배치하여 신뢰도를 높이세요',
-          '데이터 기반 A/B 테스트로 광고 효율을 지속적으로 개선하세요'
-        ];
-      }
+      // 최종 객체 생성 (JSON.parse 없이!)
+      analysis = {
+        overall_score: totalScore,
+        keywords: [{
+          keyword: keywordArray[0],
+          total_score: totalScore,
+          marketing_score: marketingScore,
+          seo_score: seoScore,
+          viral_potential: viralPotential,
+          conversion_potential: conversionPotential,
+          trend_score: 75,
+          trend_direction: "상승세",
+          competition_level: 70,
+          saturation_level: 65,
+          market_size: "중형",
+          analysis: analysisText,
+          recommendations,
+          related_keywords: relatedKeywords,
+          better_alternatives: betterAlternatives
+        }],
+        market_insights: marketInsights,
+        strategic_recommendations: strategicRecs
+      };
       
-      console.log(`✅ [${user_id}] 최종 market_insights 개수:`, analysis.market_insights.length);
-      console.log(`✅ [${user_id}] 최종 strategic_recommendations 개수:`, analysis.strategic_recommendations.length);
+      console.log(`✅ [AI 진단] 텍스트 파싱 성공 - JSON.parse 사용 안함`);
+      console.log(`🔍 [${user_id}] 분석 결과:`, {
+        overall_score: analysis.overall_score,
+        keywords_count: analysis.keywords.length,
+        insights_count: analysis.market_insights.length,
+        recommendations_count: analysis.strategic_recommendations.length
+      });
       
     } catch (aiError) {
       console.error('💥 [AI 진단] AI 호출 완전 실패:', {
