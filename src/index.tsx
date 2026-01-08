@@ -2605,15 +2605,58 @@ app.post('/api/analyze-keywords-quality', async (c) => {
       
       console.log(`✅ [AI 진단] JSON 매칭 성공 - 길이: ${jsonMatch[0].length}자`);
       
-      // 3. JSON 파싱
+      // 3. JSON 파싱 (다단계 복구 시도)
+      let parsedAnalysis: any = null;
+      
+      // 3-1. 기본 파싱 시도
       try {
-        analysis = JSON.parse(jsonMatch[0]);
-        console.log(`✅ [AI 진단] JSON 파싱 성공 - market_insights: ${analysis.market_insights?.length || 0}개`);
-      } catch (parseError) {
-        console.error(`❌ [AI 진단] JSON 파싱 오류:`, parseError);
-        console.error(`📄 [AI 진단] 파싱 시도한 JSON:`, jsonMatch[0].substring(0, 500));
-        throw new Error(`JSON 파싱 실패: ${(parseError as Error).message}`);
+        parsedAnalysis = JSON.parse(jsonMatch[0]);
+        console.log(`✅ [AI 진단] JSON 파싱 성공 (1차 시도) - market_insights: ${parsedAnalysis.market_insights?.length || 0}개`);
+      } catch (parseError1) {
+        console.warn(`⚠️ [AI 진단] 1차 파싱 실패:`, (parseError1 as Error).message);
+        
+        // 3-2. JSON 자동 수정 시도
+        try {
+          let fixedJson = jsonMatch[0];
+          
+          // 수정 1: 이스케이프되지 않은 따옴표 처리
+          fixedJson = fixedJson.replace(/(?<!\\)"(?=[^,\]\}\:"])/g, '\\"');
+          
+          // 수정 2: 배열/객체 마지막 쉼표 제거
+          fixedJson = fixedJson.replace(/,(\s*[\]\}])/g, '$1');
+          
+          // 수정 3: 누락된 배열 요소 간 쉼표 추가 (매우 보수적)
+          // "text1" "text2" → "text1", "text2"
+          fixedJson = fixedJson.replace(/"(\s*)"(?=[^\:\,\]\}])/g, '", "');
+          
+          console.log(`🔧 [AI 진단] JSON 자동 수정 시도 (2차)...`);
+          parsedAnalysis = JSON.parse(fixedJson);
+          console.log(`✅ [AI 진단] JSON 파싱 성공 (2차 자동 수정) - market_insights: ${parsedAnalysis.market_insights?.length || 0}개`);
+        } catch (parseError2) {
+          console.warn(`⚠️ [AI 진단] 2차 파싱 실패:`, (parseError2 as Error).message);
+          
+          // 3-3. 마지막 완전한 객체까지만 파싱 시도
+          try {
+            const lastBrace = jsonMatch[0].lastIndexOf('}');
+            if (lastBrace > 0) {
+              const truncated = jsonMatch[0].substring(0, lastBrace + 1);
+              console.log(`🔧 [AI 진단] 불완전한 JSON 잘라내기 시도 (3차)...`);
+              parsedAnalysis = JSON.parse(truncated);
+              console.log(`✅ [AI 진단] JSON 파싱 성공 (3차 잘라내기) - market_insights: ${parsedAnalysis.market_insights?.length || 0}개`);
+            } else {
+              throw new Error('마지막 중괄호를 찾을 수 없음');
+            }
+          } catch (parseError3) {
+            // 3-4. 완전 실패 - 상세 에러 로깅
+            console.error(`❌ [AI 진단] JSON 파싱 완전 실패 (1-3차 모두 실패)`);
+            console.error(`📄 [AI 진단] 원본 JSON 첫 1000자:`, jsonMatch[0].substring(0, 1000));
+            console.error(`📄 [AI 진단] 원본 JSON 마지막 500자:`, jsonMatch[0].substring(jsonMatch[0].length - 500));
+            throw new Error(`JSON 파싱 실패: ${(parseError1 as Error).message}`);
+          }
+        }
       }
+      
+      analysis = parsedAnalysis;
       
       // 🔍 AI 원본 응답 로그
       console.log(`🔍 [${user_id}] AI 원본 market_insights:`, analysis.market_insights);
