@@ -418,6 +418,14 @@ async function analyzeKeywordsQuality() {
       // 에러 처리
       if (response.status === 402) {
         showCreditShortageModal(data.cost_info);
+      } else if (response.status === 503 && data.error_code === 'AI_UNAVAILABLE') {
+        // ✅ AI 서비스 장애 전용 모달
+        showAIFailureModal({
+          message: data.error,
+          detail: data.error_detail,
+          retry_after: data.retry_after,
+          keywords: data.keywords
+        });
       } else {
         if (typeof window.showToast === 'function') {
           window.showToast('❌ 분석 실패: ' + data.error, 'error');
@@ -959,5 +967,63 @@ document.addEventListener('DOMContentLoaded', async () => {
 window.analyzeKeywordsQuality = analyzeKeywordsQuality;
 window.setKeywordSample = setKeywordSample;
 window.showKeywordQualityModal = showKeywordQualityModal;
+
+// ✅ AI 서비스 장애 모달 추가
+function showAIFailureModal({ message, detail, retry_after, keywords }) {
+  const modalHTML = `
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" 
+         onclick="this.remove()">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6" 
+           onclick="event.stopPropagation()">
+        <div class="text-center">
+          <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+            <svg class="h-10 w-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+          </div>
+          
+          <h3 class="text-xl font-bold text-gray-900 mb-2">
+            ⚠️ AI 분석 서비스 일시 중단
+          </h3>
+          
+          <p class="text-gray-600 mb-4">${message}</p>
+          
+          <div class="bg-gray-50 rounded-lg p-4 mb-4 text-left">
+            <p class="text-sm text-gray-700 mb-2">
+              <strong>오류 상세:</strong><br>
+              ${detail}
+            </p>
+            <p class="text-sm text-gray-700">
+              <strong>입력 키워드:</strong><br>
+              ${keywords.join(', ')}
+            </p>
+          </div>
+          
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+            <p class="text-sm text-green-800">
+              ✅ <strong>크레딧은 차감되지 않았습니다</strong>
+            </p>
+          </div>
+          
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <p class="text-sm text-blue-800">
+              💡 <strong>${Math.floor(retry_after / 60)}분 후 다시 시도해주세요</strong>
+            </p>
+          </div>
+          
+          <button onclick="this.closest('.fixed').remove()"
+                  class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+window.showAIFailureModal = showAIFailureModal;
 // 함수는 copyAnalysisResult로 변경되었고 inline onclick으로 직접 호출됨
 window.loadKeywordCreditStatus = loadKeywordCreditStatus;

@@ -2663,60 +2663,17 @@ app.post('/api/analyze-keywords-quality', async (c) => {
         timestamp: new Date().toISOString()
       });
       
-      // 🔥 키워드 기반 동적 폴백 생성
-      const mainKeyword = keywordArray[0];
-      
-      const trendDirections = ['상승세', '안정', '하락세'];
-      const marketSizes = ['대형 키워드', '중형 키워드', '소형 키워드'];
-      
-      analysis = {
-        keywords: keywordArray.map((keyword: string) => {
-          const baseScore = 65 + Math.random() * 25;
-          const marketing = Math.round(baseScore + (Math.random() * 10 - 5));
-          const seo = Math.round(baseScore + (Math.random() * 10 - 5));
-          const viral = Math.round(baseScore + (Math.random() * 10 - 5));
-          const conversion = Math.round(baseScore + (Math.random() * 10 - 5));
-          
-          return {
-            keyword,
-            marketing_score: Math.min(100, Math.max(0, marketing)),
-            seo_score: Math.min(100, Math.max(0, seo)),
-            viral_potential: Math.min(100, Math.max(0, viral)),
-            conversion_potential: Math.min(100, Math.max(0, conversion)),
-            trend_score: Math.round(60 + Math.random() * 30),
-            trend_direction: trendDirections[Math.floor(Math.random() * trendDirections.length)],
-            competition_level: Math.round(50 + Math.random() * 40),
-            saturation_level: Math.round(50 + Math.random() * 40),
-            market_size: marketSizes[Math.floor(Math.random() * marketSizes.length)],
-            total_score: Math.round((marketing + seo + viral + conversion) / 4),
-            analysis: `"${keyword}"는 마케팅 활용 가능한 키워드입니다. 타겟 고객층 정의와 차별화 전략이 필요합니다.`,
-            recommendations: ['타겟 고객층 명확화', '차별화 포인트 강조', '콘텐츠 품질 향상'],
-            related_keywords: [`${keyword} 후기`, `${keyword} 추천`, `${keyword} 비교`, `${keyword} 가격`, `${keyword} 리뷰`],
-            better_alternatives: [
-              { keyword: `${keyword} 전문가`, reason: '전문성 강조로 신뢰도 향상' },
-              { keyword: `${keyword} 가이드`, reason: '정보성 콘텐츠로 SEO 유리' },
-              { keyword: `${keyword} 솔루션`, reason: '문제 해결 중심으로 전환율 향상' }
-            ]
-          };
-        }),
-        overall_score: Math.round(70 + Math.random() * 15),
-        // 🔥 키워드 맞춤형 인사이트
-        market_insights: [
-          `"${mainKeyword}" 시장은 최근 디지털 전환으로 새로운 성장 기회가 창출되고 있습니다`,
-          `"${mainKeyword}" 관련 검색량이 전년 대비 꾸준한 상승세를 보이고 있어 시장 잠재력이 확인됩니다`,
-          `"${mainKeyword}" 타겟 고객층의 온라인 구매 패턴 변화가 새로운 마케팅 전략을 요구합니다`,
-          `"${mainKeyword}" 경쟁 구도 분석 결과 차별화 포인트 발굴을 통한 시장 진입이 가능합니다`,
-          `"${mainKeyword}" 관련 콘텐츠 마케팅을 통한 브랜드 인지도 향상 잠재력이 높은 것으로 분석됩니다`
-        ],
-        // 🔥 키워드 맞춤형 전략
-        strategic_recommendations: [
-          `"${mainKeyword}" 특화 콘텐츠를 주 2-3회 발행하여 해당 분야 전문성을 구축하세요`,
-          `"${mainKeyword}" 관련 온라인 커뮤니티에서 정보를 공유하며 신뢰도를 높이세요`,
-          `"${mainKeyword}" 롱테일 키워드를 활용한 SEO 전략으로 자연 유입을 확대하세요`,
-          `"${mainKeyword}" 고객 후기와 성공 사례를 적극 활용하여 전환율을 높이세요`,
-          `"${mainKeyword}" 관련 데이터 분석을 통해 고객 니즈에 맞춘 마케팅을 실행하세요`
-        ]
-      };
+      // ✅ 템플릿 폴백 제거 - 정직한 에러 반환
+      return c.json({
+        success: false,
+        error: 'AI 분석 서비스가 일시적으로 이용 불가합니다',
+        error_code: 'AI_UNAVAILABLE',
+        error_detail: `AI 연결 실패: ${(aiError as Error).message}`,
+        retry_after: 300, // 5분 후 재시도 권장
+        keywords: keywordArray // 입력 키워드 반환
+      }, { 
+        status: 503 // Service Unavailable
+      });
     }
     
     // 캐싱 및 히스토리 저장
