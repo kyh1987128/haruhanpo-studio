@@ -499,13 +499,19 @@ ${params.imageDescription}
 export function getYoutubeLongformPrompt(params: PromptParams): string {
   return `당신은 유튜브 롱폼 영상 시나리오 전문가입니다.
 
-브랜드: ${params.brand}
-키워드: ${params.keywords}
-산업: ${params.industry}
-톤앤매너: ${params.tone}
-타겟: ${params.targetAge}
+【브랜드 정보】
+- 브랜드/상호명: ${params.brand}
+${params.companyName ? `- 회사명: ${params.companyName}` : ''}
+- 핵심 키워드: ${params.keywords}
+- 산업 분야: ${params.industry}
+${params.location ? `- 위치: ${params.location}` : ''}
+- 톤앤매너: ${params.tone}
+- 타겟: ${params.targetAge} ${params.targetGender || ''}
+${params.website ? `- 웹사이트: ${params.website}` : ''}
+${params.sns ? `- SNS: ${params.sns}` : ''}
+${params.contact ? `- 연락처: ${params.contact}` : ''}
 
-이미지 설명:
+【제공된 이미지 분석】
 ${params.imageDescription}
 
 **유튜브 롱폼 특성:**
@@ -516,9 +522,20 @@ ${params.imageDescription}
 
 작성 요구사항:
 1. 인트로 (0-30초): 강력한 훅
+   - **키워드 "${params.keywords}"를 명확히 제시**
+   - 이미지의 핵심 요소로 시청자 주목
+   
 2. 본문 (1-10분): 3-5개 챕터로 구성
+   - **브랜드 "${params.brand}" 스토리 전개**
+   - 키워드와 이미지를 자연스럽게 연결
+   - ${params.tone} 톤으로 ${params.targetAge} 타겟 설득
+   
 3. 아웃트로 (30초): CTA + 구독 유도
-4. 이미지 기반 스토리 전개
+   ${params.website ? `- 웹사이트 방문: ${params.website}` : ''}
+   ${params.sns ? `- SNS 팔로우: ${params.sns}` : ''}
+   ${params.contact ? `- 문의: ${params.contact}` : ''}
+   
+4. 이미지와 키워드를 균형있게 활용
 5. 타임스탬프 포함
 
 출력 형식:
@@ -548,13 +565,19 @@ ${params.imageDescription}
 export function getShortformPrompt(params: PromptParams): string {
   return `당신은 숏폼 영상 통합 전문가입니다 (틱톡, 인스타 릴스, 유튜브 쇼츠).
 
-브랜드: ${params.brand}
-키워드: ${params.keywords}
-산업: ${params.industry}
-톤앤매너: ${params.tone}
-타겟: ${params.targetAge}
+【브랜드 정보】
+- 브랜드/상호명: ${params.brand}
+${params.companyName ? `- 회사명: ${params.companyName}` : ''}
+- 핵심 키워드: ${params.keywords}
+- 산업 분야: ${params.industry}
+${params.location ? `- 위치: ${params.location}` : ''}
+- 톤앤매너: ${params.tone}
+- 타겟: ${params.targetAge} ${params.targetGender || ''}
+${params.website ? `- 웹사이트: ${params.website}` : ''}
+${params.sns ? `- SNS: ${params.sns}` : ''}
+${params.contact ? `- 연락처: ${params.contact}` : ''}
 
-이미지 설명:
+【제공된 이미지 분석】
 ${params.imageDescription}
 
 **숏폼 통합 특성:**
@@ -566,8 +589,19 @@ ${params.imageDescription}
 
 작성 요구사항:
 1. 훅 (0-3초): 강렬한 시작
-2. 전개 (3-45초): 이미지 기반 메인 메시지
+   - **키워드 "${params.keywords}"를 자연스럽게 활용**
+   - 이미지의 가장 인상적인 요소로 시작
+   
+2. 전개 (3-45초): 핵심 메시지 전달
+   - **브랜드 "${params.brand}" 특징 강조**
+   - 키워드와 이미지를 자연스럽게 연결
+   - ${params.tone} 톤으로 ${params.targetAge} 공감 유도
+   
 3. 마무리 (45-60초): CTA
+   - **명확한 행동 유도** ${params.website ? `(웹사이트 방문: ${params.website})` : ''}
+   ${params.sns ? `- SNS 팔로우 유도: ${params.sns}` : ''}
+   ${params.contact ? `- 문의 유도: ${params.contact}` : ''}
+
 4. 각 플랫폼별 최적화 팁 포함
 5. 듀엣/스티치/리믹스 가능성 고려
 
@@ -579,21 +613,26 @@ ${params.imageDescription}
 ⏱️ 타임라인:
 
 00-03초: [강렬한 훅]
+- 키워드 "${params.keywords}" 자연스럽게 언급
 - 이미지 포인트: [첫 인상]
 
 03-15초: [메인 메시지]
+- 브랜드 "${params.brand}" 핵심 특징
 - 이미지 활용: [핵심 내용]
 
 15-45초: [상세 전개]
-- 이미지 기반 스토리
+- ${params.targetAge} 타겟 맞춤 스토리
+- 이미지와 키워드 연결
 
 45-60초: [CTA]
-- 행동 유도
+${params.website ? `- 웹사이트: ${params.website}` : ''}
+${params.sns ? `- SNS: ${params.sns}` : ''}
+${params.contact ? `- 연락처: ${params.contact}` : ''}
 
 ━━━━━━━━━━━━━━━━
 🎵 추천 사운드: [트렌드 사운드]
-🏷️ 해시태그: 5-8개 (플랫폼별)
-💬 캡션: 100자 이내
+🏷️ 해시태그: #${params.keywords.split(',')[0] || params.brand} + 4-7개 추가
+💬 캡션: "${params.brand}" + 키워드 포함 100자
 
 📊 플랫폼별 최적화:
 - 틱톡: [듀엣/스티치 포인트]
@@ -605,13 +644,18 @@ ${params.imageDescription}
 export function getMetadataPrompt(params: PromptParams): string {
   return `당신은 유튜브 메타데이터 생성 전문가입니다.
 
-브랜드: ${params.brand}
-키워드: ${params.keywords}
-산업: ${params.industry}
-톤앤매너: ${params.tone}
-타겟: ${params.targetAge}
+【브랜드 정보】
+- 브랜드/상호명: ${params.brand}
+${params.companyName ? `- 회사명: ${params.companyName}` : ''}
+- 핵심 키워드: ${params.keywords}
+- 산업 분야: ${params.industry}
+${params.location ? `- 위치: ${params.location}` : ''}
+- 톤앤매너: ${params.tone}
+- 타겟: ${params.targetAge} ${params.targetGender || ''}
+${params.website ? `- 웹사이트: ${params.website}` : ''}
+${params.sns ? `- SNS: ${params.sns}` : ''}
 
-이미지 설명:
+【제공된 이미지 분석】
 ${params.imageDescription}
 
 **메타데이터 생성 목표:**
@@ -622,16 +666,15 @@ ${params.imageDescription}
 작성 요구사항:
 
 1. 썸네일 전략
-- 이미지 기반 썸네일 구성
-- 텍스트 오버레이 3가지 버전
-- 색상 팔레트 제안
+- **제공된 이미지를 베이스로 썸네일 구성**
+- **텍스트 오버레이**: "${params.brand}" 또는 "${params.keywords}" 활용
+- 색상 팔레트: 브랜드 톤 반영
 - 얼굴/배경/그래픽 배치
 
-2. 제목 최적화
-- SEO형 (키워드 우선)
-- CTR형 (클릭 유도)
-- 바이럴형 (호기심 자극)
-- 각 60자 이내
+2. 제목 최적화 (반드시 키워드 포함)
+- SEO형: "${params.keywords}" + [추가 키워드] (60자)
+- CTR형: [호기심] + "${params.brand}" (60자)
+- 바이럴형: [숫자/놀람] + "${params.keywords}" (60자)
 
 3. 설명 (Description)
 - 첫 3줄: 핵심 요약

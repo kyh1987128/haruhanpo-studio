@@ -662,8 +662,8 @@ app.post('/api/generate', async (c) => {
       if (platformCount === 0) return 0;
       if (platformCount === 1) return 1;
       if (platformCount <= 3) return 2;    // 2-3개: 2크레딧
-      if (platformCount <= 6) return 4;    // 4-6개: 4크레딧
-      return 4;                            // 7-9개: 4크레딧 (최대 할인)
+      if (platformCount <= 9) return 4;    // 4-9개: 4크레딧
+      return 5;                            // 10-13개: 5크레딧 ✅
     };
     
     const requiredCredits = calculateRequiredCredits(platforms.length);
