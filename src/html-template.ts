@@ -1641,7 +1641,7 @@ export const htmlTemplate = `
 
     <script src="/static/i18n.js?v=14.0.0"></script>
     <script src="/static/app-v3-final.js?v=14.0.0"></script>
-    <script src="/static/keyword-analysis.js?v=14.2.0"></script>
+    <script src="/static/keyword-analysis.js?v=14.2.1"></script>
     <script src="/static/keyword-extended.js?v=14.0.0"></script>
     </div><!-- max-w-7xl container -->
 </body>

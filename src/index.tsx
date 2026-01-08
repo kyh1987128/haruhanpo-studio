@@ -2565,9 +2565,18 @@ app.post('/api/analyze-keywords-quality', async (c) => {
       }
       
       console.log(`✅ [AI 진단] AI 응답 성공 - 길이: ${aiResponse.length}자`);
+      console.log(`📄 [AI 진단] AI 응답 원본 (첫 500자):`, aiResponse.substring(0, 500));
       
       const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-      analysis = JSON.parse(jsonMatch ? jsonMatch[0] : aiResponse);
+      
+      if (!jsonMatch) {
+        console.error(`❌ [AI 진단] JSON 매칭 실패 - AI 응답이 JSON 형식이 아님`);
+        throw new Error('AI 응답이 JSON 형식이 아닙니다');
+      }
+      
+      console.log(`✅ [AI 진단] JSON 매칭 성공 - 길이: ${jsonMatch[0].length}자`);
+      
+      analysis = JSON.parse(jsonMatch[0]);
       
       console.log(`✅ [AI 진단] JSON 파싱 성공 - market_insights: ${analysis.market_insights?.length || 0}개`);
       
