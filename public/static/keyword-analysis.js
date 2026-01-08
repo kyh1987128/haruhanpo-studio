@@ -406,6 +406,11 @@ async function analyzeKeywordsQuality() {
       // 분석 결과를 전역 변수에 저장 (보관 기능용)
       window.lastAnalysisResult = data.analysis;
       
+      // 🔍 디버깅: API 응답 확인
+      console.log('🔍 [프론트] API 응답 analysis:', data.analysis);
+      console.log('🔍 [프론트] market_insights:', data.analysis.market_insights);
+      console.log('🔍 [프론트] strategic_recommendations:', data.analysis.strategic_recommendations);
+      
       // 분석 결과 모달 표시
       showKeywordQualityModal(data.analysis, data.cached);
       
