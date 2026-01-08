@@ -2080,6 +2080,7 @@ async function handleGenerate() {
     images: content.images.map((img) => img.base64),
     platforms,
     aiModel: 'gpt-4o',
+    customPrompt: getSelectedTemplateContent(), // ✅ 추가: 사용자 템플릿
   };
 
   // 재시도용 저장
@@ -5186,6 +5187,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+// 선택된 템플릿 가져오기 (향후 UI 연동용)
+function getSelectedTemplateContent() {
+  // TODO: 템플릿 선택 드롭다운 UI 추가 후 실제 선택 로직 구현
+  // 현재는 null 반환 (기본 템플릿 사용)
+  return null;
+}
 
 // ===================================
 // 템플릿 저장 기능

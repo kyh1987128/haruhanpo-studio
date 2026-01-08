@@ -368,6 +368,7 @@ app.post('/api/generate', async (c) => {
       aiModel = 'gpt-4o', // AI 모델 선택 (기본값: gpt-4o)
       apiKey, // 클라이언트에서 전달받은 API 키
       forceGenerate = false, // 검증 우회 플래그
+      customPrompt, // ✅ 추가: 사용자 커스텀 템플릿
     } = body;
 
     // 입력 검증
@@ -801,12 +802,36 @@ app.post('/api/generate', async (c) => {
     // 🚀 하이브리드 전략 적용
     const generationTasks = [];
     let totalCost = { openai: 0, gemini: 0 };
+    
+    // ✅ 커스텀 템플릿 처리 함수
+    const getPromptForPlatform = (platform: string) => {
+      // 1️⃣ 사용자 템플릿 우선 (customPrompt가 있고 유효한 경우)
+      if (customPrompt && customPrompt.length > 100) {
+        console.log(`  💾 사용자 템플릿 사용 (${platform}): ${customPrompt.substring(0, 50)}...`);
+        return customPrompt;
+      }
+      
+      // 2️⃣ 기본 템플릿 사용
+      switch (platform) {
+        case 'blog': return getBlogPrompt(promptParams);
+        case 'instagram': return getInstagramPrompt(promptParams);
+        case 'instagram_feed': return getInstagramFeedPrompt(promptParams);
+        case 'threads': return getThreadsPrompt(promptParams);
+        case 'youtube':
+        case 'youtube_shorts': return getYouTubePrompt(promptParams);
+        case 'youtube_longform': return getYoutubeLongformPrompt(promptParams);
+        case 'shortform_multi':
+        case 'tiktok':
+        case 'instagram_reels': return getShortformPrompt(promptParams);
+        default: return getBlogPrompt(promptParams);
+      }
+    };
 
     // 블로그: GPT-4o 사용 (최고 품질 필요)
     if (platforms.includes('blog')) {
       console.log('  📝 블로그: GPT-4o (최고 품질)');
       generationTasks.push(
-        generateContent(openai, 'blog', getBlogPrompt(promptParams), aiModel).then(result => {
+        generateContent(openai, 'blog', getPromptForPlatform('blog'), aiModel).then(result => {
           totalCost.openai += 0.052; // 약 52원
           return result;
         })
@@ -818,14 +843,14 @@ app.post('/api/generate', async (c) => {
       if (geminiApiKey) {
         console.log('  📷 인스타그램: Gemini Flash (70% 절감)');
         generationTasks.push(
-          generateContentWithGemini(geminiApiKey, getInstagramPrompt(promptParams))
+          generateContentWithGemini(geminiApiKey, getPromptForPlatform('instagram'))
             .then(content => {
               totalCost.gemini += 0.010; // 약 10원
               return { platform: 'instagram', content };
             })
         );
       } else {
-        generationTasks.push(generateContent(openai, 'instagram', getInstagramPrompt(promptParams), aiModel));
+        generationTasks.push(generateContent(openai, 'instagram', getPromptForPlatform('instagram'), aiModel));
       }
     }
     
@@ -834,14 +859,14 @@ app.post('/api/generate', async (c) => {
       if (geminiApiKey) {
         console.log('  📷 인스타그램 피드: Gemini Flash');
         generationTasks.push(
-          generateContentWithGemini(geminiApiKey, getInstagramFeedPrompt(promptParams))
+          generateContentWithGemini(geminiApiKey, getPromptForPlatform('instagram_feed'))
             .then(content => {
               totalCost.gemini += 0.010;
               return { platform: 'instagram_feed', content };
             })
         );
       } else {
-        generationTasks.push(generateContent(openai, 'instagram_feed', getInstagramFeedPrompt(promptParams), aiModel));
+        generationTasks.push(generateContent(openai, 'instagram_feed', getPromptForPlatform('instagram_feed'), aiModel));
       }
     }
 
@@ -850,14 +875,14 @@ app.post('/api/generate', async (c) => {
       if (geminiApiKey) {
         console.log('  🧵 스레드: Gemini Flash (70% 절감)');
         generationTasks.push(
-          generateContentWithGemini(geminiApiKey, getThreadsPrompt(promptParams))
+          generateContentWithGemini(geminiApiKey, getPromptForPlatform('threads'))
             .then(content => {
               totalCost.gemini += 0.006; // 약 6원
               return { platform: 'threads', content };
             })
         );
       } else {
-        generationTasks.push(generateContent(openai, 'threads', getThreadsPrompt(promptParams), aiModel));
+        generationTasks.push(generateContent(openai, 'threads', getPromptForPlatform('threads'), aiModel));
       }
     }
 
@@ -866,14 +891,14 @@ app.post('/api/generate', async (c) => {
       if (geminiApiKey) {
         console.log('  🎬 유튜브 숏폼: Gemini Flash (70% 절감)');
         generationTasks.push(
-          generateContentWithGemini(geminiApiKey, getYouTubePrompt(promptParams))
+          generateContentWithGemini(geminiApiKey, getPromptForPlatform('youtube_shorts'))
             .then(content => {
               totalCost.gemini += 0.023; // 약 23원
               return { platform: 'youtube_shorts', content };
             })
         );
       } else {
-        generationTasks.push(generateContent(openai, 'youtube_shorts', getYouTubePrompt(promptParams), aiModel));
+        generationTasks.push(generateContent(openai, 'youtube_shorts', getPromptForPlatform('youtube_shorts'), aiModel));
       }
     }
     
@@ -882,14 +907,14 @@ app.post('/api/generate', async (c) => {
       if (geminiApiKey) {
         console.log('  🎥 유튜브 롱폼: Gemini Flash (70% 절감)');
         generationTasks.push(
-          generateContentWithGemini(geminiApiKey, getYoutubeLongformPrompt(promptParams))
+          generateContentWithGemini(geminiApiKey, getPromptForPlatform('youtube_longform'))
             .then(content => {
               totalCost.gemini += 0.023;
               return { platform: 'youtube_longform', content };
             })
         );
       } else {
-        generationTasks.push(generateContent(openai, 'youtube_longform', getYoutubeLongformPrompt(promptParams), aiModel));
+        generationTasks.push(generateContent(openai, 'youtube_longform', getPromptForPlatform('youtube_longform'), aiModel));
       }
     }
     
@@ -898,14 +923,14 @@ app.post('/api/generate', async (c) => {
       if (geminiApiKey) {
         console.log('  📱 숏폼 멀티: Gemini Flash (70% 절감)');
         generationTasks.push(
-          generateContentWithGemini(geminiApiKey, getShortformPrompt(promptParams))
+          generateContentWithGemini(geminiApiKey, getPromptForPlatform('shortform_multi'))
             .then(content => {
               totalCost.gemini += 0.023;
               return { platform: 'shortform_multi', content };
             })
         );
       } else {
-        generationTasks.push(generateContent(openai, 'shortform_multi', getShortformPrompt(promptParams), aiModel));
+        generationTasks.push(generateContent(openai, 'shortform_multi', getPromptForPlatform('shortform_multi'), aiModel));
       }
     }
     
@@ -914,14 +939,14 @@ app.post('/api/generate', async (c) => {
       if (geminiApiKey) {
         console.log('  🎵 틱톡: Gemini Flash (70% 절감)');
         generationTasks.push(
-          generateContentWithGemini(geminiApiKey, getShortformPrompt(promptParams))
+          generateContentWithGemini(geminiApiKey, getPromptForPlatform('tiktok'))
             .then(content => {
               totalCost.gemini += 0.023;
               return { platform: 'tiktok', content };
             })
         );
       } else {
-        generationTasks.push(generateContent(openai, 'tiktok', getShortformPrompt(promptParams), aiModel));
+        generationTasks.push(generateContent(openai, 'tiktok', getPromptForPlatform('tiktok'), aiModel));
       }
     }
     
@@ -930,14 +955,14 @@ app.post('/api/generate', async (c) => {
       if (geminiApiKey) {
         console.log('  🎬 인스타그램 릴스: Gemini Flash (70% 절감)');
         generationTasks.push(
-          generateContentWithGemini(geminiApiKey, getShortformPrompt(promptParams))
+          generateContentWithGemini(geminiApiKey, getPromptForPlatform('instagram_reels'))
             .then(content => {
               totalCost.gemini += 0.023;
               return { platform: 'instagram_reels', content };
             })
         );
       } else {
-        generationTasks.push(generateContent(openai, 'instagram_reels', getShortformPrompt(promptParams), aiModel));
+        generationTasks.push(generateContent(openai, 'instagram_reels', getPromptForPlatform('instagram_reels'), aiModel));
       }
     }
     
