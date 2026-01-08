@@ -1646,7 +1646,7 @@ function updateCostEstimate() {
       </div>
       
       <p style="font-size: 0.85rem; opacity: 0.9; margin-top: 1rem; text-align: center; margin-bottom: 0;">
-        차등 과금: 1개 플랫폼=1크레딧, 2-3개=2크레딧, 4-9개=4크레딧, 10-13개=5크레딧
+        차등 과금: 1개 플랫폼=1크레딧, 2-3개=2크레딧, 4-9개=4크레딧, 10-12개=5크레딧
       </p>
     </div>
   `;
