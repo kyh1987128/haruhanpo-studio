@@ -1335,7 +1335,7 @@ function updateCostEstimate() {
       </div>
       
       <p style="font-size: 0.85rem; opacity: 0.9; margin-top: 1rem; text-align: center; margin-bottom: 0;">
-        모델: GPT-4o + Gemini Flash (하이브리드 전략) | 차등 과금: 1개=1크레딧, 2-3개=2크레딧, 4-9개=4크레딧
+        차등 과금: 1개 플랫폼=1크레딧, 2-3개=2크레딧, 4-9개=4크레딧
       </p>
     </div>
   `;
@@ -1521,7 +1521,7 @@ function generateContentBlocks() {
         <!-- 이미지 업로드 -->
         <div class="mb-4">
           <label class="block mb-2 font-semibold text-gray-700">
-            <i class="fas fa-image mr-2"></i>이미지 업로드 (최대 10장)
+            <i class="fas fa-image mr-2"></i>이미지 업로드 (최대 10장, 1장당 10MB)
           </label>
           <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition cursor-pointer bg-white" 
                onclick="document.getElementById('imageInput_${i}').click()">

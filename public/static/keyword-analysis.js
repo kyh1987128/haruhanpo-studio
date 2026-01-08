@@ -78,9 +78,8 @@ function renderKeywordAnalysisCard() {
         </div>
 
         <p style="opacity: 0.95; margin-bottom: 1.5rem; line-height: 1.6; font-size: 1rem;">
-          <strong>하루 3회까지 무료</strong>로 키워드 심층 분석을 제공합니다.<br>
-          4회부터는 <strong>크레딧 1개</strong>가 차감되며, <strong>무료 크레딧부터 우선 사용</strong>됩니다.
-          <br><small style="opacity: 0.85;">매월 1일 무료 크레딧 10개 자동 지급 · 이미 분석된 키워드는 캐시로 무료 제공</small>
+          키워드 분석 시 <strong>크레딧 1개</strong>가 차감됩니다.<br>
+          무료 크레딧부터 우선 사용되며, 이미 분석된 키워드는 <strong>무료로 재조회</strong> 가능합니다.
         </p>
 
         <div style="position: relative; margin-bottom: 1.5rem;">

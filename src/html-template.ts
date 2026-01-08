@@ -217,8 +217,8 @@ export const htmlTemplate = `
                     <div class="text-sm opacity-80">50크레딧 구매</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-3xl font-bold mb-1">무제한</div>
-                    <div class="text-sm opacity-80">크레딧으로 자유롭게</div>
+                    <div class="text-3xl font-bold mb-1">추가 충전</div>
+                    <div class="text-sm opacity-80">필요한 만큼만</div>
                 </div>
             </div>
             
