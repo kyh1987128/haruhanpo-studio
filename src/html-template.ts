@@ -1020,6 +1020,18 @@ export const htmlTemplate = `
                             <span class="text-sm">🧵 스레드</span>
                         </label>
                         <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" value="twitter" checked onchange="filterHistory()" class="history-platform-filter">
+                            <span class="text-sm">🐦 트위터</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" value="linkedin" checked onchange="filterHistory()" class="history-platform-filter">
+                            <span class="text-sm">💼 LinkedIn</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" value="kakaotalk" checked onchange="filterHistory()" class="history-platform-filter">
+                            <span class="text-sm">💬 카카오톡</span>
+                        </label>
+                        <label class="flex items-center gap-1 cursor-pointer">
                             <input type="checkbox" value="tiktok" checked onchange="filterHistory()" class="history-platform-filter">
                             <span class="text-sm">🎵 틱톡</span>
                         </label>
