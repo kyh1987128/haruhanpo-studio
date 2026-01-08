@@ -4601,7 +4601,20 @@ function filterHistory() {
         </div>
       </div>
       <p class="text-xs text-gray-500">
-        <i class="fas fa-clock mr-1"></i>${new Date(item.createdAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}
+        <i class="fas fa-clock mr-1"></i>${(() => {
+          const date = new Date(item.createdAt);
+          // UTC 시간에 9시간 추가 (KST)
+          const kstDate = new Date(date.getTime() + (9 * 60 * 60 * 1000));
+          return kstDate.toLocaleString('ko-KR', { 
+            year: 'numeric',
+            month: '2-digit', 
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+          });
+        })()}
       </p>
     </div>
   `;
@@ -4640,7 +4653,20 @@ function exportHistoryAsExcel() {
     
     return `
       <tr>
-        <td>${new Date(item.createdAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</td>
+        <td>${(() => {
+          const date = new Date(item.createdAt);
+          // UTC 시간에 9시간 추가 (KST)
+          const kstDate = new Date(date.getTime() + (9 * 60 * 60 * 1000));
+          return kstDate.toLocaleString('ko-KR', { 
+            year: 'numeric',
+            month: '2-digit', 
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+          });
+        })()}</td>
         <td>${item.brand}</td>
         <td>${item.keywords || ''}</td>
         <td>${platformsText}</td>
