@@ -19,8 +19,8 @@ function renderKeywordAnalysisCard() {
   const user = window.currentUser;
   const isLoggedIn = !!(user && user.id && !user.isGuest);
   
-  // ✅ 로그인 시 크레딧 정보 즉시 로드
-  if (isLoggedIn && (!window.userCreditsInfo || !window.userCreditsInfo.free_credits)) {
+  // ✅ 로그인 시 크레딧 정보 즉시 로드 (한 번만)
+  if (isLoggedIn && !window.userCreditsInfo) {
     console.log('🔄 [렌더링] 크레딧 정보 즉시 로드');
     loadKeywordCreditStatus();
   }
@@ -214,12 +214,8 @@ async function loadKeywordCreditStatus() {
       
       console.log('✅ 크레딧 동기화 완료:', window.userCreditsInfo);
       
-      // 🔥 중요: 크레딧 정보를 받았으므로 카드 다시 렌더링
-      const cardContainer = document.querySelector('[data-keyword-analysis-card]');
-      if (cardContainer && cardContainer.parentElement) {
-        console.log('🔄 카드 다시 렌더링 (크레딧 반영)');
-        cardContainer.parentElement.innerHTML = renderKeywordAnalysisCard();
-      }
+      // 🔥 카드 재렌더링 대신 DOM 직접 업데이트 (무한 루프 방지)
+      // 재렌더링은 하지 않고 이미 업데이트된 #freeKeywordCredits, #paidKeywordCredits 사용
     }
   } catch (error) {
     console.error('❌ 크레딧 조회 실패:', error);
