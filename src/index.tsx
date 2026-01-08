@@ -2585,12 +2585,28 @@ app.post('/api/analyze-keywords-quality', async (c) => {
       console.log(`✅ [AI 진단] AI 응답 성공 - 길이: ${aiResponse.length}자`);
       console.log(`📄 [AI 진단] AI 응답 원본 (첫 200자):`, aiResponse.substring(0, 200));
       
+      // 🔥 0단계: 마크다운 코드 블록 제거
+      let cleanedAiResponse = aiResponse
+        .replace(/^```json\s*/i, '')  // 시작 ```json 제거
+        .replace(/^```\s*/i, '')      // 시작 ``` 제거
+        .replace(/```\s*$/i, '')      // 끝 ``` 제거
+        .trim();
+      
+      // JSON 객체만 추출
+      const firstBrace = cleanedAiResponse.indexOf('{');
+      const lastBrace = cleanedAiResponse.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1) {
+        cleanedAiResponse = cleanedAiResponse.substring(firstBrace, lastBrace + 1);
+      }
+      
+      console.log(`🧹 [AI 진단] 마크다운 제거 완료 - 정제된 길이: ${cleanedAiResponse.length}자`);
+      
       // 🔥 3단계 안전 파싱 (JSON Schema + 후처리)
       let parsedAnalysis: any = null;
       
       // 1단계: 직접 파싱 시도
       try {
-        parsedAnalysis = JSON.parse(aiResponse.trim());
+        parsedAnalysis = JSON.parse(cleanedAiResponse);
         console.log(`✅ [AI 진단] 1단계 파싱 성공 - keywords: ${parsedAnalysis.keywords?.length || 0}개`);
       } catch (parseError) {
         const errorMsg = (parseError as Error).message;
@@ -2605,11 +2621,11 @@ app.post('/api/analyze-keywords-quality', async (c) => {
           if (posMatch) {
             const errorPos = parseInt(posMatch[1]);
             console.log(`📍 [AI 진단] 에러 위치: ${errorPos}자`);
-            console.log(`📄 [AI 진단] 에러 주변:`, aiResponse.substring(Math.max(0, errorPos - 50), errorPos + 50));
+            console.log(`📄 [AI 진단] 에러 주변:`, cleanedAiResponse.substring(Math.max(0, errorPos - 50), errorPos + 50));
           }
           
           // 보수적 정제: 이스케이프되지 않은 따옴표만 처리
-          let cleanedResponse = aiResponse.trim();
+          let cleanedResponse = cleanedAiResponse;
           
           // JSON 문자열 값 내부의 이스케이프되지 않은 따옴표를 작은따옴표로 변경
           // 패턴: "key": "value with "quote"" → "key": "value with 'quote'"
