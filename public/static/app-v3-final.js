@@ -1943,9 +1943,19 @@ async function handleGenerate() {
   
   // 현재 보유 크레딧 확인 (로그인 사용자만)
   if (!currentUser.isGuest && currentUser.id) {
-    const freeCredits = currentUser.free_credits || 0;
-    const paidCredits = currentUser.paid_credits || 0;
+    // ✅ window.userCreditsInfo 우선 참조 (최신 DB 값)
+    const freeCredits = window.userCreditsInfo?.free_credits ?? currentUser.free_credits ?? 0;
+    const paidCredits = window.userCreditsInfo?.paid_credits ?? currentUser.paid_credits ?? 0;
     const totalCredits = freeCredits + paidCredits;
+    
+    console.log('💰 [콘텐츠 생성] 크레딧 체크:', {
+      userCreditsInfo: window.userCreditsInfo,
+      currentUser_credits: {
+        free: currentUser.free_credits,
+        paid: currentUser.paid_credits
+      },
+      final: { freeCredits, paidCredits, totalCredits }
+    });
     
     // 🚨 크레딧 부족 시 즉시 차단 (서버 요청 없음 = API 비용 0원)
     if (totalCredits < creditsNeeded) {
