@@ -1158,6 +1158,12 @@ function updateCostEstimate() {
       paid: window.currentUser.paid_credits,
       total: window.currentUser.free_credits + window.currentUser.paid_credits
     });
+  } else if (window.currentUser && window.currentUser.id && !window.currentUser.isGuest) {
+    // 🔥 크레딧 정보가 없으면 즉시 로드 시도
+    console.log('⚠️ window.userCreditsInfo 없음, 크레딧 정보 로드 시도');
+    if (typeof loadKeywordCreditStatus === 'function') {
+      loadKeywordCreditStatus(); // 크레딧 정보 로드
+    }
   }
   
   // 개별 콘텐츠 블록의 총 이미지 수 계산
@@ -1200,9 +1206,17 @@ function updateCostEstimate() {
     creditsNeeded = 2;
   }
   
-  const freeCredits = currentUser.free_credits ?? 0;
-  const paidCredits = currentUser.paid_credits ?? 0;
+  // 🔥 크레딧 정보 가져오기 (window.userCreditsInfo 우선, 없으면 currentUser 사용)
+  const freeCredits = window.userCreditsInfo?.free_credits ?? currentUser.free_credits ?? 0;
+  const paidCredits = window.userCreditsInfo?.paid_credits ?? currentUser.paid_credits ?? 0;
   const totalCredits = freeCredits + paidCredits;
+  
+  console.log('📊 [updateCostEstimate] 크레딧 정보:', {
+    source: window.userCreditsInfo ? 'window.userCreditsInfo' : 'currentUser',
+    free: freeCredits,
+    paid: paidCredits,
+    total: totalCredits
+  });
   
   let costInfoHTML = '';
   let statusBadge = '';
