@@ -2466,6 +2466,14 @@ async function handleGenerate() {
           currentUser.credits = (currentUser.free_credits || 0) + (currentUser.paid_credits || 0);
         }
         
+        // 🔥 중요: window.userCreditsInfo 동기화 (키워드 AI 화면 크레딧 실시간 반영)
+        window.userCreditsInfo = {
+          free_credits: currentUser.free_credits,
+          paid_credits: currentUser.paid_credits,
+          total_credits: currentUser.credits
+        };
+        console.log('✅ window.userCreditsInfo 동기화:', window.userCreditsInfo);
+        
         // 2️⃣ 로컬스토리지 업데이트
         localStorage.setItem('postflow_user', JSON.stringify(currentUser));
         
@@ -3104,6 +3112,14 @@ async function forceGenerate() {
         } else {
           currentUser.credits = (currentUser.free_credits || 0) + (currentUser.paid_credits || 0);
         }
+        
+        // 🔥 중요: window.userCreditsInfo 동기화 (키워드 AI 화면 크레딧 실시간 반영)
+        window.userCreditsInfo = {
+          free_credits: currentUser.free_credits,
+          paid_credits: currentUser.paid_credits,
+          total_credits: currentUser.credits
+        };
+        console.log('✅ window.userCreditsInfo 동기화:', window.userCreditsInfo);
         
         // 2️⃣ 로컬스토리지 업데이트
         localStorage.setItem('postflow_user', JSON.stringify(currentUser));
@@ -4180,7 +4196,7 @@ async function openLoadProfileModal() {
             </button>
           </div>
         </div>
-        <p class="text-xs text-gray-500">${new Date(profile.updated_at || Date.now()).toLocaleString()}</p>
+        <p class="text-xs text-gray-500">${new Date(profile.updated_at || Date.now()).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</p>
       </div>
     `;
     
@@ -4585,7 +4601,7 @@ function filterHistory() {
         </div>
       </div>
       <p class="text-xs text-gray-500">
-        <i class="fas fa-clock mr-1"></i>${new Date(item.createdAt).toLocaleString()}
+        <i class="fas fa-clock mr-1"></i>${new Date(item.createdAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}
       </p>
     </div>
   `;
@@ -4624,7 +4640,7 @@ function exportHistoryAsExcel() {
     
     return `
       <tr>
-        <td>${new Date(item.createdAt).toLocaleString()}</td>
+        <td>${new Date(item.createdAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</td>
         <td>${item.brand}</td>
         <td>${item.keywords || ''}</td>
         <td>${platformsText}</td>
