@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { serveStatic } from 'hono/cloudflare-workers';
 import OpenAI from 'openai';
-import { getBlogPrompt, getInstagramPrompt, getThreadsPrompt, getYouTubePrompt, getYoutubeLongformPrompt, getShortformPrompt, getMetadataPrompt, getInstagramFeedPrompt, getTwitterPrompt } from './prompts';
+import { getBlogPrompt, getInstagramPrompt, getThreadsPrompt, getYouTubePrompt, getYoutubeLongformPrompt, getShortformPrompt, getMetadataPrompt, getInstagramFeedPrompt, getTwitterPrompt, getLinkedInPrompt, getKakaoTalkPrompt } from './prompts';
 import { htmlTemplate } from './html-template';
 import { analyzeImageWithGemini, generateContentWithGemini, calculateGeminiCost, estimateTokens } from './gemini';
 import { createSupabaseAdmin, createSupabaseClient, grantMilestoneCredit, updateConsecutiveLogin, checkAndUseMonthlyQuota } from './lib/supabase';
@@ -823,7 +823,9 @@ app.post('/api/generate', async (c) => {
         case 'shortform_multi':
         case 'tiktok':
         case 'instagram_reels': return getShortformPrompt(promptParams);
-        case 'twitter': return getTwitterPrompt(promptParams); // ✅ 신규 추가
+        case 'twitter': return getTwitterPrompt(promptParams);
+        case 'linkedin': return getLinkedInPrompt(promptParams);
+        case 'kakaotalk': return getKakaoTalkPrompt(promptParams);
         default: return getBlogPrompt(promptParams);
       }
     };
@@ -998,6 +1000,42 @@ app.post('/api/generate', async (c) => {
         );
       } else {
         generationTasks.push(generateContent(openai, 'twitter', getPromptForPlatform('twitter'), aiModel));
+      }
+    }
+    
+    // ===================================
+    // 신규 플랫폼: LinkedIn
+    // ===================================
+    if (platforms.includes('linkedin')) {
+      if (geminiApiKey) {
+        console.log('  💼 LinkedIn: Gemini Flash (70% 절감)');
+        generationTasks.push(
+          generateContentWithGemini(geminiApiKey, getPromptForPlatform('linkedin'))
+            .then(content => {
+              totalCost.gemini += 0.015; // 긴 글 = 약간 비쌈
+              return { platform: 'linkedin', content };
+            })
+        );
+      } else {
+        generationTasks.push(generateContent(openai, 'linkedin', getPromptForPlatform('linkedin'), aiModel));
+      }
+    }
+    
+    // ===================================
+    // 신규 플랫폼: KakaoTalk
+    // ===================================
+    if (platforms.includes('kakaotalk')) {
+      if (geminiApiKey) {
+        console.log('  💬 카카오톡: Gemini Flash (70% 절감)');
+        generationTasks.push(
+          generateContentWithGemini(geminiApiKey, getPromptForPlatform('kakaotalk'))
+            .then(content => {
+              totalCost.gemini += 0.008; // 짧은 글 = 저렴
+              return { platform: 'kakaotalk', content };
+            })
+        );
+      } else {
+        generationTasks.push(generateContent(openai, 'kakaotalk', getPromptForPlatform('kakaotalk'), aiModel));
       }
     }
 

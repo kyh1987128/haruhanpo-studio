@@ -724,6 +724,14 @@ export const htmlTemplate = `
                                 <input type="checkbox" name="platform" value="twitter" class="w-5 h-5 text-blue-400">
                                 <span class="font-medium text-sm">🐦 트위터</span>
                             </label>
+                            <label class="flex items-center space-x-3 border-2 rounded-lg p-3 cursor-pointer hover:bg-blue-50 transition">
+                                <input type="checkbox" name="platform" value="linkedin" class="w-5 h-5 text-blue-600">
+                                <span class="font-medium text-sm">💼 LinkedIn</span>
+                            </label>
+                            <label class="flex items-center space-x-3 border-2 rounded-lg p-3 cursor-pointer hover:bg-yellow-50 transition">
+                                <input type="checkbox" name="platform" value="kakaotalk" class="w-5 h-5 text-yellow-400">
+                                <span class="font-medium text-sm">💬 카카오톡</span>
+                            </label>
                         </div>
                     </div>
                     
