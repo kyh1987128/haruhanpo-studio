@@ -3872,11 +3872,21 @@ function openTemplateModal() {
 }
 
 function saveTemplate(platform) {
-  const textarea = document.getElementById(`template-${platform}`);
+  const textarea = document.getElementById(`template_${platform}`);
+  if (!textarea) {
+    showToast('❌ 템플릿을 찾을 수 없습니다', 'error');
+    return;
+  }
+  
   const template = textarea.value.trim();
   
   if (!template) {
     showToast('❌ 템플릿 내용을 입력해주세요', 'error');
+    return;
+  }
+  
+  if (template.length > 8000) {
+    showToast('❌ 템플릿은 최대 8000자까지 가능합니다', 'error');
     return;
   }
   
@@ -3888,17 +3898,26 @@ function saveTemplate(platform) {
   
   saveTemplates();
   showToast(`✅ ${platform} 템플릿이 저장되었습니다`, 'success');
+  
+  console.log(`✅ 템플릿 저장 완료: ${platform} (${template.length}자)`);
 }
 
 function resetTemplate(platform) {
-  const textarea = document.getElementById(`template-${platform}`);
-  textarea.value = DEFAULT_TEMPLATES[platform];
+  const textarea = document.getElementById(`template_${platform}`);
+  if (!textarea) {
+    showToast('❌ 템플릿을 찾을 수 없습니다', 'error');
+    return;
+  }
+  
+  textarea.value = DEFAULT_TEMPLATES[platform] || '';
   
   // 커스텀 템플릿에서 제거
   customTemplates = customTemplates.filter(t => t.platform !== platform);
   saveTemplates();
   
   showToast(`✅ ${platform} 템플릿이 초기화되었습니다`, 'success');
+  
+  console.log(`✅ 템플릿 초기화 완료: ${platform}`);
 }
 
 // ===================================
@@ -5587,75 +5606,103 @@ function openTemplateEditor() {
     justify-content: center; z-index: 10000;
   `;
   
-  const templates = loadCustomTemplates();
-  const platformOptions = ['blog', 'instagram', 'threads', 'youtube'].map(p => 
-    `<option value="${p}">${p}</option>`
-  ).join('');
+  // 템플릿 편집 UI 생성
+  const platforms = ['blog', 'instagram', 'instagram_feed', 'threads', 'twitter', 'linkedin', 'kakaotalk', 'tiktok', 'instagram_reels', 'youtube_shorts', 'shortform_multi', 'youtube_longform', 'metadata_generation'];
+  const platformNames = {
+    blog: '📝 네이버 블로그',
+    instagram: '📸 인스타그램 (기존)',
+    instagram_feed: '📸 인스타그램 피드',
+    threads: '🧵 스레드',
+    twitter: '🐦 트위터',
+    linkedin: '💼 LinkedIn',
+    kakaotalk: '💬 카카오톡',
+    tiktok: '🎵 틱톡',
+    instagram_reels: '📹 인스타그램 릴스',
+    youtube_shorts: '🎬 유튜브 쇼츠',
+    shortform_multi: '📱 숏폼 통합 (틱톡+릴스+쇼츠)',
+    youtube_longform: '🎥 유튜브 롱폼',
+    metadata_generation: '🏷️ 메타데이터 생성'
+  };
   
   modal.innerHTML = `
-    <div style="background: white; border-radius: 20px; padding: 2rem; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto;">
+    <div style="background: white; border-radius: 20px; padding: 2rem; max-width: 1200px; width: 95%; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
         <h2 style="margin: 0;">💾 템플릿 관리</h2>
         <button onclick="this.closest('.modal-overlay').remove()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">✕</button>
       </div>
       
-      <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f3f4f6; border-radius: 12px;">
-        <h3 style="margin-top: 0;">➕ 새 템플릿 만들기</h3>
-        <div style="margin-bottom: 1rem;">
-          <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">템플릿 이름</label>
-          <input type="text" id="templateName" placeholder="예: 블로그 전문가 톤" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+      <div style="background: #e0f2fe; border-left: 4px solid #0284c7; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+        <p style="margin: 0; font-weight: 600; color: #0c4a6e; margin-bottom: 0.5rem;">💡 사용 가능한 변수:</p>
+        <div style="font-size: 0.9rem; color: #075985;">
+          <code>{브랜드명}</code> <code>{키워드}</code> <code>{톤앤매너}</code> <code>{타겟연령대}</code> <code>{타겟성별}</code> <code>{산업분야}</code>
         </div>
-        <div style="margin-bottom: 1rem;">
-          <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">플랫폼</label>
-          <select id="templatePlatform" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
-            ${platformOptions}
-          </select>
-        </div>
-        <div style="margin-bottom: 1rem;">
-          <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">프롬프트 내용 (최대 8000자)</label>
-          <textarea id="templateContent" placeholder="당신은 전문가입니다...&#10;&#10;【브랜드 정보】&#10;- 브랜드명: {브랜드명}&#10;- 키워드: {키워드}&#10;..." style="width: 100%; height: 300px; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-family: monospace; font-size: 0.9rem;"></textarea>
-          <div style="text-align: right; margin-top: 0.25rem; color: #666; font-size: 0.85rem;">
-            <span id="charCount">0</span> / 8000자
-          </div>
-        </div>
-        <button onclick="handleSaveTemplate()" style="width: 100%; padding: 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer;">
-          💾 템플릿 저장
-        </button>
       </div>
       
-      <div>
-        <h3>📚 저장된 템플릿 (${templates.length}개)</h3>
-        <div id="templateList" style="max-height: 300px; overflow-y: auto;">
-          ${templates.length === 0 ? 
-            '<p style="text-align: center; color: #666; padding: 2rem;">저장된 템플릿이 없습니다</p>' :
-            templates.map(t => `
-              <div style="padding: 1rem; background: #f9fafb; border-radius: 8px; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
-                <div style="flex: 1;">
-                  <div style="font-weight: 600; margin-bottom: 0.25rem;">${t.name}</div>
-                  <div style="font-size: 0.85rem; color: #666;">플랫폼: ${t.platform} | ${new Date(t.created_at).toLocaleDateString('ko-KR')}</div>
+      <div id="templateList" style="display: flex; flex-direction: column; gap: 1.5rem;">
+        ${platforms.map(platform => {
+          const custom = customTemplates.find(t => t.platform === platform);
+          const template = custom ? custom.template : DEFAULT_TEMPLATES[platform];
+          
+          return `
+            <div style="border: 2px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; background: #fafafa;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h4 style="margin: 0; font-size: 1.1rem; color: #1f2937;">${platformNames[platform]}</h4>
+                <div style="display: flex; gap: 0.5rem;">
+                  <button
+                    onclick="resetTemplate('${platform}')"
+                    style="padding: 0.5rem 1rem; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;"
+                    onmouseover="this.style.background='#4b5563'"
+                    onmouseout="this.style.background='#6b7280'"
+                  >
+                    🔄 기본값
+                  </button>
+                  <button
+                    onclick="saveTemplate('${platform}')"
+                    style="padding: 0.5rem 1rem; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;"
+                    onmouseover="this.style.background='#059669'"
+                    onmouseout="this.style.background='#10b981'"
+                  >
+                    💾 저장
+                  </button>
                 </div>
-                <button onclick="handleDeleteTemplate('${t.id}')" style="padding: 0.5rem 1rem; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
-                  🗑️ 삭제
-                </button>
               </div>
-            `).join('')
-          }
-        </div>
+              <textarea
+                id="template_${platform}"
+                style="width: 100%; height: 200px; padding: 1rem; border: 1px solid #d1d5db; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.85rem; resize: vertical; background: white;"
+                placeholder="템플릿 내용을 입력하세요..."
+              >${template || ''}</textarea>
+              <div style="text-align: right; margin-top: 0.5rem; color: #6b7280; font-size: 0.85rem;">
+                <span id="charCount_${platform}">0</span> / 8000자
+              </div>
+            </div>
+          `;
+        }).join('')}
       </div>
     </div>
   `;
   
   document.body.appendChild(modal);
   
-  // 글자 수 카운터
-  const textarea = document.getElementById('templateContent');
-  const charCount = document.getElementById('charCount');
-  textarea.addEventListener('input', () => {
-    charCount.textContent = textarea.value.length;
-    if (textarea.value.length > 8000) {
-      charCount.style.color = '#ef4444';
-    } else {
-      charCount.style.color = '#666';
+  // 글자 수 카운터 초기화
+  platforms.forEach(platform => {
+    const textarea = document.getElementById(`template_${platform}`);
+    const charCount = document.getElementById(`charCount_${platform}`);
+    
+    if (textarea && charCount) {
+      // 초기 글자 수 설정
+      charCount.textContent = textarea.value.length;
+      
+      // 입력 이벤트 리스너
+      textarea.addEventListener('input', () => {
+        charCount.textContent = textarea.value.length;
+        if (textarea.value.length > 8000) {
+          charCount.style.color = '#ef4444';
+          charCount.style.fontWeight = '600';
+        } else {
+          charCount.style.color = '#6b7280';
+          charCount.style.fontWeight = 'normal';
+        }
+      });
     }
   });
 }
@@ -5692,6 +5739,6 @@ window.handleTrial = handleTrial;
 window.currentUser = currentUser;
 window.supabaseClient = null; // 초기화 후 접근 가능
 window.openTemplateEditor = openTemplateEditor;
-window.handleSaveTemplate = handleSaveTemplate;
-window.handleDeleteTemplate = handleDeleteTemplate;
+window.saveTemplate = saveTemplate;
+window.resetTemplate = resetTemplate;
 
