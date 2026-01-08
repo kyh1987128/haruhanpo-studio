@@ -2476,15 +2476,15 @@ app.post('/api/analyze-keywords-quality', async (c) => {
     
     const analysisPrompt = `
 당신은 10년 경력의 한국 시장 SEO/마케팅 전문 컨설턴트입니다. 
-다음 키워드들을 2024-2025년 기준으로 종합 분석하여 **순수 JSON만** 응답하세요.
+다음 키워드들을 2024-2025년 기준으로 종합 분석하여 **유효한 JSON만** 응답하세요.
 
 분석 키워드: ${keywordArray.join(', ')}
 
-**절대 규칙 (위반 시 재작성):**
-1. 순수 JSON만 출력 (인사말, 설명, 주석 절대 금지)
-2. 마크다운 코드 블록 금지 (\`\`\`json 사용 금지)
-3. JSON 외 어떤 텍스트도 포함 금지
-4. { 로 시작해서 } 로 끝나야 함
+⚠️ 중요: 반드시 유효한 JSON으로만 응답하세요.
+- 문자열 내부에는 작은따옴표(') 사용
+- 마지막 요소 뒤 쉼표 금지
+- 마크다운 코드 블록 사용 금지
+- 순수 JSON만 출력 (설명 문구 절대 금지)
 
 **CRITICAL: 성의없는 답변 금지! 반드시 구체적이고 상세하게 작성하세요.**
 
@@ -2571,12 +2571,13 @@ app.post('/api/analyze-keywords-quality', async (c) => {
           messages: [
             {
               role: 'system',
-              content: '당신은 한국 시장 전문 마케팅 컨설턴트입니다. 반드시 JSON만 반환하세요.'
+              content: '당신은 한국 시장 전문 마케팅 컨설턴트입니다. 반드시 유효한 JSON만 반환하세요.'
             },
             { role: 'user', content: analysisPrompt }
           ],
-          temperature: 0.7,
-          max_tokens: 4000
+          temperature: 0.3, // 낮은 temperature로 일관성 향상
+          max_tokens: 4000,
+          response_format: { type: "json_object" } // 🔥 JSON Mode 강제
         });
         aiResponse = completion.choices[0].message.content || '{}';
       }
@@ -2605,54 +2606,33 @@ app.post('/api/analyze-keywords-quality', async (c) => {
       
       console.log(`✅ [AI 진단] JSON 매칭 성공 - 길이: ${jsonMatch[0].length}자`);
       
-      // 3. JSON 파싱 (다단계 복구 시도)
+      // 3. JSON 파싱 (단순화된 2단계 접근)
       let parsedAnalysis: any = null;
       
-      // 3-1. 기본 파싱 시도
+      // 3-1. 기본 파싱 시도 (JSON Mode로 대부분 성공할 것)
       try {
         parsedAnalysis = JSON.parse(jsonMatch[0]);
-        console.log(`✅ [AI 진단] JSON 파싱 성공 (1차 시도) - market_insights: ${parsedAnalysis.market_insights?.length || 0}개`);
-      } catch (parseError1) {
-        console.warn(`⚠️ [AI 진단] 1차 파싱 실패:`, (parseError1 as Error).message);
+        console.log(`✅ [AI 진단] JSON 파싱 성공 - market_insights: ${parsedAnalysis.market_insights?.length || 0}개`);
+      } catch (parseError) {
+        console.warn(`⚠️ [AI 진단] 1차 파싱 실패:`, (parseError as Error).message);
         
-        // 3-2. JSON 자동 수정 시도
+        // 3-2. 마지막 완전한 객체까지만 잘라내기 (불완전한 생성 대비)
         try {
-          let fixedJson = jsonMatch[0];
-          
-          // 수정 1: 이스케이프되지 않은 따옴표 처리
-          fixedJson = fixedJson.replace(/(?<!\\)"(?=[^,\]\}\:"])/g, '\\"');
-          
-          // 수정 2: 배열/객체 마지막 쉼표 제거
-          fixedJson = fixedJson.replace(/,(\s*[\]\}])/g, '$1');
-          
-          // 수정 3: 누락된 배열 요소 간 쉼표 추가 (매우 보수적)
-          // "text1" "text2" → "text1", "text2"
-          fixedJson = fixedJson.replace(/"(\s*)"(?=[^\:\,\]\}])/g, '", "');
-          
-          console.log(`🔧 [AI 진단] JSON 자동 수정 시도 (2차)...`);
-          parsedAnalysis = JSON.parse(fixedJson);
-          console.log(`✅ [AI 진단] JSON 파싱 성공 (2차 자동 수정) - market_insights: ${parsedAnalysis.market_insights?.length || 0}개`);
-        } catch (parseError2) {
-          console.warn(`⚠️ [AI 진단] 2차 파싱 실패:`, (parseError2 as Error).message);
-          
-          // 3-3. 마지막 완전한 객체까지만 파싱 시도
-          try {
-            const lastBrace = jsonMatch[0].lastIndexOf('}');
-            if (lastBrace > 0) {
-              const truncated = jsonMatch[0].substring(0, lastBrace + 1);
-              console.log(`🔧 [AI 진단] 불완전한 JSON 잘라내기 시도 (3차)...`);
-              parsedAnalysis = JSON.parse(truncated);
-              console.log(`✅ [AI 진단] JSON 파싱 성공 (3차 잘라내기) - market_insights: ${parsedAnalysis.market_insights?.length || 0}개`);
-            } else {
-              throw new Error('마지막 중괄호를 찾을 수 없음');
-            }
-          } catch (parseError3) {
-            // 3-4. 완전 실패 - 상세 에러 로깅
-            console.error(`❌ [AI 진단] JSON 파싱 완전 실패 (1-3차 모두 실패)`);
-            console.error(`📄 [AI 진단] 원본 JSON 첫 1000자:`, jsonMatch[0].substring(0, 1000));
-            console.error(`📄 [AI 진단] 원본 JSON 마지막 500자:`, jsonMatch[0].substring(jsonMatch[0].length - 500));
-            throw new Error(`JSON 파싱 실패: ${(parseError1 as Error).message}`);
+          const lastBrace = jsonMatch[0].lastIndexOf('}');
+          if (lastBrace > 0) {
+            const truncated = jsonMatch[0].substring(0, lastBrace + 1);
+            console.log(`🔧 [AI 진단] 불완전한 JSON 잘라내기 시도...`);
+            parsedAnalysis = JSON.parse(truncated);
+            console.log(`✅ [AI 진단] JSON 파싱 성공 (잘라내기) - market_insights: ${parsedAnalysis.market_insights?.length || 0}개`);
+          } else {
+            throw new Error('마지막 중괄호를 찾을 수 없음');
           }
+        } catch (truncateError) {
+          // 완전 실패 - 상세 에러 로깅
+          console.error(`❌ [AI 진단] JSON 파싱 완전 실패`);
+          console.error(`📄 [AI 진단] 원본 JSON 첫 1000자:`, jsonMatch[0].substring(0, 1000));
+          console.error(`📄 [AI 진단] 원본 JSON 마지막 500자:`, jsonMatch[0].substring(jsonMatch[0].length - 500));
+          throw new Error(`JSON 파싱 실패: ${(parseError as Error).message}`);
         }
       }
       
