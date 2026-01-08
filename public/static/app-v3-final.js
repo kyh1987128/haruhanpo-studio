@@ -1507,9 +1507,11 @@ function updateCostEstimate() {
   // NEW v11.34.0: 차등 과금 크레딧 계산
   // ===================================
   
-  // 차등 과금 로직: 1개=1크레딧, 2-3개=2크레딧, 4-9개=4크레딧
+  // 차등 과금 로직: 1개=1크레딧, 2-3개=2크레딧, 4-9개=4크레딧, 10-13개=5크레딧
   let creditsNeeded = 1;
-  if (platformCount >= 4) {
+  if (platformCount >= 10) {
+    creditsNeeded = 5;
+  } else if (platformCount >= 4) {
     creditsNeeded = 4;
   } else if (platformCount >= 2) {
     creditsNeeded = 2;
@@ -2257,7 +2259,9 @@ async function handleGenerate() {
   // 🚨 크리티컬: 서버 요청 전 크레딧 사전 검증 (API 비용 낭비 방지)
   const platformCount = platforms.length;
   let creditsNeeded = 1;
-  if (platformCount >= 4) {
+  if (platformCount >= 10) {
+    creditsNeeded = 5;
+  } else if (platformCount >= 4) {
     creditsNeeded = 4;
   } else if (platformCount >= 2) {
     creditsNeeded = 2;
