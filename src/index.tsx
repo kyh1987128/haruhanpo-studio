@@ -2576,7 +2576,7 @@ app.post('/api/analyze-keywords-quality', async (c) => {
             { role: 'user', content: analysisPrompt }
           ],
           temperature: 0.3, // 낮은 temperature로 일관성 향상
-          max_tokens: 4000,
+          max_tokens: 8000, // 🔥 토큰 증가: 긴 응답 지원 (4000 → 8000)
           response_format: { type: "json_object" } // 🔥 JSON Mode 강제
         });
         aiResponse = completion.choices[0].message.content || '{}';
@@ -2584,55 +2584,48 @@ app.post('/api/analyze-keywords-quality', async (c) => {
       
       console.log(`✅ [AI 진단] AI 응답 성공 - 길이: ${aiResponse.length}자`);
       console.log(`📄 [AI 진단] AI 응답 원본 (첫 500자):`, aiResponse.substring(0, 500));
+      console.log(`📄 [AI 진단] AI 응답 원본 (마지막 200자):`, aiResponse.substring(aiResponse.length - 200));
       
-      // 🔧 강화된 JSON 추출 로직
+      // 🔥 완전히 재작성된 JSON 파싱 로직 (정규식 제거)
+      let parsedAnalysis: any = null;
       let jsonString = aiResponse.trim();
       
-      // 1. 마크다운 코드 블록 제거
-      const codeBlockMatch = jsonString.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-      if (codeBlockMatch) {
-        jsonString = codeBlockMatch[1].trim();
-        console.log(`🔧 [AI 진단] 마크다운 코드 블록 제거됨`);
+      // 1단계: 마크다운 코드 블록 제거 (있다면)
+      if (jsonString.startsWith('```')) {
+        const codeBlockMatch = jsonString.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        if (codeBlockMatch) {
+          jsonString = codeBlockMatch[1].trim();
+          console.log(`🔧 [AI 진단] 마크다운 코드 블록 제거됨`);
+        }
       }
       
-      // 2. JSON 객체 추출
-      const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
-      
-      if (!jsonMatch) {
-        console.error(`❌ [AI 진단] JSON 매칭 실패`);
-        console.error(`📄 [AI 진단] 파싱 실패한 응답 전체:`, aiResponse);
-        throw new Error(`AI 응답이 JSON 형식이 아닙니다. 응답 시작: ${aiResponse.substring(0, 100)}...`);
-      }
-      
-      console.log(`✅ [AI 진단] JSON 매칭 성공 - 길이: ${jsonMatch[0].length}자`);
-      
-      // 3. JSON 파싱 (단순화된 2단계 접근)
-      let parsedAnalysis: any = null;
-      
-      // 3-1. 기본 파싱 시도 (JSON Mode로 대부분 성공할 것)
+      // 2단계: 직접 JSON 파싱 시도 (정규식 사용 안 함!)
       try {
-        parsedAnalysis = JSON.parse(jsonMatch[0]);
+        parsedAnalysis = JSON.parse(jsonString);
         console.log(`✅ [AI 진단] JSON 파싱 성공 - market_insights: ${parsedAnalysis.market_insights?.length || 0}개`);
       } catch (parseError) {
         console.warn(`⚠️ [AI 진단] 1차 파싱 실패:`, (parseError as Error).message);
         
-        // 3-2. 마지막 완전한 객체까지만 잘라내기 (불완전한 생성 대비)
-        try {
-          const lastBrace = jsonMatch[0].lastIndexOf('}');
-          if (lastBrace > 0) {
-            const truncated = jsonMatch[0].substring(0, lastBrace + 1);
-            console.log(`🔧 [AI 진단] 불완전한 JSON 잘라내기 시도...`);
+        // 3단계: 응답이 잘린 경우 복구 시도 (마지막 } 까지만 사용)
+        const lastBrace = jsonString.lastIndexOf('}');
+        if (lastBrace > 0) {
+          const truncated = jsonString.substring(0, lastBrace + 1);
+          console.log(`🔧 [AI 진단] 불완전한 JSON 복구 시도... (${truncated.length}자)`);
+          
+          try {
             parsedAnalysis = JSON.parse(truncated);
-            console.log(`✅ [AI 진단] JSON 파싱 성공 (잘라내기) - market_insights: ${parsedAnalysis.market_insights?.length || 0}개`);
-          } else {
-            throw new Error('마지막 중괄호를 찾을 수 없음');
+            console.log(`✅ [AI 진단] 복구된 JSON 파싱 성공 - market_insights: ${parsedAnalysis.market_insights?.length || 0}개`);
+          } catch (truncateError) {
+            // 완전 실패
+            console.error(`❌ [AI 진단] JSON 파싱 완전 실패`);
+            console.error(`📄 [AI 진단] 원본 응답 첫 1000자:`, jsonString.substring(0, 1000));
+            console.error(`📄 [AI 진단] 원본 응답 마지막 500자:`, jsonString.substring(jsonString.length - 500));
+            throw new Error(`JSON 파싱 완전 실패: ${(parseError as Error).message}`);
           }
-        } catch (truncateError) {
-          // 완전 실패 - 상세 에러 로깅
-          console.error(`❌ [AI 진단] JSON 파싱 완전 실패`);
-          console.error(`📄 [AI 진단] 원본 JSON 첫 1000자:`, jsonMatch[0].substring(0, 1000));
-          console.error(`📄 [AI 진단] 원본 JSON 마지막 500자:`, jsonMatch[0].substring(jsonMatch[0].length - 500));
-          throw new Error(`JSON 파싱 실패: ${(parseError as Error).message}`);
+        } else {
+          console.error(`❌ [AI 진단] 응답에 중괄호가 없음`);
+          console.error(`📄 [AI 진단] 전체 응답:`, jsonString);
+          throw new Error(`JSON 형식 불가: ${(parseError as Error).message}`);
         }
       }
       
