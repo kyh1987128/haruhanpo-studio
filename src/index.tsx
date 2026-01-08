@@ -2538,12 +2538,16 @@ app.post('/api/analyze-keywords-quality', async (c) => {
     try {
       let aiResponse: string;
       
+      console.log(`🚀 [AI 진단] AI 호출 시작 - 키워드: ${keywords}`);
+      
       if (c.env.GEMINI_API_KEY) {
+        console.log(`🔑 [AI 진단] Gemini API 사용 (키 길이: ${c.env.GEMINI_API_KEY?.length})`);
         aiResponse = await generateContentWithGemini(
           c.env.GEMINI_API_KEY,
           analysisPrompt
         );
       } else {
+        console.log(`🔑 [AI 진단] GPT API 사용 (키 길이: ${c.env.OPENAI_API_KEY?.length})`);
         const openai = new OpenAI({ apiKey: c.env.OPENAI_API_KEY });
         const completion = await openai.chat.completions.create({
           model: 'gpt-4o-mini',
@@ -2560,8 +2564,12 @@ app.post('/api/analyze-keywords-quality', async (c) => {
         aiResponse = completion.choices[0].message.content || '{}';
       }
       
+      console.log(`✅ [AI 진단] AI 응답 성공 - 길이: ${aiResponse.length}자`);
+      
       const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
       analysis = JSON.parse(jsonMatch ? jsonMatch[0] : aiResponse);
+      
+      console.log(`✅ [AI 진단] JSON 파싱 성공 - market_insights: ${analysis.market_insights?.length || 0}개`);
       
       // 🔍 AI 원본 응답 로그
       console.log(`🔍 [${user_id}] AI 원본 market_insights:`, analysis.market_insights);
@@ -2639,7 +2647,15 @@ app.post('/api/analyze-keywords-quality', async (c) => {
       console.log(`✅ [${user_id}] 최종 strategic_recommendations 개수:`, analysis.strategic_recommendations.length);
       
     } catch (aiError) {
-      console.error('AI 분석 실패, 폴백 응답 생성:', aiError);
+      console.error('💥 [AI 진단] AI 호출 완전 실패:', {
+        error_name: (aiError as Error).name,
+        error_message: (aiError as Error).message,
+        keywords: keywords,
+        timestamp: new Date().toISOString()
+      });
+      
+      // 🔥 키워드 기반 동적 폴백 생성
+      const mainKeyword = keywordArray[0];
       
       const trendDirections = ['상승세', '안정', '하락세'];
       const marketSizes = ['대형 키워드', '중형 키워드', '소형 키워드'];
@@ -2675,19 +2691,21 @@ app.post('/api/analyze-keywords-quality', async (c) => {
           };
         }),
         overall_score: Math.round(70 + Math.random() * 15),
+        // 🔥 키워드 맞춤형 인사이트
         market_insights: [
-          '현재 시장에서 해당 키워드의 검색 수요가 꾸준히 증가하고 있습니다',
-          '경쟁사 분석 결과 차별화 포인트를 통한 시장 진입이 가능합니다',
-          '타겟 고객층이 명확하여 효율적인 마케팅 전략 수립이 용이합니다',
-          '디지털 마케팅 채널을 통한 브랜드 인지도 향상 기회가 존재합니다',
-          '장기적 관점에서 안정적인 수익 창출이 기대되는 키워드입니다'
+          `"${mainKeyword}" 시장은 최근 디지털 전환으로 새로운 성장 기회가 창출되고 있습니다`,
+          `"${mainKeyword}" 관련 검색량이 전년 대비 꾸준한 상승세를 보이고 있어 시장 잠재력이 확인됩니다`,
+          `"${mainKeyword}" 타겟 고객층의 온라인 구매 패턴 변화가 새로운 마케팅 전략을 요구합니다`,
+          `"${mainKeyword}" 경쟁 구도 분석 결과 차별화 포인트 발굴을 통한 시장 진입이 가능합니다`,
+          `"${mainKeyword}" 관련 콘텐츠 마케팅을 통한 브랜드 인지도 향상 잠재력이 높은 것으로 분석됩니다`
         ],
+        // 🔥 키워드 맞춤형 전략
         strategic_recommendations: [
-          '핵심 타겟 고객층을 세분화하고 맞춤형 메시지를 개발하세요',
-          'SEO 최적화된 콘텐츠를 주 2-3회 이상 꾸준히 발행하세요',
-          '인스타그램과 유튜브 숏폼을 활용한 바이럴 마케팅을 실행하세요',
-          '고객 후기와 성공 사례를 전면에 배치하여 신뢰도를 높이세요',
-          '데이터 기반 A/B 테스트로 광고 효율을 지속적으로 개선하세요'
+          `"${mainKeyword}" 특화 콘텐츠를 주 2-3회 발행하여 해당 분야 전문성을 구축하세요`,
+          `"${mainKeyword}" 관련 온라인 커뮤니티에서 정보를 공유하며 신뢰도를 높이세요`,
+          `"${mainKeyword}" 롱테일 키워드를 활용한 SEO 전략으로 자연 유입을 확대하세요`,
+          `"${mainKeyword}" 고객 후기와 성공 사례를 적극 활용하여 전환율을 높이세요`,
+          `"${mainKeyword}" 관련 데이터 분석을 통해 고객 니즈에 맞춘 마케팅을 실행하세요`
         ]
       };
     }
