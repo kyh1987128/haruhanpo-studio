@@ -2571,80 +2571,103 @@ app.post('/api/analyze-keywords-quality', async (c) => {
           messages: [
             {
               role: 'system',
-              content: `당신은 마케팅 키워드 분석 전문가입니다.
-
-⚠️ 절대 규칙 (위반 금지):
-1. JSON 문자열 내부에서는 절대로 큰따옴표(")를 사용하지 마세요
-2. 인용이 필요하면 작은따옴표(')만 사용하세요
-3. 각 텍스트 필드는 간결하게 (80자 이내)
-4. 마크다운 코드 블록 사용 금지
-
-올바른 예시:
-- ❌ "analysis": "실무 엑셀의 "큰형" 같은 포지셔닝"
-- ✅ "analysis": "실무 엑셀의 '큰형' 같은 포지셔닝"
-
-반드시 유효한 JSON만 반환하세요.`
+              content: '당신은 마케팅 키워드 분석 전문가입니다. 제공된 스키마 형식에 맞춰 정확한 JSON을 생성하세요.'
             },
             { role: 'user', content: analysisPrompt }
           ],
-          temperature: 0.3, // 낮은 temperature로 일관성 향상
-          max_tokens: 6000, // 🔥 타임아웃 방지를 위해 6000으로 조정
-          response_format: { type: "json_object" } // 🔥 JSON Mode 강제
+          temperature: 0.3,
+          max_tokens: 6000,
+          // 🔥 OpenAI Structured Outputs - 99% 성공률 보장!
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "keyword_analysis",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  overall_score: { type: "number" },
+                  keywords: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        keyword: { type: "string" },
+                        total_score: { type: "number" },
+                        marketing_score: { type: "number" },
+                        seo_score: { type: "number" },
+                        viral_potential: { type: "number" },
+                        conversion_potential: { type: "number" },
+                        trend_score: { type: "number" },
+                        trend_direction: { type: "string" },
+                        competition_level: { type: "number" },
+                        saturation_level: { type: "number" },
+                        market_size: { type: "string" },
+                        analysis: { type: "string" },
+                        recommendations: {
+                          type: "array",
+                          items: { type: "string" }
+                        },
+                        related_keywords: {
+                          type: "array",
+                          items: { type: "string" }
+                        },
+                        better_alternatives: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              keyword: { type: "string" },
+                              reason: { type: "string" }
+                            },
+                            required: ["keyword", "reason"],
+                            additionalProperties: false
+                          }
+                        }
+                      },
+                      required: [
+                        "keyword", "total_score", "marketing_score", "seo_score",
+                        "viral_potential", "conversion_potential", "trend_score",
+                        "trend_direction", "competition_level", "saturation_level",
+                        "market_size", "analysis", "recommendations", "related_keywords",
+                        "better_alternatives"
+                      ],
+                      additionalProperties: false
+                    }
+                  },
+                  market_insights: {
+                    type: "array",
+                    items: { type: "string" }
+                  },
+                  strategic_recommendations: {
+                    type: "array",
+                    items: { type: "string" }
+                  }
+                },
+                required: ["overall_score", "keywords", "market_insights", "strategic_recommendations"],
+                additionalProperties: false
+              }
+            }
+          }
         });
         aiResponse = completion.choices[0].message.content || '{}';
       }
       
       console.log(`✅ [AI 진단] AI 응답 성공 - 길이: ${aiResponse.length}자`);
-      console.log(`📄 [AI 진단] AI 응답 원본 (첫 500자):`, aiResponse.substring(0, 500));
-      console.log(`📄 [AI 진단] AI 응답 원본 (마지막 200자):`, aiResponse.substring(aiResponse.length - 200));
+      console.log(`📄 [AI 진단] AI 응답 원본 (첫 200자):`, aiResponse.substring(0, 200));
       
-      // 🔥 파싱 전 안전 처리
-      let jsonString = aiResponse
-        .trim()
-        // 마크다운 코드 블록 제거 (혹시 있다면)
-        .replace(/^```(?:json)?\s*/, '')
-        .replace(/\s*```$/, '');
-      
-      // 🔥 안전한 JSON 파싱
+      // 🔥 JSON Schema 사용으로 파싱이 거의 100% 성공
       let parsedAnalysis: any = null;
       
       try {
-        parsedAnalysis = JSON.parse(jsonString);
-        console.log(`✅ [AI 진단] JSON 파싱 성공 - market_insights: ${parsedAnalysis.market_insights?.length || 0}개`);
+        // JSON Schema가 유효성을 보장하므로 직접 파싱
+        parsedAnalysis = JSON.parse(aiResponse.trim());
+        console.log(`✅ [AI 진단] JSON 파싱 성공 - keywords: ${parsedAnalysis.keywords?.length || 0}개, market_insights: ${parsedAnalysis.market_insights?.length || 0}개`);
       } catch (parseError) {
         const errorMsg = (parseError as Error).message;
-        console.warn(`⚠️ [AI 진단] 1차 파싱 실패: ${errorMsg}`);
-        
-        // 에러 위치 주변 로깅 (Unterminated string 디버깅용)
-        const errorMatch = errorMsg.match(/position (\d+)/);
-        if (errorMatch) {
-          const errorPos = parseInt(errorMatch[1]);
-          const start = Math.max(0, errorPos - 100);
-          const end = Math.min(jsonString.length, errorPos + 100);
-          console.error(`📄 [AI 진단] 에러 위치 주변 (${start}-${end}):`, jsonString.substring(start, end));
-        }
-        
-        // 복구 시도: 마지막 완전한 객체까지만 사용
-        const lastBrace = jsonString.lastIndexOf('}');
-        if (lastBrace > 0) {
-          const truncated = jsonString.substring(0, lastBrace + 1);
-          console.log(`🔧 [AI 진단] 불완전한 JSON 복구 시도... (${truncated.length}자)`);
-          
-          try {
-            parsedAnalysis = JSON.parse(truncated);
-            console.log(`✅ [AI 진단] 복구된 JSON 파싱 성공 - market_insights: ${parsedAnalysis.market_insights?.length || 0}개`);
-          } catch (truncateError) {
-            // 완전 실패
-            console.error(`❌ [AI 진단] JSON 파싱 완전 실패`);
-            console.error(`📄 [AI 진단] 원본 응답 첫 1000자:`, jsonString.substring(0, 1000));
-            console.error(`📄 [AI 진단] 원본 응답 마지막 500자:`, jsonString.substring(jsonString.length - 500));
-            throw new Error(`JSON 파싱 완전 실패: ${errorMsg}`);
-          }
-        } else {
-          console.error(`❌ [AI 진단] 응답에 중괄호가 없음`);
-          console.error(`📄 [AI 진단] 전체 응답:`, jsonString.substring(0, 1000));
-          throw new Error(`JSON 형식 불가: ${errorMsg}`);
-        }
+        console.error(`❌ [AI 진단] JSON 파싱 실패: ${errorMsg}`);
+        console.error(`📄 [AI 진단] 원본 응답:`, aiResponse);
+        throw new Error(`JSON 파싱 실패: ${errorMsg}`);
       }
       
       analysis = parsedAnalysis;
