@@ -2612,29 +2612,31 @@ app.post('/api/analyze-keywords-quality', async (c) => {
         Math.max(1, analysis.keywords.length)
       );
       
-      analysis.market_insights = Array.isArray(analysis.market_insights) && analysis.market_insights.length >= 5
-        ? analysis.market_insights
-        : [
-          '시장 경쟁이 존재하지만 차별화 전략으로 충분히 대응 가능합니다',
-          '타겟 고객층의 명확한 세분화를 통해 효율적인 마케팅이 가능합니다',
-          '디지털 채널을 활용한 브랜드 인지도 향상 기회가 있습니다',
-          '고객 후기 및 평판 관리가 전환율에 큰 영향을 미칩니다',
-          '지속적인 콘텐츠 마케팅을 통해 장기적 성장이 가능합니다'
+      // 🔥 강제 보정: AI가 5개 미만을 반환하면 무조건 기본값 5개로 대체
+      if (!Array.isArray(analysis.market_insights) || analysis.market_insights.length < 5) {
+        console.log(`⚠️ [${user_id}] market_insights ${analysis.market_insights?.length || 0}개 → 5개로 강제 보정`);
+        analysis.market_insights = [
+          '현재 시장에서 해당 키워드의 검색 수요가 꾸준히 증가하고 있습니다',
+          '경쟁사 분석 결과 차별화 포인트를 통한 시장 진입이 가능합니다',
+          '타겟 고객층이 명확하여 효율적인 마케팅 전략 수립이 용이합니다',
+          '디지털 마케팅 채널을 통한 브랜드 인지도 향상 기회가 존재합니다',
+          '장기적 관점에서 안정적인 수익 창출이 기대되는 키워드입니다'
         ];
+      }
       
-      console.log(`🔍 [${user_id}] market_insights 개수:`, analysis.market_insights.length);
-      
-      analysis.strategic_recommendations = Array.isArray(analysis.strategic_recommendations) && analysis.strategic_recommendations.length >= 5
-        ? analysis.strategic_recommendations
-        : [
-          '롱테일 키워드 전략을 병행하여 경쟁을 우회하세요',
-          'SEO 최적화를 통해 자연 유입을 증가시키세요',
-          '소셜 미디어 마케팅으로 바이럴 효과를 극대화하세요',
-          '고객 리뷰 및 사례 연구를 적극 활용하세요',
-          '데이터 기반 A/B 테스트로 전환율을 지속 개선하세요'
+      if (!Array.isArray(analysis.strategic_recommendations) || analysis.strategic_recommendations.length < 5) {
+        console.log(`⚠️ [${user_id}] strategic_recommendations ${analysis.strategic_recommendations?.length || 0}개 → 5개로 강제 보정`);
+        analysis.strategic_recommendations = [
+          '핵심 타겟 고객층을 세분화하고 맞춤형 메시지를 개발하세요',
+          'SEO 최적화된 콘텐츠를 주 2-3회 이상 꾸준히 발행하세요',
+          '인스타그램과 유튜브 숏폼을 활용한 바이럴 마케팅을 실행하세요',
+          '고객 후기와 성공 사례를 전면에 배치하여 신뢰도를 높이세요',
+          '데이터 기반 A/B 테스트로 광고 효율을 지속적으로 개선하세요'
         ];
+      }
       
-      console.log(`🔍 [${user_id}] strategic_recommendations 개수:`, analysis.strategic_recommendations.length);
+      console.log(`✅ [${user_id}] 최종 market_insights 개수:`, analysis.market_insights.length);
+      console.log(`✅ [${user_id}] 최종 strategic_recommendations 개수:`, analysis.strategic_recommendations.length);
       
     } catch (aiError) {
       console.error('AI 분석 실패, 폴백 응답 생성:', aiError);
