@@ -1174,45 +1174,83 @@ app.post('/api/auth/sync', async (c) => {
       // 2️⃣ 기존 사용자: 업데이트
       console.log('📌 기존 사용자 로그인:', existingUser.email);
       
-      // 💰 월간 무료 크레딧 리셋 (가입일 기준 1개월 주기)
-      // last_reset_date + 1개월 <= 오늘 날짜면 리셋
-      const userResetDate = existingUser.last_reset_date 
+      // 💰 월간 무료 크레딧 리셋 (가입일 기준 개인별 리셋)
+      // 예: 1월 15일 가입 → 매월 15일마다 30크레딧 지급
+      const today = new Date(todayString + 'T00:00:00Z');
+      const signupDate = new Date(existingUser.created_at);
+      const lastReset = existingUser.last_reset_date 
         ? new Date(existingUser.last_reset_date + 'T00:00:00Z')
-        : null;
+        : new Date('1970-01-01T00:00:00Z');
       
-      let needsReset = false;
-      let nextResetDate = null;
+      // 가입일의 "일" 추출 (예: 15일)
+      const resetDay = signupDate.getDate();
       
-      if (userResetDate) {
-        // 다음 리셋 날짜 계산: last_reset_date + 1개월
-        nextResetDate = new Date(userResetDate);
-        nextResetDate.setUTCMonth(nextResetDate.getUTCMonth() + 1);
+      // 현재 월의 마지막 날 계산 (2월 28일 등 처리)
+      const lastDayOfCurrentMonth = new Date(
+        today.getFullYear(), 
+        today.getMonth() + 1, 
+        0
+      ).getDate();
+      
+      // 실제 리셋일 (월말 가입자 고려)
+      const actualResetDay = Math.min(resetDay, lastDayOfCurrentMonth);
+      
+      // 이번 달의 리셋 기준일 계산
+      let currentMonthResetDate = new Date(
+        today.getFullYear(), 
+        today.getMonth(), 
+        actualResetDay
+      );
+      
+      // 오늘이 이번 달 리셋일보다 이전이라면, 지난 달이 기준
+      if (today < currentMonthResetDate) {
+        currentMonthResetDate = new Date(
+          today.getFullYear(),
+          today.getMonth() - 1,
+          actualResetDay
+        );
         
-        // 오늘이 다음 리셋 날짜와 같거나 이후면 리셋
-        const today = new Date(todayString + 'T00:00:00Z');
-        needsReset = today >= nextResetDate;
-      } else {
-        // last_reset_date가 없으면 무조건 리셋
-        needsReset = true;
+        // 지난 달 마지막 날 다시 계산
+        const lastDayOfPrevMonth = new Date(
+          currentMonthResetDate.getFullYear(),
+          currentMonthResetDate.getMonth() + 1,
+          0
+        ).getDate();
+        
+        const prevMonthActualDay = Math.min(resetDay, lastDayOfPrevMonth);
+        currentMonthResetDate.setDate(prevMonthActualDay);
       }
       
-      console.log('🔍 월간 무료 크레딧 리셋 확인:', {
+      // 리셋 조건: 마지막 리셋이 이번 주기보다 이전인가?
+      const needsReset = lastReset < currentMonthResetDate;
+      
+      console.log('🔍 월간 무료 크레딧 리셋 확인 (가입일 기준):', {
+        signup_date: existingUser.created_at,
+        reset_day: resetDay,
+        actual_reset_day: actualResetDay,
+        calculated_reset_date: currentMonthResetDate.toISOString().split('T')[0],
         last_reset_date: existingUser.last_reset_date,
-        next_reset_date: nextResetDate ? nextResetDate.toISOString().split('T')[0] : null,
         today: todayString,
         free_credits: existingUser.free_credits,
         paid_credits: existingUser.paid_credits,
         needsReset,
-        계산로직: 'last_reset_date + 1개월 <= 오늘 날짜면 리셋'
+        계산로직: `매월 ${actualResetDay}일 기준 (가입일 앵커 고정)`
       });
       
       if (needsReset) {
-        console.log('📅 월간 무료 크레딧 리셋 실행!', { 
+        const calculatedResetDate = currentMonthResetDate.toISOString().split('T')[0];
+        
+        console.log('📅 가입일 기준 월간 무료 크레딧 리셋 실행!', { 
+          signupDate: existingUser.created_at,
+          resetDay: resetDay,
+          actualResetDay: actualResetDay,
           oldResetDate: existingUser.last_reset_date,
-          newResetDate: todayString,
+          newResetDate: calculatedResetDate, // ⚠️ 계산된 날짜 (오늘 아님!)
+          today: todayString,
           oldFreeCredits: existingUser.free_credits,
           newFreeCredits: 30,
-          paidCredits: existingUser.paid_credits + ' (유지)'
+          paidCredits: existingUser.paid_credits + ' (유지)',
+          설명: `매월 ${actualResetDay}일 기준 앵커 고정`
         });
         
         const { data: updatedUser, error: updateError } = await supabase
@@ -1222,7 +1260,7 @@ app.post('/api/auth/sync', async (c) => {
             name: name || existingUser.name,
             free_credits: 30, // ✅ 무료 크레딧만 리셋
             // paid_credits는 절대 건드리지 않음!
-            last_reset_date: todayString, // ✅ 오늘 날짜로 설정
+            last_reset_date: calculatedResetDate, // ✅ 계산된 리셋 기준일로 저장 (앵커 고정!)
             updated_at: new Date().toISOString()
           })
           .eq('id', user_id)
@@ -2016,11 +2054,10 @@ function generateKeywordsHash(keywords: string): string {
 async function checkAndRenewMonthlyCredits(supabase: any, userId: string): Promise<void> {
   try {
     const today = new Date();
-    const currentMonth = today.getFullYear() * 12 + today.getMonth();
     
     const { data: user, error } = await supabase
       .from('users')
-      .select('last_reset_date')
+      .select('created_at, last_reset_date')
       .eq('id', userId)
       .single();
     
@@ -2029,30 +2066,69 @@ async function checkAndRenewMonthlyCredits(supabase: any, userId: string): Promi
       return;
     }
     
-    let needsReset = false;
+    // 가입일 기준 리셋 로직
+    const signupDate = new Date(user.created_at);
+    const lastReset = user.last_reset_date 
+      ? new Date(user.last_reset_date)
+      : new Date('1970-01-01');
     
-    if (!user.last_reset_date) {
-      needsReset = true;
-    } else {
-      const lastResetDate = new Date(user.last_reset_date);
-      const lastResetMonth = lastResetDate.getFullYear() * 12 + lastResetDate.getMonth();
-      needsReset = currentMonth > lastResetMonth;
+    // 가입일의 "일" 추출 (예: 15일)
+    const resetDay = signupDate.getDate();
+    
+    // 현재 월의 마지막 날 계산 (2월 28일 등 처리)
+    const lastDayOfCurrentMonth = new Date(
+      today.getFullYear(), 
+      today.getMonth() + 1, 
+      0
+    ).getDate();
+    
+    // 실제 리셋일 (월말 가입자 고려)
+    const actualResetDay = Math.min(resetDay, lastDayOfCurrentMonth);
+    
+    // 이번 달의 리셋 기준일 계산
+    let currentMonthResetDate = new Date(
+      today.getFullYear(), 
+      today.getMonth(), 
+      actualResetDay
+    );
+    
+    // 오늘이 이번 달 리셋일보다 이전이라면, 지난 달이 기준
+    if (today < currentMonthResetDate) {
+      currentMonthResetDate = new Date(
+        today.getFullYear(),
+        today.getMonth() - 1,
+        actualResetDay
+      );
+      
+      // 지난 달 마지막 날 다시 계산
+      const lastDayOfPrevMonth = new Date(
+        currentMonthResetDate.getFullYear(),
+        currentMonthResetDate.getMonth() + 1,
+        0
+      ).getDate();
+      
+      const prevMonthActualDay = Math.min(resetDay, lastDayOfPrevMonth);
+      currentMonthResetDate.setDate(prevMonthActualDay);
     }
     
+    // 리셋 조건: 마지막 리셋이 이번 주기보다 이전인가?
+    const needsReset = lastReset < currentMonthResetDate;
+    
     if (needsReset) {
-      const todayStr = today.toISOString().split('T')[0];
+      const calculatedResetDate = currentMonthResetDate.toISOString().split('T')[0];
+      
       const { error: updateError } = await supabase
         .from('users')
         .update({
           free_credits: MONTHLY_FREE_CREDITS,
-          last_reset_date: todayStr
+          last_reset_date: calculatedResetDate // ✅ 계산된 리셋 기준일로 저장 (앵커 고정!)
         })
         .eq('id', userId);
       
       if (updateError) {
         console.error('크레딧 갱신 실패:', updateError);
       } else {
-        console.log(`✅ 사용자 ${userId}에게 월간 무료 크레딧 ${MONTHLY_FREE_CREDITS}개 지급`);
+        console.log(`✅ 사용자 ${userId}에게 월간 무료 크레딧 ${MONTHLY_FREE_CREDITS}개 지급 (매월 ${actualResetDay}일 기준)`);
       }
     }
   } catch (error) {
