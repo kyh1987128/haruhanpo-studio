@@ -1220,7 +1220,7 @@ app.post('/api/auth/sync', async (c) => {
           .update({ 
             email,
             name: name || existingUser.name,
-            free_credits: 10, // ✅ 무료 크레딧만 리셋
+            free_credits: 30, // ✅ 무료 크레딧만 리셋
             // paid_credits는 절대 건드리지 않음!
             last_reset_date: todayString, // ✅ 오늘 날짜로 설정
             updated_at: new Date().toISOString()
@@ -1251,7 +1251,7 @@ app.post('/api/auth/sync', async (c) => {
       // 3️⃣ 신규 사용자: 무료 회원으로 생성
       console.log('🆕 신규 무료 회원 생성:', {
         email,
-        free_credits: 10,
+        free_credits: 30,
         paid_credits: 0,
         last_reset_date: todayString,
         설명: '다음 달에 무료 크레딧이 리셋됩니다'
@@ -1264,7 +1264,7 @@ app.post('/api/auth/sync', async (c) => {
           email,
           name: name || null,
           tier: 'free', // ✅ 무료 회원
-          free_credits: 10, // ✅ 월간 무료 크레딧
+          free_credits: 30, // ✅ 월간 무료 크레딧
           paid_credits: 0, // ✅ 유료 크레딧 0
           last_reset_date: todayString, // ✅ 오늘 날짜로 설정
           registration_completed: false, // ✅ 신규 사용자는 회원가입 미완료 상태
@@ -1979,7 +1979,7 @@ app.route('/api/payments', payments);
 
 // 설정 상수
 const DAILY_FREE_LIMIT = 3;
-const MONTHLY_FREE_CREDITS = 10;
+const MONTHLY_FREE_CREDITS = 30;
 const CREDIT_COST = 1;
 const CACHE_DURATION_HOURS = 24;
 
