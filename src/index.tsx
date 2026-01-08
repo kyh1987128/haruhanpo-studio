@@ -2563,6 +2563,10 @@ app.post('/api/analyze-keywords-quality', async (c) => {
       const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
       analysis = JSON.parse(jsonMatch ? jsonMatch[0] : aiResponse);
       
+      // 🔍 AI 원본 응답 로그
+      console.log(`🔍 [${user_id}] AI 원본 market_insights:`, analysis.market_insights);
+      console.log(`🔍 [${user_id}] AI 원본 strategic_recommendations:`, analysis.strategic_recommendations);
+      
       if (!analysis.keywords || !Array.isArray(analysis.keywords)) {
         throw new Error('Invalid analysis format');
       }
