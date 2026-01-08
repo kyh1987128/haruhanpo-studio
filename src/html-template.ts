@@ -229,11 +229,11 @@ export const htmlTemplate = `
             <!-- 가격 플랜 카드 -->
             <div class="bg-white bg-opacity-20 rounded-xl p-8 max-w-5xl mx-auto mb-6 backdrop-blur-sm">
                 <div class="grid grid-cols-3 gap-8 text-center">
-                    <div class="relative">
+                    <div class="relative pt-8">
                         <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-purple-900 px-4 py-1 rounded-full text-xs font-bold">
                             🎁 NEW
                         </div>
-                        <div class="text-6xl font-bold mb-2">30</div>
+                        <div class="text-6xl font-bold mb-2 mt-4">30</div>
                         <div class="text-2xl font-semibold mb-3">크레딧/월</div>
                         <div class="text-sm opacity-90 mb-4">
                             가입만 해도<br>
@@ -244,11 +244,11 @@ export const htmlTemplate = `
                         </div>
                     </div>
                     
-                    <div class="relative">
+                    <div class="relative pt-8">
                         <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-1 rounded-full text-xs font-bold animate-pulse">
                             🔥 HOT
                         </div>
-                        <div class="text-6xl font-bold mb-2">₩9,000</div>
+                        <div class="text-6xl font-bold mb-2 mt-4">₩9,000</div>
                         <div class="text-2xl font-semibold mb-3">50크레딧</div>
                         <div class="text-sm opacity-90 mb-4">
                             가장 인기 있는<br>
@@ -259,8 +259,8 @@ export const htmlTemplate = `
                         </div>
                     </div>
                     
-                    <div>
-                        <div class="text-6xl font-bold mb-2">∞</div>
+                    <div class="pt-8">
+                        <div class="text-6xl font-bold mb-2 mt-4">∞</div>
                         <div class="text-2xl font-semibold mb-3">추가 충전</div>
                         <div class="text-sm opacity-90 mb-4">
                             필요한 만큼만<br>
@@ -274,7 +274,7 @@ export const htmlTemplate = `
             </div>
             
             <!-- 주요 혜택 -->
-            <div class="grid grid-cols-3 gap-4 max-w-4xl mx-auto text-sm">
+            <div class="grid grid-cols-3 gap-4 max-w-4xl mx-auto text-sm mb-8">
                 <div class="flex items-center justify-center space-x-2 bg-white bg-opacity-10 rounded-lg p-3 backdrop-blur-sm">
                     <span class="text-2xl">⚡</span>
                     <span>30초 생성</span>
