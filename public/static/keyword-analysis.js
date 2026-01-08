@@ -5,12 +5,8 @@
 =================================================================
 */
 
-// 전역 상태 관리
-let userCreditsInfo = {
-  free_credits: 0,
-  paid_credits: 0,
-  daily_remaining: 3
-};
+// 🔥 전역 상태는 window 객체에만 저장 (로컬 변수 제거)
+// window.userCreditsInfo는 loadKeywordCreditStatus()에서 초기화됨
 
 // ===================================
 // 키워드 분석 카드 렌더링
@@ -284,21 +280,24 @@ async function analyzeKeywordsQuality() {
     paid_credits: window.currentUser.paid_credits
   });
 
+  // 🔥 수정: window.userCreditsInfo 사용 (로컬 변수 userCreditsInfo 제거됨)
+  const creditsInfo = window.userCreditsInfo || { free_credits: 0, paid_credits: 0, daily_remaining: 3 };
+  
   // 일일 무료 소진 상태에서 크레딧도 0이면 바로 모달
-  const totalCredits = userCreditsInfo.free_credits + userCreditsInfo.paid_credits;
-  if (userCreditsInfo.daily_remaining === 0 && totalCredits === 0) {
+  const totalCredits = creditsInfo.free_credits + creditsInfo.paid_credits;
+  if (creditsInfo.daily_remaining === 0 && totalCredits === 0) {
     showCreditShortageModal({
       daily_used: 3,
       daily_limit: 3,
-      free_credits: userCreditsInfo.free_credits,
-      paid_credits: userCreditsInfo.paid_credits
+      free_credits: creditsInfo.free_credits,
+      paid_credits: creditsInfo.paid_credits
     });
     return;
   }
 
   // 일일 무료 소진 + 크레딧 있을 때 확인
-  if (userCreditsInfo.daily_remaining === 0 && totalCredits > 0) {
-    const confirmMessage = `오늘 무료 3회를 모두 사용했습니다.\n크레딧 1개를 사용하여 분석하시겠습니까?\n\n무료 크레딧: ${userCreditsInfo.free_credits}개\n유료 크레딧: ${userCreditsInfo.paid_credits}개`;
+  if (creditsInfo.daily_remaining === 0 && totalCredits > 0) {
+    const confirmMessage = `오늘 무료 3회를 모두 사용했습니다.\n크레딧 1개를 사용하여 분석하시겠습니까?\n\n무료 크레딧: ${creditsInfo.free_credits}개\n유료 크레딧: ${creditsInfo.paid_credits}개`;
     if (!confirm(confirmMessage)) return;
   }
   
@@ -328,16 +327,14 @@ async function analyzeKeywordsQuality() {
       // 🔥 크레딧 즉시 동기화 (전역 상태 + localStorage + UI)
       if (data.cost_info) {
         const ci = data.cost_info;
+        const currentInfo = window.userCreditsInfo || { free_credits: 0, paid_credits: 0 };
         
-        // 전역 변수 업데이트
-        userCreditsInfo = {
-          free_credits: ci.remaining_free_credits ?? userCreditsInfo.free_credits,
-          paid_credits: ci.remaining_paid_credits ?? userCreditsInfo.paid_credits,
+        // window.userCreditsInfo 직접 업데이트
+        window.userCreditsInfo = {
+          free_credits: ci.remaining_free_credits ?? currentInfo.free_credits,
+          paid_credits: ci.remaining_paid_credits ?? currentInfo.paid_credits,
           total_credits: (ci.remaining_free_credits ?? 0) + (ci.remaining_paid_credits ?? 0)
         };
-        
-        // window.userCreditsInfo 동기화
-        window.userCreditsInfo = { ...userCreditsInfo };
         
         // window.currentUser 동기화
         if (window.currentUser) {
@@ -391,9 +388,10 @@ async function analyzeKeywordsQuality() {
         
         // 기존 크레딧 UI 업데이트 (있다면)
         if (window.updateAuthUI) {
-          window.currentUser.free_credits = userCreditsInfo.free_credits;
-          window.currentUser.paid_credits = userCreditsInfo.paid_credits;
-          window.currentUser.credits = userCreditsInfo.free_credits + userCreditsInfo.paid_credits;
+          const currentInfo = window.userCreditsInfo || { free_credits: 0, paid_credits: 0 };
+          window.currentUser.free_credits = currentInfo.free_credits;
+          window.currentUser.paid_credits = currentInfo.paid_credits;
+          window.currentUser.credits = currentInfo.free_credits + currentInfo.paid_credits;
           localStorage.setItem('postflow_user', JSON.stringify(window.currentUser));
           window.updateAuthUI();
         }
@@ -456,8 +454,9 @@ async function analyzeKeywordsQuality() {
 // 크레딧 부족 모달
 // ===================================
 function showCreditShortageModal(info) {
-  const free = info?.free_credits ?? userCreditsInfo.free_credits;
-  const paid = info?.paid_credits ?? userCreditsInfo.paid_credits;
+  const currentInfo = window.userCreditsInfo || { free_credits: 0, paid_credits: 0 };
+  const free = info?.free_credits ?? currentInfo.free_credits;
+  const paid = info?.paid_credits ?? currentInfo.paid_credits;
   const total = free + paid;
   const dailyUsed = info?.daily_used ?? 3;
   const dailyLimit = info?.daily_limit ?? 3;
