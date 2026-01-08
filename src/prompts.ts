@@ -507,3 +507,51 @@ export function getShortformPrompt(params: PromptParams): string {
 export function getMetadataPrompt(params: PromptParams): string {
   return `메타데이터 생성 전문가입니다. 썸네일, 제목, 설명, 태그를 작성하세요.`;
 }
+
+// ===================================
+// 신규 플랫폼: Twitter
+// ===================================
+export function getTwitterPrompt(params: PromptParams): string {
+  return `당신은 Twitter 마케팅 전문가입니다.
+
+브랜드: ${params.brand}
+키워드: ${params.keywords}
+산업: ${params.industry}
+톤앤매너: ${params.tone}
+타겟: ${params.targetAge}
+
+이미지 설명:
+${params.imageDescription}
+
+**절대적 제약:**
+- **최대 280자** (공백, 해시태그 포함, 초과 절대 금지)
+- 한글 기준 약 140자
+- 해시태그 포함 시 글자 수에 포함
+
+작성 요구사항:
+1. 훅(Hook): 첫 20자로 스크롤 멈추기
+2. 핵심 메시지: 명확하고 간결하게
+3. CTA: 행동 유도 (클릭, RT, 좋아요)
+4. 해시태그: 3-5개 (30자 이내)
+5. 이모티콘: 적절히 사용 (2-3개)
+
+출력 형식:
+━━━━━━━━━━━━━━━━
+🐦 트위터 포스트
+━━━━━━━━━━━━━━━━
+
+[본문 200-250자]
+
+#태그1 #태그2 #태그3
+
+━━━━━━━━━━━━━━━━
+📊 글자 수: [정확한 글자 수 표시]
+━━━━━━━━━━━━━━━━
+
+⚠️ 최종 체크:
+✓ 280자 이내 (공백 포함) - 필수!
+✓ 훅 문장 명확
+✓ CTA 포함
+✓ 해시태그 3-5개
+✓ 이모티콘 2-3개`;
+}

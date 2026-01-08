@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { serveStatic } from 'hono/cloudflare-workers';
 import OpenAI from 'openai';
-import { getBlogPrompt, getInstagramPrompt, getThreadsPrompt, getYouTubePrompt, getYoutubeLongformPrompt, getShortformPrompt, getMetadataPrompt, getInstagramFeedPrompt } from './prompts';
+import { getBlogPrompt, getInstagramPrompt, getThreadsPrompt, getYouTubePrompt, getYoutubeLongformPrompt, getShortformPrompt, getMetadataPrompt, getInstagramFeedPrompt, getTwitterPrompt } from './prompts';
 import { htmlTemplate } from './html-template';
 import { analyzeImageWithGemini, generateContentWithGemini, calculateGeminiCost, estimateTokens } from './gemini';
 import { createSupabaseAdmin, createSupabaseClient, grantMilestoneCredit, updateConsecutiveLogin, checkAndUseMonthlyQuota } from './lib/supabase';
@@ -823,6 +823,7 @@ app.post('/api/generate', async (c) => {
         case 'shortform_multi':
         case 'tiktok':
         case 'instagram_reels': return getShortformPrompt(promptParams);
+        case 'twitter': return getTwitterPrompt(promptParams); // ✅ 신규 추가
         default: return getBlogPrompt(promptParams);
       }
     };
@@ -979,6 +980,24 @@ app.post('/api/generate', async (c) => {
         );
       } else {
         generationTasks.push(generateContent(openai, 'metadata_generation', getMetadataPrompt(promptParams), aiModel));
+      }
+    }
+    
+    // ===================================
+    // 신규 플랫폼: Twitter
+    // ===================================
+    if (platforms.includes('twitter')) {
+      if (geminiApiKey) {
+        console.log('  🐦 트위터: Gemini Flash (70% 절감)');
+        generationTasks.push(
+          generateContentWithGemini(geminiApiKey, getPromptForPlatform('twitter'))
+            .then(content => {
+              totalCost.gemini += 0.006; // 짧은 글 = 저렴
+              return { platform: 'twitter', content };
+            })
+        );
+      } else {
+        generationTasks.push(generateContent(openai, 'twitter', getPromptForPlatform('twitter'), aiModel));
       }
     }
 

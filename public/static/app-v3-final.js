@@ -261,6 +261,74 @@ const DEFAULT_TEMPLATES = {
 - 리스레드 유도
 - 짧게, 강하게, 명확하게`,
   
+  twitter: `당신은 트위터(X) 마이크로블로깅 마케팅 전문가입니다.
+
+【브랜드 정보】
+- 브랜드/서비스/상품: {브랜드명}
+- 핵심 키워드: {키워드}
+- 산업 분야: {산업분야}
+- 타겟: {타겟연령대} {타겟성별}
+- 톤앤매너: {톤앤매너}
+
+【작성 목표】
+제공된 이미지를 분석하여, 280자 제한 내에서 최대의 바이럴 효과와 참여를 이끌어내는 트윗을 작성하세요.
+
+【필수 작성 요소】
+
+1. **후킹 (첫 줄, 30자 이내)**
+   - 충격/질문/숫자로 시작
+   - 예: "🔥 이거 모르면 손해봅니다"
+   - 스크롤을 멈추게 하는 첫인상
+
+2. **핵심 메시지 (100~200자)**
+   
+   2-1. 이미지 핵심 포인트
+   - 제공 이미지의 가장 중요한 1가지
+   - "핵심은 이거예요" 직설적 표현
+   - 사실/숫자로 신뢰도 확보
+   
+   2-2. 가치 제공
+   - {타겟연령대}가 원하는 정보
+   - 1~2문장으로 압축
+   - 즉시 활용 가능한 팁
+   
+   2-3. 감정 자극
+   - 공감/놀람/긴급성 중 1개
+   - 이모지 1~2개만 사용
+   - {톤앤매너} 반영
+
+3. **CTA (마지막 줄, 20자 이내)**
+   - "어떻게 생각하세요?"
+   - "RT 부탁드립니다 🔁"
+   - 명확한 행동 유도
+
+4. **해시태그 (3~5개)**
+   - 핵심 키워드 2개
+   - 트렌딩 태그 1~2개
+   - 브랜드 태그 1개
+
+【글쓰기 규칙】
+
+✅ 필수:
+- 총 250~280자 (해시태그 포함)
+- 문장 최대 30자
+- 줄바꿈 최소화 (2개 이내)
+- 구어체 자연스럽게
+- {톤앤매너} 일관성
+
+❌ 금지:
+- 장문 설명 (간결하게!)
+- 전문 용어 남발
+- 이모지 과다 (3개 이하)
+- 과도한 홍보 느낌
+
+【트위터 특성】
+- 280자 엄격 제한
+- 빠른 소비와 확산
+- 리트윗/댓글 유도
+- 한 줄에 모든 것을 담기
+- 타임라인 경쟁 고려`,
+  
   youtube: `당신은 유튜브 숏폼(Shorts) 비디오 마케팅 전문가입니다.
 
 【브랜드 정보】
@@ -834,7 +902,79 @@ CTR 15% 이상, 검색 노출 최적화를 달성합니다.
 【성과 예측】
 예상 CTR: [%]
 바이럴 점수: [1-10]
-참여율: [%]`
+참여율: [%]`,
+
+  // ===================================
+  // 신규 플랫폼: Twitter
+  // ===================================
+  twitter: `당신은 Twitter 마케팅 전문가입니다.
+
+【브랜드 정보】
+- 브랜드/서비스/상품: {브랜드명}
+- 핵심 키워드: {키워드}
+- 산업 분야: {산업분야}
+- 타겟: {타겟연령대} {타겟성별}
+- 톤앤매너: {톤앤매너}
+
+**절대적 제약:**
+- **최대 280자** (공백, 해시태그 포함, 초과 절대 금지)
+- 한글 기준 약 140자
+- 해시태그 포함 시 글자 수에 포함
+
+【작성 요구사항】
+
+1. **훅(Hook)** - 첫 20자
+   - 스크롤을 멈추게 하는 강렬한 시작
+   - 질문형, 숫자형, 충격형 중 선택
+   - 예: "90%가 놓치는...", "당신도 이랬나요?", "결론부터 말하면..."
+
+2. **핵심 메시지** - 60-80자
+   - 단 하나의 명확한 메시지
+   - 이미지 내용과 연결
+   - {키워드} 자연스럽게 포함
+
+3. **CTA** - 20-30자
+   - 명확한 행동 유도
+   - "RT하면...", "답글로 공유", "링크 확인" 등
+
+4. **해시태그** - 3-5개 (30자 이내)
+   - 메인 키워드 + 트렌딩 태그
+   - #브랜드명 #키워드 #산업분야
+
+5. **이모티콘** - 2-3개
+   - 감정 표현 또는 강조용
+   - 과도하지 않게
+
+【출력 형식】
+
+━━━━━━━━━━━━━━━━
+🐦 트위터 포스트
+━━━━━━━━━━━━━━━━
+
+[훅 문장] 🔥
+
+[핵심 메시지 2-3문장]
+
+[CTA] 👉
+
+#태그1 #태그2 #태그3
+
+━━━━━━━━━━━━━━━━
+📊 글자 수: [정확한 글자 수]
+━━━━━━━━━━━━━━━━
+
+⚠️ 최종 체크:
+✓ 280자 이내 (공백 포함) - 필수!
+✓ 훅 문장 명확
+✓ CTA 포함
+✓ 해시태그 3-5개
+✓ 이모티콘 2-3개
+
+【금지 사항】
+❌ 280자 초과 (절대 불가)
+❌ 긴 문장 (Twitter는 짧고 강렬하게)
+❌ 과도한 이모티콘 (3개 이상)
+❌ 해시태그 남발 (5개 이하)`
 };
 
 // ===================================
@@ -2939,7 +3079,8 @@ function displayResults(data, platforms) {
     shortform_multi: '📱 숏폼',
     tiktok: '🎵 틱톡',
     instagram_reels: '🎬 인스타 릴스',
-    metadata_generation: '📊 메타데이터'
+    metadata_generation: '📊 메타데이터',
+    twitter: '🐦 트위터' // ✅ 신규 추가
   };
   
   // 탭 버튼 생성
@@ -3147,7 +3288,8 @@ function downloadAsText(platform) {
     shortform_multi: '숏폼',
     tiktok: '틱톡',
     instagram_reels: '인스타 릴스',
-    metadata_generation: '메타데이터'
+    metadata_generation: '메타데이터',
+    twitter: '트위터' // ✅ 신규 추가
   };
   
   const brand = document.getElementById('brand').value.trim() || 'content';
@@ -3184,7 +3326,8 @@ function downloadAsWord(platform) {
     shortform_multi: '숏폼',
     tiktok: '틱톡',
     instagram_reels: '인스타 릴스',
-    metadata_generation: '메타데이터'
+    metadata_generation: '메타데이터',
+    twitter: '트위터' // ✅ 신규 추가
   };
   
   const brand = document.getElementById('brand').value.trim() || 'content';
@@ -3267,7 +3410,8 @@ function downloadAllAsExcel() {
     shortform_multi: '숏폼',
     tiktok: '틱톡',
     instagram_reels: '인스타 릴스',
-    metadata_generation: '메타데이터'
+    metadata_generation: '메타데이터',
+    twitter: '트위터' // ✅ 신규 추가
   };
   
   // HTML 테이블 형식으로 변환 (Excel이 읽을 수 있는 형식)
@@ -3365,7 +3509,8 @@ function downloadBatchExcel() {
     shortform_multi: '숏폼',
     tiktok: '틱톡',
     instagram_reels: '인스타 릴스',
-    metadata_generation: '메타데이터'
+    metadata_generation: '메타데이터',
+    twitter: '트위터' // ✅ 신규 추가
   };
   
   // HTML 테이블 형식으로 변환
@@ -3502,12 +3647,13 @@ function openTemplateModal() {
   const templateList = document.getElementById('templateList');
   
   // 템플릿 편집 UI 생성
-  const platforms = ['blog', 'instagram', 'instagram_feed', 'threads', 'tiktok', 'instagram_reels', 'youtube_shorts', 'shortform_multi', 'youtube_longform', 'metadata_generation'];
+  const platforms = ['blog', 'instagram', 'instagram_feed', 'threads', 'twitter', 'tiktok', 'instagram_reels', 'youtube_shorts', 'shortform_multi', 'youtube_longform', 'metadata_generation'];
   const platformNames = {
     blog: '📝 네이버 블로그',
     instagram: '📸 인스타그램 (기존)',
     instagram_feed: '📸 인스타그램 피드',
     threads: '🧵 스레드',
+    twitter: '🐦 트위터',
     tiktok: '🎵 틱톡',
     instagram_reels: '📹 인스타그램 릴스',
     youtube_shorts: '🎬 유튜브 쇼츠',
@@ -4215,6 +4361,7 @@ function filterHistory() {
     instagram_reels: '📸 인스타 릴스',
     instagram_feed: '📸 인스타 피드',
     threads: '🧵 스레드',
+    twitter: '🐦 트위터',
     youtube: '🎬 유튜브',
     youtube_shorts: '🎬 유튜브 쇼츠',
     youtube_longform: '🎬 유튜브 롱폼',
@@ -4283,7 +4430,8 @@ function exportHistoryAsExcel() {
     shortform_multi: '숏폼',
     tiktok: '틱톡',
     instagram_reels: '인스타 릴스',
-    metadata_generation: '메타데이터'
+    metadata_generation: '메타데이터',
+    twitter: '트위터' // ✅ 신규 추가
   };
   
   // HTML 테이블 형식
