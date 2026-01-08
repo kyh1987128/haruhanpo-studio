@@ -199,50 +199,93 @@ export const htmlTemplate = `
 
         <!-- 히어로 섹션 (비로그인 시만 표시) -->
         <div id="heroSection" class="bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl shadow-xl p-12 mb-8 text-white text-center">
-            <h2 class="text-4xl font-bold mb-4">
+            <h2 class="text-4xl font-bold mb-4 flex items-center justify-center">
                 ☕️ 하루 한 포스트, 커피 한 잔 가격으로
             </h2>
-            <p class="text-xl mb-6 opacity-90">
+            <p class="text-xl mb-8 opacity-90">
                 이미지를 업로드하면 AI가 블로그·인스타·유튜브 등<br>
                 <strong>5개 플랫폼 맞춤 콘텐츠</strong>를 30초 안에 자동 생성합니다
             </p>
             
-            <div class="flex justify-center space-x-8 mb-8">
-                <div class="text-center">
-                    <div class="text-3xl font-bold mb-1">30회/월</div>
-                    <div class="text-sm opacity-80">가입만 해도 무료!</div>
+            <!-- 3단계 프로세스 카드 -->
+            <div class="grid grid-cols-3 gap-6 mb-8 max-w-4xl mx-auto">
+                <div class="bg-white bg-opacity-20 rounded-xl p-6 backdrop-blur-sm hover:bg-opacity-30 transition">
+                    <div class="text-5xl mb-3">📸</div>
+                    <div class="font-bold text-lg mb-2">1. 이미지 업로드</div>
+                    <div class="text-sm opacity-90">상품, 풍경, 일상<br>뭐든 OK!</div>
                 </div>
-                <div class="text-center">
-                    <div class="text-3xl font-bold mb-1">₩9,000</div>
-                    <div class="text-sm opacity-80">50크레딧 구매</div>
+                <div class="bg-white bg-opacity-20 rounded-xl p-6 backdrop-blur-sm hover:bg-opacity-30 transition">
+                    <div class="text-5xl mb-3">🤖</div>
+                    <div class="font-bold text-lg mb-2">2. AI 자동 분석</div>
+                    <div class="text-sm opacity-90">키워드 추출<br>콘텐츠 생성</div>
                 </div>
-                <div class="text-center">
-                    <div class="text-3xl font-bold mb-1">추가 충전</div>
-                    <div class="text-sm opacity-80">필요한 만큼만</div>
+                <div class="bg-white bg-opacity-20 rounded-xl p-6 backdrop-blur-sm hover:bg-opacity-30 transition">
+                    <div class="text-5xl mb-3">🚀</div>
+                    <div class="font-bold text-lg mb-2">3. 즉시 발행</div>
+                    <div class="text-sm opacity-90">5개 플랫폼<br>동시 게시</div>
                 </div>
             </div>
             
-            <!-- 가입 혜택 -->
-            <div class="bg-white bg-opacity-20 rounded-xl p-6 max-w-3xl mx-auto mb-6">
-                <div class="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                        <div class="text-2xl mb-2">🎁</div>
-                        <div class="font-semibold mb-1">무료 회원</div>
-                        <div class="text-sm opacity-90">월 30크레딧 자동 지급</div>
-                        <div class="text-xs opacity-75">(가입일 기준 매월)</div>
+            <!-- 가격 플랜 카드 -->
+            <div class="bg-white bg-opacity-20 rounded-xl p-8 max-w-5xl mx-auto mb-6 backdrop-blur-sm">
+                <div class="grid grid-cols-3 gap-8 text-center">
+                    <div class="relative">
+                        <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-purple-900 px-4 py-1 rounded-full text-xs font-bold">
+                            🎁 NEW
+                        </div>
+                        <div class="text-6xl font-bold mb-2">30</div>
+                        <div class="text-2xl font-semibold mb-3">크레딧/월</div>
+                        <div class="text-sm opacity-90 mb-4">
+                            가입만 해도<br>
+                            <strong class="text-lg">매달 무료!</strong>
+                        </div>
+                        <div class="inline-block bg-white bg-opacity-30 px-4 py-2 rounded-lg text-sm">
+                            💰 매월 자동 충전
+                        </div>
                     </div>
-                    <div>
-                        <div class="text-2xl mb-2">💎</div>
-                        <div class="font-semibold mb-1">유료 플랜</div>
-                        <div class="text-sm opacity-90">₩9,000 = 50크레딧</div>
-                        <div class="text-xs opacity-75">(10% 할인, 소진 시까지 유지)</div>
+                    
+                    <div class="relative">
+                        <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-1 rounded-full text-xs font-bold animate-pulse">
+                            🔥 HOT
+                        </div>
+                        <div class="text-6xl font-bold mb-2">₩9,000</div>
+                        <div class="text-2xl font-semibold mb-3">50크레딧</div>
+                        <div class="text-sm opacity-90 mb-4">
+                            가장 인기 있는<br>
+                            <strong class="text-lg">스타터 팩</strong>
+                        </div>
+                        <div class="inline-block bg-white bg-opacity-30 px-4 py-2 rounded-lg text-sm">
+                            💎 10% 할인 적용
+                        </div>
                     </div>
+                    
                     <div>
-                        <div class="text-2xl mb-2">➕</div>
-                        <div class="font-semibold mb-1">추가 충전</div>
-                        <div class="text-sm opacity-90">₩2,000 / ₩17,000</div>
-                        <div class="text-xs opacity-75">(10개 / 100개)</div>
+                        <div class="text-6xl font-bold mb-2">∞</div>
+                        <div class="text-2xl font-semibold mb-3">추가 충전</div>
+                        <div class="text-sm opacity-90 mb-4">
+                            필요한 만큼만<br>
+                            <strong class="text-lg">자유롭게</strong>
+                        </div>
+                        <div class="inline-block bg-white bg-opacity-30 px-4 py-2 rounded-lg text-sm">
+                            💳 10개 / 100개
+                        </div>
                     </div>
+                </div>
+            </div>
+            
+            <!-- 주요 혜택 -->
+            <div class="grid grid-cols-3 gap-4 max-w-4xl mx-auto text-sm">
+                <div class="flex items-center justify-center space-x-2 bg-white bg-opacity-10 rounded-lg p-3 backdrop-blur-sm">
+                    <span class="text-2xl">⚡</span>
+                    <span>30초 생성</span>
+                </div>
+                <div class="flex items-center justify-center space-x-2 bg-white bg-opacity-10 rounded-lg p-3 backdrop-blur-sm">
+                    <span class="text-2xl">🎯</span>
+                    <span>5개 플랫폼</span>
+                </div>
+                <div class="flex items-center justify-center space-x-2 bg-white bg-opacity-10 rounded-lg p-3 backdrop-blur-sm">
+                    <span class="text-2xl">💰</span>
+                    <span>합리적 가격</span>
                 </div>
             </div>
             

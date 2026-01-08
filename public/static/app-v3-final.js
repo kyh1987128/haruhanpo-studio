@@ -1233,7 +1233,7 @@ function updateCostEstimate() {
           로그인이 필요한 서비스입니다
         </div>
         <p style="font-size: 0.95rem; opacity: 0.9; margin: 0;">
-          가입만 해도 <strong>월 30크레딧 무료</strong> + 크레딧으로 무제한 사용!
+          가입만 해도 <strong>월 30크레딧 무료</strong> 제공!
         </p>
       </div>
     `;
