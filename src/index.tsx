@@ -2656,18 +2656,78 @@ app.post('/api/analyze-keywords-quality', async (c) => {
       console.log(`✅ [AI 진단] AI 응답 성공 - 길이: ${aiResponse.length}자`);
       console.log(`📄 [AI 진단] AI 응답 원본 (첫 200자):`, aiResponse.substring(0, 200));
       
-      // 🔥 JSON Schema 사용으로 파싱이 거의 100% 성공
+      // 🔥 3단계 안전 파싱 (JSON Schema + 후처리)
       let parsedAnalysis: any = null;
       
+      // 1단계: 직접 파싱 시도
       try {
-        // JSON Schema가 유효성을 보장하므로 직접 파싱
         parsedAnalysis = JSON.parse(aiResponse.trim());
-        console.log(`✅ [AI 진단] JSON 파싱 성공 - keywords: ${parsedAnalysis.keywords?.length || 0}개, market_insights: ${parsedAnalysis.market_insights?.length || 0}개`);
+        console.log(`✅ [AI 진단] 1단계 파싱 성공 - keywords: ${parsedAnalysis.keywords?.length || 0}개`);
       } catch (parseError) {
         const errorMsg = (parseError as Error).message;
-        console.error(`❌ [AI 진단] JSON 파싱 실패: ${errorMsg}`);
-        console.error(`📄 [AI 진단] 원본 응답:`, aiResponse);
-        throw new Error(`JSON 파싱 실패: ${errorMsg}`);
+        console.warn(`⚠️ [AI 진단] 1단계 파싱 실패: ${errorMsg}`);
+        
+        // 2단계: 안전한 문자열 정제 후 재시도
+        try {
+          console.log(`🔧 [AI 진단] 2단계: 문자열 정제 시도`);
+          
+          // 에러 위치 확인
+          const posMatch = errorMsg.match(/position (\d+)/);
+          if (posMatch) {
+            const errorPos = parseInt(posMatch[1]);
+            console.log(`📍 [AI 진단] 에러 위치: ${errorPos}자`);
+            console.log(`📄 [AI 진단] 에러 주변:`, aiResponse.substring(Math.max(0, errorPos - 50), errorPos + 50));
+          }
+          
+          // 보수적 정제: 이스케이프되지 않은 따옴표만 처리
+          let cleanedResponse = aiResponse.trim();
+          
+          // JSON 문자열 값 내부의 이스케이프되지 않은 따옴표를 작은따옴표로 변경
+          // 패턴: "key": "value with "quote"" → "key": "value with 'quote'"
+          cleanedResponse = cleanedResponse.replace(
+            /"([^"]*?)"\s*:\s*"((?:[^"\\]|\\.)*)"/g,
+            (match, key, value) => {
+              // value 내부에 이스케이프되지 않은 따옴표가 있으면 작은따옴표로 변경
+              const cleanedValue = value.replace(/(?<!\\)"/g, "'");
+              return `"${key}": "${cleanedValue}"`;
+            }
+          );
+          
+          parsedAnalysis = JSON.parse(cleanedResponse);
+          console.log(`✅ [AI 진단] 2단계 파싱 성공 (정제 후) - keywords: ${parsedAnalysis.keywords?.length || 0}개`);
+          
+        } catch (secondError) {
+          console.warn(`⚠️ [AI 진단] 2단계 파싱도 실패: ${(secondError as Error).message}`);
+          
+          // 3단계: 마지막 완전한 객체까지만 사용
+          try {
+            console.log(`🔧 [AI 진단] 3단계: 불완전한 JSON 잘라내기`);
+            const lastBrace = aiResponse.lastIndexOf('}');
+            
+            if (lastBrace > 0) {
+              const truncated = aiResponse.substring(0, lastBrace + 1);
+              
+              // 잘라낸 JSON도 정제 시도
+              let cleanedTruncated = truncated.replace(
+                /"([^"]*?)"\s*:\s*"((?:[^"\\]|\\.)*)"/g,
+                (match, key, value) => {
+                  const cleanedValue = value.replace(/(?<!\\)"/g, "'");
+                  return `"${key}": "${cleanedValue}"`;
+                }
+              );
+              
+              parsedAnalysis = JSON.parse(cleanedTruncated);
+              console.log(`✅ [AI 진단] 3단계 파싱 성공 (잘라내기 + 정제) - keywords: ${parsedAnalysis.keywords?.length || 0}개`);
+            } else {
+              throw new Error('마지막 중괄호를 찾을 수 없음');
+            }
+          } catch (thirdError) {
+            console.error(`❌ [AI 진단] 모든 파싱 시도 실패`);
+            console.error(`📄 [AI 진단] 원본 응답 첫 1000자:`, aiResponse.substring(0, 1000));
+            console.error(`📄 [AI 진단] 원본 응답 마지막 500자:`, aiResponse.substring(aiResponse.length - 500));
+            throw new Error(`JSON 파싱 완전 실패: ${errorMsg}`);
+          }
+        }
       }
       
       analysis = parsedAnalysis;
