@@ -1211,7 +1211,7 @@ app.post('/api/auth/sync', async (c) => {
           oldResetDate: existingUser.last_reset_date,
           newResetDate: todayString,
           oldFreeCredits: existingUser.free_credits,
-          newFreeCredits: 10,
+          newFreeCredits: 30,
           paidCredits: existingUser.paid_credits + ' (유지)'
         });
         
