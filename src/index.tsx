@@ -2476,9 +2476,15 @@ app.post('/api/analyze-keywords-quality', async (c) => {
     
     const analysisPrompt = `
 당신은 10년 경력의 한국 시장 SEO/마케팅 전문 컨설턴트입니다. 
-다음 키워드들을 2024-2025년 기준으로 종합 분석하여 JSON으로만 응답하세요.
+다음 키워드들을 2024-2025년 기준으로 종합 분석하여 **순수 JSON만** 응답하세요.
 
 분석 키워드: ${keywordArray.join(', ')}
+
+**절대 규칙 (위반 시 재작성):**
+1. 순수 JSON만 출력 (인사말, 설명, 주석 절대 금지)
+2. 마크다운 코드 블록 금지 (\`\`\`json 사용 금지)
+3. JSON 외 어떤 텍스트도 포함 금지
+4. { 로 시작해서 } 로 끝나야 함
 
 **CRITICAL: 성의없는 답변 금지! 반드시 구체적이고 상세하게 작성하세요.**
 
@@ -2491,19 +2497,20 @@ app.post('/api/analyze-keywords-quality', async (c) => {
 6. competition_level: 경쟁 강도
 7. saturation_level: 시장 포화도
 
-[필수 작성 규칙 - 위반 시 재작성]
+[필수 작성 규칙]
 ✅ analysis: **반드시 5문장 이상**, 타겟층/시장상황/활용전략/경쟁분석/수익성 포함
-✅ recommendations: **반드시 5개 이상**, 실행 가능한 구체적 전략 (예: "20-30대 여성 타겟 인스타그램 릴스 제작")
+✅ recommendations: **반드시 5개 이상**, 실행 가능한 구체적 전략
 ✅ related_keywords: **반드시 7개 이상**, 실제 검색되는 연관 키워드
 ✅ better_alternatives: **반드시 5개 이상**, 더 나은 키워드 + 구체적 이유
-✅ market_insights: **반드시 5개 이상**, 시장 데이터 기반 인사이트
-✅ strategic_recommendations: **반드시 5개 이상**, 단계별 실행 전략
+✅ market_insights: **반드시 5개 이상** (각 50자 이상), 시장 데이터/통계/출처 포함
+✅ strategic_recommendations: **반드시 5개 이상** (각 50자 이상), 단계별 실행 전략
 
-[JSON 형식]
+**지금 즉시 아래 JSON 형식만 출력하세요 (다른 텍스트 절대 금지):**
+
 {
   "keywords": [
     {
-      "keyword": "예시",
+      "keyword": "${keywordArray[0]}",
       "marketing_score": 85,
       "seo_score": 70,
       "viral_potential": 80,
@@ -2514,12 +2521,12 @@ app.post('/api/analyze-keywords-quality', async (c) => {
       "saturation_level": 80,
       "market_size": "대형 키워드",
       "total_score": 81,
-      "analysis": "**5문장 이상 필수** 타겟층 + 시장상황 + 활용전략 + 경쟁분석 + 수익성",
-      "recommendations": ["구체적전략1 (실행방법포함)", "구체적전략2", "구체적전략3", "구체적전략4", "구체적전략5"],
+      "analysis": "최소 5문장 이상의 구체적 분석 내용",
+      "recommendations": ["구체적전략1", "구체적전략2", "구체적전략3", "구체적전략4", "구체적전략5"],
       "related_keywords": ["연관1", "연관2", "연관3", "연관4", "연관5", "연관6", "연관7"],
       "better_alternatives": [
-        {"keyword": "대체1", "reason": "구체적 이유 (데이터 기반)"},
-        {"keyword": "대체2", "reason": "구체적 이유"},
+        {"keyword": "대체1", "reason": "구체적 이유 (50자 이상)"},
+        {"keyword": "대체2", "reason": "구체적 이유 (50자 이상)"},
         {"keyword": "대체3", "reason": "구체적 이유"},
         {"keyword": "대체4", "reason": "구체적 이유"},
         {"keyword": "대체5", "reason": "구체적 이유"}
@@ -2527,11 +2534,21 @@ app.post('/api/analyze-keywords-quality', async (c) => {
     }
   ],
   "overall_score": 81,
-  "market_insights": ["인사이트1 (데이터포함)", "인사이트2", "인사이트3", "인사이트4", "인사이트5"],
-  "strategic_recommendations": ["실행전략1 (구체적)", "실행전략2", "실행전략3", "실행전략4", "실행전략5"]
+  "market_insights": [
+    "시장 인사이트 1 (50자 이상, 출처/통계 포함)",
+    "시장 인사이트 2 (50자 이상, 출처/통계 포함)",
+    "시장 인사이트 3 (50자 이상)",
+    "시장 인사이트 4 (50자 이상)",
+    "시장 인사이트 5 (50자 이상)"
+  ],
+  "strategic_recommendations": [
+    "실행 전략 1 (50자 이상, 구체적 실행방법 포함)",
+    "실행 전략 2 (50자 이상, 구체적 실행방법 포함)",
+    "실행 전략 3 (50자 이상)",
+    "실행 전략 4 (50자 이상)",
+    "실행 전략 5 (50자 이상)"
+  ]
 }
-
-**WARNING: 일반적이고 추상적인 답변 금지! 반드시 구체적 데이터와 실행방법 포함!**
     `;
     
     let analysis: any;
@@ -2567,18 +2584,36 @@ app.post('/api/analyze-keywords-quality', async (c) => {
       console.log(`✅ [AI 진단] AI 응답 성공 - 길이: ${aiResponse.length}자`);
       console.log(`📄 [AI 진단] AI 응답 원본 (첫 500자):`, aiResponse.substring(0, 500));
       
-      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+      // 🔧 강화된 JSON 추출 로직
+      let jsonString = aiResponse.trim();
+      
+      // 1. 마크다운 코드 블록 제거
+      const codeBlockMatch = jsonString.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (codeBlockMatch) {
+        jsonString = codeBlockMatch[1].trim();
+        console.log(`🔧 [AI 진단] 마크다운 코드 블록 제거됨`);
+      }
+      
+      // 2. JSON 객체 추출
+      const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
       
       if (!jsonMatch) {
-        console.error(`❌ [AI 진단] JSON 매칭 실패 - AI 응답이 JSON 형식이 아님`);
-        throw new Error('AI 응답이 JSON 형식이 아닙니다');
+        console.error(`❌ [AI 진단] JSON 매칭 실패`);
+        console.error(`📄 [AI 진단] 파싱 실패한 응답 전체:`, aiResponse);
+        throw new Error(`AI 응답이 JSON 형식이 아닙니다. 응답 시작: ${aiResponse.substring(0, 100)}...`);
       }
       
       console.log(`✅ [AI 진단] JSON 매칭 성공 - 길이: ${jsonMatch[0].length}자`);
       
-      analysis = JSON.parse(jsonMatch[0]);
-      
-      console.log(`✅ [AI 진단] JSON 파싱 성공 - market_insights: ${analysis.market_insights?.length || 0}개`);
+      // 3. JSON 파싱
+      try {
+        analysis = JSON.parse(jsonMatch[0]);
+        console.log(`✅ [AI 진단] JSON 파싱 성공 - market_insights: ${analysis.market_insights?.length || 0}개`);
+      } catch (parseError) {
+        console.error(`❌ [AI 진단] JSON 파싱 오류:`, parseError);
+        console.error(`📄 [AI 진단] 파싱 시도한 JSON:`, jsonMatch[0].substring(0, 500));
+        throw new Error(`JSON 파싱 실패: ${(parseError as Error).message}`);
+      }
       
       // 🔍 AI 원본 응답 로그
       console.log(`🔍 [${user_id}] AI 원본 market_insights:`, analysis.market_insights);
