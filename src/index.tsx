@@ -2498,12 +2498,19 @@ app.post('/api/analyze-keywords-quality', async (c) => {
 7. saturation_level: 시장 포화도
 
 [필수 작성 규칙]
+⚠️ **절대 금지**: 문자열 내부에 큰따옴표(") 사용 금지! 반드시 작은따옴표(')로 대체!
 ✅ analysis: **반드시 5문장 이상**, 타겟층/시장상황/활용전략/경쟁분석/수익성 포함
 ✅ recommendations: **반드시 5개 이상**, 실행 가능한 구체적 전략
 ✅ related_keywords: **반드시 7개 이상**, 실제 검색되는 연관 키워드
 ✅ better_alternatives: **반드시 5개 이상**, 더 나은 키워드 + 구체적 이유
 ✅ market_insights: **반드시 5개 이상** (각 50자 이상), 시장 데이터/통계/출처 포함
 ✅ strategic_recommendations: **반드시 5개 이상** (각 50자 이상), 단계별 실행 전략
+
+[문자열 작성 예시]
+❌ 잘못된 예: "실무 엑셀의 "큰형" 포지셔닝" (큰따옴표 사용)
+✅ 올바른 예: "실무 엑셀의 '큰형' 포지셔닝" (작은따옴표 사용)
+❌ 잘못된 예: "전문가 이미지를 "강화"할 수 있습니다"
+✅ 올바른 예: "전문가 이미지를 '강화'할 수 있습니다"
 
 **지금 즉시 아래 JSON 형식만 출력하세요 (다른 텍스트 절대 금지):**
 
@@ -2656,75 +2663,200 @@ app.post('/api/analyze-keywords-quality', async (c) => {
       console.log(`✅ [AI 진단] AI 응답 성공 - 길이: ${aiResponse.length}자`);
       console.log(`📄 [AI 진단] AI 응답 원본 (첫 200자):`, aiResponse.substring(0, 200));
       
-      // 🔥 3단계 안전 파싱 (JSON Schema + 후처리)
+      // 🔥 v15.8.0: 4단계 초강력 파싱 시스템
       let parsedAnalysis: any = null;
       
-      // 1단계: 직접 파싱 시도
+      // ===== 0단계: 마크다운 코드 블록 제거 =====
+      let cleanResponse = aiResponse
+        .replace(/^```json\s*/i, '')    // 시작 ```json 제거
+        .replace(/^```\s*/i, '')        // 시작 ``` 제거  
+        .replace(/```\s*$/i, '')        // 끝 ``` 제거
+        .trim();
+      
+      // 설명 텍스트가 앞에 있는 경우 JSON 부분만 추출
+      const firstBrace = cleanResponse.indexOf('{');
+      const lastBrace = cleanResponse.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        const potentialJson = cleanResponse.substring(firstBrace, lastBrace + 1);
+        if (potentialJson.length < cleanResponse.length) {
+          console.log('🧹 [AI 진단] 앞뒤 설명 텍스트 제거됨');
+          cleanResponse = potentialJson;
+        }
+      }
+      
+      // ===== 0단계: 사전 정제 (따옴표 문제 해결) =====
+      const preClean = (text: string): string => {
+        let result = '';
+        let inString = false;
+        let escaped = false;
+        let stringStart = 0;
+        
+        for (let i = 0; i < text.length; i++) {
+          const char = text[i];
+          const next = i < text.length - 1 ? text[i + 1] : '';
+          
+          if (escaped) {
+            result += char;
+            escaped = false;
+            continue;
+          }
+          
+          if (char === '\\') {
+            result += char;
+            escaped = true;
+            continue;
+          }
+          
+          if (char === '"') {
+            if (!inString) {
+              // 문자열 시작
+              inString = true;
+              stringStart = i;
+              result += char;
+            } else {
+              // 문자열 종료인지 확인
+              const isRealEnd = /[\s,\}\]]/.test(next) || next === '' || next === ':';
+              
+              if (isRealEnd || i === text.length - 1) {
+                // 실제 종료
+                inString = false;
+                result += char;
+              } else {
+                // 문자열 내부 따옴표 → 작은따옴표로 변경
+                result += "'";
+              }
+            }
+          } else {
+            result += char;
+          }
+        }
+        
+        return result;
+      };
+      
+      console.log('🧹 [AI 진단] 0단계: 사전 정제 (따옴표 변환) 시작');
+      cleanResponse = preClean(cleanResponse);
+      console.log(`✅ [AI 진단] 0단계 완료 - 정제된 길이: ${cleanResponse.length}자`);
+      
+      // ===== 1단계: 직접 파싱 시도 =====
       try {
-        parsedAnalysis = JSON.parse(aiResponse.trim());
+        parsedAnalysis = JSON.parse(cleanResponse);
         console.log(`✅ [AI 진단] 1단계 파싱 성공 - keywords: ${parsedAnalysis.keywords?.length || 0}개`);
       } catch (parseError) {
         const errorMsg = (parseError as Error).message;
         console.warn(`⚠️ [AI 진단] 1단계 파싱 실패: ${errorMsg}`);
         
-        // 2단계: 안전한 문자열 정제 후 재시도
+        // ===== 2단계: 향상된 문자열 정제 =====
         try {
-          console.log(`🔧 [AI 진단] 2단계: 문자열 정제 시도`);
+          console.log(`🔧 [AI 진단] 2단계: 향상된 문자열 정제 시도`);
           
-          // 에러 위치 확인
-          const posMatch = errorMsg.match(/position (\d+)/);
-          if (posMatch) {
-            const errorPos = parseInt(posMatch[1]);
-            console.log(`📍 [AI 진단] 에러 위치: ${errorPos}자`);
-            console.log(`📄 [AI 진단] 에러 주변:`, aiResponse.substring(Math.max(0, errorPos - 50), errorPos + 50));
+          let result = '';
+          let inString = false;
+          let inKey = false;
+          let escaped = false;
+          
+          for (let i = 0; i < cleanResponse.length; i++) {
+            const char = cleanResponse[i];
+            const prev = i > 0 ? cleanResponse[i - 1] : '';
+            const next = i < cleanResponse.length - 1 ? cleanResponse[i + 1] : '';
+            
+            if (escaped) {
+              result += char;
+              escaped = false;
+              continue;
+            }
+            
+            if (char === '\\') {
+              result += char;
+              escaped = true;
+              continue;
+            }
+            
+            if (char === '"') {
+              if (!inString) {
+                // 문자열 시작
+                inString = true;
+                inKey = /[{\s,]/.test(prev);
+                result += char;
+              } else {
+                // 문자열 끝 vs 내부 따옴표 판단
+                if (inKey && next === ':') {
+                  // 키의 끝
+                  inString = false;
+                  inKey = false;
+                  result += char;
+                } else if (!inKey && /[,}\]\s]/.test(next)) {
+                  // 값의 끝
+                  inString = false;
+                  result += char;
+                } else {
+                  // 문자열 내부의 따옴표 → 작은따옴표로 변경
+                  result += "'";
+                }
+              }
+            } else {
+              result += char;
+            }
           }
           
-          // 보수적 정제: 이스케이프되지 않은 따옴표만 처리
-          let cleanedResponse = aiResponse.trim();
-          
-          // JSON 문자열 값 내부의 이스케이프되지 않은 따옴표를 작은따옴표로 변경
-          // 패턴: "key": "value with "quote"" → "key": "value with 'quote'"
-          cleanedResponse = cleanedResponse.replace(
-            /"([^"]*?)"\s*:\s*"((?:[^"\\]|\\.)*)"/g,
-            (match, key, value) => {
-              // value 내부에 이스케이프되지 않은 따옴표가 있으면 작은따옴표로 변경
-              const cleanedValue = value.replace(/(?<!\\)"/g, "'");
-              return `"${key}": "${cleanedValue}"`;
-            }
-          );
-          
-          parsedAnalysis = JSON.parse(cleanedResponse);
+          parsedAnalysis = JSON.parse(result);
           console.log(`✅ [AI 진단] 2단계 파싱 성공 (정제 후) - keywords: ${parsedAnalysis.keywords?.length || 0}개`);
           
         } catch (secondError) {
           console.warn(`⚠️ [AI 진단] 2단계 파싱도 실패: ${(secondError as Error).message}`);
           
-          // 3단계: 마지막 완전한 객체까지만 사용
+          // ===== 3단계: 구조적 복구 =====
           try {
-            console.log(`🔧 [AI 진단] 3단계: 불완전한 JSON 잘라내기`);
-            const lastBrace = aiResponse.lastIndexOf('}');
+            console.log(`🔧 [AI 진단] 3단계: 구조적 복구 시도`);
             
-            if (lastBrace > 0) {
-              const truncated = aiResponse.substring(0, lastBrace + 1);
+            // 괄호 균형을 맞춰서 유효한 JSON 끝점 찾기
+            let braceCount = 0;
+            let validEndPos = -1;
+            let inString = false;
+            let escaped = false;
+            
+            for (let i = 0; i < cleanResponse.length; i++) {
+              const char = cleanResponse[i];
               
-              // 잘라낸 JSON도 정제 시도
-              let cleanedTruncated = truncated.replace(
-                /"([^"]*?)"\s*:\s*"((?:[^"\\]|\\.)*)"/g,
-                (match, key, value) => {
-                  const cleanedValue = value.replace(/(?<!\\)"/g, "'");
-                  return `"${key}": "${cleanedValue}"`;
+              if (escaped) {
+                escaped = false;
+                continue;
+              }
+              
+              if (char === '\\') {
+                escaped = true;
+                continue;
+              }
+              
+              if (char === '"') {
+                inString = !inString;
+                continue;
+              }
+              
+              if (!inString) {
+                if (char === '{') braceCount++;
+                if (char === '}') {
+                  braceCount--;
+                  if (braceCount === 0) {
+                    validEndPos = i + 1;
+                    break;
+                  }
                 }
-              );
-              
-              parsedAnalysis = JSON.parse(cleanedTruncated);
-              console.log(`✅ [AI 진단] 3단계 파싱 성공 (잘라내기 + 정제) - keywords: ${parsedAnalysis.keywords?.length || 0}개`);
-            } else {
-              throw new Error('마지막 중괄호를 찾을 수 없음');
+              }
             }
+            
+            if (validEndPos > 0) {
+              const truncated = cleanResponse.substring(0, validEndPos);
+              parsedAnalysis = JSON.parse(truncated);
+              console.log(`✅ [AI 진단] 3단계 파싱 성공 (구조 복구) - keywords: ${parsedAnalysis.keywords?.length || 0}개`);
+            } else {
+              throw new Error('유효한 JSON 구조를 찾을 수 없음');
+            }
+            
           } catch (thirdError) {
             console.error(`❌ [AI 진단] 모든 파싱 시도 실패`);
             console.error(`📄 [AI 진단] 원본 응답 첫 1000자:`, aiResponse.substring(0, 1000));
-            console.error(`📄 [AI 진단] 원본 응답 마지막 500자:`, aiResponse.substring(aiResponse.length - 500));
+            console.error(`📄 [AI 진단] 정제된 응답 첫 1000자:`, cleanResponse.substring(0, 1000));
             throw new Error(`JSON 파싱 완전 실패: ${errorMsg}`);
           }
         }
