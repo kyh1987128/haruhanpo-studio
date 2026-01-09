@@ -1893,7 +1893,7 @@ function generateContentBlocks() {
         </div>
         
         <!-- 추가 설명 -->
-        <div>
+        <div class="mb-4">
           <label class="block mb-2 font-semibold text-gray-700">
             <i class="fas fa-comment-dots mr-2"></i>추가 설명 (선택)
           </label>
@@ -1905,6 +1905,95 @@ function generateContentBlocks() {
             onchange="updateContentData(${i}, 'description', this.value)"
           >${contentBlocks[i].description || ''}</textarea>
         </div>
+        
+        <!-- 플랫폼 선택 (Option B) -->
+        <div class="mb-4">
+          <label class="block mb-2 font-semibold text-gray-700">
+            <i class="fas fa-share-alt mr-2"></i>발행할 플랫폼 선택 <span class="text-red-500">*</span>
+          </label>
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2" id="platformSelect_${i}">
+            <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
+              <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="blog" onchange="updateContentPlatforms(${i})">
+              <i class="fas fa-blog text-blue-600"></i>
+              <span class="text-sm font-medium">블로그</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
+              <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="instagram" onchange="updateContentPlatforms(${i})">
+              <i class="fab fa-instagram text-pink-600"></i>
+              <span class="text-sm font-medium">인스타그램</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
+              <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="threads" onchange="updateContentPlatforms(${i})">
+              <i class="fas fa-at text-gray-800"></i>
+              <span class="text-sm font-medium">스레드</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
+              <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="youtube" onchange="updateContentPlatforms(${i})">
+              <i class="fab fa-youtube text-red-600"></i>
+              <span class="text-sm font-medium">유튜브</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
+              <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="twitter" onchange="updateContentPlatforms(${i})">
+              <i class="fab fa-twitter text-blue-400"></i>
+              <span class="text-sm font-medium">트위터</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
+              <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="facebook" onchange="updateContentPlatforms(${i})">
+              <i class="fab fa-facebook text-blue-700"></i>
+              <span class="text-sm font-medium">페이스북</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
+              <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="linkedin" onchange="updateContentPlatforms(${i})">
+              <i class="fab fa-linkedin text-blue-800"></i>
+              <span class="text-sm font-medium">LinkedIn</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
+              <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="naver_cafe" onchange="updateContentPlatforms(${i})">
+              <i class="fas fa-comments text-green-600"></i>
+              <span class="text-sm font-medium">카페</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
+              <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="tistory" onchange="updateContentPlatforms(${i})">
+              <i class="fas fa-pen-fancy text-orange-600"></i>
+              <span class="text-sm font-medium">티스토리</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
+              <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="kakao_story" onchange="updateContentPlatforms(${i})">
+              <i class="fas fa-book-open text-yellow-500"></i>
+              <span class="text-sm font-medium">카카오스토리</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
+              <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="band" onchange="updateContentPlatforms(${i})">
+              <i class="fas fa-users text-green-700"></i>
+              <span class="text-sm font-medium">밴드</span>
+            </label>
+            <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
+              <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="brunch" onchange="updateContentPlatforms(${i})">
+              <i class="fas fa-coffee text-brown-600"></i>
+              <span class="text-sm font-medium">브런치</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- 개별 생성 버튼 (Option B) -->
+        <div class="flex items-center justify-between gap-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border-2 border-purple-200">
+          <div>
+            <p class="text-sm text-gray-600">예상 크레딧 차감</p>
+            <p class="text-2xl font-bold text-purple-600" id="contentCredit_${i}">0 크레딧</p>
+          </div>
+          <button
+            type="button"
+            onclick="generateSingleContent(${i})"
+            class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:from-purple-700 hover:to-pink-700 transition shadow-lg"
+            id="generateBtn_${i}"
+          >
+            <i class="fas fa-magic mr-2"></i>
+            콘텐츠 #${i + 1} 생성하기
+          </button>
+        </div>
+        
+        <!-- 개별 결과 영역 (Option B) -->
+        <div id="contentResult_${i}" class="hidden mt-4"></div>
       </div>
     `;
   }
@@ -6577,4 +6666,450 @@ function openDateTimeModalForGeneration(platform) {
 
 // 전역 노출
 window.openDateTimeModalForGeneration = openDateTimeModalForGeneration;
+
+
+// ===================================
+// Option B: 개별 콘텐츠 생성 함수
+// ===================================
+
+// 콘텐츠별 플랫폼 선택 상태 저장
+const contentPlatforms = {};
+
+// 플랫폼 선택 업데이트
+function updateContentPlatforms(contentIndex) {
+  const checkboxes = document.querySelectorAll(`input[data-content="${contentIndex}"].content-platform-checkbox:checked`);
+  const platforms = Array.from(checkboxes).map(cb => cb.value);
+  
+  // 플랫폼 저장
+  if (!contentBlocks[contentIndex]) {
+    contentBlocks[contentIndex] = { images: [], keywords: '', topic: '', description: '' };
+  }
+  contentBlocks[contentIndex].platforms = platforms;
+  contentPlatforms[contentIndex] = platforms;
+  
+  // 크레딧 계산
+  const platformCount = platforms.length;
+  let credit = 1;
+  if (platformCount >= 10) {
+    credit = 5;
+  } else if (platformCount >= 4) {
+    credit = 4;
+  } else if (platformCount >= 2) {
+    credit = 2;
+  } else if (platformCount === 0) {
+    credit = 0;
+  }
+  
+  // 크레딧 표시 업데이트
+  const creditDisplay = document.getElementById(`contentCredit_${contentIndex}`);
+  if (creditDisplay) {
+    creditDisplay.textContent = `${credit} 크레딧`;
+  }
+  
+  console.log(`💰 [콘텐츠 #${contentIndex + 1}] 플랫폼: ${platformCount}개, 크레딧: ${credit}`);
+}
+
+// 개별 콘텐츠 생성
+async function generateSingleContent(contentIndex) {
+  console.log(`🚀 [콘텐츠 #${contentIndex + 1}] 생성 시작`);
+  
+  const content = contentBlocks[contentIndex];
+  if (!content) {
+    showToast(`❌ 콘텐츠 #${contentIndex + 1} 정보가 없습니다`, 'error');
+    return;
+  }
+  
+  // 이미지 검증
+  if (!content.images || content.images.length === 0) {
+    showToast(`❌ 콘텐츠 #${contentIndex + 1}에 최소 1장의 이미지를 업로드해주세요`, 'error');
+    return;
+  }
+  
+  // 키워드 검증
+  if (!content.keywords || content.keywords.trim() === '') {
+    showToast(`❌ 콘텐츠 #${contentIndex + 1}의 키워드를 입력해주세요`, 'error');
+    return;
+  }
+  
+  // 플랫폼 검증
+  const platforms = contentPlatforms[contentIndex] || [];
+  if (platforms.length === 0) {
+    showToast(`❌ 콘텐츠 #${contentIndex + 1}의 플랫폼을 최소 1개 선택해주세요`, 'error');
+    return;
+  }
+  
+  // 크레딧 계산
+  const platformCount = platforms.length;
+  let creditsNeeded = 1;
+  if (platformCount >= 10) {
+    creditsNeeded = 5;
+  } else if (platformCount >= 4) {
+    creditsNeeded = 4;
+  } else if (platformCount >= 2) {
+    creditsNeeded = 2;
+  }
+  
+  console.log(`💰 [콘텐츠 #${contentIndex + 1}] 크레딧 계산: ${platformCount}개 플랫폼 = ${creditsNeeded} 크레딧`);
+  
+  // 크레딧 확인 (로그인 사용자만)
+  if (!currentUser.isGuest && currentUser.id) {
+    const freeCredits = window.userCreditsInfo?.free_credits ?? currentUser.free_credits ?? 0;
+    const paidCredits = window.userCreditsInfo?.paid_credits ?? currentUser.paid_credits ?? 0;
+    const totalCredits = freeCredits + paidCredits;
+    
+    if (totalCredits < creditsNeeded) {
+      console.error(`❌ [콘텐츠 #${contentIndex + 1}] 크레딧 부족: 필요 ${creditsNeeded}, 보유 ${totalCredits}`);
+      
+      const goToPayment = confirm(
+        `⛔ 크레딧이 부족합니다!\n\n` +
+        `• 필요: ${creditsNeeded}크레딧\n` +
+        `• 보유: ${totalCredits}크레딧 (무료 ${freeCredits} + 유료 ${paidCredits})\n\n` +
+        `💳 충전 페이지로 이동하시겠습니까?`
+      );
+      
+      if (goToPayment) {
+        window.location.href = '/static/payment.html';
+      }
+      return;
+    }
+    
+    console.log(`✅ [콘텐츠 #${contentIndex + 1}] 크레딧 검증 통과: 필요 ${creditsNeeded}, 보유 ${totalCredits}`);
+  }
+  
+  // 브랜드 정보 가져오기
+  const brand = document.getElementById('brand')?.value.trim() || '';
+  const companyName = document.getElementById('companyName')?.value.trim() || '';
+  const businessType = document.getElementById('businessType')?.value.trim() || '';
+  const location = document.getElementById('location')?.value.trim() || '';
+  const targetGender = document.getElementById('targetGender')?.value || '';
+  const contact = document.getElementById('contact')?.value.trim() || '';
+  let website = document.getElementById('website')?.value.trim() || '';
+  if (website && !website.startsWith('http://') && !website.startsWith('https://')) {
+    website = 'https://' + website;
+  }
+  const sns = document.getElementById('sns')?.value.trim() || '';
+  const tone = document.getElementById('tone')?.value || '친근한';
+  const targetAge = document.getElementById('targetAge')?.value || '20대';
+  const industry = document.getElementById('industry')?.value || '라이프스타일';
+  
+  // 키워드에 주제와 설명 추가
+  let enhancedKeywords = content.keywords;
+  if (content.topic) {
+    enhancedKeywords += ` (주제: ${content.topic})`;
+  }
+  if (content.description) {
+    enhancedKeywords += ` (${content.description})`;
+  }
+  
+  const formData = {
+    user_id: currentUser?.id || null,
+    is_guest: currentUser?.isGuest || false,
+    brand,
+    companyName,
+    businessType,
+    location,
+    targetGender,
+    contact,
+    website,
+    sns,
+    keywords: enhancedKeywords,
+    tone,
+    targetAge,
+    industry,
+    images: content.images.map((img) => img.base64),
+    platforms,
+    aiModel: 'gpt-4o',
+    customPrompt: getSelectedTemplateContent(),
+  };
+  
+  // 로딩 표시
+  showContentLoading(contentIndex);
+  
+  try {
+    const response = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData),
+    });
+    
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      hideContentLoading(contentIndex);
+      const errorText = await response.text();
+      console.error('서버 에러:', response.status, errorText.substring(0, 200));
+      showToast(`서버 오류가 발생했습니다. (${response.status})`, 'error');
+      return;
+    }
+    
+    const result = await response.json();
+    
+    console.log(`🔍 [콘텐츠 #${contentIndex + 1}] 백엔드 응답:`, result);
+    
+    if (!result.success) {
+      hideContentLoading(contentIndex);
+      showToast(`❌ ${result.error || '콘텐츠 생성 실패'}`, 'error');
+      return;
+    }
+    
+    // 로딩 숨기기
+    hideContentLoading(contentIndex);
+    
+    // 결과 표시
+    displaySingleContentResult(contentIndex, result, platforms);
+    
+    // 크레딧 갱신
+    if (result.remaining_credits !== undefined) {
+      updateUserCredits(result.remaining_credits);
+    }
+    
+    showToast(`✅ 콘텐츠 #${contentIndex + 1} 생성 완료!`, 'success');
+    
+  } catch (error) {
+    console.error(`❌ [콘텐츠 #${contentIndex + 1}] 생성 오류:`, error);
+    hideContentLoading(contentIndex);
+    showToast(`❌ ${error.message}`, 'error');
+  }
+}
+
+// 개별 콘텐츠 로딩 표시
+function showContentLoading(contentIndex) {
+  const resultArea = document.getElementById(`contentResult_${contentIndex}`);
+  if (!resultArea) return;
+  
+  resultArea.classList.remove('hidden');
+  resultArea.innerHTML = `
+    <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-8 text-center border-2 border-purple-200">
+      <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-600 mx-auto mb-4"></div>
+      <p class="text-lg font-bold text-gray-800 mb-2">
+        <i class="fas fa-magic mr-2 text-purple-600"></i>
+        콘텐츠 #${contentIndex + 1} 생성 중...
+      </p>
+      <p class="text-sm text-gray-600">AI가 콘텐츠를 생성하고 있습니다. 잠시만 기다려주세요.</p>
+      <p class="text-xs text-gray-500 mt-2">예상 소요 시간: 30-60초</p>
+    </div>
+  `;
+  
+  resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// 개별 콘텐츠 로딩 숨기기
+function hideContentLoading(contentIndex) {
+  // 로딩만 숨기고 결과 영역은 유지
+}
+
+// 개별 콘텐츠 결과 표시
+function displaySingleContentResult(contentIndex, result, platforms) {
+  const resultArea = document.getElementById(`contentResult_${contentIndex}`);
+  if (!resultArea) return;
+  
+  const platformNames = {
+    blog: '네이버 블로그',
+    instagram: '인스타그램',
+    threads: '스레드',
+    youtube: '유튜브 숏폼',
+    twitter: '트위터',
+    facebook: '페이스북',
+    linkedin: 'LinkedIn',
+    naver_cafe: '네이버 카페',
+    tistory: '티스토리',
+    kakao_story: '카카오스토리',
+    band: '밴드',
+    brunch: '브런치'
+  };
+  
+  let html = `
+    <div class="bg-white rounded-xl p-6 shadow-lg border-2 border-green-200">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-bold text-gray-800">
+          <i class="fas fa-check-circle text-green-600 mr-2"></i>
+          콘텐츠 #${contentIndex + 1} 생성 완료
+        </h3>
+        <button
+          onclick="document.getElementById('contentResult_${contentIndex}').classList.add('hidden')"
+          class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm"
+        >
+          <i class="fas fa-times mr-1"></i>닫기
+        </button>
+      </div>
+      
+      <!-- 탭 버튼 -->
+      <div class="flex flex-wrap gap-2 mb-4 border-b-2 border-gray-200 pb-3" id="tabButtons_${contentIndex}">
+  `;
+  
+  platforms.forEach((platform, index) => {
+    const isActive = index === 0;
+    html += `
+      <button
+        onclick="switchContentTab(${contentIndex}, '${platform}')"
+        id="tabBtn_${contentIndex}_${platform}"
+        class="px-4 py-2 rounded-t-lg font-semibold transition ${
+          isActive
+            ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
+            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+        }"
+      >
+        ${platformNames[platform] || platform}
+      </button>
+    `;
+  });
+  
+  html += `
+      </div>
+      
+      <!-- 탭 콘텐츠 -->
+      <div id="tabContents_${contentIndex}">
+  `;
+  
+  platforms.forEach((platform, index) => {
+    const content = result.data[platform];
+    if (!content) return;
+    
+    const isActive = index === 0;
+    html += `
+      <div id="tab_${contentIndex}_${platform}" class="${isActive ? '' : 'hidden'}">
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-3 max-h-96 overflow-y-auto whitespace-pre-wrap text-sm" id="content_${contentIndex}_${platform}">
+          ${formatContent(content)}
+        </div>
+        
+        <!-- 액션 버튼 -->
+        <div class="flex flex-wrap gap-2">
+          <button
+            onclick="editContentText(${contentIndex}, '${platform}')"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+          >
+            <i class="fas fa-edit mr-1"></i>수정
+          </button>
+          <button
+            onclick="downloadAsText(${JSON.stringify(content).replace(/"/g, '&quot;')}, '콘텐츠${contentIndex + 1}_${platformNames[platform]}.txt')"
+            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm"
+          >
+            <i class="fas fa-file-download mr-1"></i>TXT
+          </button>
+          <button
+            onclick="downloadAsDoc(${JSON.stringify(content).replace(/"/g, '&quot;')}, '콘텐츠${contentIndex + 1}_${platformNames[platform]}.doc')"
+            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm"
+          >
+            <i class="fas fa-file-word mr-1"></i>DOC
+          </button>
+          <button
+            onclick="copyToClipboard(${JSON.stringify(content).replace(/"/g, '&quot;')}, '${platformNames[platform]}')"
+            class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm"
+          >
+            <i class="fas fa-copy mr-1"></i>복사
+          </button>
+          <button
+            onclick="openDateTimeModalForGeneration('${platform}')"
+            class="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition text-sm"
+          >
+            <i class="fas fa-calendar-alt mr-1"></i>캘린더 등록
+          </button>
+        </div>
+        
+        <!-- 수정 영역 (숨김) -->
+        <div id="editor_${contentIndex}_${platform}" class="hidden mt-4">
+          <textarea
+            id="content_editor_${contentIndex}_${platform}"
+            class="w-full p-4 border-2 border-purple-300 rounded-lg resize-none"
+            rows="10"
+          >${content}</textarea>
+          <div class="flex gap-2 mt-2">
+            <button
+              onclick="cancelContentEdit(${contentIndex}, '${platform}')"
+              class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm"
+            >
+              <i class="fas fa-times mr-1"></i>취소
+            </button>
+            <button
+              onclick="saveContentEdit(${contentIndex}, '${platform}')"
+              class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm"
+            >
+              <i class="fas fa-save mr-1"></i>저장
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  
+  html += `
+      </div>
+    </div>
+  `;
+  
+  resultArea.innerHTML = html;
+  resultArea.classList.remove('hidden');
+  resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// 탭 전환
+function switchContentTab(contentIndex, platform) {
+  // 모든 탭 비활성화
+  const allTabs = document.querySelectorAll(`[id^="tab_${contentIndex}_"]`);
+  allTabs.forEach(tab => tab.classList.add('hidden'));
+  
+  const allButtons = document.querySelectorAll(`[id^="tabBtn_${contentIndex}_"]`);
+  allButtons.forEach(btn => {
+    btn.className = 'px-4 py-2 rounded-t-lg font-semibold transition bg-gray-100 text-gray-600 hover:bg-gray-200';
+  });
+  
+  // 선택된 탭 활성화
+  const selectedTab = document.getElementById(`tab_${contentIndex}_${platform}`);
+  if (selectedTab) {
+    selectedTab.classList.remove('hidden');
+  }
+  
+  const selectedButton = document.getElementById(`tabBtn_${contentIndex}_${platform}`);
+  if (selectedButton) {
+    selectedButton.className = 'px-4 py-2 rounded-t-lg font-semibold transition bg-gradient-to-r from-purple-600 to-blue-600 text-white';
+  }
+}
+
+// 콘텐츠 수정
+function editContentText(contentIndex, platform) {
+  const contentDiv = document.getElementById(`content_${contentIndex}_${platform}`);
+  const editorDiv = document.getElementById(`editor_${contentIndex}_${platform}`);
+  
+  if (contentDiv && editorDiv) {
+    contentDiv.classList.add('hidden');
+    editorDiv.classList.remove('hidden');
+  }
+}
+
+// 콘텐츠 수정 취소
+function cancelContentEdit(contentIndex, platform) {
+  const contentDiv = document.getElementById(`content_${contentIndex}_${platform}`);
+  const editorDiv = document.getElementById(`editor_${contentIndex}_${platform}`);
+  
+  if (contentDiv && editorDiv) {
+    contentDiv.classList.remove('hidden');
+    editorDiv.classList.add('hidden');
+  }
+}
+
+// 콘텐츠 수정 저장
+function saveContentEdit(contentIndex, platform) {
+  const editor = document.getElementById(`content_editor_${contentIndex}_${platform}`);
+  const contentDiv = document.getElementById(`content_${contentIndex}_${platform}`);
+  
+  if (editor && contentDiv) {
+    const newContent = editor.value;
+    contentDiv.innerHTML = formatContent(newContent);
+    contentDiv.classList.remove('hidden');
+    
+    const editorDiv = document.getElementById(`editor_${contentIndex}_${platform}`);
+    if (editorDiv) {
+      editorDiv.classList.add('hidden');
+    }
+    
+    showToast('✅ 수정 내용이 저장되었습니다', 'success');
+  }
+}
+
+// 전역 노출
+window.updateContentPlatforms = updateContentPlatforms;
+window.generateSingleContent = generateSingleContent;
+window.switchContentTab = switchContentTab;
+window.editContentText = editContentText;
+window.cancelContentEdit = cancelContentEdit;
+window.saveContentEdit = saveContentEdit;
 
