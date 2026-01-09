@@ -1825,6 +1825,263 @@ app.get('/api/profile', async (c) => {
   }
 });
 
+// ==================== 🆕 Profiles API (다중 프로필 관리) ====================
+
+// 1️⃣ GET /api/profiles - 사용자의 모든 프로필 조회
+app.get('/api/profiles', async (c) => {
+  try {
+    const user_id = c.req.query('user_id');
+    
+    if (!user_id) {
+      return c.json({ error: 'user_id는 필수입니다' }, 400);
+    }
+    
+    console.log('📋 프로필 목록 조회:', user_id);
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // RLS 정책에 의해 자동으로 본인 프로필만 조회됨
+    const { data: profiles, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user_id)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('❌ 프로필 목록 조회 실패:', error);
+      return c.json({ success: false, error: error.message }, 500);
+    }
+    
+    console.log(`✅ 프로필 목록 조회 완료: ${profiles?.length || 0}개`);
+    
+    return c.json({
+      success: true,
+      profiles: profiles || [],
+      count: profiles?.length || 0
+    });
+  } catch (error: any) {
+    console.error('❌ 프로필 목록 조회 예외:', error);
+    return c.json({ error: '프로필 목록 조회 중 오류가 발생했습니다', details: error.message }, 500);
+  }
+});
+
+// 2️⃣ POST /api/profiles - 새 프로필 생성
+app.post('/api/profiles', async (c) => {
+  try {
+    console.log('💾 /api/profiles 생성 요청');
+    
+    const body = await c.req.json();
+    const { 
+      user_id, 
+      profile_name,
+      brand, 
+      company_name, 
+      business_type, 
+      location, 
+      target_gender, 
+      contact, 
+      website, 
+      sns, 
+      keywords, 
+      tone, 
+      target_age, 
+      industry 
+    } = body;
+    
+    if (!user_id) {
+      return c.json({ error: 'user_id는 필수입니다' }, 400);
+    }
+    
+    if (!profile_name) {
+      return c.json({ error: 'profile_name은 필수입니다' }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // UUID 생성
+    const profileId = crypto.randomUUID();
+    
+    // profiles 테이블에 새 프로필 생성
+    const { data: newProfile, error: insertError } = await supabase
+      .from('profiles')
+      .insert({
+        id: profileId,
+        user_id,
+        profile_name,
+        brand: brand || company_name,
+        company_name,
+        business_type,
+        location,
+        target_gender,
+        contact,
+        website,
+        sns,
+        brand_keywords: keywords ? (Array.isArray(keywords) ? keywords : [keywords]) : null,
+        tone,
+        target_age,
+        industry,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+    
+    if (insertError) {
+      console.error('❌ 프로필 생성 실패:', insertError);
+      
+      // UNIQUE 제약 위반 (중복 프로필명)
+      if (insertError.code === '23505') {
+        return c.json({ success: false, error: '이미 존재하는 프로필 이름입니다' }, 409);
+      }
+      
+      return c.json({ success: false, error: insertError.message }, 500);
+    }
+    
+    console.log('✅ 프로필 생성 완료:', newProfile.profile_name);
+    
+    return c.json({
+      success: true,
+      profile: newProfile
+    });
+  } catch (error: any) {
+    console.error('❌ 프로필 생성 예외:', error);
+    return c.json({ error: '프로필 생성 중 오류가 발생했습니다', details: error.message }, 500);
+  }
+});
+
+// 3️⃣ PUT /api/profiles/:id - 프로필 수정
+app.put('/api/profiles/:id', async (c) => {
+  try {
+    const profileId = c.req.param('id');
+    console.log('✏️ /api/profiles/:id 수정 요청:', profileId);
+    
+    const body = await c.req.json();
+    const { 
+      user_id,
+      profile_name,
+      brand, 
+      company_name, 
+      business_type, 
+      location, 
+      target_gender, 
+      contact, 
+      website, 
+      sns, 
+      keywords, 
+      tone, 
+      target_age, 
+      industry 
+    } = body;
+    
+    if (!user_id) {
+      return c.json({ error: 'user_id는 필수입니다' }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // RLS 정책에 의해 본인 프로필만 수정 가능
+    const { data: updatedProfile, error: updateError } = await supabase
+      .from('profiles')
+      .update({
+        profile_name,
+        brand: brand || company_name,
+        company_name,
+        business_type,
+        location,
+        target_gender,
+        contact,
+        website,
+        sns,
+        brand_keywords: keywords ? (Array.isArray(keywords) ? keywords : [keywords]) : null,
+        tone,
+        target_age,
+        industry,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', profileId)
+      .eq('user_id', user_id)
+      .select()
+      .single();
+    
+    if (updateError) {
+      console.error('❌ 프로필 수정 실패:', updateError);
+      
+      // UNIQUE 제약 위반 (중복 프로필명)
+      if (updateError.code === '23505') {
+        return c.json({ success: false, error: '이미 존재하는 프로필 이름입니다' }, 409);
+      }
+      
+      return c.json({ success: false, error: updateError.message }, 500);
+    }
+    
+    if (!updatedProfile) {
+      return c.json({ success: false, error: '프로필을 찾을 수 없거나 권한이 없습니다' }, 404);
+    }
+    
+    console.log('✅ 프로필 수정 완료:', updatedProfile.profile_name);
+    
+    return c.json({
+      success: true,
+      profile: updatedProfile
+    });
+  } catch (error: any) {
+    console.error('❌ 프로필 수정 예외:', error);
+    return c.json({ error: '프로필 수정 중 오류가 발생했습니다', details: error.message }, 500);
+  }
+});
+
+// 4️⃣ DELETE /api/profiles/:id - 프로필 삭제
+app.delete('/api/profiles/:id', async (c) => {
+  try {
+    const profileId = c.req.param('id');
+    const user_id = c.req.query('user_id');
+    
+    if (!user_id) {
+      return c.json({ error: 'user_id는 필수입니다' }, 400);
+    }
+    
+    console.log('🗑️ /api/profiles/:id 삭제 요청:', profileId);
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // RLS 정책에 의해 본인 프로필만 삭제 가능
+    const { error: deleteError } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', profileId)
+      .eq('user_id', user_id);
+    
+    if (deleteError) {
+      console.error('❌ 프로필 삭제 실패:', deleteError);
+      return c.json({ success: false, error: deleteError.message }, 500);
+    }
+    
+    console.log('✅ 프로필 삭제 완료:', profileId);
+    
+    return c.json({
+      success: true,
+      message: '프로필이 삭제되었습니다'
+    });
+  } catch (error: any) {
+    console.error('❌ 프로필 삭제 예외:', error);
+    return c.json({ error: '프로필 삭제 중 오류가 발생했습니다', details: error.message }, 500);
+  }
+});
+
+// ==================== 히스토리 API ====================
+
 // 히스토리 조회 API (보안 강화)
 app.get('/api/history', async (c) => {
   try {
