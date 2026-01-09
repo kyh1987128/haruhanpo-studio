@@ -2258,14 +2258,20 @@ async function handleGenerate() {
   
   // 🚨 크리티컬: 서버 요청 전 크레딧 사전 검증 (API 비용 낭비 방지)
   const platformCount = platforms.length;
-  let creditsNeeded = 1;
+  let creditPerContent = 1;
   if (platformCount >= 10) {
-    creditsNeeded = 5;
+    creditPerContent = 5;
   } else if (platformCount >= 4) {
-    creditsNeeded = 4;
+    creditPerContent = 4;
   } else if (platformCount >= 2) {
-    creditsNeeded = 2;
+    creditPerContent = 2;
   }
+  
+  // ✅ 콘텐츠 개수 확인
+  const contentCount = Object.keys(contentBlocks).length;
+  const creditsNeeded = creditPerContent * contentCount;
+  
+  console.log(`💰 [크레딧 계산] 플랫폼: ${platformCount}개, 콘텐츠: ${contentCount}개, 크레딧/콘텐츠: ${creditPerContent}, 총 필요: ${creditsNeeded}`);
   
   // 현재 보유 크레딧 확인 (로그인 사용자만)
   if (!currentUser.isGuest && currentUser.id) {
@@ -2828,10 +2834,10 @@ function displayBatchResults(allResults, errors) {
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-xl font-bold text-gray-800">
             <i class="fas fa-file-alt mr-2 text-purple-600"></i>
-            콘텐츠 #${result.index}
+            콘텐츠 #${result.contentIndex + 1}
           </h3>
           <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-semibold">
-            <i class="fas fa-key mr-1"></i>${result.keyword || '키워드'}
+            <i class="fas fa-key mr-1"></i>${result.keywords || '키워드'}
           </span>
         </div>
     `;
@@ -2881,7 +2887,7 @@ function displayBatchResults(allResults, errors) {
     errors.forEach((err) => {
       html += `
         <div class="bg-white p-4 rounded-lg mb-2 border border-red-200">
-          <span class="font-semibold">콘텐츠 #${err.index}:</span>
+          <span class="font-semibold">콘텐츠 #${err.index + 1}:</span>
           <span class="text-red-600 ml-2">${err.error}</span>
         </div>
       `;

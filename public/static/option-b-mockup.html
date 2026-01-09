@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>옵션 B: 개별 플랫폼 선택 UI 시각화</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .content-section {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        .content-section:hover {
+            border-color: #8b5cf6;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.1);
+        }
+        .platform-checkbox {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .platform-checkbox:hover {
+            transform: scale(1.05);
+        }
+        .platform-checkbox input:checked + label {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .content-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .credit-badge {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-6xl mx-auto">
+        <!-- 헤더 -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                <i class="fas fa-magic mr-2 text-purple-600"></i>
+                옵션 B: 콘텐츠별 개별 플랫폼 선택
+            </h1>
+            <p class="text-gray-600">각 콘텐츠마다 원하는 플랫폼만 선택할 수 있습니다</p>
+            
+            <!-- 크레딧 표시 -->
+            <div class="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border-2 border-purple-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">예상 크레딧 차감</p>
+                        <p class="text-2xl font-bold text-purple-600" id="totalCredit">0 크레딧</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-600">현재 보유 크레딧</p>
+                        <p class="text-2xl font-bold text-gray-800">38 크레딧</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 콘텐츠 #1 -->
+        <div class="content-section bg-white p-6 mb-6">
+            <div class="content-header -mx-6 -mt-6 mb-6 p-4 text-white rounded-t-lg">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-bold flex items-center">
+                        <span class="bg-white text-purple-600 w-8 h-8 rounded-full flex items-center justify-center mr-3">1</span>
+                        콘텐츠 #1
+                    </h2>
+                    <span class="credit-badge px-4 py-1 rounded-full text-sm font-bold" id="credit1">2 크레딧</span>
+                </div>
+            </div>
+
+            <!-- 이미지 영역 -->
+            <div class="mb-6">
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50">
+                    <i class="fas fa-image text-4xl text-gray-400 mb-2"></i>
+                    <p class="text-gray-600">이미지를 업로드하세요</p>
+                </div>
+            </div>
+
+            <!-- 플랫폼 선택 -->
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-3">
+                    <i class="fas fa-share-alt mr-2 text-purple-600"></i>
+                    발행할 플랫폼 선택
+                </label>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <!-- 블로그 -->
+                    <div class="platform-checkbox">
+                        <input type="checkbox" id="c1-blog" class="hidden" onchange="updateCredit()" checked>
+                        <label for="c1-blog" class="block p-4 border-2 border-gray-300 rounded-lg text-center hover:border-purple-500 cursor-pointer">
+                            <i class="fas fa-blog text-2xl mb-2"></i>
+                            <p class="text-sm font-medium">블로그</p>
+                        </label>
+                    </div>
+                    <!-- 인스타그램 -->
+                    <div class="platform-checkbox">
+                        <input type="checkbox" id="c1-instagram" class="hidden" onchange="updateCredit()" checked>
+                        <label for="c1-instagram" class="block p-4 border-2 border-gray-300 rounded-lg text-center hover:border-purple-500 cursor-pointer">
+                            <i class="fab fa-instagram text-2xl mb-2"></i>
+                            <p class="text-sm font-medium">인스타그램</p>
+                        </label>
+                    </div>
+                    <!-- 유튜브 -->
+                    <div class="platform-checkbox">
+                        <input type="checkbox" id="c1-youtube" class="hidden" onchange="updateCredit()">
+                        <label for="c1-youtube" class="block p-4 border-2 border-gray-300 rounded-lg text-center hover:border-purple-500 cursor-pointer">
+                            <i class="fab fa-youtube text-2xl mb-2"></i>
+                            <p class="text-sm font-medium">유튜브</p>
+                        </label>
+                    </div>
+                    <!-- 스레드 -->
+                    <div class="platform-checkbox">
+                        <input type="checkbox" id="c1-threads" class="hidden" onchange="updateCredit()">
+                        <label for="c1-threads" class="block p-4 border-2 border-gray-300 rounded-lg text-center hover:border-purple-500 cursor-pointer">
+                            <i class="fas fa-at text-2xl mb-2"></i>
+                            <p class="text-sm font-medium">스레드</p>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 콘텐츠 #2 -->
+        <div class="content-section bg-white p-6 mb-6">
+            <div class="content-header -mx-6 -mt-6 mb-6 p-4 text-white rounded-t-lg">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-bold flex items-center">
+                        <span class="bg-white text-purple-600 w-8 h-8 rounded-full flex items-center justify-center mr-3">2</span>
+                        콘텐츠 #2
+                    </h2>
+                    <span class="credit-badge px-4 py-1 rounded-full text-sm font-bold" id="credit2">2 크레딧</span>
+                </div>
+            </div>
+
+            <!-- 이미지 영역 -->
+            <div class="mb-6">
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50">
+                    <i class="fas fa-image text-4xl text-gray-400 mb-2"></i>
+                    <p class="text-gray-600">이미지를 업로드하세요</p>
+                </div>
+            </div>
+
+            <!-- 플랫폼 선택 -->
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-3">
+                    <i class="fas fa-share-alt mr-2 text-purple-600"></i>
+                    발행할 플랫폼 선택
+                </label>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <!-- 블로그 -->
+                    <div class="platform-checkbox">
+                        <input type="checkbox" id="c2-blog" class="hidden" onchange="updateCredit()" checked>
+                        <label for="c2-blog" class="block p-4 border-2 border-gray-300 rounded-lg text-center hover:border-purple-500 cursor-pointer">
+                            <i class="fas fa-blog text-2xl mb-2"></i>
+                            <p class="text-sm font-medium">블로그</p>
+                        </label>
+                    </div>
+                    <!-- 인스타그램 -->
+                    <div class="platform-checkbox">
+                        <input type="checkbox" id="c2-instagram" class="hidden" onchange="updateCredit()">
+                        <label for="c2-instagram" class="block p-4 border-2 border-gray-300 rounded-lg text-center hover:border-purple-500 cursor-pointer">
+                            <i class="fab fa-instagram text-2xl mb-2"></i>
+                            <p class="text-sm font-medium">인스타그램</p>
+                        </label>
+                    </div>
+                    <!-- 유튜브 -->
+                    <div class="platform-checkbox">
+                        <input type="checkbox" id="c2-youtube" class="hidden" onchange="updateCredit()" checked>
+                        <label for="c2-youtube" class="block p-4 border-2 border-gray-300 rounded-lg text-center hover:border-purple-500 cursor-pointer">
+                            <i class="fab fa-youtube text-2xl mb-2"></i>
+                            <p class="text-sm font-medium">유튜브</p>
+                        </label>
+                    </div>
+                    <!-- 스레드 -->
+                    <div class="platform-checkbox">
+                        <input type="checkbox" id="c2-threads" class="hidden" onchange="updateCredit()">
+                        <label for="c2-threads" class="block p-4 border-2 border-gray-300 rounded-lg text-center hover:border-purple-500 cursor-pointer">
+                            <i class="fas fa-at text-2xl mb-2"></i>
+                            <p class="text-sm font-medium">스레드</p>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 콘텐츠 #3 -->
+        <div class="content-section bg-white p-6 mb-6">
+            <div class="content-header -mx-6 -mt-6 mb-6 p-4 text-white rounded-t-lg">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-bold flex items-center">
+                        <span class="bg-white text-purple-600 w-8 h-8 rounded-full flex items-center justify-center mr-3">3</span>
+                        콘텐츠 #3
+                    </h2>
+                    <span class="credit-badge px-4 py-1 rounded-full text-sm font-bold" id="credit3">2 크레딧</span>
+                </div>
+            </div>
+
+            <!-- 이미지 영역 -->
+            <div class="mb-6">
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50">
+                    <i class="fas fa-image text-4xl text-gray-400 mb-2"></i>
+                    <p class="text-gray-600">이미지를 업로드하세요</p>
+                </div>
+            </div>
+
+            <!-- 플랫폼 선택 -->
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-3">
+                    <i class="fas fa-share-alt mr-2 text-purple-600"></i>
+                    발행할 플랫폼 선택
+                </label>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <!-- 블로그 -->
+                    <div class="platform-checkbox">
+                        <input type="checkbox" id="c3-blog" class="hidden" onchange="updateCredit()">
+                        <label for="c3-blog" class="block p-4 border-2 border-gray-300 rounded-lg text-center hover:border-purple-500 cursor-pointer">
+                            <i class="fas fa-blog text-2xl mb-2"></i>
+                            <p class="text-sm font-medium">블로그</p>
+                        </label>
+                    </div>
+                    <!-- 인스타그램 -->
+                    <div class="platform-checkbox">
+                        <input type="checkbox" id="c3-instagram" class="hidden" onchange="updateCredit()">
+                        <label for="c3-instagram" class="block p-4 border-2 border-gray-300 rounded-lg text-center hover:border-purple-500 cursor-pointer">
+                            <i class="fab fa-instagram text-2xl mb-2"></i>
+                            <p class="text-sm font-medium">인스타그램</p>
+                        </label>
+                    </div>
+                    <!-- 유튜브 -->
+                    <div class="platform-checkbox">
+                        <input type="checkbox" id="c3-youtube" class="hidden" onchange="updateCredit()">
+                        <label for="c3-youtube" class="block p-4 border-2 border-gray-300 rounded-lg text-center hover:border-purple-500 cursor-pointer">
+                            <i class="fab fa-youtube text-2xl mb-2"></i>
+                            <p class="text-sm font-medium">유튜브</p>
+                        </label>
+                    </div>
+                    <!-- 스레드 -->
+                    <div class="platform-checkbox">
+                        <input type="checkbox" id="c3-threads" class="hidden" onchange="updateCredit()" checked>
+                        <label for="c3-threads" class="block p-4 border-2 border-gray-300 rounded-lg text-center hover:border-purple-500 cursor-pointer">
+                            <i class="fas fa-at text-2xl mb-2"></i>
+                            <p class="text-sm font-medium">스레드</p>
+                        </label>
+                    </div>
+                    <!-- 트위터 -->
+                    <div class="platform-checkbox">
+                        <input type="checkbox" id="c3-twitter" class="hidden" onchange="updateCredit()" checked>
+                        <label for="c3-twitter" class="block p-4 border-2 border-gray-300 rounded-lg text-center hover:border-purple-500 cursor-pointer">
+                            <i class="fab fa-twitter text-2xl mb-2"></i>
+                            <p class="text-sm font-medium">트위터</p>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 생성 버튼 -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <button class="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-lg font-bold rounded-lg hover:from-purple-700 hover:to-pink-700 transition">
+                <i class="fas fa-magic mr-2"></i>
+                콘텐츠 생성하기 (총 <span id="finalCredit">6</span> 크레딧)
+            </button>
+        </div>
+
+        <!-- 설명 -->
+        <div class="mt-8 bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
+            <h3 class="text-lg font-bold text-blue-800 mb-3">
+                <i class="fas fa-info-circle mr-2"></i>
+                옵션 B 특징
+            </h3>
+            <ul class="space-y-2 text-blue-700">
+                <li><i class="fas fa-check-circle mr-2 text-blue-600"></i>각 콘텐츠마다 <strong>독립적으로 플랫폼 선택</strong> 가능</li>
+                <li><i class="fas fa-check-circle mr-2 text-blue-600"></i>콘텐츠 #1: 블로그 + 인스타그램 = <strong>2크레딧</strong></li>
+                <li><i class="fas fa-check-circle mr-2 text-blue-600"></i>콘텐츠 #2: 블로그 + 유튜브 = <strong>2크레딧</strong></li>
+                <li><i class="fas fa-check-circle mr-2 text-blue-600"></i>콘텐츠 #3: 스레드 + 트위터 = <strong>2크레딧</strong></li>
+                <li><i class="fas fa-check-circle mr-2 text-blue-600"></i>총 <strong>6크레딧</strong> 차감 (각 콘텐츠별로 정확히 계산)</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // 크레딧 계산 함수
+        function calculateCredit(platformCount) {
+            if (platformCount === 0) return 0;
+            if (platformCount === 1) return 1;
+            if (platformCount >= 2 && platformCount <= 3) return 2;
+            if (platformCount >= 4 && platformCount <= 9) return 4;
+            if (platformCount >= 10 && platformCount <= 12) return 5;
+            return 5;
+        }
+
+        // 크레딧 업데이트
+        function updateCredit() {
+            // 콘텐츠 #1
+            const c1Checked = document.querySelectorAll('input[id^="c1-"]:checked').length;
+            const c1Credit = calculateCredit(c1Checked);
+            document.getElementById('credit1').textContent = c1Credit + ' 크레딧';
+
+            // 콘텐츠 #2
+            const c2Checked = document.querySelectorAll('input[id^="c2-"]:checked').length;
+            const c2Credit = calculateCredit(c2Checked);
+            document.getElementById('credit2').textContent = c2Credit + ' 크레딧';
+
+            // 콘텐츠 #3
+            const c3Checked = document.querySelectorAll('input[id^="c3-"]:checked').length;
+            const c3Credit = calculateCredit(c3Checked);
+            document.getElementById('credit3').textContent = c3Credit + ' 크레딧';
+
+            // 총합
+            const totalCredit = c1Credit + c2Credit + c3Credit;
+            document.getElementById('totalCredit').textContent = totalCredit + ' 크레딧';
+            document.getElementById('finalCredit').textContent = totalCredit;
+        }
+
+        // 초기 로드 시 크레딧 계산
+        updateCredit();
+    </script>
+</body>
+</html>
