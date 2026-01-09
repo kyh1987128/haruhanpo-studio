@@ -3232,4 +3232,207 @@ app.get('/api/keyword-monthly-report', async (c) => {
   }
 });
 
+// ===================================
+// Phase 3: 캘린더 기능 API
+// ===================================
+
+// 1️⃣ 발행 예정 콘텐츠 조회
+app.get('/api/scheduled-content', async (c) => {
+  try {
+    const user_id = c.req.query('user_id');
+    const status = c.req.query('status'); // 'draft', 'scheduled', 'published', 'cancelled'
+    const start_date = c.req.query('start_date'); // YYYY-MM-DD
+    const end_date = c.req.query('end_date'); // YYYY-MM-DD
+    
+    if (!user_id) {
+      return c.json({ success: false, error: '사용자 ID가 필요합니다' }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // 쿼리 빌더
+    let query = supabase
+      .from('generations')
+      .select('*')
+      .eq('user_id', user_id)
+      .order('scheduled_date', { ascending: true, nullsFirst: false });
+    
+    // 상태 필터
+    if (status) {
+      query = query.eq('publish_status', status);
+    }
+    
+    // 날짜 범위 필터
+    if (start_date && end_date) {
+      query = query
+        .gte('scheduled_date', start_date)
+        .lte('scheduled_date', end_date);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('❌ 발행 예정 콘텐츠 조회 실패:', error);
+      return c.json({ success: false, error: error.message }, 500);
+    }
+    
+    console.log(`✅ 발행 예정 콘텐츠 조회: ${user_id} (${data?.length || 0}건)`);
+    
+    return c.json({
+      success: true,
+      data: data || [],
+      count: data?.length || 0
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 발행 예정 콘텐츠 조회 오류:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 2️⃣ 발행 예정일 설정/수정
+app.post('/api/schedule-content', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { generation_id, scheduled_date, publish_status, user_id } = body;
+    
+    if (!generation_id || !user_id) {
+      return c.json({ 
+        success: false, 
+        error: 'generation_id와 user_id가 필요합니다' 
+      }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // 권한 확인 (본인 콘텐츠만 수정 가능)
+    const { data: existing, error: checkError } = await supabase
+      .from('generations')
+      .select('id, user_id')
+      .eq('id', generation_id)
+      .eq('user_id', user_id)
+      .single();
+    
+    if (checkError || !existing) {
+      return c.json({ 
+        success: false, 
+        error: '권한이 없거나 존재하지 않는 콘텐츠입니다' 
+      }, 403);
+    }
+    
+    // 발행 예정일 설정/수정
+    const updateData: any = {};
+    if (scheduled_date !== undefined) {
+      updateData.scheduled_date = scheduled_date;
+    }
+    if (publish_status !== undefined) {
+      updateData.publish_status = publish_status;
+    }
+    updateData.updated_at = new Date().toISOString();
+    
+    const { data, error } = await supabase
+      .from('generations')
+      .update(updateData)
+      .eq('id', generation_id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ 발행 예정일 설정 실패:', error);
+      return c.json({ success: false, error: error.message }, 500);
+    }
+    
+    console.log(`✅ 발행 예정일 설정: ${generation_id} → ${scheduled_date || 'null'}`);
+    
+    return c.json({
+      success: true,
+      message: '발행 예정일이 설정되었습니다',
+      data
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 발행 예정일 설정 오류:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 3️⃣ 발행 상태 변경
+app.patch('/api/schedule-content/:id', async (c) => {
+  try {
+    const generation_id = c.req.param('id');
+    const body = await c.req.json();
+    const { publish_status, user_id } = body;
+    
+    if (!generation_id || !user_id || !publish_status) {
+      return c.json({ 
+        success: false, 
+        error: 'id, user_id, publish_status가 필요합니다' 
+      }, 400);
+    }
+    
+    // 유효한 상태값 확인
+    const validStatuses = ['draft', 'scheduled', 'published', 'cancelled'];
+    if (!validStatuses.includes(publish_status)) {
+      return c.json({ 
+        success: false, 
+        error: `유효하지 않은 상태값입니다. 허용: ${validStatuses.join(', ')}` 
+      }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // 권한 확인
+    const { data: existing, error: checkError } = await supabase
+      .from('generations')
+      .select('id, user_id')
+      .eq('id', generation_id)
+      .eq('user_id', user_id)
+      .single();
+    
+    if (checkError || !existing) {
+      return c.json({ 
+        success: false, 
+        error: '권한이 없거나 존재하지 않는 콘텐츠입니다' 
+      }, 403);
+    }
+    
+    // 상태 변경
+    const { data, error } = await supabase
+      .from('generations')
+      .update({ 
+        publish_status,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', generation_id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ 발행 상태 변경 실패:', error);
+      return c.json({ success: false, error: error.message }, 500);
+    }
+    
+    console.log(`✅ 발행 상태 변경: ${generation_id} → ${publish_status}`);
+    
+    return c.json({
+      success: true,
+      message: '발행 상태가 변경되었습니다',
+      data
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 발행 상태 변경 오류:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
 export default app;
