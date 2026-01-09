@@ -4189,8 +4189,8 @@ async function openLoadProfileModal() {
       <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
         <div class="flex justify-between items-start mb-2">
           <div class="flex-1">
-            <h4 class="font-bold text-gray-800">${profile.brand || profile.name || '이름 없음'}</h4>
-            <p class="text-sm text-gray-600">${profile.brand || '브랜드 정보 없음'}</p>
+            <h4 class="font-bold text-gray-800">${profile.brand || '이름 없음'}</h4>
+            <p class="text-sm text-gray-600">${profile.company_name || '회사명 정보 없음'}</p>
             <p class="text-xs text-gray-500 mt-1">
               ${profile.industry || '산업분야 미설정'} | ${profile.target_age || '연령대 미설정'} | ${profile.tone || '톤 미설정'}
             </p>
@@ -6084,12 +6084,19 @@ async function changeEventStatus(eventId, newStatus) {
  * 날짜/시간 선택 모달 열기
  */
 function openDateTimeModal(generationId, platform) {
+  console.log('📅 openDateTimeModal 호출:', { generationId, platform });
+  
   const modal = document.getElementById('dateTimeModal');
   const platformLabel = document.getElementById('dateTimeModalPlatform');
   
-  if (!modal) return;
+  if (!modal) {
+    console.error('❌ dateTimeModal 요소 없음');
+    alert('모달을 찾을 수 없습니다. 페이지를 새로고침해주세요.');
+    return;
+  }
 
   pendingScheduleData = { generationId, platform };
+  console.log('💾 pendingScheduleData 저장:', pendingScheduleData);
   
   if (platformLabel) {
     const platformNames = {
@@ -6109,18 +6116,32 @@ function openDateTimeModal(generationId, platform) {
     platformLabel.textContent = platformNames[platform] || platform;
   }
 
+  console.log('🎨 모달 표시 시작');
   modal.classList.remove('hidden');
+  console.log('✅ 모달 표시 완료');
 
   // Flatpickr 초기화
-  if (!flatpickrInstance) {
-    flatpickrInstance = flatpickr('#dateTimePicker', {
-      enableTime: true,
-      dateFormat: 'Y-m-d H:i',
-      time_24hr: false,
-      locale: 'ko',
-      minDate: 'today',
-      defaultDate: new Date()
-    });
+  try {
+    if (typeof flatpickr === 'undefined') {
+      console.error('❌ Flatpickr 라이브러리 로드 안 됨');
+      alert('날짜 선택기가 로드되지 않았습니다. 페이지를 새로고침해주세요.');
+      return;
+    }
+    
+    if (!flatpickrInstance) {
+      console.log('🗓️ Flatpickr 초기화 시작');
+      flatpickrInstance = flatpickr('#dateTimePicker', {
+        enableTime: true,
+        dateFormat: 'Y-m-d H:i',
+        time_24hr: false,
+        locale: 'ko',
+        minDate: 'today',
+        defaultDate: new Date()
+      });
+      console.log('✅ Flatpickr 초기화 완료');
+    }
+  } catch (error) {
+    console.error('❌ Flatpickr 초기화 실패:', error);
   }
 }
 
