@@ -440,7 +440,7 @@ export const htmlTemplate = `
         </div>
 
         <!-- 날짜/시간 선택 모달 -->
-        <div id="dateTimeModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+        <div id="dateTimeModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center">
             <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 w-full">
                 <div class="text-center mb-6">
                     <div class="text-5xl mb-4">📅</div>
@@ -473,7 +473,7 @@ export const htmlTemplate = `
         </div>
 
         <!-- 빠른 등록 모달 -->
-        <div id="quickAddModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+        <div id="quickAddModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center">
             <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl mx-4 w-full">
                 <div class="text-center mb-6">
                     <div class="text-5xl mb-4">🚀</div>
