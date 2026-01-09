@@ -17,6 +17,14 @@ export const htmlTemplate = `
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+    
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/themes/material_blue.css">
+    
     <style>
       body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -144,6 +152,63 @@ export const htmlTemplate = `
           transform: translateX(400px);
           opacity: 0;
         }
+      }
+      
+      /* FullCalendar 커스텀 스타일 */
+      #fullCalendar {
+        max-width: 100%;
+        margin: 0 auto;
+      }
+      .fc {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      }
+      .fc-toolbar-title {
+        font-size: 1.5rem !important;
+        font-weight: 700 !important;
+        color: #1f2937;
+      }
+      .fc-button {
+        background: #667eea !important;
+        border: none !important;
+        text-transform: capitalize !important;
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+        padding: 8px 16px !important;
+      }
+      .fc-button:hover {
+        background: #5568d3 !important;
+      }
+      .fc-button-active {
+        background: #4c51bf !important;
+      }
+      .fc-daygrid-day {
+        cursor: pointer;
+      }
+      .fc-daygrid-day:hover {
+        background: #f3f4f6;
+      }
+      .fc-event {
+        border-radius: 4px;
+        padding: 2px 4px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        border: none !important;
+      }
+      .fc-event-scheduled {
+        background: #3b82f6 !important;
+        color: white;
+      }
+      .fc-event-published {
+        background: #10b981 !important;
+        color: white;
+      }
+      .fc-event-cancelled {
+        background: #ef4444 !important;
+        color: white;
+      }
+      .fc-event-draft {
+        background: #6b7280 !important;
+        color: white;
       }
     </style>
 </head>
@@ -321,37 +386,155 @@ export const htmlTemplate = `
             </div>
         </div>
 
-        <!-- 📅 발행 예정 캘린더 섹션 (Phase 3) -->
+        <!-- 📅 콘텐츠 관리 캘린더 (Phase 3 - 완전 개편) -->
         <div id="scheduledContentArea" class="hidden bg-white rounded-2xl shadow-md p-6 mb-8">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-semibold text-gray-700">
-                    <i class="fas fa-calendar-alt mr-2 text-blue-500"></i>발행 예정 콘텐츠
+                    <i class="fas fa-calendar-alt mr-2 text-blue-500"></i>콘텐츠 관리 캘린더
                 </h3>
-                <span class="text-xs text-gray-500">예정된 콘텐츠 관리</span>
+                <div class="flex gap-2">
+                    <button onclick="openQuickAddModal()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm">
+                        <i class="fas fa-plus mr-1"></i>빠른 등록
+                    </button>
+                    <button onclick="toggleCalendarView()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
+                        <i class="fas fa-list mr-1"></i>목록 보기
+                    </button>
+                </div>
             </div>
             
-            <!-- 필터 버튼 -->
-            <div class="flex space-x-2 mb-4 flex-wrap gap-2">
-                <button onclick="loadScheduledContent('all')" class="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
-                    전체
-                </button>
-                <button onclick="loadScheduledContent('scheduled')" class="px-3 py-1 bg-blue-200 text-blue-700 rounded-lg hover:bg-blue-300 transition text-sm">
-                    📅 예정
-                </button>
-                <button onclick="loadScheduledContent('published')" class="px-3 py-1 bg-green-200 text-green-700 rounded-lg hover:bg-green-300 transition text-sm">
-                    ✅ 발행완료
-                </button>
-                <button onclick="loadScheduledContent('cancelled')" class="px-3 py-1 bg-red-200 text-red-700 rounded-lg hover:bg-red-300 transition text-sm">
-                    ❌ 취소
-                </button>
+            <!-- 뷰 전환 -->
+            <div id="calendarViewContainer">
+                <!-- 달력 뷰 (기본) -->
+                <div id="calendarView">
+                    <div id="fullCalendar" class="bg-white rounded-lg"></div>
+                </div>
+                
+                <!-- 리스트 뷰 (숨김) -->
+                <div id="listView" class="hidden">
+                    <!-- 필터 버튼 -->
+                    <div class="flex space-x-2 mb-4 flex-wrap gap-2">
+                        <button onclick="loadScheduledContent('all')" class="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
+                            전체
+                        </button>
+                        <button onclick="loadScheduledContent('scheduled')" class="px-3 py-1 bg-blue-200 text-blue-700 rounded-lg hover:bg-blue-300 transition text-sm">
+                            📅 예정
+                        </button>
+                        <button onclick="loadScheduledContent('published')" class="px-3 py-1 bg-green-200 text-green-700 rounded-lg hover:bg-green-300 transition text-sm">
+                            ✅ 발행완료
+                        </button>
+                        <button onclick="loadScheduledContent('cancelled')" class="px-3 py-1 bg-red-200 text-red-700 rounded-lg hover:bg-red-300 transition text-sm">
+                            ❌ 취소
+                        </button>
+                    </div>
+                    
+                    <!-- 발행 예정 목록 -->
+                    <div id="scheduledContentList" class="space-y-3">
+                        <div class="text-center text-gray-500 py-8">
+                            <i class="fas fa-calendar-check text-4xl mb-3 text-gray-300"></i>
+                            <p>발행 예정된 콘텐츠가 없습니다.</p>
+                            <p class="text-xs text-gray-400 mt-2">히스토리에서 콘텐츠의 발행 예정일을 설정할 수 있습니다.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <!-- 발행 예정 목록 -->
-            <div id="scheduledContentList" class="space-y-3">
-                <div class="text-center text-gray-500 py-8">
-                    <i class="fas fa-calendar-check text-4xl mb-3 text-gray-300"></i>
-                    <p>발행 예정된 콘텐츠가 없습니다.</p>
-                    <p class="text-xs text-gray-400 mt-2">히스토리에서 콘텐츠의 발행 예정일을 설정할 수 있습니다.</p>
+        </div>
+
+        <!-- 날짜/시간 선택 모달 -->
+        <div id="dateTimeModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 w-full">
+                <div class="text-center mb-6">
+                    <div class="text-5xl mb-4">📅</div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">발행 예정일 설정</h3>
+                    <p class="text-gray-600 text-sm" id="dateTimeModalPlatform"></p>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block mb-2 font-semibold text-gray-700">
+                        <i class="fas fa-calendar mr-2"></i>발행 예정일
+                    </label>
+                    <input
+                        type="text"
+                        id="dateTimePicker"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="날짜와 시간을 선택하세요"
+                        readonly
+                    />
+                </div>
+                
+                <div class="flex gap-3">
+                    <button onclick="closeDateTimeModal()" class="flex-1 px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+                        취소
+                    </button>
+                    <button onclick="confirmDateTimeSelection()" class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold">
+                        확인
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 빠른 등록 모달 -->
+        <div id="quickAddModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl mx-4 w-full">
+                <div class="text-center mb-6">
+                    <div class="text-5xl mb-4">🚀</div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">빠른 콘텐츠 등록</h3>
+                    <p class="text-gray-600 text-sm">캘린더에 새 콘텐츠를 등록하세요</p>
+                </div>
+                
+                <div class="space-y-4 mb-6">
+                    <div>
+                        <label class="block mb-2 font-semibold text-gray-700">
+                            <i class="fas fa-tag mr-2"></i>플랫폼 선택
+                        </label>
+                        <select id="quickAddPlatform" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="blog">📝 네이버블로그</option>
+                            <option value="instagram">📷 인스타그램</option>
+                            <option value="instagramFeed">📷 인스타그램 피드</option>
+                            <option value="threads">🧵 스레드</option>
+                            <option value="youtube">🎥 유튜브 숏폼</option>
+                            <option value="youtubeLongform">🎬 유튜브 롱폼</option>
+                            <option value="linkedin">💼 LinkedIn</option>
+                            <option value="facebook">👍 페이스북</option>
+                            <option value="twitter">🐦 트위터(X)</option>
+                            <option value="kakaotalk">💬 카카오톡</option>
+                            <option value="naverband">🎵 네이버 밴드</option>
+                            <option value="telegram">✈️ 텔레그램</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block mb-2 font-semibold text-gray-700">
+                            <i class="fas fa-calendar mr-2"></i>발행 예정일
+                        </label>
+                        <input
+                            type="text"
+                            id="quickAddDateTime"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="날짜와 시간을 선택하세요"
+                            readonly
+                        />
+                    </div>
+                    
+                    <div>
+                        <label class="block mb-2 font-semibold text-gray-700">
+                            <i class="fas fa-file-alt mr-2"></i>메모 (선택)
+                        </label>
+                        <textarea
+                            id="quickAddMemo"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="콘텐츠에 대한 간단한 메모를 입력하세요"
+                            rows="3"
+                        ></textarea>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3">
+                    <button onclick="closeQuickAddModal()" class="flex-1 px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+                        취소
+                    </button>
+                    <button onclick="confirmQuickAdd()" class="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold">
+                        등록
+                    </button>
                 </div>
             </div>
         </div>
@@ -1741,6 +1924,14 @@ export const htmlTemplate = `
     </div>
 
     <script src="/static/i18n.js?v=14.0.0"></script>
+    
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ko.js"></script>
+    
     <script src="/static/app-v3-final.js?v=14.0.0"></script>
     <script src="/static/keyword-analysis.js?v=16.0.1"></script>
     <script src="/static/keyword-extended.js?v=14.0.0"></script>

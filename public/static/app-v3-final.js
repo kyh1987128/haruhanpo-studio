@@ -3275,6 +3275,14 @@ function displayResults(data, platforms) {
           <h3 class="text-xl font-bold text-gray-800">${platformNames[platform]}</h3>
           <div class="flex gap-2">
             <button
+              onclick="openDateTimeModalForGeneration('${platform}')"
+              class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold flex items-center gap-2"
+              title="캘린더에 등록하기"
+            >
+              <i class="fas fa-calendar-plus"></i>
+              캘린더
+            </button>
+            <button
               onclick="editContent('${platform}')"
               class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-semibold flex items-center gap-2"
               title="콘텐츠 수정하기"
@@ -4593,7 +4601,7 @@ function filterHistory() {
             👁 보기
           </button>
           <button
-            onclick="openScheduleModal('${item.id}', '${itemPlatforms[0] || 'blog'}')"
+            onclick="openDateTimeModal('${item.id}', '${itemPlatforms[0] || 'blog'}')"
             class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm whitespace-nowrap"
             title="발행 예정일 설정"
           >
@@ -5801,13 +5809,523 @@ window.openTemplateEditor = openTemplateEditor;
 window.saveTemplate = saveTemplate;
 window.resetTemplate = resetTemplate;
 
+
 // ========================================
-// Phase 3: 캘린더 기능
+// Phase 3: 콘텐츠 관리 캘린더 (완전 개편)
 // ========================================
 
+// 전역 변수
+let calendarInstance = null;
+let flatpickrInstance = null;
+let quickAddFlatpickr = null;
+let pendingScheduleData = null;
+let isCalendarView = true;
+
 /**
- * 발행 예정 콘텐츠 목록 로드
- * @param {string} status - 필터 상태 ('all', 'scheduled', 'published', 'cancelled')
+ * FullCalendar 초기화
+ */
+function initFullCalendar() {
+  const calendarEl = document.getElementById('fullCalendar');
+  if (!calendarEl) return;
+
+  if (calendarInstance) {
+    calendarInstance.destroy();
+  }
+
+  calendarInstance = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    locale: 'ko',
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth,dayGridWeek'
+    },
+    buttonText: {
+      today: '오늘',
+      month: '월',
+      week: '주'
+    },
+    height: 'auto',
+    eventClassNames: function(arg) {
+      const status = arg.event.extendedProps.publish_status || 'draft';
+      return [`fc-event-${status}`];
+    },
+    eventClick: function(info) {
+      showEventDetails(info.event);
+    },
+    dateClick: function(info) {
+      // 날짜 클릭 시 빠른 등록 모달 오픈
+      openQuickAddModal(info.dateStr);
+    },
+    events: async function(fetchInfo, successCallback, failureCallback) {
+      try {
+        const events = await loadCalendarEvents();
+        successCallback(events);
+      } catch (error) {
+        console.error('캘린더 이벤트 로드 오류:', error);
+        failureCallback(error);
+      }
+    }
+  });
+
+  calendarInstance.render();
+  console.log('✅ FullCalendar 초기화 완료');
+}
+
+/**
+ * 캘린더 이벤트 로드
+ */
+async function loadCalendarEvents() {
+  const user = window.currentUser;
+  if (!user || !user.id) return [];
+
+  try {
+    const response = await fetch(`/api/scheduled-content?user_id=${user.id}`);
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || '캘린더 이벤트 조회 실패');
+    }
+
+    const platformEmojis = {
+      blog: '📝',
+      instagram: '📷',
+      instagramFeed: '📷',
+      threads: '🧵',
+      youtube: '🎥',
+      youtubeLongform: '🎬',
+      linkedin: '💼',
+      facebook: '👍',
+      twitter: '🐦',
+      kakaotalk: '💬',
+      naverband: '🎵',
+      telegram: '✈️'
+    };
+
+    const platformNames = {
+      blog: '네이버블로그',
+      instagram: '인스타그램',
+      instagramFeed: '인스타그램 피드',
+      threads: '스레드',
+      youtube: '유튜브',
+      youtubeLongform: '유튜브 롱폼',
+      linkedin: 'LinkedIn',
+      facebook: '페이스북',
+      twitter: '트위터(X)',
+      kakaotalk: '카카오톡',
+      naverband: '네이버 밴드',
+      telegram: '텔레그램'
+    };
+
+    return (data.scheduled_content || []).map(item => {
+      const emoji = platformEmojis[item.platform] || '📄';
+      const name = platformNames[item.platform] || item.platform;
+      
+      return {
+        id: item.id,
+        title: `${emoji} ${name}`,
+        start: item.scheduled_date,
+        extendedProps: {
+          generation_id: item.id,
+          platform: item.platform,
+          publish_status: item.publish_status,
+          content: item.content || '',
+          created_at: item.created_at
+        }
+      };
+    });
+  } catch (error) {
+    console.error('캘린더 이벤트 로드 오류:', error);
+    return [];
+  }
+}
+
+/**
+ * 이벤트 상세 정보 표시
+ */
+function showEventDetails(event) {
+  const props = event.extendedProps;
+  const statusLabels = {
+    draft: '초안',
+    scheduled: '📅 예정',
+    published: '✅ 발행완료',
+    cancelled: '❌ 취소'
+  };
+
+  const platformNames = {
+    blog: '네이버블로그',
+    instagram: '인스타그램',
+    instagramFeed: '인스타그램 피드',
+    threads: '스레드',
+    youtube: '유튜브',
+    youtubeLongform: '유튜브 롱폼',
+    linkedin: 'LinkedIn',
+    facebook: '페이스북',
+    twitter: '트위터(X)',
+    kakaotalk: '카카오톡',
+    naverband: '네이버 밴드',
+    telegram: '텔레그램'
+  };
+
+  const status = statusLabels[props.publish_status] || '초안';
+  const platform = platformNames[props.platform] || props.platform;
+  const content = props.content ? props.content.substring(0, 200) + '...' : '내용 없음';
+  
+  const scheduledDate = new Date(event.start).toLocaleString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
+
+  const html = `
+    <div class="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center" id="eventDetailsModal">
+      <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg mx-4 w-full">
+        <div class="text-center mb-6">
+          <div class="text-5xl mb-4">${event.title.split(' ')[0]}</div>
+          <h3 class="text-2xl font-bold text-gray-800 mb-2">${platform}</h3>
+          <p class="text-gray-600">${status}</p>
+        </div>
+        
+        <div class="space-y-4 mb-6">
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <p class="text-sm font-semibold text-gray-700 mb-2">
+              <i class="fas fa-calendar mr-2"></i>발행 예정일
+            </p>
+            <p class="text-gray-800">${scheduledDate}</p>
+          </div>
+          
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <p class="text-sm font-semibold text-gray-700 mb-2">
+              <i class="fas fa-file-alt mr-2"></i>콘텐츠 미리보기
+            </p>
+            <p class="text-sm text-gray-600">${content}</p>
+          </div>
+        </div>
+        
+        <div class="flex gap-2 mb-4">
+          <button onclick="changeEventStatus('${event.id}', 'scheduled')" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
+            📅 예정
+          </button>
+          <button onclick="changeEventStatus('${event.id}', 'published')" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm">
+            ✅ 발행
+          </button>
+          <button onclick="changeEventStatus('${event.id}', 'cancelled')" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm">
+            ❌ 취소
+          </button>
+        </div>
+        
+        <button onclick="closeEventDetailsModal()" class="w-full px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+          닫기
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+/**
+ * 이벤트 상세 모달 닫기
+ */
+function closeEventDetailsModal() {
+  const modal = document.getElementById('eventDetailsModal');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+/**
+ * 이벤트 상태 변경
+ */
+async function changeEventStatus(eventId, newStatus) {
+  const user = window.currentUser;
+  if (!user || !user.id) {
+    showToast('로그인이 필요합니다.', 'error');
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/schedule-content/${eventId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: user.id,
+        publish_status: newStatus
+      })
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || '상태 변경 실패');
+    }
+
+    showToast('발행 상태가 변경되었습니다.', 'success');
+    closeEventDetailsModal();
+    
+    // 캘린더 새로고침
+    if (calendarInstance) {
+      calendarInstance.refetchEvents();
+    }
+  } catch (error) {
+    console.error('발행 상태 변경 오류:', error);
+    showToast('발행 상태 변경에 실패했습니다.', 'error');
+  }
+}
+
+/**
+ * 날짜/시간 선택 모달 열기
+ */
+function openDateTimeModal(generationId, platform) {
+  const modal = document.getElementById('dateTimeModal');
+  const platformLabel = document.getElementById('dateTimeModalPlatform');
+  
+  if (!modal) return;
+
+  pendingScheduleData = { generationId, platform };
+  
+  if (platformLabel) {
+    const platformNames = {
+      blog: '📝 네이버블로그',
+      instagram: '📷 인스타그램',
+      instagramFeed: '📷 인스타그램 피드',
+      threads: '🧵 스레드',
+      youtube: '🎥 유튜브',
+      youtubeLongform: '🎬 유튜브 롱폼',
+      linkedin: '💼 LinkedIn',
+      facebook: '👍 페이스북',
+      twitter: '🐦 트위터(X)',
+      kakaotalk: '💬 카카오톡',
+      naverband: '🎵 네이버 밴드',
+      telegram: '✈️ 텔레그램'
+    };
+    platformLabel.textContent = platformNames[platform] || platform;
+  }
+
+  modal.classList.remove('hidden');
+
+  // Flatpickr 초기화
+  if (!flatpickrInstance) {
+    flatpickrInstance = flatpickr('#dateTimePicker', {
+      enableTime: true,
+      dateFormat: 'Y-m-d H:i',
+      time_24hr: false,
+      locale: 'ko',
+      minDate: 'today',
+      defaultDate: new Date()
+    });
+  }
+}
+
+/**
+ * 날짜/시간 선택 모달 닫기
+ */
+function closeDateTimeModal() {
+  const modal = document.getElementById('dateTimeModal');
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+  pendingScheduleData = null;
+  
+  if (flatpickrInstance) {
+    flatpickrInstance.clear();
+  }
+}
+
+/**
+ * 날짜/시간 선택 확인
+ */
+async function confirmDateTimeSelection() {
+  if (!pendingScheduleData) return;
+
+  const dateInput = document.getElementById('dateTimePicker');
+  const selectedDate = dateInput.value;
+
+  if (!selectedDate) {
+    showToast('날짜와 시간을 선택해주세요.', 'error');
+    return;
+  }
+
+  const { generationId, platform } = pendingScheduleData;
+  
+  await saveSchedule(generationId, platform, selectedDate);
+  closeDateTimeModal();
+}
+
+/**
+ * 발행 예정일 저장
+ */
+async function saveSchedule(generationId, platform, scheduledDate) {
+  const user = window.currentUser;
+  if (!user || !user.id) {
+    showToast('로그인이 필요합니다.', 'error');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/schedule-content', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        generation_id: generationId,
+        user_id: user.id,
+        scheduled_date: scheduledDate,
+        publish_status: 'scheduled'
+      })
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || '발행 예정일 설정 실패');
+    }
+
+    showToast('발행 예정일이 설정되었습니다.', 'success');
+    
+    // 캘린더 새로고침
+    if (calendarInstance) {
+      calendarInstance.refetchEvents();
+    }
+  } catch (error) {
+    console.error('발행 예정일 저장 오류:', error);
+    showToast('발행 예정일 설정에 실패했습니다.', 'error');
+  }
+}
+
+/**
+ * 빠른 등록 모달 열기
+ */
+function openQuickAddModal(preSelectedDate = null) {
+  const modal = document.getElementById('quickAddModal');
+  if (!modal) return;
+
+  modal.classList.remove('hidden');
+
+  // Flatpickr 초기화
+  if (!quickAddFlatpickr) {
+    quickAddFlatpickr = flatpickr('#quickAddDateTime', {
+      enableTime: true,
+      dateFormat: 'Y-m-d H:i',
+      time_24hr: false,
+      locale: 'ko',
+      minDate: 'today',
+      defaultDate: preSelectedDate || new Date()
+    });
+  } else if (preSelectedDate) {
+    quickAddFlatpickr.setDate(preSelectedDate);
+  }
+}
+
+/**
+ * 빠른 등록 모달 닫기
+ */
+function closeQuickAddModal() {
+  const modal = document.getElementById('quickAddModal');
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+  
+  // 폼 초기화
+  document.getElementById('quickAddPlatform').value = 'blog';
+  document.getElementById('quickAddMemo').value = '';
+  
+  if (quickAddFlatpickr) {
+    quickAddFlatpickr.clear();
+  }
+}
+
+/**
+ * 빠른 등록 확인
+ */
+async function confirmQuickAdd() {
+  const platform = document.getElementById('quickAddPlatform').value;
+  const scheduledDate = document.getElementById('quickAddDateTime').value;
+  const memo = document.getElementById('quickAddMemo').value.trim();
+
+  if (!scheduledDate) {
+    showToast('발행 예정일을 선택해주세요.', 'error');
+    return;
+  }
+
+  const user = window.currentUser;
+  if (!user || !user.id) {
+    showToast('로그인이 필요합니다.', 'error');
+    return;
+  }
+
+  try {
+    // 임시 generation_id 생성 (실제로는 히스토리에서 가져와야 함)
+    // 여기서는 간단히 placeholder로 처리
+    const tempGenerationId = `quick-${Date.now()}`;
+    
+    const response = await fetch('/api/schedule-content', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        generation_id: tempGenerationId,
+        user_id: user.id,
+        scheduled_date: scheduledDate,
+        publish_status: 'scheduled',
+        platform: platform,
+        content: memo || '빠른 등록'
+      })
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || '빠른 등록 실패');
+    }
+
+    showToast('콘텐츠가 캘린더에 등록되었습니다.', 'success');
+    closeQuickAddModal();
+    
+    // 캘린더 새로고침
+    if (calendarInstance) {
+      calendarInstance.refetchEvents();
+    }
+  } catch (error) {
+    console.error('빠른 등록 오류:', error);
+    showToast('빠른 등록에 실패했습니다.', 'error');
+  }
+}
+
+/**
+ * 캘린더/리스트 뷰 전환
+ */
+function toggleCalendarView() {
+  const calendarView = document.getElementById('calendarView');
+  const listView = document.getElementById('listView');
+  const toggleBtn = document.querySelector('[onclick="toggleCalendarView()"]');
+
+  if (!calendarView || !listView || !toggleBtn) return;
+
+  isCalendarView = !isCalendarView;
+
+  if (isCalendarView) {
+    calendarView.classList.remove('hidden');
+    listView.classList.add('hidden');
+    toggleBtn.innerHTML = '<i class="fas fa-list mr-1"></i>목록 보기';
+    
+    // 캘린더 새로고침
+    if (calendarInstance) {
+      calendarInstance.refetchEvents();
+    }
+  } else {
+    calendarView.classList.add('hidden');
+    listView.classList.remove('hidden');
+    toggleBtn.innerHTML = '<i class="fas fa-calendar mr-1"></i>달력 보기';
+    
+    // 리스트 로드
+    loadScheduledContent('all');
+  }
+}
+
+/**
+ * 발행 예정 콘텐츠 목록 로드 (리스트 뷰)
  */
 async function loadScheduledContent(status = 'all') {
   const user = window.currentUser;
@@ -5837,8 +6355,7 @@ async function loadScheduledContent(status = 'all') {
 }
 
 /**
- * 발행 예정 콘텐츠 목록 렌더링
- * @param {Array} contentList - 발행 예정 콘텐츠 배열
+ * 발행 예정 콘텐츠 목록 렌더링 (리스트 뷰)
  */
 function renderScheduledContentList(contentList) {
   const container = document.getElementById('scheduledContentList');
@@ -5867,8 +6384,7 @@ function renderScheduledContentList(contentList) {
     twitter: '트위터(X)',
     kakaotalk: '카카오톡',
     naverband: '네이버 밴드',
-    telegram: '텔레그램',
-    navertv: '네이버TV'
+    telegram: '텔레그램'
   };
 
   const statusBadges = {
@@ -5926,9 +6442,7 @@ function renderScheduledContentList(contentList) {
 }
 
 /**
- * 발행 상태 변경
- * @param {string} generationId - 콘텐츠 ID
- * @param {string} newStatus - 새 상태 ('draft', 'scheduled', 'published', 'cancelled')
+ * 발행 상태 변경 (리스트 뷰)
  */
 async function changePublishStatus(generationId, newStatus) {
   const user = window.currentUser;
@@ -5962,65 +6476,17 @@ async function changePublishStatus(generationId, newStatus) {
 }
 
 /**
- * 발행 예정일 설정 모달 열기
- * @param {string} generationId - 콘텐츠 ID
- * @param {string} platform - 플랫폼명
- */
-function openScheduleModal(generationId, platform) {
-  // TODO: 모달 UI 구현 (다음 단계에서 추가)
-  const scheduledDate = prompt('발행 예정일을 입력하세요 (YYYY-MM-DD HH:mm):');
-  if (!scheduledDate) return;
-
-  saveSchedule(generationId, platform, scheduledDate);
-}
-
-/**
- * 발행 예정일 저장
- * @param {string} generationId - 콘텐츠 ID
- * @param {string} platform - 플랫폼명
- * @param {string} scheduledDate - 발행 예정일 (ISO 문자열)
- */
-async function saveSchedule(generationId, platform, scheduledDate) {
-  const user = window.currentUser;
-  if (!user || !user.id) {
-    showToast('로그인이 필요합니다.', 'error');
-    return;
-  }
-
-  try {
-    const response = await fetch('/api/schedule-content', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        generation_id: generationId,
-        user_id: user.id,
-        scheduled_date: scheduledDate,
-        publish_status: 'scheduled'
-      })
-    });
-
-    const data = await response.json();
-
-    if (!data.success) {
-      throw new Error(data.error || '발행 예정일 설정 실패');
-    }
-
-    showToast('발행 예정일이 설정되었습니다.', 'success');
-    loadScheduledContent('all'); // 목록 새로고침
-  } catch (error) {
-    console.error('발행 예정일 저장 오류:', error);
-    showToast('발행 예정일 설정에 실패했습니다.', 'error');
-  }
-}
-
-/**
  * 캘린더 섹션 표시 (로그인 시)
  */
 function showScheduledContentArea() {
   const area = document.getElementById('scheduledContentArea');
   if (area) {
     area.classList.remove('hidden');
-    loadScheduledContent('all'); // 초기 로드
+    
+    // FullCalendar 초기화
+    setTimeout(() => {
+      initFullCalendar();
+    }, 100);
   }
 }
 
@@ -6032,13 +6498,44 @@ function hideScheduledContentArea() {
   if (area) {
     area.classList.add('hidden');
   }
+  
+  // 캘린더 인스턴스 정리
+  if (calendarInstance) {
+    calendarInstance.destroy();
+    calendarInstance = null;
+  }
 }
 
 // 전역 노출
-window.loadScheduledContent = loadScheduledContent;
-window.changePublishStatus = changePublishStatus;
-window.openScheduleModal = openScheduleModal;
+window.initFullCalendar = initFullCalendar;
+window.loadCalendarEvents = loadCalendarEvents;
+window.showEventDetails = showEventDetails;
+window.closeEventDetailsModal = closeEventDetailsModal;
+window.changeEventStatus = changeEventStatus;
+window.openDateTimeModal = openDateTimeModal;
+window.closeDateTimeModal = closeDateTimeModal;
+window.confirmDateTimeSelection = confirmDateTimeSelection;
 window.saveSchedule = saveSchedule;
+window.openQuickAddModal = openQuickAddModal;
+window.closeQuickAddModal = closeQuickAddModal;
+window.confirmQuickAdd = confirmQuickAdd;
+window.toggleCalendarView = toggleCalendarView;
+window.loadScheduledContent = loadScheduledContent;
+window.renderScheduledContentList = renderScheduledContentList;
+window.changePublishStatus = changePublishStatus;
 window.showScheduledContentArea = showScheduledContentArea;
 window.hideScheduledContentArea = hideScheduledContentArea;
+
+
+/**
+ * 생성 완료 화면에서 캘린더 등록 (임시 generation_id 사용)
+ */
+function openDateTimeModalForGeneration(platform) {
+  // 임시 generation_id 생성
+  const tempId = `gen-${Date.now()}-${platform}`;
+  openDateTimeModal(tempId, platform);
+}
+
+// 전역 노출
+window.openDateTimeModalForGeneration = openDateTimeModalForGeneration;
 
