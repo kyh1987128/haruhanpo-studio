@@ -5951,10 +5951,6 @@ function initFullCalendar() {
     eventClick: function(info) {
       showEventDetails(info.event);
     },
-    dateClick: function(info) {
-      // 날짜 클릭 시 빠른 등록 모달 오픈
-      openQuickAddModal(info.dateStr);
-    },
     events: async function(fetchInfo, successCallback, failureCallback) {
       try {
         const events = await loadCalendarEvents();
@@ -6317,101 +6313,6 @@ async function saveSchedule(generationId, platform, scheduledDate) {
 /**
  * 빠른 등록 모달 열기
  */
-function openQuickAddModal(preSelectedDate = null) {
-  const modal = document.getElementById('quickAddModal');
-  if (!modal) return;
-
-  modal.classList.remove('hidden');
-
-  // Flatpickr 초기화
-  if (!quickAddFlatpickr) {
-    quickAddFlatpickr = flatpickr('#quickAddDateTime', {
-      enableTime: true,
-      dateFormat: 'Y-m-d H:i',
-      time_24hr: false,
-      locale: 'ko',
-      minDate: 'today',
-      defaultDate: preSelectedDate || new Date()
-    });
-  } else if (preSelectedDate) {
-    quickAddFlatpickr.setDate(preSelectedDate);
-  }
-}
-
-/**
- * 빠른 등록 모달 닫기
- */
-function closeQuickAddModal() {
-  const modal = document.getElementById('quickAddModal');
-  if (modal) {
-    modal.classList.add('hidden');
-  }
-  
-  // 폼 초기화
-  document.getElementById('quickAddPlatform').value = 'blog';
-  document.getElementById('quickAddMemo').value = '';
-  
-  if (quickAddFlatpickr) {
-    quickAddFlatpickr.clear();
-  }
-}
-
-/**
- * 빠른 등록 확인
- */
-async function confirmQuickAdd() {
-  const platform = document.getElementById('quickAddPlatform').value;
-  const scheduledDate = document.getElementById('quickAddDateTime').value;
-  const memo = document.getElementById('quickAddMemo').value.trim();
-
-  if (!scheduledDate) {
-    showToast('발행 예정일을 선택해주세요.', 'error');
-    return;
-  }
-
-  const user = window.currentUser;
-  if (!user || !user.id) {
-    showToast('로그인이 필요합니다.', 'error');
-    return;
-  }
-
-  try {
-    // 임시 generation_id 생성 (실제로는 히스토리에서 가져와야 함)
-    // 여기서는 간단히 placeholder로 처리
-    const tempGenerationId = `quick-${Date.now()}`;
-    
-    const response = await fetch('/api/schedule-content', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        generation_id: tempGenerationId,
-        user_id: user.id,
-        scheduled_date: scheduledDate,
-        publish_status: 'scheduled',
-        platform: platform,
-        content: memo || '빠른 등록'
-      })
-    });
-
-    const data = await response.json();
-
-    if (!data.success) {
-      throw new Error(data.error || '빠른 등록 실패');
-    }
-
-    showToast('콘텐츠가 캘린더에 등록되었습니다.', 'success');
-    closeQuickAddModal();
-    
-    // 캘린더 새로고침
-    if (calendarInstance) {
-      calendarInstance.refetchEvents();
-    }
-  } catch (error) {
-    console.error('빠른 등록 오류:', error);
-    showToast('빠른 등록에 실패했습니다.', 'error');
-  }
-}
-
 /**
  * 캘린더/리스트 뷰 전환
  */

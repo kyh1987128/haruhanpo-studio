@@ -393,9 +393,6 @@ export const htmlTemplate = `
                     <i class="fas fa-calendar-alt mr-2 text-blue-500"></i>콘텐츠 관리 캘린더
                 </h3>
                 <div class="flex gap-2">
-                    <button onclick="openQuickAddModal()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm">
-                        <i class="fas fa-plus mr-1"></i>빠른 등록
-                    </button>
                     <button onclick="toggleCalendarView()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
                         <i class="fas fa-list mr-1"></i>목록 보기
                     </button>
@@ -472,72 +469,6 @@ export const htmlTemplate = `
             </div>
         </div>
 
-        <!-- 빠른 등록 모달 -->
-        <div id="quickAddModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center">
-            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl mx-4 w-full">
-                <div class="text-center mb-6">
-                    <div class="text-5xl mb-4">🚀</div>
-                    <h3 class="text-2xl font-bold text-gray-800 mb-2">빠른 콘텐츠 등록</h3>
-                    <p class="text-gray-600 text-sm">캘린더에 새 콘텐츠를 등록하세요</p>
-                </div>
-                
-                <div class="space-y-4 mb-6">
-                    <div>
-                        <label class="block mb-2 font-semibold text-gray-700">
-                            <i class="fas fa-tag mr-2"></i>플랫폼 선택
-                        </label>
-                        <select id="quickAddPlatform" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                            <option value="blog">📝 네이버블로그</option>
-                            <option value="instagram">📷 인스타그램</option>
-                            <option value="instagramFeed">📷 인스타그램 피드</option>
-                            <option value="threads">🧵 스레드</option>
-                            <option value="youtube">🎥 유튜브 숏폼</option>
-                            <option value="youtubeLongform">🎬 유튜브 롱폼</option>
-                            <option value="linkedin">💼 LinkedIn</option>
-                            <option value="facebook">👍 페이스북</option>
-                            <option value="twitter">🐦 트위터(X)</option>
-                            <option value="kakaotalk">💬 카카오톡</option>
-                            <option value="naverband">🎵 네이버 밴드</option>
-                            <option value="telegram">✈️ 텔레그램</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block mb-2 font-semibold text-gray-700">
-                            <i class="fas fa-calendar mr-2"></i>발행 예정일
-                        </label>
-                        <input
-                            type="text"
-                            id="quickAddDateTime"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                            placeholder="날짜와 시간을 선택하세요"
-                            readonly
-                        />
-                    </div>
-                    
-                    <div>
-                        <label class="block mb-2 font-semibold text-gray-700">
-                            <i class="fas fa-file-alt mr-2"></i>메모 (선택)
-                        </label>
-                        <textarea
-                            id="quickAddMemo"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                            placeholder="콘텐츠에 대한 간단한 메모를 입력하세요"
-                            rows="3"
-                        ></textarea>
-                    </div>
-                </div>
-                
-                <div class="flex gap-3">
-                    <button onclick="closeQuickAddModal()" class="flex-1 px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
-                        취소
-                    </button>
-                    <button onclick="confirmQuickAdd()" class="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold">
-                        등록
-                    </button>
-                </div>
-            </div>
-        </div>
 
         <!-- 입력 폼 -->
         <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">

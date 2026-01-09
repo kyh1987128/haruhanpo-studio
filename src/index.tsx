@@ -3591,11 +3591,11 @@ app.post('/api/schedule-content', async (c) => {
     if (publish_status !== undefined) {
       updateData.publish_status = publish_status;
     }
-    // updated_at은 DB 트리거로 자동 업데이트되므로 제거
+    updateData.updated_at = new Date().toISOString();
     
     const { data, error } = await supabase
       .from('generations')
-      .update(updateData)
+      .update(updateData as any) // 타입 캐스팅 추가
       .eq('id', generation_id)
       .select()
       .single();
@@ -3666,9 +3666,9 @@ app.patch('/api/schedule-content/:id', async (c) => {
     const { data, error } = await supabase
       .from('generations')
       .update({ 
-        publish_status
-        // updated_at은 DB 트리거로 자동 업데이트되므로 제거
-      })
+        publish_status,
+        updated_at: new Date().toISOString()
+      } as any) // 타입 캐스팅 추가
       .eq('id', generation_id)
       .select()
       .single();
