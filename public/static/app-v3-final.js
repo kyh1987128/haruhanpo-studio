@@ -4189,7 +4189,7 @@ async function openLoadProfileModal() {
       <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
         <div class="flex justify-between items-start mb-2">
           <div class="flex-1">
-            <h4 class="font-bold text-gray-800">${profile.name || '이름 없음'}</h4>
+            <h4 class="font-bold text-gray-800">${profile.brand || profile.name || '이름 없음'}</h4>
             <p class="text-sm text-gray-600">${profile.brand || '브랜드 정보 없음'}</p>
             <p class="text-xs text-gray-500 mt-1">
               ${profile.industry || '산업분야 미설정'} | ${profile.target_age || '연령대 미설정'} | ${profile.tone || '톤 미설정'}
@@ -4443,6 +4443,10 @@ async function saveToHistory(formData, results) {
     
     const result = await response.json();
     console.log('✅ 히스토리 저장 완료:', result);
+    
+    // ✅ generation_id를 전역 변수에 저장 (캘린더 등록용)
+    window.lastGenerationId = result.id;
+    console.log('📝 Generation ID 저장:', window.lastGenerationId);
     
     // 로컬 배열 업데이트 (UI 즉시 반영)
     contentHistory.unshift({
@@ -6531,9 +6535,17 @@ window.hideScheduledContentArea = hideScheduledContentArea;
  * 생성 완료 화면에서 캘린더 등록 (임시 generation_id 사용)
  */
 function openDateTimeModalForGeneration(platform) {
-  // 임시 generation_id 생성
-  const tempId = `gen-${Date.now()}-${platform}`;
-  openDateTimeModal(tempId, platform);
+  // ✅ 실제 generation_id 사용 (히스토리 저장 시 받은 ID)
+  const realId = window.lastGenerationId;
+  
+  if (!realId) {
+    showToast('콘텐츠를 먼저 생성해주세요.', 'error');
+    console.error('❌ generation_id 없음');
+    return;
+  }
+  
+  console.log('📅 캘린더 등록 시작:', { realId, platform });
+  openDateTimeModal(realId, platform);
 }
 
 // 전역 노출
