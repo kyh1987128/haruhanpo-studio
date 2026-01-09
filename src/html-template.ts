@@ -321,6 +321,40 @@ export const htmlTemplate = `
             </div>
         </div>
 
+        <!-- 📅 발행 예정 캘린더 섹션 (Phase 3) -->
+        <div id="scheduledContentArea" class="hidden bg-white rounded-2xl shadow-md p-6 mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-700">
+                    <i class="fas fa-calendar-alt mr-2 text-blue-500"></i>발행 예정 콘텐츠
+                </h3>
+                <span class="text-xs text-gray-500">예정된 콘텐츠 관리</span>
+            </div>
+            
+            <!-- 필터 버튼 -->
+            <div class="flex space-x-2 mb-4 flex-wrap gap-2">
+                <button onclick="loadScheduledContent('all')" class="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
+                    전체
+                </button>
+                <button onclick="loadScheduledContent('scheduled')" class="px-3 py-1 bg-blue-200 text-blue-700 rounded-lg hover:bg-blue-300 transition text-sm">
+                    📅 예정
+                </button>
+                <button onclick="loadScheduledContent('published')" class="px-3 py-1 bg-green-200 text-green-700 rounded-lg hover:bg-green-300 transition text-sm">
+                    ✅ 발행완료
+                </button>
+                <button onclick="loadScheduledContent('cancelled')" class="px-3 py-1 bg-red-200 text-red-700 rounded-lg hover:bg-red-300 transition text-sm">
+                    ❌ 취소
+                </button>
+            </div>
+            
+            <!-- 발행 예정 목록 -->
+            <div id="scheduledContentList" class="space-y-3">
+                <div class="text-center text-gray-500 py-8">
+                    <i class="fas fa-calendar-check text-4xl mb-3 text-gray-300"></i>
+                    <p>발행 예정된 콘텐츠가 없습니다.</p>
+                    <p class="text-xs text-gray-400 mt-2">히스토리에서 콘텐츠의 발행 예정일을 설정할 수 있습니다.</p>
+                </div>
+            </div>
+        </div>
 
         <!-- 입력 폼 -->
         <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">

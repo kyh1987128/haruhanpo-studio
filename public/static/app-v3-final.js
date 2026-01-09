@@ -4593,6 +4593,13 @@ function filterHistory() {
             👁 보기
           </button>
           <button
+            onclick="openScheduleModal('${item.id}', '${itemPlatforms[0] || 'blog'}')"
+            class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm whitespace-nowrap"
+            title="발행 예정일 설정"
+          >
+            📅 예정일
+          </button>
+          <button
             onclick="deleteHistory('${item.id}')"
             class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition text-sm whitespace-nowrap"
           >
@@ -5362,6 +5369,9 @@ function updateAuthUI() {
     guestArea.classList.add('hidden');
     memberFeaturesArea.classList.remove('hidden');
     
+    // 📅 Phase 3: 캘린더 섹션 표시
+    showScheduledContentArea();
+    
     // 히어로 섹션 숨기기
     if (heroSection) {
       heroSection.classList.add('hidden');
@@ -5412,6 +5422,9 @@ function updateAuthUI() {
     userInfoArea.classList.add('hidden');
     guestArea.classList.remove('hidden');
     memberFeaturesArea.classList.add('hidden');
+    
+    // 📅 Phase 3: 캘린더 섹션 숨김
+    hideScheduledContentArea();
     
     // 히어로 섹션 표시
     if (heroSection) {
@@ -5787,4 +5800,245 @@ window.supabaseClient = null; // 초기화 후 접근 가능
 window.openTemplateEditor = openTemplateEditor;
 window.saveTemplate = saveTemplate;
 window.resetTemplate = resetTemplate;
+
+// ========================================
+// Phase 3: 캘린더 기능
+// ========================================
+
+/**
+ * 발행 예정 콘텐츠 목록 로드
+ * @param {string} status - 필터 상태 ('all', 'scheduled', 'published', 'cancelled')
+ */
+async function loadScheduledContent(status = 'all') {
+  const user = window.currentUser;
+  if (!user || !user.id) {
+    showToast('로그인이 필요합니다.', 'error');
+    return;
+  }
+
+  try {
+    const params = new URLSearchParams({ user_id: user.id });
+    if (status !== 'all') {
+      params.append('status', status);
+    }
+
+    const response = await fetch(`/api/scheduled-content?${params.toString()}`);
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || '발행 예정 콘텐츠 조회 실패');
+    }
+
+    renderScheduledContentList(data.scheduled_content || []);
+  } catch (error) {
+    console.error('발행 예정 콘텐츠 로드 오류:', error);
+    showToast('발행 예정 콘텐츠를 불러올 수 없습니다.', 'error');
+  }
+}
+
+/**
+ * 발행 예정 콘텐츠 목록 렌더링
+ * @param {Array} contentList - 발행 예정 콘텐츠 배열
+ */
+function renderScheduledContentList(contentList) {
+  const container = document.getElementById('scheduledContentList');
+  if (!container) return;
+
+  if (!contentList || contentList.length === 0) {
+    container.innerHTML = `
+      <div class="text-center text-gray-500 py-8">
+        <i class="fas fa-calendar-check text-4xl mb-3 text-gray-300"></i>
+        <p>발행 예정된 콘텐츠가 없습니다.</p>
+        <p class="text-xs text-gray-400 mt-2">히스토리에서 콘텐츠의 발행 예정일을 설정할 수 있습니다.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const platformNames = {
+    blog: '네이버블로그',
+    instagram: '인스타그램',
+    instagramFeed: '인스타그램 피드',
+    threads: '스레드',
+    youtube: '유튜브',
+    youtubeLongform: '유튜브 롱폼',
+    linkedin: 'LinkedIn',
+    facebook: '페이스북',
+    twitter: '트위터(X)',
+    kakaotalk: '카카오톡',
+    naverband: '네이버 밴드',
+    telegram: '텔레그램',
+    navertv: '네이버TV'
+  };
+
+  const statusBadges = {
+    draft: '<span class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">초안</span>',
+    scheduled: '<span class="px-2 py-1 bg-blue-200 text-blue-700 rounded text-xs">📅 예정</span>',
+    published: '<span class="px-2 py-1 bg-green-200 text-green-700 rounded text-xs">✅ 발행완료</span>',
+    cancelled: '<span class="px-2 py-1 bg-red-200 text-red-700 rounded text-xs">❌ 취소</span>'
+  };
+
+  container.innerHTML = contentList.map(item => {
+    const scheduledDate = item.scheduled_date 
+      ? new Date(item.scheduled_date).toLocaleString('ko-KR', { 
+          year: 'numeric', 
+          month: '2-digit', 
+          day: '2-digit', 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: true 
+        })
+      : '미설정';
+    
+    const platform = platformNames[item.platform] || item.platform;
+    const statusBadge = statusBadges[item.publish_status] || statusBadges.draft;
+
+    return `
+      <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+        <div class="flex justify-between items-start mb-2">
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="font-semibold text-gray-800">${platform}</span>
+              ${statusBadge}
+            </div>
+            <p class="text-sm text-gray-600 line-clamp-2">${item.content?.substring(0, 100) || '내용 없음'}...</p>
+          </div>
+        </div>
+        <div class="flex justify-between items-center mt-3">
+          <span class="text-xs text-gray-500">
+            <i class="fas fa-clock mr-1"></i>${scheduledDate}
+          </span>
+          <div class="flex gap-2">
+            <button onclick="changePublishStatus('${item.id}', 'scheduled')" class="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition" title="예정으로 변경">
+              📅
+            </button>
+            <button onclick="changePublishStatus('${item.id}', 'published')" class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition" title="발행완료로 변경">
+              ✅
+            </button>
+            <button onclick="changePublishStatus('${item.id}', 'cancelled')" class="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition" title="취소">
+              ❌
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/**
+ * 발행 상태 변경
+ * @param {string} generationId - 콘텐츠 ID
+ * @param {string} newStatus - 새 상태 ('draft', 'scheduled', 'published', 'cancelled')
+ */
+async function changePublishStatus(generationId, newStatus) {
+  const user = window.currentUser;
+  if (!user || !user.id) {
+    showToast('로그인이 필요합니다.', 'error');
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/schedule-content/${generationId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: user.id,
+        publish_status: newStatus
+      })
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || '상태 변경 실패');
+    }
+
+    showToast('발행 상태가 변경되었습니다.', 'success');
+    loadScheduledContent('all'); // 목록 새로고침
+  } catch (error) {
+    console.error('발행 상태 변경 오류:', error);
+    showToast('발행 상태 변경에 실패했습니다.', 'error');
+  }
+}
+
+/**
+ * 발행 예정일 설정 모달 열기
+ * @param {string} generationId - 콘텐츠 ID
+ * @param {string} platform - 플랫폼명
+ */
+function openScheduleModal(generationId, platform) {
+  // TODO: 모달 UI 구현 (다음 단계에서 추가)
+  const scheduledDate = prompt('발행 예정일을 입력하세요 (YYYY-MM-DD HH:mm):');
+  if (!scheduledDate) return;
+
+  saveSchedule(generationId, platform, scheduledDate);
+}
+
+/**
+ * 발행 예정일 저장
+ * @param {string} generationId - 콘텐츠 ID
+ * @param {string} platform - 플랫폼명
+ * @param {string} scheduledDate - 발행 예정일 (ISO 문자열)
+ */
+async function saveSchedule(generationId, platform, scheduledDate) {
+  const user = window.currentUser;
+  if (!user || !user.id) {
+    showToast('로그인이 필요합니다.', 'error');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/schedule-content', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        generation_id: generationId,
+        user_id: user.id,
+        scheduled_date: scheduledDate,
+        publish_status: 'scheduled'
+      })
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || '발행 예정일 설정 실패');
+    }
+
+    showToast('발행 예정일이 설정되었습니다.', 'success');
+    loadScheduledContent('all'); // 목록 새로고침
+  } catch (error) {
+    console.error('발행 예정일 저장 오류:', error);
+    showToast('발행 예정일 설정에 실패했습니다.', 'error');
+  }
+}
+
+/**
+ * 캘린더 섹션 표시 (로그인 시)
+ */
+function showScheduledContentArea() {
+  const area = document.getElementById('scheduledContentArea');
+  if (area) {
+    area.classList.remove('hidden');
+    loadScheduledContent('all'); // 초기 로드
+  }
+}
+
+/**
+ * 캘린더 섹션 숨김 (로그아웃 시)
+ */
+function hideScheduledContentArea() {
+  const area = document.getElementById('scheduledContentArea');
+  if (area) {
+    area.classList.add('hidden');
+  }
+}
+
+// 전역 노출
+window.loadScheduledContent = loadScheduledContent;
+window.changePublishStatus = changePublishStatus;
+window.openScheduleModal = openScheduleModal;
+window.saveSchedule = saveSchedule;
+window.showScheduledContentArea = showScheduledContentArea;
+window.hideScheduledContentArea = hideScheduledContentArea;
 
