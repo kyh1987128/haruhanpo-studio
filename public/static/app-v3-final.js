@@ -2402,8 +2402,7 @@ async function handleGenerate() {
     console.log(`✅ [프론트엔드 검증 통과] 필요: ${creditsNeeded}, 보유: ${totalCredits}`);
   }
   
-  // 콘텐츠 블록 검증
-  const contentCount = Object.keys(contentBlocks).length;
+  // 콘텐츠 블록 검증 (contentCount는 이미 2360번 줄에서 선언됨)
   if (contentCount === 0) {
     showToast('❌ 생성할 콘텐츠가 없습니다', 'error');
     return;
