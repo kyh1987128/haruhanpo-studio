@@ -5936,6 +5936,22 @@ async function loadCalendarEvents() {
         const name = platformNames[item.platform] || item.platform || '콘텐츠';
         const status = item.publish_status || 'draft';
         
+        // results (jsonb)에서 콘텐츠 추출
+        let content = '내용 없음';
+        if (item.results && typeof item.results === 'object') {
+          // item.platform에 해당하는 콘텐츠 찾기
+          const platformData = item.results[item.platform];
+          if (platformData && platformData.content) {
+            content = platformData.content;
+          } else {
+            // 첫 번째 플랫폼 콘텐츠 사용
+            const firstPlatform = Object.keys(item.results)[0];
+            if (firstPlatform && item.results[firstPlatform]?.content) {
+              content = item.results[firstPlatform].content;
+            }
+          }
+        }
+        
         events.push({
           id: item.id,
           title: `${emoji} ${name}`,
@@ -5946,8 +5962,9 @@ async function loadCalendarEvents() {
             generation_id: item.id,
             platform: item.platform || 'unknown',
             publish_status: status,
-            content: item.content || '내용 없음',
-            created_at: item.created_at
+            content: content,
+            created_at: item.created_at,
+            results: item.results // 전체 results 저장
           }
         });
       });
@@ -7330,10 +7347,10 @@ window.deleteProfile = deleteProfile;
 // ============================================================
 
 /**
- * 메모 모달 열기
+ * 메모 모달 열기 (여러 메모 지원)
  */
-async function openMemoModal(dateStr) {
-  console.log('📝 openMemoModal 호출:', dateStr);
+async function openMemoModal(dateStr, memoId = null) {
+  console.log('📝 openMemoModal 호출:', dateStr, memoId);
   
   const user = window.currentUser;
   if (!user || !user.id) {
@@ -7341,35 +7358,72 @@ async function openMemoModal(dateStr) {
     return;
   }
 
-  // 기존 메모 조회
-  let existingMemo = '';
-  let memoId = null;
+  // 기존 메모 목록 조회
+  let existingMemos = [];
   
   try {
     const response = await fetch(`/api/calendar-memos?user_id=${user.id}&date=${dateStr}`);
     const data = await response.json();
     
-    if (data.success && data.memos && data.memos.length > 0) {
-      existingMemo = data.memos[0].memo;
-      memoId = data.memos[0].id;
+    if (data.success && data.memos) {
+      existingMemos = data.memos;
     }
   } catch (error) {
     console.error('메모 조회 오류:', error);
   }
 
+  // 기존 메모 목록 HTML
+  const memosListHtml = existingMemos.length > 0 ? `
+    <div class="mb-4">
+      <h4 class="text-sm font-semibold text-gray-700 mb-2">
+        <i class="fas fa-list mr-2"></i>이 날짜의 메모 (${existingMemos.length}개)
+      </h4>
+      <div class="space-y-2 max-h-60 overflow-y-auto">
+        ${existingMemos.map(memo => {
+          const memoTime = new Date(memo.date).toLocaleTimeString('ko-KR', {
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          return `
+            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+              <div class="flex justify-between items-start mb-1">
+                <span class="text-xs text-gray-500">
+                  <i class="fas fa-clock mr-1"></i>${memoTime}
+                </span>
+                <button 
+                  onclick="deleteMemo('${memo.id}')" 
+                  class="text-red-600 hover:text-red-800 text-sm"
+                  title="삭제"
+                >
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+              <p class="text-sm text-gray-800">${memo.memo}</p>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  ` : '';
+
   const html = `
     <div id="memoModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]" style="z-index: 60;">
-      <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+      <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-xl font-bold text-gray-800">
-            📝 메모 ${existingMemo ? '수정' : '작성'}
+            📝 메모 관리
           </h3>
           <button onclick="closeMemoModal()" class="text-gray-500 hover:text-gray-700">
             <i class="fas fa-times text-xl"></i>
           </button>
         </div>
         
-        <div class="mb-4">
+        ${memosListHtml}
+        
+        <div class="mb-4 ${existingMemos.length > 0 ? 'border-t pt-4' : ''}">
+          <h4 class="text-sm font-semibold text-gray-700 mb-2">
+            <i class="fas fa-plus-circle mr-2"></i>새 메모 추가
+          </h4>
           <p class="text-sm text-gray-600 mb-2">
             <i class="fas fa-calendar mr-2"></i>${dateStr}
           </p>
@@ -7378,18 +7432,10 @@ async function openMemoModal(dateStr) {
             class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
             rows="5" 
             placeholder="메모를 입력하세요..."
-          >${existingMemo}</textarea>
+          ></textarea>
         </div>
         
         <div class="flex gap-2">
-          ${memoId ? `
-            <button 
-              onclick="deleteMemo('${memoId}')" 
-              class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-            >
-              삭제
-            </button>
-          ` : ''}
           <button 
             onclick="saveMemo('${dateStr}')" 
             class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
@@ -7400,7 +7446,7 @@ async function openMemoModal(dateStr) {
             onclick="closeMemoModal()" 
             class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
           >
-            취소
+            닫기
           </button>
         </div>
       </div>
@@ -7414,7 +7460,6 @@ async function openMemoModal(dateStr) {
     const textarea = document.getElementById('memoTextarea');
     if (textarea) {
       textarea.focus();
-      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
     }
   }, 100);
 }
@@ -7430,7 +7475,7 @@ function closeMemoModal() {
 }
 
 /**
- * 메모 저장
+ * 메모 저장 (시간 정보 포함)
  */
 async function saveMemo(dateStr) {
   const user = window.currentUser;
@@ -7448,12 +7493,16 @@ async function saveMemo(dateStr) {
   }
 
   try {
+    // 현재 시간 포함한 timestamp 생성
+    const now = new Date();
+    const dateWithTime = `${dateStr} ${now.toTimeString().split(' ')[0]}`; // YYYY-MM-DD HH:MM:SS
+    
     const response = await fetch('/api/calendar-memo', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         user_id: user.id,
-        date: dateStr,
+        date: dateWithTime, // 시간 정보 포함
         memo
       })
     });

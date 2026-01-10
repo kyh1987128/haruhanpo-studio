@@ -3711,7 +3711,7 @@ app.patch('/api/schedule-content/:id', async (c) => {
 // 📝 캘린더 메모 API
 // ============================================================
 
-// 1️⃣ 메모 저장/수정 (UPSERT)
+// 1️⃣ 메모 저장 (INSERT - 여러 개 저장 가능)
 app.post('/api/calendar-memo', async (c) => {
   try {
     const body = await c.req.json();
@@ -3731,21 +3731,16 @@ app.post('/api/calendar-memo', async (c) => {
       c.env.SUPABASE_SERVICE_KEY
     );
     
-    // UPSERT: 같은 날짜에 메모가 있으면 업데이트, 없으면 삽입
+    // INSERT: 여러 메모 저장 가능 (UNIQUE 제약조건 제거됨)
     const { data, error } = await supabase
       .from('calendar_memos')
-      .upsert(
-        {
-          user_id,
-          date,
-          memo,
-          updated_at: new Date().toISOString()
-        },
-        {
-          onConflict: 'user_id,date', // UNIQUE 제약조건 기준
-          ignoreDuplicates: false // 중복 시 업데이트
-        }
-      )
+      .insert({
+        user_id,
+        date,
+        memo,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
       .select()
       .single();
     
