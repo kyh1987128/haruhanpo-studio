@@ -3789,9 +3789,15 @@ app.get('/api/calendar-memos', async (c) => {
       .eq('user_id', user_id)
       .order('date', { ascending: false });
     
-    // 특정 날짜만 조회
+    // 특정 날짜만 조회 (timestamptz이므로 날짜 범위로 검색)
     if (date) {
-      query = query.eq('date', date);
+      // date가 YYYY-MM-DD 형식이면 해당 날짜의 00:00:00 ~ 23:59:59 조회
+      const startOfDay = `${date}T00:00:00Z`;
+      const endOfDay = `${date}T23:59:59Z`;
+      
+      query = query
+        .gte('date', startOfDay)
+        .lte('date', endOfDay);
     }
     
     const { data, error } = await query;

@@ -5973,16 +5973,20 @@ async function loadCalendarEvents() {
     // 메모 이벤트 추가
     if (memoData.success && memoData.memos) {
       memoData.memos.forEach(memo => {
+        // memo.date에서 날짜 부분만 추출 (YYYY-MM-DD)
+        const memoDate = memo.date.split('T')[0];
+        
         events.push({
           id: `memo-${memo.id}`,
           title: `📝 ${memo.memo.substring(0, 20)}${memo.memo.length > 20 ? '...' : ''}`,
-          start: memo.date,
+          start: memoDate, // 날짜만 표시 (시간 제거)
           backgroundColor: '#f59e0b',
           extendedProps: {
             type: 'memo',
             memo_id: memo.id,
             memo_text: memo.memo,
-            memo_date: memo.date
+            memo_date: memoDate, // 날짜만 저장
+            memo_time: memo.date // 전체 timestamp 보관
           }
         });
       });
@@ -7362,7 +7366,13 @@ async function openMemoModal(dateStr, memoId = null) {
   let existingMemos = [];
   
   try {
-    const response = await fetch(`/api/calendar-memos?user_id=${user.id}&date=${dateStr}`);
+    // dateStr이 ISO 8601 형식이면 날짜 부분만 추출
+    let queryDate = dateStr;
+    if (dateStr.includes('T')) {
+      queryDate = dateStr.split('T')[0]; // YYYY-MM-DD만 추출
+    }
+    
+    const response = await fetch(`/api/calendar-memos?user_id=${user.id}&date=${queryDate}`);
     const data = await response.json();
     
     if (data.success && data.memos) {
@@ -7493,16 +7503,28 @@ async function saveMemo(dateStr) {
   }
 
   try {
-    // 현재 시간 포함한 timestamp 생성
+    // 현재 시간 포함한 ISO 8601 timestamp 생성
     const now = new Date();
-    const dateWithTime = `${dateStr} ${now.toTimeString().split(' ')[0]}`; // YYYY-MM-DD HH:MM:SS
+    
+    // dateStr이 ISO 8601 형식인지 확인
+    let dateToSave;
+    if (dateStr.includes('T')) {
+      // 이미 ISO 8601 형식 (예: 2026-01-08T00:00:00+00:00)
+      // 현재 시간으로 교체
+      dateToSave = now.toISOString();
+    } else {
+      // 날짜만 있는 경우 (예: 2026-01-08)
+      const datePart = dateStr.split(' ')[0]; // 날짜 부분만 추출
+      const timePart = now.toTimeString().split(' ')[0]; // HH:MM:SS
+      dateToSave = `${datePart}T${timePart}+09:00`; // KST timezone
+    }
     
     const response = await fetch('/api/calendar-memo', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         user_id: user.id,
-        date: dateWithTime, // 시간 정보 포함
+        date: dateToSave,
         memo
       })
     });
