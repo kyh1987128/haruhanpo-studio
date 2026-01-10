@@ -6986,31 +6986,19 @@ async function confirmSaveProfile() {
     return;
   }
   
-  const brand = document.getElementById('brand').value.trim();
-  if (!brand) {
-    showToast('브랜드명을 입력해주세요', 'error');
-    return;
-  }
-  
   const user = window.currentUser;
   if (!user || !user.id) {
     showToast('로그인이 필요합니다', 'error');
     return;
   }
   
-  // 폼 데이터 수집
+  // 폼 데이터 수집 (profiles 테이블 스키마에 맞춤)
   const profileData = {
     user_id: user.id,
     profile_name: profileName,
-    brand: document.getElementById('brand')?.value.trim() || '',
     company_name: document.getElementById('companyName')?.value.trim() || '',
-    business_type: document.getElementById('businessType')?.value.trim() || '',
-    location: document.getElementById('location')?.value.trim() || '',
-    target_gender: document.getElementById('targetGender')?.value || '',
     contact: document.getElementById('contact')?.value.trim() || '',
     website: document.getElementById('website')?.value.trim() || '',
-    sns: document.getElementById('sns')?.value.trim() || '',
-    keywords: document.getElementById('keywords')?.value.trim() || '',
     tone: document.getElementById('tone')?.value || '친근한',
     target_age: document.getElementById('targetAge')?.value || '20대',
     industry: document.getElementById('industry')?.value || '라이프스타일'
@@ -7158,25 +7146,32 @@ async function applyProfile(profileId) {
       throw new Error('프로필을 찾을 수 없습니다');
     }
     
-    // 폼에 값 채우기
-    document.getElementById('brand').value = profile.brand || '';
-    document.getElementById('companyName').value = profile.company_name || '';
-    document.getElementById('businessType').value = profile.business_type || '';
-    document.getElementById('location').value = profile.location || '';
-    document.getElementById('targetGender').value = profile.target_gender || '';
-    document.getElementById('contact').value = profile.contact || '';
-    document.getElementById('website').value = profile.website || '';
-    document.getElementById('sns').value = profile.sns || '';
-    document.getElementById('keywords').value = profile.brand_keywords ? profile.brand_keywords.join(', ') : '';
-    document.getElementById('tone').value = profile.tone || '친근한';
-    document.getElementById('targetAge').value = profile.target_age || '20대';
-    document.getElementById('industry').value = profile.industry || '라이프스타일';
+    // 폼에 값 채우기 (profiles 테이블 스키마에 맞춤)
+    // 옵셔널 체이닝으로 안전하게 접근
+    const brandEl = document.getElementById('brand');
+    const companyNameEl = document.getElementById('companyName');
+    const contactEl = document.getElementById('contact');
+    const websiteEl = document.getElementById('website');
+    const toneEl = document.getElementById('tone');
+    const targetAgeEl = document.getElementById('targetAge');
+    const industryEl = document.getElementById('industry');
+    
+    if (brandEl) brandEl.value = profile.profile_name || ''; // profile_name을 brand 필드에 표시
+    if (companyNameEl) companyNameEl.value = profile.company_name || '';
+    if (contactEl) contactEl.value = profile.contact || '';
+    if (websiteEl) websiteEl.value = profile.website || '';
+    if (toneEl) toneEl.value = profile.tone || '친근한';
+    if (targetAgeEl) targetAgeEl.value = profile.target_age || '20대';
+    if (industryEl) industryEl.value = profile.industry || '라이프스타일';
     
     showToast('✅ 프로필이 적용되었습니다', 'success');
     closeProfileListModal();
     
     // 스크롤을 폼 상단으로 이동
-    document.getElementById('contentForm').scrollIntoView({ behavior: 'smooth' });
+    const formEl = document.getElementById('contentForm');
+    if (formEl) {
+      formEl.scrollIntoView({ behavior: 'smooth' });
+    }
   } catch (error) {
     console.error('프로필 적용 오류:', error);
     showToast(`프로필 적용 실패: ${error.message}`, 'error');
