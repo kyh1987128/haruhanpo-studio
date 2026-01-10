@@ -5581,12 +5581,47 @@ document.addEventListener('DOMContentLoaded', () => {
   if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
   if (heroTrialBtn) heroTrialBtn.addEventListener('click', handleTrial);
   
-  // 회원 전용 버튼 클릭 시 로그인 유도
-  const memberButtons = ['saveProfileBtn', 'loadProfileBtn', 'historyBtn', 'templateBtn'];
-  memberButtons.forEach(btnId => {
-    const btn = document.getElementById(btnId);
+  // 회원 전용 버튼 클릭 시 로그인 유도 + 프로필 모달 연결
+  const saveProfileBtn = document.getElementById('saveProfileBtn');
+  const loadProfileBtn = document.getElementById('loadProfileBtn');
+  const historyBtn = document.getElementById('historyBtn');
+  const templateBtn = document.getElementById('templateBtn');
+  
+  // 프로필 저장 버튼
+  if (saveProfileBtn) {
+    saveProfileBtn.addEventListener('click', (e) => {
+      if (currentUser.isGuest) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (confirm('이 기능은 회원 전용입니다. 로그인 하시겠습니까?')) {
+          handleLogin();
+        }
+        return false;
+      }
+      // 로그인 상태: 모달 열기
+      openProfileSaveModal();
+    });
+  }
+  
+  // 프로필 관리 버튼
+  if (loadProfileBtn) {
+    loadProfileBtn.addEventListener('click', (e) => {
+      if (currentUser.isGuest) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (confirm('이 기능은 회원 전용입니다. 로그인 하시겠습니까?')) {
+          handleLogin();
+        }
+        return false;
+      }
+      // 로그인 상태: 모달 열기
+      openProfileListModal();
+    });
+  }
+  
+  // 히스토리, 템플릿 버튼
+  [historyBtn, templateBtn].forEach(btn => {
     if (btn) {
-      const originalClick = btn.onclick;
       btn.addEventListener('click', (e) => {
         if (currentUser.isGuest) {
           e.preventDefault();
@@ -7242,23 +7277,6 @@ async function deleteProfile(profileId) {
 }
 
 // 기존 버튼 이벤트 리스너 수정
-document.addEventListener('DOMContentLoaded', function() {
-  const saveProfileBtn = document.getElementById('saveProfileBtn');
-  const loadProfileBtn = document.getElementById('loadProfileBtn');
-  
-  if (saveProfileBtn) {
-    saveProfileBtn.removeEventListener('click', saveProfile); // 기존 리스너 제거
-    saveProfileBtn.addEventListener('click', function() {
-      openProfileSaveModal();
-    });
-  }
-  
-  if (loadProfileBtn) {
-    loadProfileBtn.addEventListener('click', function() {
-      openProfileListModal();
-    });
-  }
-});
 
 // 전역 노출
 window.openProfileListModal = openProfileListModal;
