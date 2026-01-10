@@ -7506,24 +7506,19 @@ async function saveMemo(dateStr) {
   }
 
   try {
-    // 로컬 날짜와 현재 시간을 결합한 timestamp 생성
-    const now = new Date();
-    
-    // dateStr에서 날짜 부분 추출 (YYYY-MM-DD)
+    // 날짜 부분 추출 (YYYY-MM-DD)
     const datePart = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr.split(' ')[0];
     
-    // 로컬 시간 생성 (년, 월, 일, 시, 분, 초)
-    const localDateTime = new Date(
-      parseInt(datePart.split('-')[0]), // 년
-      parseInt(datePart.split('-')[1]) - 1, // 월 (0-based)
-      parseInt(datePart.split('-')[2]), // 일
-      now.getHours(),
-      now.getMinutes(),
-      now.getSeconds()
-    );
+    // 현재 시간 정보 가져오기
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
     
-    // ISO 8601 형식으로 변환
-    const dateToSave = localDateTime.toISOString();
+    // ISO 8601 형식으로 직접 조합 (시간대 +09:00 명시)
+    const dateToSave = `${datePart}T${hours}:${minutes}:${seconds}+09:00`;
+    
+    console.log('📝 메모 저장 날짜:', dateToSave);
     
     const response = await fetch('/api/calendar-memo', {
       method: 'POST',
