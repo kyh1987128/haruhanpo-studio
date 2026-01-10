@@ -372,10 +372,10 @@ export const htmlTemplate = `
             </div>
             <div class="flex justify-center space-x-3 flex-wrap gap-2">
                 <button id="saveProfileBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
-                    <i class="fas fa-save mr-2"></i><span data-i18n="saveProfile">프로필 저장</span>
+                    <i class="fas fa-save mr-2"></i><span data-i18n="saveProfile">새 프로필 저장</span>
                 </button>
                 <button id="loadProfileBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                    <i class="fas fa-folder-open mr-2"></i><span data-i18n="loadProfile">프로필 불러오기</span>
+                    <i class="fas fa-folder-open mr-2"></i><span data-i18n="loadProfile">프로필 관리</span>
                 </button>
                 <button id="historyBtn" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
                     <i class="fas fa-history mr-2"></i><span data-i18n="viewHistory">히스토리</span>
@@ -469,6 +469,79 @@ export const htmlTemplate = `
             </div>
         </div>
 
+        <!-- 프로필 목록 모달 -->
+        <div id="profileListModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-4xl mx-4 w-full max-h-[80vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800">
+                        <i class="fas fa-user-circle mr-2 text-blue-500"></i>프로필 관리
+                    </h3>
+                    <button onclick="closeProfileListModal()" class="text-gray-500 hover:text-gray-700 text-2xl">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="mb-4">
+                    <button onclick="openProfileSaveModal()" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition w-full">
+                        <i class="fas fa-plus mr-2"></i>새 프로필 추가
+                    </button>
+                </div>
+                
+                <div id="profileListContainer" class="space-y-4">
+                    <!-- 프로필 카드들이 여기에 동적으로 추가됩니다 -->
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-inbox text-4xl mb-3"></i>
+                        <p>저장된 프로필이 없습니다</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 프로필 저장/수정 모달 -->
+        <div id="profileSaveModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-[70] flex items-center justify-center">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl mx-4 w-full max-h-[80vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-gray-800">
+                        <i class="fas fa-save mr-2 text-green-500"></i><span id="profileModalTitle">새 프로필 저장</span>
+                    </h3>
+                    <button onclick="closeProfileSaveModal()" class="text-gray-500 hover:text-gray-700 text-2xl">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block mb-2 font-semibold text-gray-700">
+                            <i class="fas fa-signature mr-2"></i>프로필 이름 <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            id="profileNameInput"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                            placeholder="예: 회사 공식 프로필, 개인 블로그, 테스트용"
+                            required
+                        />
+                        <p class="text-xs text-gray-500 mt-1">나중에 쉽게 찾을 수 있도록 구분할 수 있는 이름을 입력하세요</p>
+                    </div>
+                    
+                    <div class="border-t pt-4">
+                        <p class="text-sm text-gray-600 mb-3">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            현재 입력된 폼 내용이 이 프로필 이름으로 저장됩니다
+                        </p>
+                    </div>
+                    
+                    <div class="flex gap-3">
+                        <button onclick="closeProfileSaveModal()" class="flex-1 px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+                            취소
+                        </button>
+                        <button onclick="confirmSaveProfile()" class="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold">
+                            <i class="fas fa-save mr-2"></i>저장
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- 입력 폼 -->
         <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">

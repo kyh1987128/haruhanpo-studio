@@ -7013,3 +7013,340 @@ window.editContentText = editContentText;
 window.cancelContentEdit = cancelContentEdit;
 window.saveContentEdit = saveContentEdit;
 
+
+// ========================================
+// 프로필 관리 시스템 (다중 프로필 지원)
+// ========================================
+
+let currentEditingProfileId = null;
+
+/**
+ * 프로필 목록 모달 열기
+ */
+async function openProfileListModal() {
+  const modal = document.getElementById('profileListModal');
+  if (!modal) return;
+  
+  modal.classList.remove('hidden');
+  
+  // 프로필 목록 로드
+  await loadProfilesList();
+}
+
+/**
+ * 프로필 목록 모달 닫기
+ */
+function closeProfileListModal() {
+  const modal = document.getElementById('profileListModal');
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+}
+
+/**
+ * 프로필 저장 모달 열기
+ */
+function openProfileSaveModal(profileId = null) {
+  const modal = document.getElementById('profileSaveModal');
+  const titleEl = document.getElementById('profileModalTitle');
+  const nameInput = document.getElementById('profileNameInput');
+  
+  if (!modal) return;
+  
+  currentEditingProfileId = profileId;
+  
+  if (profileId) {
+    // 수정 모드
+    titleEl.textContent = '프로필 수정';
+    // 기존 프로필 이름 불러오기 (TODO)
+  } else {
+    // 새로 저장 모드
+    titleEl.textContent = '새 프로필 저장';
+    nameInput.value = '';
+  }
+  
+  modal.classList.remove('hidden');
+  nameInput.focus();
+}
+
+/**
+ * 프로필 저장 모달 닫기
+ */
+function closeProfileSaveModal() {
+  const modal = document.getElementById('profileSaveModal');
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+  currentEditingProfileId = null;
+}
+
+/**
+ * 프로필 저장 확인
+ */
+async function confirmSaveProfile() {
+  const profileName = document.getElementById('profileNameInput').value.trim();
+  
+  if (!profileName) {
+    showToast('프로필 이름을 입력해주세요', 'error');
+    return;
+  }
+  
+  const brand = document.getElementById('brand').value.trim();
+  if (!brand) {
+    showToast('브랜드명을 입력해주세요', 'error');
+    return;
+  }
+  
+  const user = window.currentUser;
+  if (!user || !user.id) {
+    showToast('로그인이 필요합니다', 'error');
+    return;
+  }
+  
+  // 폼 데이터 수집
+  const profileData = {
+    user_id: user.id,
+    profile_name: profileName,
+    brand: document.getElementById('brand')?.value.trim() || '',
+    company_name: document.getElementById('companyName')?.value.trim() || '',
+    business_type: document.getElementById('businessType')?.value.trim() || '',
+    location: document.getElementById('location')?.value.trim() || '',
+    target_gender: document.getElementById('targetGender')?.value || '',
+    contact: document.getElementById('contact')?.value.trim() || '',
+    website: document.getElementById('website')?.value.trim() || '',
+    sns: document.getElementById('sns')?.value.trim() || '',
+    keywords: document.getElementById('keywords')?.value.trim() || '',
+    tone: document.getElementById('tone')?.value || '친근한',
+    target_age: document.getElementById('targetAge')?.value || '20대',
+    industry: document.getElementById('industry')?.value || '라이프스타일'
+  };
+  
+  try {
+    let response;
+    
+    if (currentEditingProfileId) {
+      // 수정
+      response = await fetch(`/api/profiles/${currentEditingProfileId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profileData)
+      });
+    } else {
+      // 새로 생성
+      response = await fetch('/api/profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profileData)
+      });
+    }
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || '프로필 저장 실패');
+    }
+    
+    showToast('✅ 프로필이 저장되었습니다', 'success');
+    closeProfileSaveModal();
+    
+    // 프로필 목록 새로고침
+    if (document.getElementById('profileListModal').classList.contains('hidden') === false) {
+      await loadProfilesList();
+    }
+  } catch (error) {
+    console.error('프로필 저장 오류:', error);
+    showToast(`프로필 저장 실패: ${error.message}`, 'error');
+  }
+}
+
+/**
+ * 프로필 목록 로드
+ */
+async function loadProfilesList() {
+  const container = document.getElementById('profileListContainer');
+  if (!container) return;
+  
+  const user = window.currentUser;
+  if (!user || !user.id) {
+    container.innerHTML = `
+      <div class="text-center py-8 text-gray-500">
+        <i class="fas fa-user-slash text-4xl mb-3"></i>
+        <p>로그인이 필요합니다</p>
+      </div>
+    `;
+    return;
+  }
+  
+  try {
+    const response = await fetch(`/api/profiles?user_id=${user.id}`);
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || '프로필 목록 조회 실패');
+    }
+    
+    const profiles = data.profiles || [];
+    
+    if (profiles.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-8 text-gray-500">
+          <i class="fas fa-inbox text-4xl mb-3"></i>
+          <p>저장된 프로필이 없습니다</p>
+          <p class="text-sm mt-2">위의 "새 프로필 추가" 버튼을 눌러 프로필을 저장하세요</p>
+        </div>
+      `;
+      return;
+    }
+    
+    container.innerHTML = profiles.map(profile => `
+      <div class="border rounded-lg p-4 hover:shadow-md transition">
+        <div class="flex justify-between items-start mb-3">
+          <div class="flex-1">
+            <h4 class="font-bold text-lg text-gray-800">${profile.profile_name || '이름 없음'}</h4>
+            <p class="text-sm text-gray-600">${profile.brand || '브랜드 정보 없음'}</p>
+          </div>
+          <div class="flex gap-2">
+            <button 
+              onclick="applyProfile('${profile.id}')" 
+              class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm"
+              title="이 프로필 사용"
+            >
+              <i class="fas fa-check"></i>
+            </button>
+            <button 
+              onclick="deleteProfile('${profile.id}')" 
+              class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition text-sm"
+              title="삭제"
+            >
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        <div class="text-xs text-gray-500 space-y-1">
+          <p><i class="fas fa-building mr-1"></i>${profile.company_name || '회사명 없음'}</p>
+          <p><i class="fas fa-industry mr-1"></i>${profile.industry || '산업분야 미설정'}</p>
+          <p><i class="fas fa-users mr-1"></i>${profile.target_age || '연령대 미설정'} • ${profile.tone || '톤 미설정'}</p>
+        </div>
+      </div>
+    `).join('');
+  } catch (error) {
+    console.error('프로필 목록 로드 오류:', error);
+    container.innerHTML = `
+      <div class="text-center py-8 text-red-500">
+        <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
+        <p>프로필 목록을 불러오는 중 오류가 발생했습니다</p>
+      </div>
+    `;
+  }
+}
+
+/**
+ * 프로필 적용 (폼에 자동 채우기)
+ */
+async function applyProfile(profileId) {
+  const user = window.currentUser;
+  if (!user || !user.id) {
+    showToast('로그인이 필요합니다', 'error');
+    return;
+  }
+  
+  try {
+    const response = await fetch(`/api/profiles?user_id=${user.id}`);
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || '프로필 조회 실패');
+    }
+    
+    const profile = data.profiles.find(p => p.id === profileId);
+    if (!profile) {
+      throw new Error('프로필을 찾을 수 없습니다');
+    }
+    
+    // 폼에 값 채우기
+    document.getElementById('brand').value = profile.brand || '';
+    document.getElementById('companyName').value = profile.company_name || '';
+    document.getElementById('businessType').value = profile.business_type || '';
+    document.getElementById('location').value = profile.location || '';
+    document.getElementById('targetGender').value = profile.target_gender || '';
+    document.getElementById('contact').value = profile.contact || '';
+    document.getElementById('website').value = profile.website || '';
+    document.getElementById('sns').value = profile.sns || '';
+    document.getElementById('keywords').value = profile.brand_keywords ? profile.brand_keywords.join(', ') : '';
+    document.getElementById('tone').value = profile.tone || '친근한';
+    document.getElementById('targetAge').value = profile.target_age || '20대';
+    document.getElementById('industry').value = profile.industry || '라이프스타일';
+    
+    showToast('✅ 프로필이 적용되었습니다', 'success');
+    closeProfileListModal();
+    
+    // 스크롤을 폼 상단으로 이동
+    document.getElementById('contentForm').scrollIntoView({ behavior: 'smooth' });
+  } catch (error) {
+    console.error('프로필 적용 오류:', error);
+    showToast(`프로필 적용 실패: ${error.message}`, 'error');
+  }
+}
+
+/**
+ * 프로필 삭제
+ */
+async function deleteProfile(profileId) {
+  if (!confirm('이 프로필을 삭제하시겠습니까?')) {
+    return;
+  }
+  
+  const user = window.currentUser;
+  if (!user || !user.id) {
+    showToast('로그인이 필요합니다', 'error');
+    return;
+  }
+  
+  try {
+    const response = await fetch(`/api/profiles/${profileId}?user_id=${user.id}`, {
+      method: 'DELETE'
+    });
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || '프로필 삭제 실패');
+    }
+    
+    showToast('✅ 프로필이 삭제되었습니다', 'success');
+    await loadProfilesList();
+  } catch (error) {
+    console.error('프로필 삭제 오류:', error);
+    showToast(`프로필 삭제 실패: ${error.message}`, 'error');
+  }
+}
+
+// 기존 버튼 이벤트 리스너 수정
+document.addEventListener('DOMContentLoaded', function() {
+  const saveProfileBtn = document.getElementById('saveProfileBtn');
+  const loadProfileBtn = document.getElementById('loadProfileBtn');
+  
+  if (saveProfileBtn) {
+    saveProfileBtn.removeEventListener('click', saveProfile); // 기존 리스너 제거
+    saveProfileBtn.addEventListener('click', function() {
+      openProfileSaveModal();
+    });
+  }
+  
+  if (loadProfileBtn) {
+    loadProfileBtn.addEventListener('click', function() {
+      openProfileListModal();
+    });
+  }
+});
+
+// 전역 노출
+window.openProfileListModal = openProfileListModal;
+window.closeProfileListModal = closeProfileListModal;
+window.openProfileSaveModal = openProfileSaveModal;
+window.closeProfileSaveModal = closeProfileSaveModal;
+window.confirmSaveProfile = confirmSaveProfile;
+window.loadProfilesList = loadProfilesList;
+window.applyProfile = applyProfile;
+window.deleteProfile = deleteProfile;
+
