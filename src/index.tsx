@@ -3692,4 +3692,170 @@ app.patch('/api/schedule-content/:id', async (c) => {
   }
 });
 
+// ============================================================
+// 📝 캘린더 메모 API
+// ============================================================
+
+// 1️⃣ 메모 저장/수정 (UPSERT)
+app.post('/api/calendar-memo', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { user_id, date, memo } = body;
+    
+    if (!user_id || !date || !memo) {
+      return c.json({ 
+        success: false, 
+        error: 'user_id, date, memo가 필요합니다' 
+      }, 400);
+    }
+    
+    console.log(`📝 캘린더 메모 저장 요청: user_id=${user_id}, date=${date}`);
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // UPSERT: 같은 날짜에 메모가 있으면 업데이트, 없으면 삽입
+    const { data, error } = await supabase
+      .from('calendar_memos')
+      .upsert(
+        {
+          user_id,
+          date,
+          memo,
+          updated_at: new Date().toISOString()
+        },
+        {
+          onConflict: 'user_id,date', // UNIQUE 제약조건 기준
+          ignoreDuplicates: false // 중복 시 업데이트
+        }
+      )
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ 메모 저장 실패:', error);
+      return c.json({ success: false, error: error.message }, 500);
+    }
+    
+    console.log(`✅ 메모 저장 완료: ${date} → "${memo.substring(0, 30)}..."`);
+    
+    return c.json({
+      success: true,
+      message: '메모가 저장되었습니다',
+      data
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 메모 저장 오류:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 2️⃣ 메모 조회
+app.get('/api/calendar-memos', async (c) => {
+  try {
+    const user_id = c.req.query('user_id');
+    const date = c.req.query('date'); // 옵션: 특정 날짜만 조회
+    
+    if (!user_id) {
+      return c.json({ 
+        success: false, 
+        error: 'user_id가 필요합니다' 
+      }, 400);
+    }
+    
+    console.log(`📝 캘린더 메모 조회: user_id=${user_id}, date=${date || 'all'}`);
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    let query = supabase
+      .from('calendar_memos')
+      .select('*')
+      .eq('user_id', user_id)
+      .order('date', { ascending: false });
+    
+    // 특정 날짜만 조회
+    if (date) {
+      query = query.eq('date', date);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('❌ 메모 조회 실패:', error);
+      return c.json({ success: false, error: error.message }, 500);
+    }
+    
+    console.log(`✅ 메모 조회 완료: ${data?.length || 0}개`);
+    
+    return c.json({
+      success: true,
+      memos: data || [],
+      count: data?.length || 0
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 메모 조회 오류:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 3️⃣ 메모 삭제
+app.delete('/api/calendar-memo/:id', async (c) => {
+  try {
+    const memo_id = c.req.param('id');
+    const user_id = c.req.query('user_id');
+    
+    if (!memo_id || !user_id) {
+      return c.json({ 
+        success: false, 
+        error: 'id와 user_id가 필요합니다' 
+      }, 400);
+    }
+    
+    console.log(`📝 캘린더 메모 삭제: memo_id=${memo_id}, user_id=${user_id}`);
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // 권한 확인 + 삭제
+    const { data, error } = await supabase
+      .from('calendar_memos')
+      .delete()
+      .eq('id', memo_id)
+      .eq('user_id', user_id) // RLS 보호
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ 메모 삭제 실패:', error);
+      return c.json({ 
+        success: false, 
+        error: error.code === 'PGRST116' 
+          ? '메모를 찾을 수 없거나 권한이 없습니다' 
+          : error.message 
+      }, 404);
+    }
+    
+    console.log(`✅ 메모 삭제 완료: ${memo_id}`);
+    
+    return c.json({
+      success: true,
+      message: '메모가 삭제되었습니다',
+      data
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 메모 삭제 오류:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
 export default app;

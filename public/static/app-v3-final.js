@@ -5851,6 +5851,10 @@ function initFullCalendar() {
     eventClick: function(info) {
       showEventDetails(info.event);
     },
+    dateClick: function(info) {
+      // 빈 날짜 클릭 시 메모 입력 모달 열기
+      openMemoModal(info.dateStr);
+    },
     events: async function(fetchInfo, successCallback, failureCallback) {
       try {
         const events = await loadCalendarEvents();
@@ -5859,6 +5863,10 @@ function initFullCalendar() {
         console.error('캘린더 이벤트 로드 오류:', error);
         failureCallback(error);
       }
+    },
+    dayCellContent: function(arg) {
+      // 메모가 있는 날짜에 아이콘 표시 (나중에 구현)
+      return { html: arg.dayNumberText };
     }
   });
 
@@ -7229,4 +7237,200 @@ window.confirmSaveProfile = confirmSaveProfile;
 window.loadProfilesList = loadProfilesList;
 window.applyProfile = applyProfile;
 window.deleteProfile = deleteProfile;
+
+// ============================================================
+// 📝 캘린더 메모 기능
+// ============================================================
+
+/**
+ * 메모 모달 열기
+ */
+async function openMemoModal(dateStr) {
+  console.log('📝 openMemoModal 호출:', dateStr);
+  
+  const user = window.currentUser;
+  if (!user || !user.id) {
+    showToast('로그인이 필요합니다', 'error');
+    return;
+  }
+
+  // 기존 메모 조회
+  let existingMemo = '';
+  let memoId = null;
+  
+  try {
+    const response = await fetch(`/api/calendar-memos?user_id=${user.id}&date=${dateStr}`);
+    const data = await response.json();
+    
+    if (data.success && data.memos && data.memos.length > 0) {
+      existingMemo = data.memos[0].memo;
+      memoId = data.memos[0].id;
+    }
+  } catch (error) {
+    console.error('메모 조회 오류:', error);
+  }
+
+  const html = `
+    <div id="memoModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]" style="z-index: 60;">
+      <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-bold text-gray-800">
+            📝 메모 ${existingMemo ? '수정' : '작성'}
+          </h3>
+          <button onclick="closeMemoModal()" class="text-gray-500 hover:text-gray-700">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+        
+        <div class="mb-4">
+          <p class="text-sm text-gray-600 mb-2">
+            <i class="fas fa-calendar mr-2"></i>${dateStr}
+          </p>
+          <textarea 
+            id="memoTextarea" 
+            class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+            rows="5" 
+            placeholder="메모를 입력하세요..."
+          >${existingMemo}</textarea>
+        </div>
+        
+        <div class="flex gap-2">
+          ${memoId ? `
+            <button 
+              onclick="deleteMemo('${memoId}')" 
+              class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            >
+              삭제
+            </button>
+          ` : ''}
+          <button 
+            onclick="saveMemo('${dateStr}')" 
+            class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          >
+            저장
+          </button>
+          <button 
+            onclick="closeMemoModal()" 
+            class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+          >
+            취소
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', html);
+  
+  // 포커스 설정
+  setTimeout(() => {
+    const textarea = document.getElementById('memoTextarea');
+    if (textarea) {
+      textarea.focus();
+      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    }
+  }, 100);
+}
+
+/**
+ * 메모 모달 닫기
+ */
+function closeMemoModal() {
+  const modal = document.getElementById('memoModal');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+/**
+ * 메모 저장
+ */
+async function saveMemo(dateStr) {
+  const user = window.currentUser;
+  if (!user || !user.id) {
+    showToast('로그인이 필요합니다', 'error');
+    return;
+  }
+
+  const textarea = document.getElementById('memoTextarea');
+  const memo = textarea?.value.trim();
+
+  if (!memo) {
+    showToast('메모 내용을 입력하세요', 'error');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/calendar-memo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: user.id,
+        date: dateStr,
+        memo
+      })
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || '메모 저장 실패');
+    }
+
+    showToast('✅ 메모가 저장되었습니다', 'success');
+    closeMemoModal();
+    
+    // 캘린더 새로고침
+    if (calendarInstance) {
+      calendarInstance.refetchEvents();
+    }
+  } catch (error) {
+    console.error('메모 저장 오류:', error);
+    showToast('메모 저장에 실패했습니다', 'error');
+  }
+}
+
+/**
+ * 메모 삭제
+ */
+async function deleteMemo(memoId) {
+  const user = window.currentUser;
+  if (!user || !user.id) {
+    showToast('로그인이 필요합니다', 'error');
+    return;
+  }
+
+  if (!confirm('메모를 삭제하시겠습니까?')) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/calendar-memo/${memoId}?user_id=${user.id}`, {
+      method: 'DELETE'
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || '메모 삭제 실패');
+    }
+
+    showToast('✅ 메모가 삭제되었습니다', 'success');
+    closeMemoModal();
+    
+    // 캘린더 새로고침
+    if (calendarInstance) {
+      calendarInstance.refetchEvents();
+    }
+  } catch (error) {
+    console.error('메모 삭제 오류:', error);
+    showToast('메모 삭제에 실패했습니다', 'error');
+  }
+}
+
+// 전역 노출
+window.openMemoModal = openMemoModal;
+window.closeMemoModal = closeMemoModal;
+window.saveMemo = saveMemo;
+window.deleteMemo = deleteMemo;
 
