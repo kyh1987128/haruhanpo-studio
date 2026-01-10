@@ -12,6 +12,7 @@ let savedProfiles = [];
 let contentHistory = [];
 let customTemplates = [];
 let currentEditImageIndex = null;
+let currentEditingProfileId = null; // 프로필 수정 시 사용
 let lastFormData = null; // 재시도용
 
 // LocalStorage 키
@@ -6913,8 +6914,6 @@ window.saveContentEdit = saveContentEdit;
 // ========================================
 // 프로필 관리 시스템 (다중 프로필 지원)
 // ========================================
-
-let currentEditingProfileId = null;
 
 /**
  * 프로필 목록 모달 열기
