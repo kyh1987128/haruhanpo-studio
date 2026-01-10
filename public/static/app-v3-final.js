@@ -7368,14 +7368,14 @@ async function openMemoModal(dateStr, memoId = null) {
   // 기존 메모 목록 조회
   let existingMemos = [];
   
+  // 표시할 날짜 (YYYY-MM-DD 형식)
+  let displayDate = dateStr;
+  if (dateStr.includes('T')) {
+    displayDate = dateStr.split('T')[0]; // YYYY-MM-DD만 추출
+  }
+  
   try {
-    // dateStr이 ISO 8601 형식이면 날짜 부분만 추출
-    let queryDate = dateStr;
-    if (dateStr.includes('T')) {
-      queryDate = dateStr.split('T')[0]; // YYYY-MM-DD만 추출
-    }
-    
-    const response = await fetch(`/api/calendar-memos?user_id=${user.id}&date=${queryDate}`);
+    const response = await fetch(`/api/calendar-memos?user_id=${user.id}&date=${displayDate}`);
     const data = await response.json();
     
     if (data.success && data.memos) {
@@ -7438,7 +7438,7 @@ async function openMemoModal(dateStr, memoId = null) {
             <i class="fas fa-plus-circle mr-2"></i>새 메모 추가
           </h4>
           <p class="text-sm text-gray-600 mb-2">
-            <i class="fas fa-calendar mr-2"></i>${dateStr}
+            <i class="fas fa-calendar mr-2"></i>${displayDate}
           </p>
           <textarea 
             id="memoTextarea" 
@@ -7450,7 +7450,7 @@ async function openMemoModal(dateStr, memoId = null) {
         
         <div class="flex gap-2">
           <button 
-            onclick="saveMemo('${dateStr}')" 
+            onclick="saveMemo('${displayDate}')" 
             class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
             저장
@@ -7506,21 +7506,24 @@ async function saveMemo(dateStr) {
   }
 
   try {
-    // 현재 시간 포함한 ISO 8601 timestamp 생성
+    // 로컬 날짜와 현재 시간을 결합한 timestamp 생성
     const now = new Date();
     
-    // dateStr이 ISO 8601 형식인지 확인
-    let dateToSave;
-    if (dateStr.includes('T')) {
-      // 이미 ISO 8601 형식 (예: 2026-01-08T00:00:00+00:00)
-      // 현재 시간으로 교체
-      dateToSave = now.toISOString();
-    } else {
-      // 날짜만 있는 경우 (예: 2026-01-08)
-      const datePart = dateStr.split(' ')[0]; // 날짜 부분만 추출
-      const timePart = now.toTimeString().split(' ')[0]; // HH:MM:SS
-      dateToSave = `${datePart}T${timePart}+09:00`; // KST timezone
-    }
+    // dateStr에서 날짜 부분 추출 (YYYY-MM-DD)
+    const datePart = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr.split(' ')[0];
+    
+    // 로컬 시간 생성 (년, 월, 일, 시, 분, 초)
+    const localDateTime = new Date(
+      parseInt(datePart.split('-')[0]), // 년
+      parseInt(datePart.split('-')[1]) - 1, // 월 (0-based)
+      parseInt(datePart.split('-')[2]), // 일
+      now.getHours(),
+      now.getMinutes(),
+      now.getSeconds()
+    );
+    
+    // ISO 8601 형식으로 변환
+    const dateToSave = localDateTime.toISOString();
     
     const response = await fetch('/api/calendar-memo', {
       method: 'POST',
