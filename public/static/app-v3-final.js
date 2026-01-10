@@ -4889,20 +4889,28 @@ let currentUser = window.currentUser;
 
 // Supabase 클라이언트 초기화
 async function initSupabase() {
+  console.log('🔧 [Supabase] initSupabase 시작');
   try {
     // Supabase JS SDK를 동적으로 로드
     if (typeof window.supabase === 'undefined') {
+      console.log('📦 [Supabase] CDN에서 SDK 로드 중...');
       // CDN에서 Supabase 로드
       const script = document.createElement('script');
       script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
       script.onload = () => {
+        console.log('✅ [Supabase] SDK 로드 완료');
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         console.log('✅ Supabase 클라이언트 초기화 완료');
         checkSupabaseSession();
       };
+      script.onerror = (error) => {
+        console.error('❌ [Supabase] SDK 로드 실패:', error);
+      };
       document.head.appendChild(script);
     } else {
+      console.log('✅ [Supabase] SDK 이미 로드됨');
       supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      console.log('✅ Supabase 클라이언트 초기화 완료');
       checkSupabaseSession();
     }
   } catch (error) {
@@ -5332,6 +5340,8 @@ function showRegistrationCompleteModal(userId) {
 
 // UI 초기화
 function initializeAuth() {
+  console.log('🚀 [초기화] initializeAuth 시작');
+  
   // Supabase 초기화
   initSupabase();
   
@@ -5339,14 +5349,19 @@ function initializeAuth() {
   const savedUser = localStorage.getItem('postflow_user');
   if (savedUser) {
     window.currentUser = JSON.parse(savedUser);
+    console.log('✅ [초기화] localStorage에서 사용자 복원:', window.currentUser);
     updateAuthUI();
   } else {
     // 비회원 상태로 시작
     window.currentUser.isGuest = true;
     window.currentUser.tier = 'guest';
     window.currentUser.credits = 1;
+    console.log('📝 [초기화] 비회원 상태로 시작:', window.currentUser);
     updateAuthUI();
   }
+  
+  // 전역 노출 (디버깅용)
+  console.log('🌐 [초기화] window.currentUser 전역 노출 완료:', window.currentUser);
 }
 
 // 인증 상태 확인
