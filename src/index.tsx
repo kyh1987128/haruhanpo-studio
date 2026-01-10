@@ -3540,7 +3540,7 @@ app.get('/api/scheduled-content', async (c) => {
     
     return c.json({
       success: true,
-      data: data || [],
+      scheduled_content: data || [], // ✅ 'data' → 'scheduled_content'로 변경
       count: data?.length || 0
     });
     
