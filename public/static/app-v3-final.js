@@ -6,6 +6,7 @@
 // 전역 변수
 let selectedImages = []; // 더 이상 사용 안 함 (개별 콘텐츠로 변경)
 let contentBlocks = {}; // { 0: { images: [], keywords: '', topic: '', description: '' }, 1: {...}, ... }
+let contentPlatforms = {}; // 콘텐츠별 플랫폼 선택 상태 (Option B)
 let resultData = {};
 let savedProfiles = [];
 let contentHistory = [];
@@ -4064,102 +4065,21 @@ function loadProfiles() {
   }
 }
 
+// 🔥 기존 saveProfile 함수는 deprecated (새 모달 시스템 사용)
+// 하위 호환성을 위해 유지하지만 새 시스템으로 리다이렉트
 function saveProfile() {
-  const brand = document.getElementById('brand').value.trim();
-  
-  if (!brand) {
-    showToast('❌ 브랜드명을 입력해주세요', 'error');
-    return;
-  }
-  
-  const profileName = prompt('프로필 이름을 입력하세요:', brand);
-  if (!profileName) return;
-  
-  // 선택된 플랫폼 가져오기
-  const platformCheckboxes = document.querySelectorAll('input[name="platform"]:checked');
-  const selectedPlatforms = Array.from(platformCheckboxes).map(cb => cb.value);
-  
-  const profile = {
-    id: Date.now(),
-    name: profileName,
-    brand: document.getElementById('brand')?.value.trim() || '',
-    companyName: document.getElementById('companyName')?.value.trim() || '',
-    businessType: document.getElementById('businessType')?.value.trim() || '',
-    location: document.getElementById('location')?.value.trim() || '',
-    targetGender: document.getElementById('targetGender')?.value || '',
-    contact: document.getElementById('contact')?.value.trim() || '',
-    website: document.getElementById('website')?.value.trim() || '',
-    sns: document.getElementById('sns')?.value.trim() || '',
-    keywords: document.getElementById('keywords')?.value.trim() || '',
-    tone: document.getElementById('tone')?.value || '친근한',
-    targetAge: document.getElementById('targetAge')?.value || '20대',
-    industry: document.getElementById('industry')?.value || '라이프스타일',
-    contentStrategy: document.querySelector('input[name="contentStrategy"]:checked')?.value || 'auto',
-    selectedPlatforms: selectedPlatforms,
-    createdAt: new Date().toISOString()
-  };
-  
-  // 로컬스토리지에 저장 (기존 기능 유지)
-  savedProfiles.unshift(profile);
-  if (savedProfiles.length > 50) {
-    savedProfiles = savedProfiles.slice(0, 50);
-  }
-  localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(savedProfiles));
-  
-  // 🔥 DB에도 저장 (새로 추가)
-  saveProfileToDB(profile);
-  
-  showToast('✅ 프로필이 저장되었습니다', 'success');
+  console.warn('⚠️ saveProfile() is deprecated. Use openProfileSaveModal() instead.');
+  openProfileSaveModal();
 }
 
-// 🔥 DB 저장 함수 수정
+// 🔥 DEPRECATED: 단일 프로필 시스템 (하위 호환성용)
+// 새로운 다중 프로필 시스템(/api/profiles)을 사용하세요
 async function saveProfileToDB(profile) {
-  try {
-    // localStorage에서 사용자 정보 가져오기
-    const storedUser = localStorage.getItem('postflow_user');
-    
-    if (!storedUser) {
-      console.log('❌ 로그인 정보 없음');
-      return;
-    }
-    
-    const user = JSON.parse(storedUser);
-    const userId = user.id;
-    
-    console.log('💾 프로필 DB 저장 시작:', userId);
-    
-    const response = await fetch('/api/profile', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        user_id: userId,
-        brand: profile.brand,
-        company_name: profile.companyName,
-        business_type: profile.businessType,
-        location: profile.location,
-        target_gender: profile.targetGender,
-        contact: profile.contact,
-        website: profile.website,
-        sns: profile.sns,
-        keywords: profile.keywords,
-        tone: profile.tone,
-        target_age: profile.targetAge,
-        industry: profile.industry
-      })
-    });
-    
-    const result = await response.json();
-    
-    if (result.success) {
-      console.log('✅ 프로필 DB 저장 완료');
-    } else {
-      console.error('❌ 프로필 DB 저장 실패:', result.error);
-    }
-  } catch (error) {
-    console.error('❌ 프로필 DB 저장 예외:', error);
-  }
+  console.warn('⚠️ saveProfileToDB() is deprecated. This saves to old single-profile system.');
+  console.warn('⚠️ Use the new multi-profile system: openProfileSaveModal()');
+  
+  // 기존 코드는 users 테이블에 덮어쓰기만 함 (사용 금지)
+  return;
 }
 
 // 🔥 DB에서 프로필 로드 함수 수정
@@ -4229,8 +4149,11 @@ function setElementValue(id, value) {
   return false;
 }
 
-// ✅ DB 기반 프로필 불러오기 모달 (localStorage 제거)
+// ✅ 프로필 불러오기 모달 (새 다중 프로필 시스템 사용)
 async function openLoadProfileModal() {
+  console.warn('⚠️ openLoadProfileModal() redirecting to new multi-profile system');
+  openProfileListModal();
+}
   const modal = document.getElementById('profileModal');
   const profileList = document.getElementById('profileList');
   
@@ -6571,9 +6494,6 @@ window.openDateTimeModalForGeneration = openDateTimeModalForGeneration;
 // ===================================
 // Option B: 개별 콘텐츠 생성 함수
 // ===================================
-
-// 콘텐츠별 플랫폼 선택 상태 저장
-const contentPlatforms = {};
 
 // 플랫폼 선택 업데이트
 function updateContentPlatforms(contentIndex) {
