@@ -6992,13 +6992,19 @@ async function confirmSaveProfile() {
     return;
   }
   
-  // 폼 데이터 수집 (profiles 테이블 스키마에 맞춤)
+  // 폼 데이터 수집 (모든 필드 포함)
   const profileData = {
     user_id: user.id,
     profile_name: profileName,
+    brand: document.getElementById('brand')?.value.trim() || '',
     company_name: document.getElementById('companyName')?.value.trim() || '',
+    business_type: document.getElementById('businessType')?.value.trim() || '',
+    location: document.getElementById('location')?.value.trim() || '',
+    target_gender: document.getElementById('targetGender')?.value || '',
     contact: document.getElementById('contact')?.value.trim() || '',
     website: document.getElementById('website')?.value.trim() || '',
+    sns: document.getElementById('sns')?.value.trim() || '',
+    keywords: document.getElementById('keywords')?.value.trim() || '',
     tone: document.getElementById('tone')?.value || '친근한',
     target_age: document.getElementById('targetAge')?.value || '20대',
     industry: document.getElementById('industry')?.value || '라이프스타일'
@@ -7146,23 +7152,24 @@ async function applyProfile(profileId) {
       throw new Error('프로필을 찾을 수 없습니다');
     }
     
-    // 폼에 값 채우기 (profiles 테이블 스키마에 맞춤)
-    // 옵셔널 체이닝으로 안전하게 접근
-    const brandEl = document.getElementById('brand');
-    const companyNameEl = document.getElementById('companyName');
-    const contactEl = document.getElementById('contact');
-    const websiteEl = document.getElementById('website');
-    const toneEl = document.getElementById('tone');
-    const targetAgeEl = document.getElementById('targetAge');
-    const industryEl = document.getElementById('industry');
+    // 폼에 값 채우기 (모든 필드 포함)
+    const setFieldValue = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.value = value || '';
+    };
     
-    if (brandEl) brandEl.value = profile.profile_name || ''; // profile_name을 brand 필드에 표시
-    if (companyNameEl) companyNameEl.value = profile.company_name || '';
-    if (contactEl) contactEl.value = profile.contact || '';
-    if (websiteEl) websiteEl.value = profile.website || '';
-    if (toneEl) toneEl.value = profile.tone || '친근한';
-    if (targetAgeEl) targetAgeEl.value = profile.target_age || '20대';
-    if (industryEl) industryEl.value = profile.industry || '라이프스타일';
+    setFieldValue('brand', profile.brand);
+    setFieldValue('companyName', profile.company_name);
+    setFieldValue('businessType', profile.business_type);
+    setFieldValue('location', profile.location);
+    setFieldValue('targetGender', profile.target_gender);
+    setFieldValue('contact', profile.contact);
+    setFieldValue('website', profile.website);
+    setFieldValue('sns', profile.sns);
+    setFieldValue('keywords', profile.keywords);
+    setFieldValue('tone', profile.tone || '친근한');
+    setFieldValue('targetAge', profile.target_age || '20대');
+    setFieldValue('industry', profile.industry || '라이프스타일');
     
     showToast('✅ 프로필이 적용되었습니다', 'success');
     closeProfileListModal();
