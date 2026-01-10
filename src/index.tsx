@@ -1922,7 +1922,7 @@ app.post('/api/profiles', async (c) => {
         contact,
         website,
         sns,
-        brand_keywords: keywords ? (Array.isArray(keywords) ? keywords : [keywords]) : null,
+        keywords, // ✅ brand_keywords → keywords 변경
         tone,
         target_age,
         industry,
@@ -2001,7 +2001,7 @@ app.put('/api/profiles/:id', async (c) => {
         contact,
         website,
         sns,
-        brand_keywords: keywords ? (Array.isArray(keywords) ? keywords : [keywords]) : null,
+        keywords, // ✅ brand_keywords → keywords 변경
         tone,
         target_age,
         industry,
