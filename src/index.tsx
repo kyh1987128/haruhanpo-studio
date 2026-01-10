@@ -3619,27 +3619,29 @@ app.post('/api/schedule-content', async (c) => {
   }
 });
 
-// 3️⃣ 발행 상태 변경
+// 3️⃣ 발행 상태 변경 (예정일 삭제 포함)
 app.patch('/api/schedule-content/:id', async (c) => {
   try {
     const generation_id = c.req.param('id');
     const body = await c.req.json();
-    const { publish_status, user_id } = body;
+    const { publish_status, user_id, scheduled_date } = body;
     
-    if (!generation_id || !user_id || !publish_status) {
+    if (!generation_id || !user_id) {
       return c.json({ 
         success: false, 
-        error: 'id, user_id, publish_status가 필요합니다' 
+        error: 'id, user_id가 필요합니다' 
       }, 400);
     }
     
-    // 유효한 상태값 확인
-    const validStatuses = ['draft', 'scheduled', 'published', 'cancelled'];
-    if (!validStatuses.includes(publish_status)) {
-      return c.json({ 
-        success: false, 
-        error: `유효하지 않은 상태값입니다. 허용: ${validStatuses.join(', ')}` 
-      }, 400);
+    // publish_status가 있으면 유효성 검사
+    if (publish_status) {
+      const validStatuses = ['draft', 'scheduled', 'published', 'cancelled'];
+      if (!validStatuses.includes(publish_status)) {
+        return c.json({ 
+          success: false, 
+          error: `유효하지 않은 상태값입니다. 허용: ${validStatuses.join(', ')}` 
+        }, 400);
+      }
     }
     
     const supabase = createSupabaseAdmin(
@@ -3662,13 +3664,26 @@ app.patch('/api/schedule-content/:id', async (c) => {
       }, 403);
     }
     
+    // 업데이트 데이터 구성
+    const updateData: any = {
+      updated_at: new Date().toISOString()
+    };
+    
+    if (publish_status !== undefined) {
+      updateData.publish_status = publish_status;
+    }
+    
+    // scheduled_date가 명시적으로 null이면 삭제
+    if (scheduled_date === null) {
+      updateData.scheduled_date = null;
+    } else if (scheduled_date !== undefined) {
+      updateData.scheduled_date = scheduled_date;
+    }
+    
     // 상태 변경
     const { data, error } = await supabase
       .from('generations')
-      .update({ 
-        publish_status,
-        updated_at: new Date().toISOString() // ✅ 주석 해제 (DB 컬럼 추가 완료)
-      } as any) // 타입 캐스팅 추가
+      .update(updateData)
       .eq('id', generation_id)
       .select()
       .single();
@@ -3678,7 +3693,7 @@ app.patch('/api/schedule-content/:id', async (c) => {
       return c.json({ success: false, error: error.message }, 500);
     }
     
-    console.log(`✅ 발행 상태 변경: ${generation_id} → ${publish_status}`);
+    console.log(`✅ 발행 상태 변경: ${generation_id} → ${publish_status || 'N/A'}`);
     
     return c.json({
       success: true,

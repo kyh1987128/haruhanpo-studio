@@ -5849,7 +5849,14 @@ function initFullCalendar() {
       return [`fc-event-${status}`];
     },
     eventClick: function(info) {
-      showEventDetails(info.event);
+      const eventType = info.event.extendedProps.type;
+      if (eventType === 'memo') {
+        // 메모 클릭 → 메모 수정 모달
+        openMemoModal(info.event.extendedProps.memo_date, info.event.extendedProps.memo_id);
+      } else {
+        // 예정일 클릭 → 상세 모달
+        showEventDetails(info.event);
+      }
     },
     dateClick: function(info) {
       // 빈 날짜 클릭 시 메모 입력 모달 열기
@@ -5875,67 +5882,98 @@ function initFullCalendar() {
 }
 
 /**
- * 캘린더 이벤트 로드
+ * 캘린더 이벤트 로드 (예정일 + 메모)
  */
 async function loadCalendarEvents() {
   const user = window.currentUser;
   if (!user || !user.id) return [];
 
   try {
-    const response = await fetch(`/api/scheduled-content?user_id=${user.id}`);
-    const data = await response.json();
+    // 1️⃣ 예정일 로드
+    const scheduleResponse = await fetch(`/api/scheduled-content?user_id=${user.id}`);
+    const scheduleData = await scheduleResponse.json();
 
-    if (!data.success) {
-      throw new Error(data.error || '캘린더 이벤트 조회 실패');
+    // 2️⃣ 메모 로드
+    const memoResponse = await fetch(`/api/calendar-memos?user_id=${user.id}`);
+    const memoData = await memoResponse.json();
+
+    const events = [];
+
+    // 예정일 이벤트 추가
+    if (scheduleData.success && scheduleData.scheduled_content) {
+      const platformEmojis = {
+        blog: '📝',
+        instagram: '📷',
+        instagramFeed: '📷',
+        threads: '🧵',
+        youtube: '🎥',
+        youtubeLongform: '🎬',
+        linkedin: '💼',
+        facebook: '👍',
+        twitter: '🐦',
+        kakaotalk: '💬',
+        naverband: '🎵',
+        telegram: '✈️'
+      };
+
+      const platformNames = {
+        blog: '네이버블로그',
+        instagram: '인스타그램',
+        instagramFeed: '인스타그램 피드',
+        threads: '스레드',
+        youtube: '유튜브',
+        youtubeLongform: '유튜브 롱폼',
+        linkedin: 'LinkedIn',
+        facebook: '페이스북',
+        twitter: '트위터(X)',
+        kakaotalk: '카카오톡',
+        naverband: '네이버 밴드',
+        telegram: '텔레그램'
+      };
+
+      scheduleData.scheduled_content.forEach(item => {
+        const emoji = platformEmojis[item.platform] || '📄';
+        const name = platformNames[item.platform] || item.platform || '콘텐츠';
+        const status = item.publish_status || 'draft';
+        
+        events.push({
+          id: item.id,
+          title: `${emoji} ${name}`,
+          start: item.scheduled_date,
+          backgroundColor: status === 'published' ? '#10b981' : status === 'cancelled' ? '#ef4444' : '#3b82f6',
+          extendedProps: {
+            type: 'schedule',
+            generation_id: item.id,
+            platform: item.platform || 'unknown',
+            publish_status: status,
+            content: item.content || '내용 없음',
+            created_at: item.created_at
+          }
+        });
+      });
     }
 
-    const platformEmojis = {
-      blog: '📝',
-      instagram: '📷',
-      instagramFeed: '📷',
-      threads: '🧵',
-      youtube: '🎥',
-      youtubeLongform: '🎬',
-      linkedin: '💼',
-      facebook: '👍',
-      twitter: '🐦',
-      kakaotalk: '💬',
-      naverband: '🎵',
-      telegram: '✈️'
-    };
+    // 메모 이벤트 추가
+    if (memoData.success && memoData.memos) {
+      memoData.memos.forEach(memo => {
+        events.push({
+          id: `memo-${memo.id}`,
+          title: `📝 ${memo.memo.substring(0, 20)}${memo.memo.length > 20 ? '...' : ''}`,
+          start: memo.date,
+          backgroundColor: '#f59e0b',
+          extendedProps: {
+            type: 'memo',
+            memo_id: memo.id,
+            memo_text: memo.memo,
+            memo_date: memo.date
+          }
+        });
+      });
+    }
 
-    const platformNames = {
-      blog: '네이버블로그',
-      instagram: '인스타그램',
-      instagramFeed: '인스타그램 피드',
-      threads: '스레드',
-      youtube: '유튜브',
-      youtubeLongform: '유튜브 롱폼',
-      linkedin: 'LinkedIn',
-      facebook: '페이스북',
-      twitter: '트위터(X)',
-      kakaotalk: '카카오톡',
-      naverband: '네이버 밴드',
-      telegram: '텔레그램'
-    };
-
-    return (data.scheduled_content || []).map(item => {
-      const emoji = platformEmojis[item.platform] || '📄';
-      const name = platformNames[item.platform] || item.platform;
-      
-      return {
-        id: item.id,
-        title: `${emoji} ${name}`,
-        start: item.scheduled_date,
-        extendedProps: {
-          generation_id: item.id,
-          platform: item.platform,
-          publish_status: item.publish_status,
-          content: item.content || '',
-          created_at: item.created_at
-        }
-      };
-    });
+    console.log(`✅ 캘린더 이벤트 로드: 예정일 ${scheduleData.scheduled_content?.length || 0}개, 메모 ${memoData.memos?.length || 0}개`);
+    return events;
+    
   } catch (error) {
     console.error('캘린더 이벤트 로드 오류:', error);
     return [];
@@ -6017,6 +6055,9 @@ function showEventDetails(event) {
           <button onclick="changeEventStatus('${event.id}', 'cancelled')" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm">
             ❌ 취소
           </button>
+          <button onclick="deleteScheduledEvent('${event.id}')" class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm">
+            🗑️ 삭제
+          </button>
         </div>
         
         <button onclick="closeEventDetailsModal()" class="w-full px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
@@ -6075,6 +6116,51 @@ async function changeEventStatus(eventId, newStatus) {
   } catch (error) {
     console.error('발행 상태 변경 오류:', error);
     showToast('발행 상태 변경에 실패했습니다.', 'error');
+  }
+}
+
+/**
+ * 예정일 이벤트 삭제
+ */
+async function deleteScheduledEvent(eventId) {
+  const user = window.currentUser;
+  if (!user || !user.id) {
+    showToast('로그인이 필요합니다.', 'error');
+    return;
+  }
+
+  if (!confirm('이 예정일을 삭제하시겠습니까?')) {
+    return;
+  }
+
+  try {
+    // generations 테이블에서 scheduled_date를 NULL로 설정
+    const response = await fetch(`/api/schedule-content/${eventId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: user.id,
+        publish_status: 'draft',
+        scheduled_date: null
+      })
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || '삭제 실패');
+    }
+
+    showToast('✅ 예정일이 삭제되었습니다', 'success');
+    closeEventDetailsModal();
+    
+    // 캘린더 새로고침
+    if (calendarInstance) {
+      calendarInstance.refetchEvents();
+    }
+  } catch (error) {
+    console.error('예정일 삭제 오류:', error);
+    showToast('예정일 삭제에 실패했습니다', 'error');
   }
 }
 
@@ -6440,6 +6526,7 @@ window.loadCalendarEvents = loadCalendarEvents;
 window.showEventDetails = showEventDetails;
 window.closeEventDetailsModal = closeEventDetailsModal;
 window.changeEventStatus = changeEventStatus;
+window.deleteScheduledEvent = deleteScheduledEvent;
 window.openDateTimeModal = openDateTimeModal;
 window.closeDateTimeModal = closeDateTimeModal;
 window.confirmDateTimeSelection = confirmDateTimeSelection;
