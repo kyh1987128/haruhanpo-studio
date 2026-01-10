@@ -3792,8 +3792,9 @@ app.get('/api/calendar-memos', async (c) => {
     // 특정 날짜만 조회 (timestamptz이므로 날짜 범위로 검색)
     if (date) {
       // date가 YYYY-MM-DD 형식이면 해당 날짜의 00:00:00 ~ 23:59:59 조회
-      const startOfDay = `${date}T00:00:00Z`;
-      const endOfDay = `${date}T23:59:59Z`;
+      // KST 기준 (UTC+9)으로 변환
+      const startOfDay = `${date}T00:00:00+09:00`;
+      const endOfDay = `${date}T23:59:59+09:00`;
       
       query = query
         .gte('date', startOfDay)
