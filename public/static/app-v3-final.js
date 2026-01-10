@@ -5860,7 +5860,10 @@ function initFullCalendar() {
     },
     dateClick: function(info) {
       // 빈 날짜 클릭 시 메모 입력 모달 열기
-      openMemoModal(info.dateStr);
+      // info.dateStr은 UTC 기준이므로 로컬 날짜로 변환
+      const localDate = new Date(info.date.getFullYear(), info.date.getMonth(), info.date.getDate());
+      const dateStr = localDate.toISOString().split('T')[0]; // YYYY-MM-DD
+      openMemoModal(dateStr);
     },
     events: async function(fetchInfo, successCallback, failureCallback) {
       try {
