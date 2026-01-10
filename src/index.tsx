@@ -3591,7 +3591,8 @@ app.post('/api/schedule-content', async (c) => {
     if (publish_status !== undefined) {
       updateData.publish_status = publish_status;
     }
-    updateData.updated_at = new Date().toISOString();
+    // TODO: generations 테이블에 updated_at 컬럼 추가 후 활성화
+    // updateData.updated_at = new Date().toISOString();
     
     const { data, error } = await supabase
       .from('generations')
@@ -3666,8 +3667,9 @@ app.patch('/api/schedule-content/:id', async (c) => {
     const { data, error } = await supabase
       .from('generations')
       .update({ 
-        publish_status,
-        updated_at: new Date().toISOString()
+        publish_status
+        // TODO: generations 테이블에 updated_at 컬럼 추가 후 활성화
+        // updated_at: new Date().toISOString()
       } as any) // 타입 캐스팅 추가
       .eq('id', generation_id)
       .select()
