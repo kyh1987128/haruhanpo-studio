@@ -4936,7 +4936,7 @@ async function checkSupabaseSession() {
       const isNewUser = Math.abs(createdAt - lastSignInAt) < 5000; // 5초 이내면 신규
       
       // 로그인 상태 (초기값은 0으로 설정, 서버 동기화 후 업데이트)
-      currentUser = {
+      window.currentUser = {
         id: session.user.id,  // ✅ 추가: 사용자 ID
         isLoggedIn: true,
         isGuest: false,
@@ -4948,6 +4948,7 @@ async function checkSupabaseSession() {
         tier: 'free', // ✅ 서버에서 실제 등급 조회
         subscription_status: 'free'
       };
+      currentUser = window.currentUser; // 로컬 참조 동기화
       
       // ⚠️ 주의: localStorage에 저장하지 않음 (서버 동기화 후에만 저장)
       // localStorage.setItem('postflow_user', JSON.stringify(currentUser));
@@ -5286,14 +5287,15 @@ function showRegistrationCompleteModal(userId) {
         console.log('✅ 회원가입 완료 성공:', data.user);
         
         // 사용자 정보 업데이트
-        currentUser = {
-          ...currentUser,
+        window.currentUser = {
+          ...window.currentUser,
           ...data.user,
           isLoggedIn: true,
           isGuest: false,
           registration_completed: true
         };
-        localStorage.setItem('postflow_user', JSON.stringify(currentUser));
+        currentUser = window.currentUser; // 로컬 참조 동기화
+        localStorage.setItem('postflow_user', JSON.stringify(window.currentUser));
         
         // 모달 닫기
         document.getElementById('registrationModal').remove();
