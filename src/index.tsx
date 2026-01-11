@@ -1046,6 +1046,24 @@ app.post('/api/generate', async (c) => {
         generationTasks.push(generateContent(openai, 'kakaotalk', getPromptForPlatform('kakaotalk'), aiModel));
       }
     }
+    
+    // ===================================
+    // 신규 플랫폼: Brunch
+    // ===================================
+    if (platforms.includes('brunch')) {
+      if (geminiApiKey) {
+        console.log('  📖 브런치: Gemini Flash (70% 절감)');
+        generationTasks.push(
+          generateContentWithGemini(geminiApiKey, getPromptForPlatform('brunch'))
+            .then(content => {
+              totalCost.gemini += 0.020; // 긴 글 (2500-4000자) = 블로그와 유사
+              return { platform: 'brunch', content };
+            })
+        );
+      } else {
+        generationTasks.push(generateContent(openai, 'brunch', getPromptForPlatform('brunch'), aiModel));
+      }
+    }
 
     // 모든 생성 작업 완료 대기 (순차 처리로 타임아웃 방지)
     console.log(`🔄 콘텐츠 생성 시작 (${generationTasks.length}개 플랫폼, 순차 처리)`);

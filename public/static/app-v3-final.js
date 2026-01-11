@@ -4657,20 +4657,23 @@ function filterHistory() {
     return;
   }
   
-  // 🔥 플랫폼 표시명 확장 (instagram_reels 등 지원)
+  // 🔥 플랫폼 표시명 확장 (FontAwesome 아이콘 사용, 콘텐츠 블록과 동일)
   const platformNames = {
-    blog: '📝 블로그',
-    instagram: '📸 인스타',
-    instagram_reels: '📸 인스타 릴스',
-    instagram_feed: '📸 인스타 피드',
-    threads: '🧵 스레드',
-    twitter: '🐦 트위터(X)',
-    linkedin: '💼 LinkedIn',
-    kakaotalk: '💬 카카오톡',
-    youtube: '🎬 유튜브',
-    youtube_shorts: '🎬 유튜브 쇼츠',
-    youtube_longform: '🎬 유튜브 롱폼',
-    tiktok: '🎵 틱톡'
+    blog: '<i class="fas fa-blog text-blue-600 mr-2"></i>네이버 블로그',
+    instagram: '<i class="fab fa-instagram text-pink-600 mr-2"></i>인스타그램',
+    instagram_feed: '<i class="fab fa-instagram text-pink-600 mr-2"></i>인스타그램 피드',
+    instagram_reels: '<i class="fab fa-instagram text-purple-600 mr-2"></i>인스타 릴스',
+    threads: '<i class="fas fa-at text-gray-800 mr-2"></i>스레드',
+    twitter: '<i class="fab fa-twitter text-blue-400 mr-2"></i>트위터(X)',
+    linkedin: '<i class="fab fa-linkedin text-blue-700 mr-2"></i>LinkedIn',
+    kakaotalk: '<i class="fas fa-comment-dots text-yellow-500 mr-2"></i>카카오톡',
+    brunch: '<i class="fas fa-book-open text-orange-600 mr-2"></i>브런치',
+    tiktok: '<i class="fab fa-tiktok text-black mr-2"></i>틱톡',
+    youtube: '<i class="fab fa-youtube text-red-600 mr-2"></i>유튜브',
+    youtube_shorts: '<i class="fab fa-youtube text-red-500 mr-2"></i>유튜브 쇼츠',
+    youtube_longform: '<i class="fab fa-youtube text-red-600 mr-2"></i>유튜브 롱폼',
+    metadata_generation: '<i class="fas fa-tags text-blue-600 mr-2"></i>메타데이터 생성',
+    shortform_multi: '<i class="fas fa-film text-purple-600 mr-2"></i>숏폼 통합' // 레거시 데이터용
   };
   
   historyList.innerHTML = filtered.map(item => {
@@ -7436,6 +7439,21 @@ async function generateSingleContent(contentIndex) {
       console.log(`✅ 히스토리 저장 완료:`, historyEntry.id);
     } catch (error) {
       console.error('❌ 히스토리 저장 실패:', error);
+    }
+    
+    // ✅ DB에 히스토리 저장 (영구 보관)
+    try {
+      await saveToHistory(
+        {
+          brand: brand,
+          keywords: enhancedKeywords,
+          platforms: platforms
+        },
+        result.data
+      );
+      console.log(`✅ DB 히스토리 저장 완료:`, generationId);
+    } catch (error) {
+      console.error('❌ DB 히스토리 저장 실패:', error);
     }
     
     // 결과 표시
