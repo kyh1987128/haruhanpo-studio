@@ -4579,10 +4579,10 @@ async function openHistoryModal() {
   const modal = document.getElementById('historyModal');
   const historyList = document.getElementById('historyList');
   
-  // 검색/필터 초기화
-  document.getElementById('historySearch').value = '';
-  document.querySelectorAll('.history-platform-filter').forEach(cb => cb.checked = true);
-  document.getElementById('historySortOrder').value = 'newest';
+  // 검색/필터 초기화 (UI 제거로 주석 처리)
+  // document.getElementById('historySearch').value = '';
+  // document.querySelectorAll('.history-platform-filter').forEach(cb => cb.checked = true);
+  // document.getElementById('historySortOrder').value = 'newest';
   
   // 로딩 표시
   historyList.innerHTML = '<p class="text-gray-500 text-center py-8">🔄 히스토리 불러오는 중...</p>';
@@ -4593,80 +4593,21 @@ async function openHistoryModal() {
   await loadHistory();
   
   // 렌더링
-  filterHistory();
+  renderHistory();
 }
 
-function filterHistory() {
+function renderHistory() {
   const historyList = document.getElementById('historyList');
-  const searchTerm = document.getElementById('historySearch').value.toLowerCase();
-  const selectedPlatforms = Array.from(document.querySelectorAll('.history-platform-filter:checked'))
-    .map(cb => cb.value);
-  const sortOrder = document.getElementById('historySortOrder').value;
   
   if (contentHistory.length === 0) {
     historyList.innerHTML = '<p class="text-gray-500 text-center py-8">생성 히스토리가 없습니다</p>';
     return;
   }
   
-  // 🔥 플랫폼 매핑 테이블 (문제 2 해결: instagram_reels → instagram 매칭)
-  const PLATFORM_GROUPS = {
-    instagram: ['instagram', 'instagram_reels', 'instagram_feed'],
-    youtube: ['youtube', 'youtube_shorts', 'youtube_longform'],
-    blog: ['blog'],
-    threads: ['threads'],
-    tiktok: ['tiktok']
-  };
-  
-  // 필터링
-  let filtered = contentHistory.filter(item => {
-    // 🔥 keywords 안전 처리 (문제 1 해결: 배열 → 문자열 변환)
-    let keywordsText = '';
-    if (Array.isArray(item.keywords)) {
-      keywordsText = item.keywords.join(', ');
-    } else if (typeof item.keywords === 'string') {
-      keywordsText = item.keywords;
-    }
-    
-    // 검색어 필터 (에러 없는 안전한 처리)
-    const brandText = item.brand || '';
-    const matchesSearch = !searchTerm || 
-      brandText.toLowerCase().includes(searchTerm) ||
-      keywordsText.toLowerCase().includes(searchTerm);
-    
-    // 🔥 플랫폼 그룹 매칭 (문제 2 해결)
-    const itemPlatforms = Array.isArray(item.platforms) ? item.platforms : [item.platforms];
-    
-    const matchesPlatform = selectedPlatforms.length === 0 ||
-      itemPlatforms.some(itemPlatform => 
-        selectedPlatforms.some(selectedPlatform => {
-          // 직접 매칭
-          if (itemPlatform === selectedPlatform) return true;
-          // 그룹 매칭 (instagram → instagram_reels 포함)
-          const group = PLATFORM_GROUPS[selectedPlatform];
-          return group && group.includes(itemPlatform);
-        })
-      );
-    
-    return matchesSearch && matchesPlatform;
-  });
-  
-  // 정렬
-  filtered.sort((a, b) => {
-    if (sortOrder === 'newest') {
-      return new Date(b.createdAt) - new Date(a.createdAt);
-    } else if (sortOrder === 'oldest') {
-      return new Date(a.createdAt) - new Date(b.createdAt);
-    } else if (sortOrder === 'brand') {
-      return (a.brand || '').localeCompare(b.brand || '');
-    }
-    return 0;
-  });
-  
-  // 렌더링
-  if (filtered.length === 0) {
-    historyList.innerHTML = '<p class="text-gray-500 text-center py-8">검색 결과가 없습니다</p>';
-    return;
-  }
+  // 최신순으로 정렬 (검색/필터 기능 제거)
+  const sorted = [...contentHistory].sort((a, b) => 
+    new Date(b.createdAt) - new Date(a.createdAt)
+  );
   
   // 🔥 플랫폼 표시명 확장 (FontAwesome 아이콘 사용, 콘텐츠 블록과 동일)
   const platformNames = {
@@ -4687,7 +4628,7 @@ function filterHistory() {
     shortform_multi: '<i class="fas fa-film text-purple-600 mr-2"></i>숏폼 통합' // 레거시 데이터용
   };
   
-  historyList.innerHTML = filtered.map(item => {
+  historyList.innerHTML = sorted.map(item => {
     const itemPlatforms = Array.isArray(item.platforms) ? item.platforms : [item.platforms];
     const keywordsDisplay = Array.isArray(item.keywords) 
       ? item.keywords.join(', ') 
