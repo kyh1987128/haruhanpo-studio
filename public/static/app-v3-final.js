@@ -7405,20 +7405,29 @@ async function openMemoModal(dateStr, memoId = null) {
             minute: '2-digit'
           });
           return `
-            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200" id="memo-${memo.id}">
               <div class="flex justify-between items-start mb-1">
                 <span class="text-xs text-gray-500">
                   <i class="fas fa-clock mr-1"></i>${memoTime}
                 </span>
-                <button 
-                  onclick="deleteMemo('${memo.id}')" 
-                  class="text-red-600 hover:text-red-800 text-sm"
-                  title="삭제"
-                >
-                  <i class="fas fa-trash"></i>
-                </button>
+                <div class="flex gap-2">
+                  <button 
+                    onclick="editMemo('${memo.id}', \`${memo.memo.replace(/`/g, '\\`').replace(/\\/g, '\\\\')}\`)" 
+                    class="text-blue-600 hover:text-blue-800 text-sm"
+                    title="수정"
+                  >
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button 
+                    onclick="deleteMemo('${memo.id}')" 
+                    class="text-red-600 hover:text-red-800 text-sm"
+                    title="삭제"
+                  >
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
               </div>
-              <p class="text-sm text-gray-800">${memo.memo}</p>
+              <p class="text-sm text-gray-800 memo-text-${memo.id}">${memo.memo}</p>
             </div>
           `;
         }).join('')}
@@ -7594,9 +7603,118 @@ async function deleteMemo(memoId) {
   }
 }
 
+/**
+ * 메모 수정 모드로 전환
+ */
+function editMemo(memoId, currentText) {
+  const memoElement = document.getElementById(`memo-${memoId}`);
+  if (!memoElement) return;
+
+  // 기존 텍스트 영역을 textarea로 변경
+  const textElement = memoElement.querySelector(`.memo-text-${memoId}`);
+  if (!textElement) return;
+
+  // 편집 모드 HTML
+  textElement.innerHTML = `
+    <textarea 
+      id="edit-textarea-${memoId}" 
+      class="w-full p-2 border border-gray-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      rows="3"
+    >${currentText}</textarea>
+    <div class="flex gap-2 mt-2">
+      <button 
+        onclick="updateMemo('${memoId}')"
+        class="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+      >
+        <i class="fas fa-check mr-1"></i>저장
+      </button>
+      <button 
+        onclick="cancelEditMemo('${memoId}', \`${currentText.replace(/`/g, '\\`').replace(/\\/g, '\\\\')}\`)"
+        class="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-400"
+      >
+        <i class="fas fa-times mr-1"></i>취소
+      </button>
+    </div>
+  `;
+
+  // textarea에 포커스
+  const textarea = document.getElementById(`edit-textarea-${memoId}`);
+  if (textarea) {
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+  }
+}
+
+/**
+ * 메모 수정 취소
+ */
+function cancelEditMemo(memoId, originalText) {
+  const memoElement = document.getElementById(`memo-${memoId}`);
+  if (!memoElement) return;
+
+  const textElement = memoElement.querySelector(`.memo-text-${memoId}`);
+  if (!textElement) return;
+
+  // 원래 텍스트로 복원
+  textElement.innerHTML = originalText;
+}
+
+/**
+ * 메모 업데이트
+ */
+async function updateMemo(memoId) {
+  const user = window.currentUser;
+  if (!user || !user.id) {
+    showToast('로그인이 필요합니다', 'error');
+    return;
+  }
+
+  const textarea = document.getElementById(`edit-textarea-${memoId}`);
+  if (!textarea) return;
+
+  const newText = textarea.value.trim();
+  if (!newText) {
+    showToast('메모 내용을 입력해주세요', 'error');
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/calendar-memo/${memoId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        user_id: user.id,
+        memo: newText
+      })
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || '메모 수정 실패');
+    }
+
+    showToast('✅ 메모가 수정되었습니다', 'success');
+    closeMemoModal();
+    
+    // 캘린더 새로고침
+    if (calendarInstance) {
+      calendarInstance.refetchEvents();
+    }
+  } catch (error) {
+    console.error('메모 수정 오류:', error);
+    showToast('메모 수정에 실패했습니다', 'error');
+  }
+}
+
 // 전역 노출
 window.openMemoModal = openMemoModal;
 window.closeMemoModal = closeMemoModal;
 window.saveMemo = saveMemo;
 window.deleteMemo = deleteMemo;
+window.editMemo = editMemo;
+window.cancelEditMemo = cancelEditMemo;
+window.updateMemo = updateMemo;
 

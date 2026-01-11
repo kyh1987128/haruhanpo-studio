@@ -3875,4 +3875,61 @@ app.delete('/api/calendar-memo/:id', async (c) => {
   }
 });
 
+// 4️⃣ 메모 수정
+app.put('/api/calendar-memo/:id', async (c) => {
+  try {
+    const memo_id = c.req.param('id');
+    const body = await c.req.json();
+    const { user_id, memo } = body;
+    
+    if (!memo_id || !user_id || !memo) {
+      return c.json({ 
+        success: false, 
+        error: 'id, user_id, memo가 필요합니다' 
+      }, 400);
+    }
+    
+    console.log(`📝 캘린더 메모 수정: memo_id=${memo_id}, user_id=${user_id}`);
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // 권한 확인 + 수정
+    const { data, error } = await supabase
+      .from('calendar_memos')
+      .update({
+        memo,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', memo_id)
+      .eq('user_id', user_id) // RLS 보호
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ 메모 수정 실패:', error);
+      return c.json({ 
+        success: false, 
+        error: error.code === 'PGRST116' 
+          ? '메모를 찾을 수 없거나 권한이 없습니다' 
+          : error.message 
+      }, 404);
+    }
+    
+    console.log(`✅ 메모 수정 완료: ${memo_id}`);
+    
+    return c.json({
+      success: true,
+      message: '메모가 수정되었습니다',
+      data
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 메모 수정 오류:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
 export default app;
