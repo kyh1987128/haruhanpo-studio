@@ -1978,20 +1978,27 @@ function generateContentBlocks() {
         </div>
         
         <!-- 개별 생성 버튼 (Option B) -->
-        <div class="flex items-center justify-between gap-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border-2 border-purple-200">
-          <div>
-            <p class="text-sm text-gray-600">예상 크레딧 차감</p>
-            <p class="text-2xl font-bold text-purple-600" id="contentCredit_${i}">0 크레딧</p>
+        <div id="contentBlock_${i}" class="flex flex-col gap-3 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border-2 border-purple-200">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-600">💰 예상 크레딧 차감</p>
+              <div id="contentCredit_${i}" class="flex items-baseline gap-2">
+                <span class="text-2xl font-bold text-purple-600">0 크레딧</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onclick="generateSingleContent(${i})"
+              class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:from-purple-700 hover:to-pink-700 transition shadow-lg whitespace-nowrap"
+              id="generateBtn_${i}"
+            >
+              <i class="fas fa-magic mr-2"></i>
+              콘텐츠 #${i + 1} 생성하기
+            </button>
           </div>
-          <button
-            type="button"
-            onclick="generateSingleContent(${i})"
-            class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:from-purple-700 hover:to-pink-700 transition shadow-lg"
-            id="generateBtn_${i}"
-          >
-            <i class="fas fa-magic mr-2"></i>
-            콘텐츠 #${i + 1} 생성하기
-          </button>
+          <p class="text-xs text-gray-500">
+            💡 차등 과금: 1개=1크레딧 | 2-3개=2크레딧 | 4-9개=4크레딧 | 10-12개=5크레딧
+          </p>
         </div>
         
         <!-- 개별 결과 영역 (Option B) -->
@@ -7069,13 +7076,22 @@ function updateContentPlatforms(contentIndex) {
     credit = 0;
   }
   
+  // 예상 소요 시간 계산 (플랫폼당 약 10초)
+  const estimatedSeconds = platformCount > 0 ? Math.max(10, platformCount * 10) : 0;
+  const estimatedTime = estimatedSeconds >= 60 
+    ? `약 ${Math.ceil(estimatedSeconds / 60)}분`
+    : `${estimatedSeconds}초`;
+  
   // 크레딧 표시 업데이트
   const creditDisplay = document.getElementById(`contentCredit_${contentIndex}`);
   if (creditDisplay) {
-    creditDisplay.textContent = `${credit} 크레딧`;
+    creditDisplay.innerHTML = `
+      <span class="text-2xl font-bold text-purple-600">${credit} 크레딧</span>
+      <span class="text-sm text-gray-500 ml-2">• ${estimatedTime}</span>
+    `;
   }
   
-  console.log(`💰 [콘텐츠 #${contentIndex + 1}] 플랫폼: ${platformCount}개, 크레딧: ${credit}`);
+  console.log(`💰 [콘텐츠 #${contentIndex + 1}] 플랫폼: ${platformCount}개, 크레딧: ${credit}, 예상 시간: ${estimatedTime}`);
 }
 
 // 개별 콘텐츠 생성
@@ -7086,6 +7102,19 @@ async function generateSingleContent(contentIndex) {
   if (!content) {
     showToast(`❌ 콘텐츠 #${contentIndex + 1} 정보가 없습니다`, 'error');
     return;
+  }
+  
+  // ✅ 중복 생성 방지
+  if (content.generated && content.generationId) {
+    const confirmRegenerate = confirm(
+      `⚠️ 콘텐츠 #${contentIndex + 1}은(는) 이미 생성되었습니다.\n\n` +
+      `재생성하시면 추가 크레딧이 차감됩니다.\n\n` +
+      `계속하시겠습니까?`
+    );
+    
+    if (!confirmRegenerate) {
+      return;
+    }
   }
   
   // 이미지 검증
@@ -7232,10 +7261,37 @@ async function generateSingleContent(contentIndex) {
       contentBlocks[contentIndex].generationId = result.id;
       contentBlocks[contentIndex].generated = true;
       contentBlocks[contentIndex].results = result.data;
+      
+      // ✅ 히스토리에 저장
+      try {
+        const historyEntry = {
+          id: result.id,
+          brand,
+          keywords: enhancedKeywords,
+          platforms,
+          results: result.data,
+          createdAt: new Date().toISOString()
+        };
+        
+        contentHistory.unshift(historyEntry);
+        if (contentHistory.length > 50) {
+          contentHistory = contentHistory.slice(0, 50);
+        }
+        
+        console.log(`✅ 히스토리 저장 완료:`, historyEntry.id);
+      } catch (error) {
+        console.error('❌ 히스토리 저장 실패:', error);
+      }
     }
     
     // 결과 표시
     displaySingleContentResult(contentIndex, result, platforms);
+    
+    // ✅ 생성 완료 후 해당 콘텐츠 블록으로 스크롤
+    const contentBlock = document.getElementById(`contentBlock_${contentIndex}`);
+    if (contentBlock) {
+      contentBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
     
     // 크레딧 갱신
     if (result.remaining_credits !== undefined) {
