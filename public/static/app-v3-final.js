@@ -6042,7 +6042,7 @@ async function loadCalendarEvents() {
         instagramFeed: { class: 'fab fa-instagram', color: 'text-pink-600' },
         instagram_feed: { class: 'fab fa-instagram', color: 'text-pink-600' },
         instagram_reels: { class: 'fab fa-instagram', color: 'text-purple-600' },
-        threads: { class: 'fas fa-at', color: 'text-black' },
+        threads: { class: 'fas fa-at', color: 'text-gray-800' },
         youtube: { class: 'fab fa-youtube', color: 'text-red-600' },
         youtube_longform: { class: 'fab fa-youtube', color: 'text-red-600' },
         youtube_shorts: { class: 'fab fa-youtube', color: 'text-red-500' },
