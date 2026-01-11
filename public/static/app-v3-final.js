@@ -3456,10 +3456,13 @@ function retryGeneration() {
 // ===================================
 // 결과 표시
 // ===================================
-function displayResults(data, platforms) {
+function displayResults(data, platforms, options = {}) {
   const resultArea = document.getElementById('resultArea');
   const tabButtons = document.getElementById('tabButtons');
   const tabContents = document.getElementById('tabContents');
+  
+  // ✅ 옵션: hideCalendarButton (캘린더 버튼 숨기기)
+  const hideCalendarButton = options.hideCalendarButton || false;
   
   const platformNames = {
     blog: '<i class="fas fa-blog text-blue-600 mr-2"></i>네이버 블로그',
@@ -3503,6 +3506,7 @@ function displayResults(data, platforms) {
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-xl font-bold text-gray-800">${platformNames[platform]}</h3>
           <div class="flex gap-2">
+            ${!hideCalendarButton ? `
             <button
               type="button"
               onclick="openDateTimeModalForGeneration('${platform}')"
@@ -3512,6 +3516,7 @@ function displayResults(data, platforms) {
               <i class="fas fa-calendar-plus"></i>
               캘린더
             </button>
+            ` : ''}
             <button
               type="button"
               onclick="editContent('${platform}')"
@@ -3808,6 +3813,11 @@ function saveEdit(platform) {
   // resultData 업데이트
   resultData[platform] = newContent;
   
+  // ✅ 히스토리 DB에도 업데이트
+  if (window.lastGenerationId) {
+    updateHistoryContent(window.lastGenerationId, platform, newContent);
+  }
+  
   // 디스플레이 업데이트
   display.innerHTML = formatContent(newContent);
   
@@ -3816,6 +3826,32 @@ function saveEdit(platform) {
   actions.classList.add('hidden');
   
   showToast('✅ 수정 내용이 저장되었습니다', 'success');
+}
+
+// ✅ 히스토리 업데이트 함수
+async function updateHistoryContent(generationId, platform, newContent) {
+  const user = window.currentUser;
+  if (!user || !user.id) return;
+  
+  try {
+    const response = await fetch('/api/history', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: user.id,
+        generation_id: generationId,
+        platform: platform,
+        content: newContent
+      })
+    });
+    
+    const data = await response.json();
+    if (!data.success) {
+      console.error('히스토리 업데이트 실패:', data.error);
+    }
+  } catch (error) {
+    console.error('히스토리 업데이트 오류:', error);
+  }
 }
 
 // ===================================
@@ -6754,12 +6790,12 @@ async function viewFullContent(generationId, platform) {
     if (platform && item.results[platform]) {
       // 특정 플랫폼만 표시
       resultData = { [platform]: item.results[platform] };
-      displayResults(resultData, [platform]);
+      displayResults(resultData, [platform], { hideCalendarButton: true });
     } else if (!platform) {
       // platform이 없으면 전체 표시
       resultData = item.results;
       const allPlatforms = Object.keys(item.results);
-      displayResults(item.results, allPlatforms);
+      displayResults(item.results, allPlatforms, { hideCalendarButton: true });
     } else {
       // platform은 있는데 해당 데이터가 없는 경우만 에러
       showToast('❌ 해당 플랫폼의 콘텐츠가 없습니다', 'error');
