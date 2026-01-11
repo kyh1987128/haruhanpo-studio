@@ -6332,16 +6332,35 @@ async function viewFullContent(generationId) {
   }
 
   try {
-    // 히스토리에서 해당 콘텐츠 찾기
-    const response = await fetch(`/api/history?user_id=${user.id}`);
-    const data = await response.json();
+    let item = null;
     
-    if (!data.success) {
-      throw new Error('히스토리 로드 실패');
+    // 1차 시도: 히스토리에서 찾기
+    try {
+      const historyResponse = await fetch(`/api/history?user_id=${user.id}`);
+      const historyData = await historyResponse.json();
+      
+      if (historyData.success) {
+        item = (historyData.history || []).find(h => h.id === generationId);
+      }
+    } catch (err) {
+      console.warn('히스토리 조회 실패:', err);
     }
     
-    // ✅ undefined 체크 추가
-    const item = (data.history || []).find(h => h.id === generationId);
+    // 2차 시도: scheduled-content에서 찾기
+    if (!item) {
+      try {
+        const scheduleResponse = await fetch(`/api/scheduled-content?user_id=${user.id}`);
+        const scheduleData = await scheduleResponse.json();
+        
+        if (scheduleData.success) {
+          item = (scheduleData.scheduled_content || []).find(h => h.id === generationId);
+        }
+      } catch (err) {
+        console.warn('scheduled-content 조회 실패:', err);
+      }
+    }
+    
+    // 콘텐츠를 찾지 못한 경우
     if (!item) {
       showToast('콘텐츠를 찾을 수 없습니다', 'error');
       return;
