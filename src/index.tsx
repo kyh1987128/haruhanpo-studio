@@ -2236,6 +2236,69 @@ app.delete('/api/history', async (c) => {
   }
 });
 
+// ✅ 히스토리 업데이트 (콘텐츠 수정)
+app.patch('/api/history', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { user_id, generation_id, platform, content } = body;
+    
+    if (!user_id || !generation_id || !platform || !content) {
+      console.error('❌ 필수 파라미터 누락:', body);
+      return c.json({ error: '필수 파라미터가 누락되었습니다' }, 400);
+    }
+    
+    console.log('📝 히스토리 업데이트:', { generation_id, platform, user_id });
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // 기존 데이터 조회
+    const { data: existing, error: fetchError } = await supabase
+      .from('generations')
+      .select('results')
+      .eq('id', generation_id)
+      .eq('user_id', user_id)
+      .single();
+    
+    if (fetchError || !existing) {
+      console.error('❌ 히스토리 조회 실패:', fetchError);
+      return c.json({ success: false, error: '히스토리를 찾을 수 없습니다' }, 404);
+    }
+    
+    // results 업데이트
+    const updatedResults = {
+      ...existing.results,
+      [platform]: content
+    };
+    
+    // DB 업데이트
+    const { error: updateError } = await supabase
+      .from('generations')
+      .update({ results: updatedResults })
+      .eq('id', generation_id)
+      .eq('user_id', user_id);
+    
+    if (updateError) {
+      console.error('❌ 히스토리 업데이트 실패:', updateError);
+      return c.json({ success: false, error: updateError.message }, 500);
+    }
+    
+    console.log('✅ 히스토리 업데이트 완료:', generation_id);
+    
+    return c.json({
+      success: true,
+      generation_id,
+      platform,
+      message: '콘텐츠가 업데이트되었습니다'
+    });
+  } catch (error: any) {
+    console.error('❌ 히스토리 업데이트 예외:', error);
+    return c.json({ error: '히스토리 업데이트 중 오류가 발생했습니다', details: error.message }, 500);
+  }
+});
+
 // 메인 페이지
 app.get('/', (c) => {
   return c.html(htmlTemplate);

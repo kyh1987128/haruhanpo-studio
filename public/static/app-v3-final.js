@@ -6786,6 +6786,9 @@ async function viewFullContent(generationId, platform) {
       return;
     }
     
+    // ✅ generation_id 저장 (캘린더 등록 및 수정 기능에 필요)
+    window.lastGenerationId = generationId;
+    
     // ✅ 방법 1: platform이 없으면 전체 표시, 있으면 해당 플랫폼만 표시
     if (platform && item.results[platform]) {
       // 특정 플랫폼만 표시
