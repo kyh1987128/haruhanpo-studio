@@ -3075,7 +3075,8 @@ function displayBatchResults(allResults, errors) {
           </div>
           <div class="mt-3 flex gap-2">
             <button
-              onclick="copyToClipboard(${JSON.stringify(content).replace(/"/g, '&quot;')}, '${platformNames[platform]}')"
+              type="button"
+              onclick="copyContentFromBatch(${result.contentIndex}, '${platform}', '${platformNames[platform]}')"
               class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
             >
               <i class="fas fa-copy mr-1"></i>복사
@@ -3676,6 +3677,40 @@ function downloadAsTextFromSingle(contentIndex, platform, filename) {
   URL.revokeObjectURL(url);
   
   showToast('✅ 텍스트 파일 다운로드 완료!', 'success');
+}
+
+// ✅ displayBatchResults용 헬퍼 함수
+function copyContentFromBatch(contentIndex, platform, platformName) {
+  // displayBatchResults에서 생성한 콘텐츠 영역에서 텍스트 추출
+  const contentElements = document.querySelectorAll('.bg-gray-50.rounded-lg.border');
+  if (!contentElements || contentElements.length === 0) {
+    showToast('❌ 복사할 내용이 없습니다', 'error');
+    return;
+  }
+  
+  // contentIndex에 해당하는 영역 찾기
+  let targetContent = null;
+  contentElements.forEach((el) => {
+    const textContent = el.textContent || '';
+    if (textContent.includes(platformName)) {
+      const contentDiv = el.querySelector('.bg-white.p-4.rounded');
+      if (contentDiv) {
+        targetContent = contentDiv.textContent?.trim();
+      }
+    }
+  });
+  
+  if (!targetContent) {
+    showToast('❌ 복사할 내용이 없습니다', 'error');
+    return;
+  }
+  
+  navigator.clipboard.writeText(targetContent).then(() => {
+    showToast(`✅ ${platformName} 복사됨!`, 'success');
+  }).catch(err => {
+    console.error('복사 실패:', err);
+    showToast('❌ 복사에 실패했습니다', 'error');
+  });
 }
 
 function downloadAsTextFromResult(platform, filename) {
