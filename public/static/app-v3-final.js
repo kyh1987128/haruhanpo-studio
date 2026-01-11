@@ -5940,7 +5940,7 @@ function initFullCalendar() {
       if (props.type === 'memo') {
         return {
           html: `<div class="fc-event-main-frame" style="background-color: #f59e0b; color: white; padding: 2px 4px; border-radius: 3px;">
-            <div class="fc-event-time">${arg.timeText}</div>
+            ${arg.timeText ? `<div class="fc-event-time">${arg.timeText}</div>` : ''}
             <div class="fc-event-title-container">
               <div class="fc-event-title fc-sticky">${arg.event.title}</div>
             </div>
@@ -5951,7 +5951,7 @@ function initFullCalendar() {
       // 예정일 이벤트: Font Awesome 아이콘 + 제목 + 배경색
       return {
         html: `<div class="fc-event-main-frame" style="background-color: ${bgColor}; color: white; padding: 2px 4px; border-radius: 3px;">
-          <div class="fc-event-time">${arg.timeText}</div>
+          ${arg.timeText ? `<div class="fc-event-time">${arg.timeText}</div>` : ''}
           <div class="fc-event-title-container">
             <div class="fc-event-title fc-sticky">
               <i class="${iconData.class}" style="margin-right: 4px; color: ${iconData.color};"></i>
@@ -6107,10 +6107,15 @@ async function loadCalendarEvents() {
             }
             
             // 이벤트 추가
+            // ✅ 날짜만 표시 (시간 제거)
+            const scheduledDate = new Date(item.scheduled_date);
+            const dateOnly = `${scheduledDate.getFullYear()}-${String(scheduledDate.getMonth() + 1).padStart(2, '0')}-${String(scheduledDate.getDate()).padStart(2, '0')}`;
+            
             events.push({
               id: `${item.id}-${platform}-${index}`, // 고유 ID
               title: `${platformName}: ${title}`, // ✅ 이모지 제거, 플랫폼 이름만
-              start: item.scheduled_date,
+              start: dateOnly, // ✅ 날짜만 (시간 제거)
+              allDay: true, // ✅ 종일 이벤트로 설정
               backgroundColor: backgroundColor,
               extendedProps: {
                 type: 'schedule',
@@ -6121,7 +6126,8 @@ async function loadCalendarEvents() {
                 content: content,
                 content_title: title,
                 created_at: item.created_at,
-                results: item.results
+                results: item.results,
+                scheduled_date_full: item.scheduled_date // ✅ 원본 날짜 저장 (시간 포함)
               }
             });
           });
@@ -6157,10 +6163,15 @@ async function loadCalendarEvents() {
             }
           }
           
+          // ✅ 날짜만 표시 (시간 제거)
+          const scheduledDate = new Date(item.scheduled_date);
+          const dateOnly = `${scheduledDate.getFullYear()}-${String(scheduledDate.getMonth() + 1).padStart(2, '0')}-${String(scheduledDate.getDate()).padStart(2, '0')}`;
+          
           events.push({
             id: item.id,
             title: `${platformName}: ${title}`, // ✅ 이모지 제거, 플랫폼 이름만
-            start: item.scheduled_date,
+            start: dateOnly, // ✅ 날짜만 (시간 제거)
+            allDay: true, // ✅ 종일 이벤트로 설정
             backgroundColor: backgroundColor,
             extendedProps: {
               type: 'schedule',
@@ -6171,7 +6182,8 @@ async function loadCalendarEvents() {
               content: content,
               content_title: title,
               created_at: item.created_at,
-              results: item.results
+              results: item.results,
+              scheduled_date_full: item.scheduled_date // ✅ 원본 날짜 저장 (시간 포함)
             }
           });
         }
@@ -6262,9 +6274,16 @@ function showEventDetails(event) {
   const title = props.content_title || event.title.replace(/^[^\s]+\s/, ''); // 이모지 제거
   const content = props.content ? props.content.substring(0, 300) : '내용 없음';
   
-  const scheduledDate = new Date(event.start).toLocaleString('ko-KR', {
+  // ✅ 원본 날짜 사용 (시간 포함)
+  const scheduledDateFull = props.scheduled_date_full || event.start;
+  const scheduledDate = new Date(scheduledDateFull).toLocaleString('ko-KR', {
     year: 'numeric',
     month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
@@ -6338,7 +6357,7 @@ function showEventDetails(event) {
           <button onclick="viewFullContent('${props.generation_id}')" class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm">
             <i class="fas fa-eye mr-1"></i>보기
           </button>
-          <button onclick="deleteScheduledEvent('${props.generation_id}')" class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm">
+          <button onclick="deleteScheduledEvent('${props.generation_id}', '${props.platform}')" class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm">
             <i class="fas fa-trash mr-1"></i>삭제
           </button>
         </div>
@@ -6407,26 +6426,27 @@ async function changeEventStatus(generationId, platform, newStatus) {
 }
 
 /**
- * 예정일 이벤트 삭제
+ * 예정일 이벤트 삭제 (특정 플랫폼만)
  */
-async function deleteScheduledEvent(eventId) {
+async function deleteScheduledEvent(eventId, platform) {
   const user = window.currentUser;
   if (!user || !user.id) {
     showToast('로그인이 필요합니다.', 'error');
     return;
   }
 
-  if (!confirm('이 예정일을 삭제하시겠습니까?')) {
+  if (!confirm(`이 플랫폼(${platform})의 예정일을 삭제하시겠습니까?`)) {
     return;
   }
 
   try {
-    // generations 테이블에서 scheduled_date를 NULL로 설정
+    // ✅ 특정 플랫폼만 삭제 (platform_status 업데이트)
     const response = await fetch(`/api/schedule-content/${eventId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         user_id: user.id,
+        platform: platform, // ✅ 플랫폼 지정
         publish_status: 'draft',
         scheduled_date: null
       })
