@@ -5909,32 +5909,42 @@ async function loadCalendarEvents() {
     if (scheduleData.success && scheduleData.scheduled_content) {
       const platformEmojis = {
         blog: '📝',
-        instagram: '📷',
-        instagramFeed: '📷',
+        instagram: '📸',
+        instagramFeed: '📸',
+        instagram_feed: '📸',
+        instagram_reels: '🎬',
         threads: '🧵',
         youtube: '🎥',
+        youtube_shorts: '📱',
         youtubeLongform: '🎬',
         linkedin: '💼',
         facebook: '👍',
         twitter: '🐦',
         kakaotalk: '💬',
         naverband: '🎵',
-        telegram: '✈️'
+        telegram: '✈️',
+        tiktok: '🎵',
+        shortform_multi: '🎬'
       };
 
       const platformNames = {
-        blog: '네이버블로그',
+        blog: '블로그',
         instagram: '인스타그램',
-        instagramFeed: '인스타그램 피드',
+        instagramFeed: '인스타피드',
+        instagram_feed: '인스타피드',
+        instagram_reels: '인스타릴스',
         threads: '스레드',
         youtube: '유튜브',
-        youtubeLongform: '유튜브 롱폼',
+        youtube_shorts: '유튜브쇼츠',
+        youtubeLongform: '유튜브롱폼',
         linkedin: 'LinkedIn',
         facebook: '페이스북',
-        twitter: '트위터(X)',
+        twitter: '트위터',
         kakaotalk: '카카오톡',
-        naverband: '네이버 밴드',
-        telegram: '텔레그램'
+        naverband: '밴드',
+        telegram: '텔레그램',
+        tiktok: '틱톡',
+        shortform_multi: '숏폼'
       };
 
       scheduleData.scheduled_content.forEach(item => {
@@ -6330,7 +6340,8 @@ async function viewFullContent(generationId) {
       throw new Error('히스토리 로드 실패');
     }
     
-    const item = data.history.find(h => h.id === generationId);
+    // ✅ undefined 체크 추가
+    const item = (data.history || []).find(h => h.id === generationId);
     if (!item) {
       showToast('콘텐츠를 찾을 수 없습니다', 'error');
       return;
@@ -6580,15 +6591,41 @@ function renderScheduledContentList(contentList) {
     blog: '네이버블로그',
     instagram: '인스타그램',
     instagramFeed: '인스타그램 피드',
+    instagram_feed: '인스타그램 피드',
+    instagram_reels: '인스타그램 릴스',
     threads: '스레드',
     youtube: '유튜브',
+    youtube_shorts: '유튜브 쇼츠',
     youtubeLongform: '유튜브 롱폼',
     linkedin: 'LinkedIn',
     facebook: '페이스북',
     twitter: '트위터(X)',
     kakaotalk: '카카오톡',
     naverband: '네이버 밴드',
-    telegram: '텔레그램'
+    telegram: '텔레그램',
+    tiktok: '틱톡',
+    shortform_multi: '숏폼 통합'
+  };
+
+  // ✅ 플랫폼 이모지 추가
+  const platformEmojis = {
+    blog: '📝',
+    instagram: '📸',
+    instagramFeed: '📸',
+    instagram_feed: '📸',
+    instagram_reels: '🎬',
+    threads: '🧵',
+    youtube: '🎥',
+    youtube_shorts: '📱',
+    youtubeLongform: '🎬',
+    linkedin: '💼',
+    facebook: '👍',
+    twitter: '🐦',
+    kakaotalk: '💬',
+    naverband: '🎵',
+    telegram: '✈️',
+    tiktok: '🎵',
+    shortform_multi: '🎬'
   };
 
   const statusBadges = {
@@ -6610,11 +6647,24 @@ function renderScheduledContentList(contentList) {
         })
       : '미설정';
     
+    // ✅ 생성일 추가
+    const createdDate = item.created_at 
+      ? new Date(item.created_at).toLocaleString('ko-KR', { 
+          year: 'numeric', 
+          month: '2-digit', 
+          day: '2-digit', 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: true 
+        })
+      : '정보 없음';
+    
     const statusBadge = statusBadges[item.publish_status] || statusBadges.draft;
 
     // platforms 배열의 모든 플랫폼 표시
     const platformsList = (item.platforms || [item.platform]).map(platform => {
       const platformName = platformNames[platform] || platform || '알 수 없음';
+      const emoji = platformEmojis[platform] || '📄';
       
       // ✅ 플랫폼별 상태 사용
       const platformStatus = (item.platform_status && item.platform_status[platform]) || item.publish_status || 'draft';
@@ -6652,12 +6702,13 @@ function renderScheduledContentList(contentList) {
       return `
         <div class="border-l-4 border-blue-400 pl-3 mb-2">
           <div class="flex items-center gap-2 mb-1">
-            <span class="text-sm font-medium text-gray-800">${title}</span>
+            <span class="text-lg font-bold text-gray-800">${emoji} ${platformName}</span>
             ${platformStatusBadge}
           </div>
           <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
-            <span><i class="fas fa-share-alt mr-1"></i>${platformName}</span>
+            <span><i class="fas fa-clock mr-1"></i>생성: ${createdDate}</span>
           </div>
+          <p class="text-sm font-medium text-gray-800 mb-1">${title}</p>
           <p class="text-sm text-gray-600 line-clamp-2">${content.substring(0, 100)}${content.length > 100 ? '...' : ''}</p>
           <div class="flex gap-1 mt-2">
             <button onclick="changePublishStatus('${item.id}', '${platform}', 'scheduled')" class="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition" title="예정으로 변경">
@@ -6669,22 +6720,25 @@ function renderScheduledContentList(contentList) {
             <button onclick="changePublishStatus('${item.id}', '${platform}', 'cancelled')" class="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition" title="취소">
               ❌
             </button>
+            <button onclick="viewFullContent('${item.id}')" class="px-2 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-700 transition" title="전체 보기">
+              📄
+            </button>
           </div>
         </div>
       `;
     }).join('');
 
     return `
-      <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+      <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition mb-3">
         <div class="flex justify-between items-start mb-3">
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-500">
-              <i class="fas fa-clock mr-1"></i>${scheduledDate}
+          <div class="flex flex-col gap-1">
+            <span class="text-sm font-semibold text-gray-700">
+              <i class="fas fa-calendar-alt mr-1"></i>발행 예정: ${scheduledDate}
             </span>
           </div>
         </div>
         
-        <div class="space-y-2">
+        <div class="space-y-3">
           ${platformsList}
         </div>
       </div>
