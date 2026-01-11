@@ -3516,7 +3516,7 @@ function displayResults(data, platforms) {
             </button>
             <button
               type="button"
-              onclick="downloadAsText(${JSON.stringify(data[platform]).replace(/"/g, '&quot;')}, '${platformNames[platform]}.txt')"
+              onclick="downloadAsTextFromResult('${platform}', '${platformNames[platform]}.txt')"
               class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold flex items-center gap-2"
               title="텍스트 파일로 다운로드"
             >
@@ -3525,7 +3525,7 @@ function displayResults(data, platforms) {
             </button>
             <button
               type="button"
-              onclick="copyToClipboard(${JSON.stringify(data[platform]).replace(/"/g, '&quot;')}, '${platformNames[platform]}')"
+              onclick="copyToClipboardFromResult('${platform}', '${platformNames[platform]}')"
               class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold flex items-center gap-2"
             >
               <i class="fas fa-copy"></i>
@@ -3624,6 +3624,47 @@ function switchTab(platform, eventOrElement) {
   } else {
     console.error(`Tab content not found: tab-${platform}`);
   }
+}
+
+// displayResults용 헬퍼 함수 (resultData에서 참조)
+function copyToClipboardFromResult(platform, platformName) {
+  const content = resultData[platform];
+  if (!content) {
+    showToast('❌ 복사할 내용이 없습니다', 'error');
+    return;
+  }
+  
+  navigator.clipboard.writeText(content).then(() => {
+    showToast(`✅ ${platformName || '콘텐츠'} 복사됨!`, 'success');
+  }).catch(err => {
+    console.error('복사 실패:', err);
+    showToast('❌ 복사에 실패했습니다', 'error');
+  });
+}
+
+function downloadAsTextFromResult(platform, filename) {
+  const content = resultData[platform];
+  if (!content) {
+    showToast('❌ 다운로드할 내용이 없습니다', 'error');
+    return;
+  }
+  
+  if (!filename) {
+    const date = new Date().toISOString().split('T')[0];
+    filename = `content_${date}.txt`;
+  }
+  
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  showToast('✅ 텍스트 파일 다운로드 완료!', 'success');
 }
 
 function copyToClipboard(content, platformName) {
@@ -6632,15 +6673,15 @@ async function viewFullContent(generationId, platform) {
       return;
     }
     
-    // ✅ platform이 지정된 경우 해당 플랫폼만 표시
-    if (platform && item.results[platform]) {
-      resultData = { [platform]: item.results[platform] };
-      displayResults(resultData, [platform]);
-    } else {
-      // platform이 없으면 전체 표시
-      resultData = item.results;
-      displayResults(item.results, item.platforms);
+    // ✅ platform이 지정되지 않았거나 해당 플랫폼이 없으면 에러
+    if (!platform || !item.results[platform]) {
+      showToast('플랫폼 정보가 올바르지 않습니다', 'error');
+      return;
     }
+    
+    // ✅ 선택한 플랫폼만 표시
+    resultData = { [platform]: item.results[platform] };
+    displayResults(resultData, [platform]);
     
     // 모달 닫기
     closeEventDetailsModal();
