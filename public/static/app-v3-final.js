@@ -3576,12 +3576,17 @@ function formatContent(content) {
     .replace(/#(\S+)/g, '<span style="color: #3b82f6; font-weight: 600;">#$1</span>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     // 이모지를 FontAwesome 아이콘으로 치환
-    .replace(/🎬/g, '<i class="fas fa-video"></i>')
-    .replace(/🧵/g, '<i class="fab fa-threads"></i>')
-    .replace(/💬/g, '<i class="fas fa-comment"></i>')
-    .replace(/📱/g, '<i class="fas fa-mobile-alt"></i>')
-    .replace(/📖/g, '<i class="fas fa-book-open"></i>')
-    .replace(/🎵/g, '<i class="fab fa-tiktok"></i>');
+    .replace(/📝/g, '<i class="fas fa-blog"></i>')           // 네이버 블로그
+    .replace(/📸/g, '<i class="fab fa-instagram"></i>')     // 인스타그램 피드
+    .replace(/🎬/g, '<i class="fas fa-video"></i>')         // 인스타그램 릴스
+    .replace(/🧵/g, '<i class="fab fa-threads"></i>')       // 스레드
+    .replace(/🐦/g, '<i class="fab fa-twitter"></i>')       // 트위터
+    .replace(/💼/g, '<i class="fab fa-linkedin"></i>')      // LinkedIn
+    .replace(/💬/g, '<i class="fas fa-comment"></i>')       // 카카오톡
+    .replace(/🎥/g, '<i class="fab fa-youtube"></i>')       // 유튜브 롱폼
+    .replace(/📱/g, '<i class="fas fa-mobile-alt"></i>')    // 유튜브 숏폼
+    .replace(/📖/g, '<i class="fas fa-book-open"></i>')     // 브런치
+    .replace(/🎵/g, '<i class="fab fa-tiktok"></i>');       // 틱톡
 }
 
 function switchTab(platform, eventOrElement) {

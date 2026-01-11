@@ -372,7 +372,16 @@ export function getThreadsPrompt(params: PromptParams): string {
 키워드: ${params.keywords}
 
 짧고 강렬한 포스트를 작성하세요 (200-300자).
-해시태그 7-10개 포함.`;
+해시태그 7-10개 포함.
+
+출력 형식:
+━━━━━━━━━━━━━━━━
+🧵 스레드 포스트
+━━━━━━━━━━━━━━━━
+[포스트 내용]
+
+#해시태그1 #해시태그2 ...
+━━━━━━━━━━━━━━━━`;
 }
 
 export function getYouTubePrompt(params: PromptParams): string {
@@ -381,7 +390,19 @@ export function getYouTubePrompt(params: PromptParams): string {
 브랜드: ${params.brand}
 키워드: ${params.keywords}
 
-60초 이내 스크립트와 메타데이터를 작성하세요.`;
+60초 이내 스크립트와 메타데이터를 작성하세요.
+
+출력 형식:
+━━━━━━━━━━━━━━━━
+📱 유튜브 숏폼 대본
+━━━━━━━━━━━━━━━━
+
+[00-03초] 훅: [강렬한 시작]
+[03-45초] 전개: [핵심 메시지]
+[45-60초] CTA: [행동 유도]
+
+#해시태그1 #해시태그2 ...
+━━━━━━━━━━━━━━━━`;
 }
 
 export function getInstagramFeedPrompt(params: PromptParams): string {
