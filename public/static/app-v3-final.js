@@ -6068,6 +6068,12 @@ async function loadCalendarEvents() {
           item.platforms.forEach((platform, index) => {
             // ✅ 플랫폼별 상태 사용
             const status = platformStatus[platform] || fallbackStatus;
+            
+            // ✅ draft 상태인 플랫폼은 캘린더에 표시하지 않음
+            if (status === 'draft') {
+              return; // 건너뛰기
+            }
+            
             const backgroundColor = status === 'published' ? '#10b981' : status === 'cancelled' ? '#ef4444' : '#3b82f6';
             
             const emoji = platformEmojis[platform] || '📄';
@@ -6252,20 +6258,27 @@ function showEventDetails(event) {
     telegram: '텔레그램'
   };
 
-  // ✅ Font Awesome 아이콘 매핑
+  // ✅ Font Awesome 아이콘 매핑 (캘린더와 동일)
   const platformIcons = {
     blog: { class: 'fas fa-blog', color: 'text-blue-600' },
     instagram: { class: 'fab fa-instagram', color: 'text-pink-600' },
     instagramFeed: { class: 'fab fa-instagram', color: 'text-pink-600' },
+    instagram_feed: { class: 'fab fa-instagram', color: 'text-pink-600' },
+    instagram_reels: { class: 'fab fa-instagram', color: 'text-purple-600' },
     threads: { class: 'fas fa-at', color: 'text-gray-800' },
     youtube: { class: 'fab fa-youtube', color: 'text-red-600' },
+    youtube_longform: { class: 'fab fa-youtube', color: 'text-red-600' },
+    youtube_shorts: { class: 'fab fa-youtube', color: 'text-red-500' },
     youtubeLongform: { class: 'fab fa-youtube', color: 'text-red-600' },
     linkedin: { class: 'fab fa-linkedin', color: 'text-blue-700' },
     facebook: { class: 'fab fa-facebook', color: 'text-blue-600' },
     twitter: { class: 'fab fa-twitter', color: 'text-blue-400' },
     kakaotalk: { class: 'fas fa-comment-dots', color: 'text-yellow-500' },
     naverband: { class: 'fas fa-users', color: 'text-green-600' },
-    telegram: { class: 'fab fa-telegram', color: 'text-blue-500' }
+    band: { class: 'fas fa-users', color: 'text-green-600' },
+    telegram: { class: 'fab fa-telegram', color: 'text-blue-500' },
+    tiktok: { class: 'fab fa-tiktok', color: 'text-black' },
+    shortform_multi: { class: 'fas fa-film', color: 'text-purple-600' }
   };
 
   const status = statusLabels[props.publish_status] || '초안';
@@ -6435,15 +6448,15 @@ async function deleteScheduledEvent(eventId, platform) {
   }
 
   try {
-    // ✅ 특정 플랫폼만 삭제 (platform_status 업데이트)
+    // ✅ 해당 플랫폼만 'draft' 상태로 변경 (scheduled_date는 유지)
     const response = await fetch(`/api/schedule-content/${eventId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         user_id: user.id,
         platform: platform, // ✅ 플랫폼 지정
-        publish_status: 'draft',
-        scheduled_date: null
+        publish_status: 'draft' // ✅ draft로 변경하여 캘린더에서 숨김
+        // ✅ scheduled_date는 보내지 않음 (다른 플랫폼 유지)
       })
     });
 
