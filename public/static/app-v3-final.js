@@ -3481,6 +3481,7 @@ function displayResults(data, platforms) {
   // 탭 버튼 생성
   tabButtons.innerHTML = platforms.map((platform, index) => `
     <button
+      type="button"
       class="tab-button ${index === 0 ? 'active' : ''} px-6 py-3 rounded-lg font-semibold transition"
       onclick="switchTab('${platform}')"
     >
@@ -3496,6 +3497,7 @@ function displayResults(data, platforms) {
           <h3 class="text-xl font-bold text-gray-800">${platformNames[platform]}</h3>
           <div class="flex gap-2">
             <button
+              type="button"
               onclick="openDateTimeModalForGeneration('${platform}')"
               class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold flex items-center gap-2"
               title="캘린더에 등록하기"
@@ -3504,6 +3506,7 @@ function displayResults(data, platforms) {
               캘린더
             </button>
             <button
+              type="button"
               onclick="editContent('${platform}')"
               class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-semibold flex items-center gap-2"
               title="콘텐츠 수정하기"
@@ -3512,6 +3515,7 @@ function displayResults(data, platforms) {
               수정
             </button>
             <button
+              type="button"
               onclick="downloadAsText('${platform}')"
               class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold flex items-center gap-2"
               title="텍스트 파일로 다운로드"
@@ -3520,14 +3524,7 @@ function displayResults(data, platforms) {
               TXT
             </button>
             <button
-              onclick="downloadAsWord('${platform}')"
-              class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-semibold flex items-center gap-2"
-              title="Word 문서로 다운로드"
-            >
-              <i class="fas fa-file-word"></i>
-              DOC
-            </button>
-            <button
+              type="button"
               onclick="copyToClipboard(${JSON.stringify(data[platform]).replace(/"/g, '&quot;')}, '${platformNames[platform]}')"
               class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold flex items-center gap-2"
             >
@@ -7519,6 +7516,7 @@ function displaySingleContentResult(contentIndex, result, platforms) {
           콘텐츠 #${contentIndex + 1} 생성 완료
         </h3>
         <button
+          type="button"
           onclick="document.getElementById('contentResult_${contentIndex}').classList.add('hidden')"
           class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm"
         >
@@ -7534,6 +7532,7 @@ function displaySingleContentResult(contentIndex, result, platforms) {
     const isActive = index === 0;
     html += `
       <button
+        type="button"
         onclick="switchContentTab(${contentIndex}, '${platform}')"
         id="tabBtn_${contentIndex}_${platform}"
         class="px-4 py-2 rounded-t-lg font-semibold transition ${
@@ -7568,30 +7567,28 @@ function displaySingleContentResult(contentIndex, result, platforms) {
         <!-- 액션 버튼 -->
         <div class="flex flex-wrap gap-2">
           <button
+            type="button"
             onclick="editContentText(${contentIndex}, '${platform}')"
             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
           >
             <i class="fas fa-edit mr-1"></i>수정
           </button>
           <button
+            type="button"
             onclick="downloadAsText(${JSON.stringify(content).replace(/"/g, '&quot;')}, '콘텐츠${contentIndex + 1}_${platformNames[platform]}.txt')"
             class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm"
           >
             <i class="fas fa-file-download mr-1"></i>TXT
           </button>
           <button
-            onclick="downloadAsDoc(${JSON.stringify(content).replace(/"/g, '&quot;')}, '콘텐츠${contentIndex + 1}_${platformNames[platform]}.doc')"
-            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm"
-          >
-            <i class="fas fa-file-word mr-1"></i>DOC
-          </button>
-          <button
+            type="button"
             onclick="copyToClipboard(${JSON.stringify(content).replace(/"/g, '&quot;')}, '${platformNames[platform]}')"
             class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm"
           >
             <i class="fas fa-copy mr-1"></i>복사
           </button>
           <button
+            type="button"
             onclick="openDateTimeModalForGeneration('${platform}', ${contentIndex})"
             class="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition text-sm"
           >
@@ -7608,12 +7605,14 @@ function displaySingleContentResult(contentIndex, result, platforms) {
           >${content}</textarea>
           <div class="flex gap-2 mt-2">
             <button
+              type="button"
               onclick="cancelContentEdit(${contentIndex}, '${platform}')"
               class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm"
             >
               <i class="fas fa-times mr-1"></i>취소
             </button>
             <button
+              type="button"
               onclick="saveContentEdit(${contentIndex}, '${platform}')"
               class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm"
             >
