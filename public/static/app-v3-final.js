@@ -5938,45 +5938,70 @@ async function loadCalendarEvents() {
       };
 
       scheduleData.scheduled_content.forEach(item => {
-        // 🔍 디버깅: platforms와 results 구조 확인
-        console.log('📊 Item platforms:', item.platforms);
-        console.log('📊 Item results keys:', item.results ? Object.keys(item.results) : 'null');
-        
-        // platforms 배열에서 첫 번째 플랫폼 사용
-        const platform = item.platforms?.[0] || item.platform || 'unknown';
-        const emoji = platformEmojis[platform] || '📄';
-        const platformName = platformNames[platform] || platform || '콘텐츠';
         const status = item.publish_status || 'draft';
+        const backgroundColor = status === 'published' ? '#10b981' : status === 'cancelled' ? '#ef4444' : '#3b82f6';
         
-        console.log(`📊 선택된 platform: ${platform}, results에서 찾기 시도...`);
-        
-        // results (jsonb)에서 제목과 콘텐츠 추출
-        let title = platformName; // 기본값: 플랫폼 이름
-        let content = '내용 없음';
-        
-        if (item.results && typeof item.results === 'object') {
-          // 해당 플랫폼의 데이터 찾기
-          const platformData = item.results[platform];
-          console.log(`📊 platformData (${platform}):`, platformData ? 'found' : 'NOT FOUND');
+        // 각 플랫폼마다 별도 이벤트 생성
+        if (item.platforms && Array.isArray(item.platforms)) {
+          item.platforms.forEach((platform, index) => {
+            const emoji = platformEmojis[platform] || '📄';
+            const platformName = platformNames[platform] || platform || '콘텐츠';
+            
+            // results (jsonb)에서 해당 플랫폼의 데이터 추출
+            let title = platformName; // 기본값: 플랫폼 이름
+            let content = '내용 없음';
+            
+            if (item.results && typeof item.results === 'object') {
+              const platformData = item.results[platform];
+              
+              if (platformData) {
+                // 제목 추출
+                if (platformData.title) {
+                  title = platformData.title;
+                } else if (platformData.content) {
+                  // 제목이 없으면 콘텐츠의 첫 50자를 제목으로 사용
+                  const contentText = platformData.content;
+                  if (contentText && contentText.length > 0) {
+                    title = contentText.substring(0, 50) + (contentText.length > 50 ? '...' : '');
+                  }
+                }
+                // 콘텐츠 추출
+                if (platformData.content) {
+                  content = platformData.content;
+                }
+              }
+            }
+            
+            // 이벤트 추가
+            events.push({
+              id: `${item.id}-${platform}-${index}`, // 고유 ID
+              title: `${emoji} ${title}`,
+              start: item.scheduled_date,
+              backgroundColor: backgroundColor,
+              extendedProps: {
+                type: 'schedule',
+                generation_id: item.id,
+                platform: platform,
+                platforms: item.platforms,
+                publish_status: status,
+                content: content,
+                content_title: title,
+                created_at: item.created_at,
+                results: item.results
+              }
+            });
+          });
+        } else {
+          // platforms 배열이 없는 경우 (기존 방식)
+          const platform = item.platform || 'unknown';
+          const emoji = platformEmojis[platform] || '📄';
+          const platformName = platformNames[platform] || platform || '콘텐츠';
           
-          if (platformData) {
-            // 제목 추출
-            if (platformData.title) {
-              title = platformData.title;
-            } else if (platformData.content) {
-              // 제목이 없으면 콘텐츠의 첫 50자를 제목으로 사용
-              title = platformData.content.substring(0, 50) + (platformData.content.length > 50 ? '...' : '');
-            }
-            // 콘텐츠 추출
-            if (platformData.content) {
-              content = platformData.content;
-            }
-            console.log(`✅ 콘텐츠 추출 성공: title=${title.substring(0, 30)}..., content length=${content.length}`);
-          } else {
-            // 플랫폼 데이터가 없으면 첫 번째 플랫폼 데이터 사용
-            console.log('⚠️ platformData 없음, 첫 번째 키 사용');
+          let title = platformName;
+          let content = '내용 없음';
+          
+          if (item.results && typeof item.results === 'object') {
             const firstPlatform = Object.keys(item.results)[0];
-            console.log(`📊 첫 번째 키: ${firstPlatform}`);
             if (firstPlatform && item.results[firstPlatform]) {
               const firstData = item.results[firstPlatform];
               if (firstData.title) {
@@ -5989,25 +6014,25 @@ async function loadCalendarEvents() {
               }
             }
           }
+          
+          events.push({
+            id: item.id,
+            title: `${emoji} ${title}`,
+            start: item.scheduled_date,
+            backgroundColor: backgroundColor,
+            extendedProps: {
+              type: 'schedule',
+              generation_id: item.id,
+              platform: platform,
+              platforms: [platform],
+              publish_status: status,
+              content: content,
+              content_title: title,
+              created_at: item.created_at,
+              results: item.results
+            }
+          });
         }
-        
-        events.push({
-          id: item.id,
-          title: `${emoji} ${title}`, // 실제 콘텐츠 제목 사용
-          start: item.scheduled_date,
-          backgroundColor: status === 'published' ? '#10b981' : status === 'cancelled' ? '#ef4444' : '#3b82f6',
-          extendedProps: {
-            type: 'schedule',
-            generation_id: item.id,
-            platform: platform,
-            platforms: item.platforms || [platform],
-            publish_status: status,
-            content: content,
-            content_title: title, // 제목 추가
-            created_at: item.created_at,
-            results: item.results // 전체 results 저장
-          }
-        });
       });
     }
 
@@ -6486,72 +6511,71 @@ function renderScheduledContentList(contentList) {
         })
       : '미설정';
     
-    // platforms 배열에서 첫 번째 플랫폼 사용
-    const platform = item.platforms?.[0] || item.platform || 'unknown';
-    const platformName = platformNames[platform] || platform || '알 수 없음';
     const statusBadge = statusBadges[item.publish_status] || statusBadges.draft;
 
-    // results (jsonb)에서 제목과 콘텐츠 추출
-    let title = platformName;
-    let content = '내용 없음';
-    
-    if (item.results && typeof item.results === 'object') {
-      const platformData = item.results[platform];
-      if (platformData) {
-        if (platformData.title) {
-          title = platformData.title;
-        } else if (platformData.content) {
-          title = platformData.content.substring(0, 50) + (platformData.content.length > 50 ? '...' : '');
-        }
-        if (platformData.content) {
-          content = platformData.content;
-        }
-      } else {
-        // 첫 번째 플랫폼 데이터 사용
-        const firstPlatform = Object.keys(item.results)[0];
-        if (firstPlatform && item.results[firstPlatform]) {
-          const firstData = item.results[firstPlatform];
-          if (firstData.title) {
-            title = firstData.title;
-          } else if (firstData.content) {
-            title = firstData.content.substring(0, 50) + (firstData.content.length > 50 ? '...' : '');
+    // platforms 배열의 모든 플랫폼 표시
+    const platformsList = (item.platforms || [item.platform]).map(platform => {
+      const platformName = platformNames[platform] || platform || '알 수 없음';
+      
+      // results (jsonb)에서 해당 플랫폼의 제목과 콘텐츠 추출
+      let title = platformName;
+      let content = '내용 없음';
+      
+      if (item.results && typeof item.results === 'object') {
+        const platformData = item.results[platform];
+        if (platformData) {
+          if (platformData.title) {
+            title = platformData.title;
+          } else if (platformData.content) {
+            const contentText = platformData.content;
+            if (contentText && contentText.length > 0) {
+              title = contentText.substring(0, 50) + (contentText.length > 50 ? '...' : '');
+            }
           }
-          if (firstData.content) {
-            content = firstData.content;
+          if (platformData.content) {
+            content = platformData.content;
           }
         }
       }
-    }
+
+      return `
+        <div class="border-l-4 border-blue-400 pl-3 mb-2">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-sm font-medium text-gray-800">${title}</span>
+          </div>
+          <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
+            <span><i class="fas fa-share-alt mr-1"></i>${platformName}</span>
+          </div>
+          <p class="text-sm text-gray-600 line-clamp-2">${content.substring(0, 100)}${content.length > 100 ? '...' : ''}</p>
+        </div>
+      `;
+    }).join('');
 
     return `
       <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-        <div class="flex justify-between items-start mb-2">
-          <div class="flex-1">
-            <div class="flex items-center gap-2 mb-1">
-              <span class="font-semibold text-gray-800">${title}</span>
-              ${statusBadge}
-            </div>
-            <div class="flex items-center gap-2 text-xs text-gray-500 mb-2">
-              <span><i class="fas fa-share-alt mr-1"></i>${platformName}</span>
-            </div>
-            <p class="text-sm text-gray-600 line-clamp-2">${content.substring(0, 100)}${content.length > 100 ? '...' : ''}</p>
+        <div class="flex justify-between items-start mb-3">
+          <div class="flex items-center gap-2">
+            ${statusBadge}
+            <span class="text-xs text-gray-500">
+              <i class="fas fa-clock mr-1"></i>${scheduledDate}
+            </span>
           </div>
         </div>
-        <div class="flex justify-between items-center mt-3">
-          <span class="text-xs text-gray-500">
-            <i class="fas fa-clock mr-1"></i>${scheduledDate}
-          </span>
-          <div class="flex gap-2">
-            <button onclick="changePublishStatus('${item.id}', 'scheduled')" class="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition" title="예정으로 변경">
-              📅
-            </button>
-            <button onclick="changePublishStatus('${item.id}', 'published')" class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition" title="발행완료로 변경">
-              ✅
-            </button>
-            <button onclick="changePublishStatus('${item.id}', 'cancelled')" class="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition" title="취소">
-              ❌
-            </button>
-          </div>
+        
+        <div class="space-y-2">
+          ${platformsList}
+        </div>
+        
+        <div class="flex justify-end gap-2 mt-3 pt-3 border-t border-gray-100">
+          <button onclick="changePublishStatus('${item.id}', 'scheduled')" class="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition" title="예정으로 변경">
+            📅
+          </button>
+          <button onclick="changePublishStatus('${item.id}', 'published')" class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition" title="발행완료로 변경">
+            ✅
+          </button>
+          <button onclick="changePublishStatus('${item.id}', 'cancelled')" class="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition" title="취소">
+            ❌
+          </button>
         </div>
       </div>
     `;
