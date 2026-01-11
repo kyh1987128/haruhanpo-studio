@@ -1487,9 +1487,16 @@ function updateCostEstimate() {
   
   const platformCheckboxes = document.querySelectorAll('input[name="platform"]:checked');
   const platformCount = platformCheckboxes.length;
+  
+  // ✅ costEstimate 엘리먼트 존재 확인 (하단 일괄 생성 UI 제거로 인한 null 방지)
+  const costElement = document.getElementById('costEstimate');
+  if (!costElement) {
+    console.log('ℹ️ costEstimate 엘리먼트 없음 (개별 생성 모드)');
+    return;
+  }
 
   if (totalImageCount === 0 || platformCount === 0 || contentCount === 0) {
-    document.getElementById('costEstimate').innerHTML = `
+    costElement.innerHTML = `
       <div style="padding: 1.5rem; text-align: center; background: #f9fafb; border-radius: 12px; border: 2px dashed #d1d5db;">
         <p style="color: #6b7280; margin: 0;">
           📊 콘텐츠별 이미지와 플랫폼을 선택하면 크레딧 정보가 표시됩니다
@@ -1911,7 +1918,7 @@ function generateContentBlocks() {
         <!-- 플랫폼 선택 (Option B) -->
         <div class="mb-4">
           <label class="block mb-2 font-semibold text-gray-700">
-            <i class="fas fa-share-alt mr-2"></i>발행할 플랫폼 선택 <span class="text-red-500">*</span>
+            <i class="fas fa-share-alt mr-2"></i>발행할 플랫폼 콘텐츠 선택 <span class="text-red-500">*</span>
           </label>
           <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2" id="platformSelect_${i}">
             <!-- 블로그 & SNS 포스트 -->
@@ -7032,11 +7039,21 @@ window.hideScheduledContentArea = hideScheduledContentArea;
 
 
 /**
- * 생성 완료 화면에서 캘린더 등록 (임시 generation_id 사용)
+ * 생성 완료 화면에서 캘린더 등록 (개별 콘텐츠 generation_id 사용)
  */
-function openDateTimeModalForGeneration(platform) {
-  // ✅ 실제 generation_id 사용 (히스토리 저장 시 받은 ID)
-  const realId = window.lastGenerationId;
+function openDateTimeModalForGeneration(platform, contentIndex) {
+  // ✅ 개별 콘텐츠의 generation_id 사용
+  let realId;
+  
+  // contentIndex가 전달된 경우 해당 콘텐츠의 ID 사용
+  if (contentIndex !== undefined && contentBlocks[contentIndex]) {
+    realId = contentBlocks[contentIndex].generationId;
+    console.log(`📅 [콘텐츠 #${contentIndex + 1}] 캘린더 등록:`, { realId, platform });
+  } else {
+    // contentIndex 없으면 마지막 생성 ID 사용 (하위 호환성)
+    realId = window.lastGenerationId;
+    console.log('📅 캘린더 등록 (legacy):', { realId, platform });
+  }
   
   if (!realId) {
     showToast('콘텐츠를 먼저 생성해주세요.', 'error');
@@ -7044,7 +7061,6 @@ function openDateTimeModalForGeneration(platform) {
     return;
   }
   
-  console.log('📅 캘린더 등록 시작:', { realId, platform });
   openDateTimeModal(realId, platform);
 }
 
@@ -7346,16 +7362,35 @@ function displaySingleContentResult(contentIndex, result, platforms) {
   const platformNames = {
     blog: '네이버 블로그',
     instagram: '인스타그램',
+    instagram_feed: '인스타그램 피드',
+    instagram_reels: '인스타 릴스',
     threads: '스레드',
     youtube: '유튜브 숏폼',
-    twitter: '트위터',
-    facebook: '페이스북',
+    youtube_shorts: '유튜브 쇼츠',
+    youtube_longform: '유튜브 롱폼',
+    twitter: '트위터(X)',
     linkedin: 'LinkedIn',
-    naver_cafe: '네이버 카페',
-    tistory: '티스토리',
-    kakao_story: '카카오스토리',
-    band: '밴드',
-    brunch: '브런치'
+    kakaotalk: '카카오톡',
+    tiktok: '틱톡',
+    brunch: '브런치',
+    metadata_generation: '메타데이터 생성'
+  };
+  
+  const platformIcons = {
+    blog: '<i class="fas fa-blog text-blue-600 mr-2"></i>',
+    instagram: '<i class="fab fa-instagram text-pink-600 mr-2"></i>',
+    instagram_feed: '<i class="fab fa-instagram text-pink-600 mr-2"></i>',
+    instagram_reels: '<i class="fab fa-instagram text-purple-600 mr-2"></i>',
+    threads: '<i class="fas fa-at text-gray-800 mr-2"></i>',
+    youtube: '<i class="fab fa-youtube text-red-600 mr-2"></i>',
+    youtube_shorts: '<i class="fab fa-youtube text-red-500 mr-2"></i>',
+    youtube_longform: '<i class="fab fa-youtube text-red-600 mr-2"></i>',
+    twitter: '<i class="fab fa-twitter text-blue-400 mr-2"></i>',
+    linkedin: '<i class="fab fa-linkedin text-blue-700 mr-2"></i>',
+    kakaotalk: '<i class="fas fa-comment-dots text-yellow-500 mr-2"></i>',
+    tiktok: '<i class="fab fa-tiktok text-black mr-2"></i>',
+    brunch: '<i class="fas fa-book-open text-orange-600 mr-2"></i>',
+    metadata_generation: '<i class="fas fa-tags text-blue-600 mr-2"></i>'
   };
   
   let html = `
@@ -7389,7 +7424,7 @@ function displaySingleContentResult(contentIndex, result, platforms) {
             : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
         }"
       >
-        ${platformNames[platform] || platform}
+        ${platformIcons[platform] || ''}${platformNames[platform] || platform}
       </button>
     `;
   });
@@ -7439,7 +7474,7 @@ function displaySingleContentResult(contentIndex, result, platforms) {
             <i class="fas fa-copy mr-1"></i>복사
           </button>
           <button
-            onclick="openDateTimeModalForGeneration('${platform}')"
+            onclick="openDateTimeModalForGeneration('${platform}', ${contentIndex})"
             class="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition text-sm"
           >
             <i class="fas fa-calendar-alt mr-1"></i>캘린더 등록
