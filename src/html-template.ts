@@ -1835,7 +1835,7 @@ export const htmlTemplate = `
       </div>
     </div>
 
-    <script src="/static/i18n.js?v=14.0.0"></script>
+    <script src="/static/i18n.js?v=15.0.0"></script>
     
     <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
@@ -1844,9 +1844,9 @@ export const htmlTemplate = `
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ko.js"></script>
     
-    <script src="/static/app-v3-final.js?v=14.0.0"></script>
-    <script src="/static/keyword-analysis.js?v=16.0.1"></script>
-    <script src="/static/keyword-extended.js?v=14.0.0"></script>
+    <script src="/static/app-v3-final.js?v=15.0.0"></script>
+    <script src="/static/keyword-analysis.js?v=17.0.0"></script>
+    <script src="/static/keyword-extended.js?v=15.0.0"></script>
     </div><!-- max-w-7xl container -->
 </body>
 </html>
