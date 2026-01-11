@@ -3642,6 +3642,42 @@ function copyToClipboardFromResult(platform, platformName) {
   });
 }
 
+// ✅ displaySingleContentResult용 헬퍼 함수들
+function copyToClipboardFromSingle(contentIndex, platform, platformName) {
+  const content = document.getElementById(`content_${contentIndex}_${platform}`)?.textContent;
+  if (!content) {
+    showToast('❌ 복사할 내용이 없습니다', 'error');
+    return;
+  }
+  
+  navigator.clipboard.writeText(content).then(() => {
+    showToast(`✅ ${platformName || '콘텐츠'} 복사됨!`, 'success');
+  }).catch(err => {
+    console.error('복사 실패:', err);
+    showToast('❌ 복사에 실패했습니다', 'error');
+  });
+}
+
+function downloadAsTextFromSingle(contentIndex, platform, filename) {
+  const content = document.getElementById(`content_${contentIndex}_${platform}`)?.textContent;
+  if (!content) {
+    showToast('❌ 다운로드할 내용이 없습니다', 'error');
+    return;
+  }
+  
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || `content_${platform}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  showToast('✅ 텍스트 파일 다운로드 완료!', 'success');
+}
+
 function downloadAsTextFromResult(platform, filename) {
   const content = resultData[platform];
   if (!content) {
@@ -7621,14 +7657,14 @@ function displaySingleContentResult(contentIndex, result, platforms) {
           </button>
           <button
             type="button"
-            onclick="downloadAsText(${JSON.stringify(content).replace(/"/g, '&quot;')}, '콘텐츠${contentIndex + 1}_${platformNames[platform]}.txt')"
+            onclick="downloadAsTextFromSingle(${contentIndex}, '${platform}', '콘텐츠${contentIndex + 1}_${platformNames[platform]}.txt')"
             class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm"
           >
             <i class="fas fa-file-download mr-1"></i>TXT
           </button>
           <button
             type="button"
-            onclick="copyToClipboard(${JSON.stringify(content).replace(/"/g, '&quot;')}, '${platformNames[platform]}')"
+            onclick="copyToClipboardFromSingle(${contentIndex}, '${platform}', '${platformNames[platform]}')"
             class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm"
           >
             <i class="fas fa-copy mr-1"></i>복사
