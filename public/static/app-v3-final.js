@@ -3964,7 +3964,7 @@ function openTemplateModal() {
   const templateList = document.getElementById('templateList');
   
   // 템플릿 편집 UI 생성
-  const platforms = ['blog', 'instagram', 'instagram_feed', 'threads', 'twitter', 'linkedin', 'kakaotalk', 'brunch', 'tiktok', 'instagram_reels', 'youtube_shorts', 'youtube_longform', 'metadata_generation'];
+  const platforms = ['blog', 'instagram_feed', 'threads', 'twitter', 'linkedin', 'kakaotalk', 'brunch', 'tiktok', 'instagram_reels', 'youtube_shorts', 'youtube_longform', 'metadata_generation'];
   const platformNames = {
     blog: '네이버 블로그',
     instagram: '인스타그램 (기존)',
@@ -5727,21 +5727,37 @@ function openTemplateEditor() {
   `;
   
   // 템플릿 편집 UI 생성
-  const platforms = ['blog', 'instagram', 'instagram_feed', 'threads', 'twitter', 'linkedin', 'kakaotalk', 'tiktok', 'instagram_reels', 'youtube_shorts', 'shortform_multi', 'youtube_longform', 'metadata_generation'];
+  const platforms = ['blog', 'instagram_feed', 'threads', 'twitter', 'linkedin', 'kakaotalk', 'brunch', 'tiktok', 'instagram_reels', 'youtube_shorts', 'youtube_longform', 'metadata_generation'];
   const platformNames = {
-    blog: '📝 네이버 블로그',
-    instagram: '📸 인스타그램 (기존)',
-    instagram_feed: '📸 인스타그램 피드',
-    threads: '🧵 스레드',
-    twitter: '🐦 트위터(X)',
-    linkedin: '💼 LinkedIn',
-    kakaotalk: '💬 카카오톡',
-    tiktok: '🎵 틱톡',
-    instagram_reels: '📹 인스타그램 릴스',
-    youtube_shorts: '🎬 유튜브 쇼츠',
-    shortform_multi: '📱 숏폼 통합 (틱톡+릴스+쇼츠)',
-    youtube_longform: '🎥 유튜브 롱폼',
-    metadata_generation: '🏷️ 메타데이터 생성'
+    blog: '네이버 블로그',
+    instagram: '인스타그램 (기존)',
+    instagram_feed: '인스타그램 피드',
+    threads: '스레드',
+    twitter: '트위터(X)',
+    linkedin: 'LinkedIn',
+    kakaotalk: '카카오톡',
+    brunch: '브런치',
+    tiktok: '틱톡',
+    instagram_reels: '인스타그램 릴스',
+    youtube_shorts: '유튜브 쇼츠',
+    youtube_longform: '유튜브 롱폼',
+    metadata_generation: '메타데이터 생성'
+  };
+  
+  const platformIcons = {
+    blog: '<i class="fas fa-blog text-blue-600 mr-2"></i>',
+    instagram: '<i class="fab fa-instagram text-pink-600 mr-2"></i>',
+    instagram_feed: '<i class="fab fa-instagram text-pink-600 mr-2"></i>',
+    threads: '<i class="fas fa-at text-gray-800 mr-2"></i>',
+    twitter: '<i class="fab fa-twitter text-blue-400 mr-2"></i>',
+    linkedin: '<i class="fab fa-linkedin text-blue-700 mr-2"></i>',
+    kakaotalk: '<i class="fas fa-comment-dots text-yellow-500 mr-2"></i>',
+    brunch: '<i class="fas fa-book-open text-orange-600 mr-2"></i>',
+    tiktok: '<i class="fab fa-tiktok text-black mr-2"></i>',
+    instagram_reels: '<i class="fab fa-instagram text-purple-600 mr-2"></i>',
+    youtube_shorts: '<i class="fab fa-youtube text-red-500 mr-2"></i>',
+    youtube_longform: '<i class="fab fa-youtube text-red-600 mr-2"></i>',
+    metadata_generation: '<i class="fas fa-tags text-blue-600 mr-2"></i>'
   };
   
   modal.innerHTML = `
@@ -5766,7 +5782,7 @@ function openTemplateEditor() {
           return `
             <div style="border: 2px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; background: #fafafa;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h4 style="margin: 0; font-size: 1.1rem; color: #1f2937;">${platformNames[platform]}</h4>
+                <h4 style="margin: 0; font-size: 1.1rem; color: #1f2937;">${platformIcons[platform] || ''}${platformNames[platform]}</h4>
                 <div style="display: flex; gap: 0.5rem;">
                   <button
                     onclick="resetTemplate('${platform}')"
