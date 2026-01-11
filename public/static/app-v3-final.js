@@ -3479,6 +3479,12 @@ function displayResults(data, platforms) {
     metadata_generation: '<i class="fas fa-tags text-purple-600 mr-2"></i>메타데이터'
   };
   
+  // ✅ HTML 태그 제거 (onclick 속성에서 사용)
+  const getPlatformText = (platform) => {
+    const html = platformNames[platform] || platform;
+    return html.replace(/<[^>]*>/g, '').trim();
+  };
+  
   // 탭 버튼 생성
   tabButtons.innerHTML = platforms.map((platform, index) => `
     <button
@@ -3517,7 +3523,7 @@ function displayResults(data, platforms) {
             </button>
             <button
               type="button"
-              onclick="downloadAsTextFromResult('${platform}', '${platformNames[platform]}.txt')"
+              onclick="downloadAsTextFromResult('${platform}', '${getPlatformText(platform)}.txt')"
               class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold flex items-center gap-2"
               title="텍스트 파일로 다운로드"
             >
@@ -3526,7 +3532,7 @@ function displayResults(data, platforms) {
             </button>
             <button
               type="button"
-              onclick="copyToClipboardFromResult('${platform}', '${platformNames[platform]}')"
+              onclick="copyToClipboardFromResult('${platform}', '${getPlatformText(platform)}')"
               class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold flex items-center gap-2"
             >
               <i class="fas fa-copy"></i>
