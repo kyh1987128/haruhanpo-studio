@@ -5938,11 +5938,17 @@ async function loadCalendarEvents() {
       };
 
       scheduleData.scheduled_content.forEach(item => {
+        // 🔍 디버깅: platforms와 results 구조 확인
+        console.log('📊 Item platforms:', item.platforms);
+        console.log('📊 Item results keys:', item.results ? Object.keys(item.results) : 'null');
+        
         // platforms 배열에서 첫 번째 플랫폼 사용
         const platform = item.platforms?.[0] || item.platform || 'unknown';
         const emoji = platformEmojis[platform] || '📄';
         const platformName = platformNames[platform] || platform || '콘텐츠';
         const status = item.publish_status || 'draft';
+        
+        console.log(`📊 선택된 platform: ${platform}, results에서 찾기 시도...`);
         
         // results (jsonb)에서 제목과 콘텐츠 추출
         let title = platformName; // 기본값: 플랫폼 이름
@@ -5951,6 +5957,8 @@ async function loadCalendarEvents() {
         if (item.results && typeof item.results === 'object') {
           // 해당 플랫폼의 데이터 찾기
           const platformData = item.results[platform];
+          console.log(`📊 platformData (${platform}):`, platformData ? 'found' : 'NOT FOUND');
+          
           if (platformData) {
             // 제목 추출
             if (platformData.title) {
@@ -5963,9 +5971,12 @@ async function loadCalendarEvents() {
             if (platformData.content) {
               content = platformData.content;
             }
+            console.log(`✅ 콘텐츠 추출 성공: title=${title.substring(0, 30)}..., content length=${content.length}`);
           } else {
             // 플랫폼 데이터가 없으면 첫 번째 플랫폼 데이터 사용
+            console.log('⚠️ platformData 없음, 첫 번째 키 사용');
             const firstPlatform = Object.keys(item.results)[0];
+            console.log(`📊 첫 번째 키: ${firstPlatform}`);
             if (firstPlatform && item.results[firstPlatform]) {
               const firstData = item.results[firstPlatform];
               if (firstData.title) {
