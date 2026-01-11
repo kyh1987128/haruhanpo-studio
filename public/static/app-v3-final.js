@@ -3481,7 +3481,13 @@ function switchTab(platform, eventOrElement) {
     }
   }
   
-  document.getElementById(`tab-${platform}`).classList.remove('hidden');
+  // ✅ null 체크 추가
+  const tabContent = document.getElementById(`tab-${platform}`);
+  if (tabContent) {
+    tabContent.classList.remove('hidden');
+  } else {
+    console.error(`Tab content not found: tab-${platform}`);
+  }
 }
 
 function copyToClipboard(platform) {
@@ -5889,6 +5895,61 @@ function initFullCalendar() {
         console.error('캘린더 이벤트 로드 오류:', error);
         failureCallback(error);
       }
+    },
+    // ✅ 커스텀 이벤트 렌더링 (Font Awesome 아이콘 사용)
+    eventContent: function(arg) {
+      const props = arg.event.extendedProps;
+      const platform = props.platform;
+      
+      // Font Awesome 아이콘 매핑
+      const platformIcons = {
+        blog: { class: 'fas fa-blog', color: 'text-blue-600' },
+        instagram: { class: 'fab fa-instagram', color: 'text-pink-600' },
+        instagramFeed: { class: 'fab fa-instagram', color: 'text-pink-600' },
+        instagram_feed: { class: 'fab fa-instagram', color: 'text-pink-600' },
+        instagram_reels: { class: 'fab fa-instagram', color: 'text-purple-600' },
+        threads: { class: 'fas fa-at', color: 'text-gray-800' },
+        youtube: { class: 'fab fa-youtube', color: 'text-red-600' },
+        youtube_longform: { class: 'fab fa-youtube', color: 'text-red-600' },
+        youtube_shorts: { class: 'fab fa-youtube', color: 'text-red-500' },
+        youtubeLongform: { class: 'fab fa-youtube', color: 'text-red-600' },
+        linkedin: { class: 'fab fa-linkedin', color: 'text-blue-700' },
+        facebook: { class: 'fab fa-facebook', color: 'text-blue-600' },
+        twitter: { class: 'fab fa-twitter', color: 'text-blue-400' },
+        kakaotalk: { class: 'fas fa-comment-dots', color: 'text-yellow-500' },
+        naverband: { class: 'fas fa-users', color: 'text-green-600' },
+        band: { class: 'fas fa-users', color: 'text-green-600' },
+        telegram: { class: 'fab fa-telegram', color: 'text-blue-500' },
+        tiktok: { class: 'fab fa-tiktok', color: 'text-black' },
+        shortform_multi: { class: 'fas fa-film', color: 'text-purple-600' }
+      };
+      
+      const iconData = platformIcons[platform] || { class: 'fas fa-file', color: 'text-gray-600' };
+      
+      // 메모인 경우 기본 렌더링
+      if (props.type === 'memo') {
+        return {
+          html: `<div class="fc-event-main-frame">
+            <div class="fc-event-time">${arg.timeText}</div>
+            <div class="fc-event-title-container">
+              <div class="fc-event-title fc-sticky">${arg.event.title}</div>
+            </div>
+          </div>`
+        };
+      }
+      
+      // 예정일 이벤트: Font Awesome 아이콘 + 제목
+      return {
+        html: `<div class="fc-event-main-frame">
+          <div class="fc-event-time">${arg.timeText}</div>
+          <div class="fc-event-title-container">
+            <div class="fc-event-title fc-sticky">
+              <i class="${iconData.class}" style="margin-right: 4px;"></i>
+              ${arg.event.title}
+            </div>
+          </div>
+        </div>`
+      };
     },
     dayCellContent: function(arg) {
       // 메모가 있는 날짜에 아이콘 표시 (나중에 구현)
