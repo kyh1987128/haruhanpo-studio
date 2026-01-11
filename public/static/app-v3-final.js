@@ -6673,15 +6673,21 @@ async function viewFullContent(generationId, platform) {
       return;
     }
     
-    // ✅ platform이 지정되지 않았거나 해당 플랫폼이 없으면 에러
-    if (!platform || !item.results[platform]) {
-      showToast('플랫폼 정보가 올바르지 않습니다', 'error');
+    // ✅ 방법 1: platform이 없으면 전체 표시, 있으면 해당 플랫폼만 표시
+    if (platform && item.results[platform]) {
+      // 특정 플랫폼만 표시
+      resultData = { [platform]: item.results[platform] };
+      displayResults(resultData, [platform]);
+    } else if (!platform) {
+      // platform이 없으면 전체 표시
+      resultData = item.results;
+      const allPlatforms = Object.keys(item.results);
+      displayResults(item.results, allPlatforms);
+    } else {
+      // platform은 있는데 해당 데이터가 없는 경우만 에러
+      showToast('❌ 해당 플랫폼의 콘텐츠가 없습니다', 'error');
       return;
     }
-    
-    // ✅ 선택한 플랫폼만 표시
-    resultData = { [platform]: item.results[platform] };
-    displayResults(resultData, [platform]);
     
     // 모달 닫기
     closeEventDetailsModal();
