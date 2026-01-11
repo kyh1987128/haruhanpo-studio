@@ -3577,7 +3577,14 @@ function formatContent(content) {
     .replace(/>/g, '&gt;')
     .replace(/\n/g, '<br>')
     .replace(/#(\S+)/g, '<span style="color: #3b82f6; font-weight: 600;">#$1</span>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // 이모지를 FontAwesome 아이콘으로 치환
+    .replace(/🎬/g, '<i class="fas fa-video"></i>')
+    .replace(/🧵/g, '<i class="fab fa-threads"></i>')
+    .replace(/💬/g, '<i class="fas fa-comment"></i>')
+    .replace(/📱/g, '<i class="fas fa-mobile-alt"></i>')
+    .replace(/📖/g, '<i class="fas fa-book-open"></i>')
+    .replace(/🎵/g, '<i class="fab fa-tiktok"></i>');
 }
 
 function switchTab(platform, eventOrElement) {
