@@ -4947,6 +4947,9 @@ function viewHistory(id) {
   const item = contentHistory.find(h => h.id === id);
   if (!item) return;
   
+  // ✅ generation_id 저장 (캘린더 등록 및 수정 기능에 필요)
+  window.lastGenerationId = id;
+  
   resultData = item.results;
   displayResults(item.results, item.platforms);
   
