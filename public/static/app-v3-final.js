@@ -5979,8 +5979,12 @@ async function loadCalendarEvents() {
     // 메모 이벤트 추가
     if (memoData.success && memoData.memos) {
       memoData.memos.forEach(memo => {
-        // memo.date에서 날짜 부분만 추출 (YYYY-MM-DD)
-        const memoDate = memo.date.split('T')[0];
+        // memo.date는 UTC 형식이므로 KST로 변환 후 날짜 추출
+        const utcDate = new Date(memo.date);
+        const year = utcDate.getFullYear();
+        const month = String(utcDate.getMonth() + 1).padStart(2, '0');
+        const day = String(utcDate.getDate()).padStart(2, '0');
+        const memoDate = `${year}-${month}-${day}`;
         
         events.push({
           id: `memo-${memo.id}`,
