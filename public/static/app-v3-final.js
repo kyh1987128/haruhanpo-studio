@@ -6511,7 +6511,7 @@ function showEventDetails(event) {
         </div>
         
         <div class="flex gap-2 mb-4">
-          <button onclick="viewFullContent('${props.generation_id}')" class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm">
+          <button onclick="viewFullContent('${props.generation_id}', '${props.platform}')" class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm">
             <i class="fas fa-eye mr-1"></i>보기
           </button>
           <button onclick="deleteScheduledEvent('${props.generation_id}', '${props.platform}')" class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm">
