@@ -1918,66 +1918,66 @@ function generateContentBlocks() {
             <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
               <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="blog" onchange="updateContentPlatforms(${i})">
               <i class="fas fa-blog text-blue-600"></i>
-              <span class="text-sm font-medium">📝 네이버 블로그</span>
+              <span class="text-sm font-medium">네이버 블로그</span>
             </label>
             <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
               <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="instagram_feed" onchange="updateContentPlatforms(${i})">
               <i class="fab fa-instagram text-pink-600"></i>
-              <span class="text-sm font-medium">📸 인스타그램 피드</span>
+              <span class="text-sm font-medium">인스타그램 피드</span>
             </label>
             <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
               <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="threads" onchange="updateContentPlatforms(${i})">
               <i class="fas fa-at text-gray-800"></i>
-              <span class="text-sm font-medium">🧵 스레드</span>
+              <span class="text-sm font-medium">스레드</span>
             </label>
             <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
               <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="twitter" onchange="updateContentPlatforms(${i})">
               <i class="fab fa-twitter text-blue-400"></i>
-              <span class="text-sm font-medium">🐦 트위터(X)</span>
+              <span class="text-sm font-medium">트위터(X)</span>
             </label>
             <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
               <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="linkedin" onchange="updateContentPlatforms(${i})">
               <i class="fab fa-linkedin text-blue-700"></i>
-              <span class="text-sm font-medium">💼 LinkedIn</span>
+              <span class="text-sm font-medium">LinkedIn</span>
             </label>
             <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
               <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="kakaotalk" onchange="updateContentPlatforms(${i})">
               <i class="fas fa-comment-dots text-yellow-500"></i>
-              <span class="text-sm font-medium">💬 카카오톡</span>
+              <span class="text-sm font-medium">카카오톡</span>
             </label>
             <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
               <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="brunch" onchange="updateContentPlatforms(${i})">
               <i class="fas fa-book-open text-orange-600"></i>
-              <span class="text-sm font-medium">📖 브런치</span>
+              <span class="text-sm font-medium">브런치</span>
             </label>
             
             <!-- 숏폼 영상 -->
             <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
               <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="tiktok" onchange="updateContentPlatforms(${i})">
               <i class="fab fa-tiktok text-black"></i>
-              <span class="text-sm font-medium">🎵 틱톡</span>
+              <span class="text-sm font-medium">틱톡</span>
             </label>
             <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
               <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="instagram_reels" onchange="updateContentPlatforms(${i})">
               <i class="fab fa-instagram text-purple-600"></i>
-              <span class="text-sm font-medium">📸 인스타 릴스</span>
+              <span class="text-sm font-medium">인스타 릴스</span>
             </label>
             <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
               <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="youtube_shorts" onchange="updateContentPlatforms(${i})">
               <i class="fab fa-youtube text-red-500"></i>
-              <span class="text-sm font-medium">🎬 유튜브 쇼츠</span>
+              <span class="text-sm font-medium">유튜브 쇼츠</span>
             </label>
             
             <!-- 롱폼 영상 -->
             <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
               <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="youtube_longform" onchange="updateContentPlatforms(${i})">
               <i class="fab fa-youtube text-red-600"></i>
-              <span class="text-sm font-medium">🎥 유튜브 롱폼</span>
+              <span class="text-sm font-medium">유튜브 롱폼</span>
             </label>
             <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
               <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="metadata_generation" onchange="updateContentPlatforms(${i})">
               <i class="fas fa-tags text-blue-600"></i>
-              <span class="text-sm font-medium">📊 메타데이터 생성</span>
+              <span class="text-sm font-medium">메타데이터 생성</span>
             </label>
           </div>
         </div>
