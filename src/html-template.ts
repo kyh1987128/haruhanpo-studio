@@ -661,32 +661,7 @@ export const htmlTemplate = `
                     </div>
                 </div>
 
-                <!-- 생성할 콘텐츠 개수 -->
-                <div>
-                    <label class="block mb-2 font-semibold text-gray-700">
-                        <i class="fas fa-list-ol mr-2"></i>생성할 콘텐츠 개수
-                    </label>
-                    <select id="contentCount" onchange="generateContentBlocks()" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
-                        <option value="1" selected>1개</option>
-                        <option value="2">2개</option>
-                        <option value="3">3개</option>
-                        <option value="4">4개</option>
-                        <option value="5">5개</option>
-                        <option value="6">6개</option>
-                        <option value="7">7개</option>
-                        <option value="8">8개</option>
-                        <option value="9">9개</option>
-                        <option value="10">10개</option>
-                        <option value="12">12개</option>
-                        <option value="15">15개</option>
-                        <option value="20">20개</option>
-                    </select>
-                </div>
-                
-                <!-- 개별 콘텐츠 입력 영역 -->
-                <div id="contentBlocksContainer" class="space-y-4"></div>
-
-                <!-- 톤앤매너, 연령대, 산업 -->
+                <!-- 톤앤매너, 연령대, 산업 (연락처 정보 바로 아래로 이동) -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label class="block mb-2 font-semibold text-gray-700">
@@ -749,6 +724,31 @@ export const htmlTemplate = `
                         </select>
                     </div>
                 </div>
+
+                <!-- 생성할 콘텐츠 블록 개수 -->
+                <div>
+                    <label class="block mb-2 font-semibold text-gray-700">
+                        <i class="fas fa-list-ol mr-2"></i>생성할 콘텐츠 개수
+                    </label>
+                    <select id="contentCount" onchange="generateContentBlocks()" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                        <option value="1" selected>1개</option>
+                        <option value="2">2개</option>
+                        <option value="3">3개</option>
+                        <option value="4">4개</option>
+                        <option value="5">5개</option>
+                        <option value="6">6개</option>
+                        <option value="7">7개</option>
+                        <option value="8">8개</option>
+                        <option value="9">9개</option>
+                        <option value="10">10개</option>
+                        <option value="12">12개</option>
+                        <option value="15">15개</option>
+                        <option value="20">20개</option>
+                    </select>
+                </div>
+                
+                <!-- 개별 콘텐츠 입력 영역 -->
+                <div id="contentBlocksContainer" class="space-y-4"></div>
 
                 <!-- 🔥 NEW v6.1: 하이브리드 전략 선택 -->
                 <div class="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl border-2 border-purple-200">
@@ -925,7 +925,7 @@ export const htmlTemplate = `
                         <i class="fas fa-check-square mr-2"></i>생성할 플랫폼 선택 (최소 1개)
                     </label>
                     
-                    <!-- 블로그 & SNS -->
+                    <!-- 블로그 & SNS 포스트 -->
                     <div class="mb-4">
                         <h4 class="text-sm font-semibold text-gray-600 mb-2">📝 블로그 & SNS 포스트</h4>
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -953,13 +953,17 @@ export const htmlTemplate = `
                                 <input type="checkbox" name="platform" value="kakaotalk" class="w-5 h-5 text-yellow-400">
                                 <span class="font-medium text-sm">💬 카카오톡</span>
                             </label>
+                            <label class="flex items-center space-x-3 border-2 rounded-lg p-3 cursor-pointer hover:bg-orange-50 transition">
+                                <input type="checkbox" name="platform" value="brunch" class="w-5 h-5 text-orange-600">
+                                <span class="font-medium text-sm">📖 브런치</span>
+                            </label>
                         </div>
                     </div>
                     
-                    <!-- 숏폼 비디오 -->
+                    <!-- 숏폼 영상 -->
                     <div class="mb-4">
-                        <h4 class="text-sm font-semibold text-gray-600 mb-2">📱 숏폼 영상 (9:16, 15-60초)</h4>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <h4 class="text-sm font-semibold text-gray-600 mb-2">📱 숏폼 영상</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                             <label class="flex items-center space-x-3 border-2 rounded-lg p-3 cursor-pointer hover:bg-pink-50 transition">
                                 <input type="checkbox" name="platform" value="tiktok" class="w-5 h-5 text-pink-600">
                                 <span class="font-medium text-sm">🎵 틱톡</span>
@@ -972,19 +976,12 @@ export const htmlTemplate = `
                                 <input type="checkbox" name="platform" value="youtube_shorts" class="w-5 h-5 text-pink-600">
                                 <span class="font-medium text-sm">🎬 유튜브 쇼츠</span>
                             </label>
-                            <label class="flex items-center space-x-3 border-2 rounded-lg p-3 cursor-pointer hover:bg-pink-50 transition">
-                                <input type="checkbox" name="platform" value="shortform_multi" class="w-5 h-5 text-pink-600">
-                                <span class="font-medium text-sm">🎥 숏폼(전체)</span>
-                            </label>
                         </div>
-                        <p class="text-xs text-gray-500 mt-2 ml-1">
-                            💡 "숏폼(전체)"는 틱톡+릴스+쇼츠에 모두 최적화된 대본을 생성합니다
-                        </p>
                     </div>
                     
-                    <!-- 롱폼 비디오 -->
+                    <!-- 롱폼 영상 -->
                     <div>
-                        <h4 class="text-sm font-semibold text-gray-600 mb-2">🎬 롱폼 영상 (16:9, 5-15분)</h4>
+                        <h4 class="text-sm font-semibold text-gray-600 mb-2">🎬 롱폼 영상</h4>
                         <div class="grid grid-cols-2 md:grid-cols-2 gap-3">
                             <label class="flex items-center space-x-3 border-2 rounded-lg p-3 cursor-pointer hover:bg-red-50 transition">
                                 <input type="checkbox" name="platform" value="youtube_longform" class="w-5 h-5 text-red-600">
@@ -995,22 +992,9 @@ export const htmlTemplate = `
                                 <span class="font-medium text-sm">📊 메타데이터 생성</span>
                             </label>
                         </div>
-                        <p class="text-xs text-gray-500 mt-2 ml-1">
-                            💡 롱폼: 상세한 시나리오 & 연출 지시 | 메타데이터: 제목, 썸네일, 설명, 태그 최적화
-                        </p>
                     </div>
                 </div>
 
-                <!-- 비용 예상 (버튼 바로 위) -->
-                <div id="costEstimate" class="mb-6"></div>
-
-                <button
-                    type="submit"
-                    id="generateBtn"
-                    class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-4 px-6 rounded-lg hover:from-purple-700 hover:to-blue-700 transition shadow-lg text-lg"
-                >
-                    🎯 콘텐츠 생성하기
-                </button>
             </form>
         </div>
 

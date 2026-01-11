@@ -3344,6 +3344,7 @@ function displayResults(data, platforms) {
     twitter: '🐦 트위터(X)',
     linkedin: '💼 LinkedIn',
     kakaotalk: '💬 카카오톡',
+    brunch: '📖 브런치',
     youtube: '🎬 유튜브',
     youtube_shorts: '🎬 유튜브 숏폼',
     youtube_longform: '🎥 유튜브 롱폼',
@@ -5927,6 +5928,7 @@ function initFullCalendar() {
         facebook: { class: 'fab fa-facebook', color: '#ffffff' },
         twitter: { class: 'fab fa-twitter', color: '#ffffff' },
         kakaotalk: { class: 'fas fa-comment-dots', color: '#ffffff' },
+        brunch: { class: 'fas fa-book-open', color: '#ffffff' },
         naverband: { class: 'fas fa-users', color: '#ffffff' },
         band: { class: 'fas fa-users', color: '#ffffff' },
         telegram: { class: 'fab fa-telegram', color: '#ffffff' },
@@ -6007,6 +6009,7 @@ async function loadCalendarEvents() {
         facebook: '📘',
         twitter: '🐦',
         kakaotalk: '💬',
+        brunch: '📖',
         naverband: '🎵',
         telegram: '✈️',
         tiktok: '🎵',
@@ -6051,6 +6054,7 @@ async function loadCalendarEvents() {
         facebook: { class: 'fab fa-facebook', color: 'text-blue-600' },
         twitter: { class: 'fab fa-twitter', color: 'text-blue-400' },
         kakaotalk: { class: 'fas fa-comment-dots', color: 'text-yellow-500' },
+        brunch: { class: 'fas fa-book-open', color: 'text-orange-600' },
         naverband: { class: 'fas fa-users', color: 'text-green-600' },
         band: { class: 'fas fa-users', color: 'text-green-600' },
         telegram: { class: 'fab fa-telegram', color: 'text-blue-500' },
@@ -6274,6 +6278,7 @@ function showEventDetails(event) {
     facebook: { class: 'fab fa-facebook', color: 'text-blue-600' },
     twitter: { class: 'fab fa-twitter', color: 'text-blue-400' },
     kakaotalk: { class: 'fas fa-comment-dots', color: 'text-yellow-500' },
+    brunch: { class: 'fas fa-book-open', color: 'text-orange-600' },
     naverband: { class: 'fas fa-users', color: 'text-green-600' },
     band: { class: 'fas fa-users', color: 'text-green-600' },
     telegram: { class: 'fab fa-telegram', color: 'text-blue-500' },
@@ -7217,6 +7222,17 @@ async function generateSingleContent(contentIndex) {
     
     // 로딩 숨기기
     hideContentLoading(contentIndex);
+    
+    // ✅ 히스토리 저장 (캘린더 등록용)
+    if (result.id) {
+      window.lastGenerationId = result.id;
+      console.log(`📝 [콘텐츠 #${contentIndex + 1}] Generation ID 저장:`, result.id);
+      
+      // 콘텐츠 블록에 저장
+      contentBlocks[contentIndex].generationId = result.id;
+      contentBlocks[contentIndex].generated = true;
+      contentBlocks[contentIndex].results = result.data;
+    }
     
     // 결과 표시
     displaySingleContentResult(contentIndex, result, platforms);

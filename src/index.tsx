@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { serveStatic } from 'hono/cloudflare-workers';
 import OpenAI from 'openai';
-import { getBlogPrompt, getInstagramPrompt, getThreadsPrompt, getYouTubePrompt, getYoutubeLongformPrompt, getShortformPrompt, getMetadataPrompt, getInstagramFeedPrompt, getTwitterPrompt, getLinkedInPrompt, getKakaoTalkPrompt } from './prompts';
+import { getBlogPrompt, getInstagramPrompt, getThreadsPrompt, getYouTubePrompt, getYoutubeLongformPrompt, getShortformPrompt, getMetadataPrompt, getInstagramFeedPrompt, getTwitterPrompt, getLinkedInPrompt, getKakaoTalkPrompt, getBrunchPrompt } from './prompts';
 import { htmlTemplate } from './html-template';
 import { analyzeImageWithGemini, generateContentWithGemini, calculateGeminiCost, estimateTokens } from './gemini';
 import { createSupabaseAdmin, createSupabaseClient, grantMilestoneCredit, updateConsecutiveLogin, checkAndUseMonthlyQuota } from './lib/supabase';
@@ -833,6 +833,7 @@ app.post('/api/generate', async (c) => {
         case 'twitter': return getTwitterPrompt(promptParams);
         case 'linkedin': return getLinkedInPrompt(promptParams);
         case 'kakaotalk': return getKakaoTalkPrompt(promptParams);
+        case 'brunch': return getBrunchPrompt(promptParams);
         default: return getBlogPrompt(promptParams);
       }
     };
