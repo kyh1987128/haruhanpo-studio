@@ -6284,11 +6284,6 @@ function showEventDetails(event) {
     minute: '2-digit',
     hour12: true
   });
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true
-  });
   
   // ✅ 생성일 추가
   const createdDate = props.created_at ? new Date(props.created_at).toLocaleString('ko-KR', {
