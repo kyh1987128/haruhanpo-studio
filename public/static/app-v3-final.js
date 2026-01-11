@@ -5860,9 +5860,12 @@ function initFullCalendar() {
     },
     dateClick: function(info) {
       // 빈 날짜 클릭 시 메모 입력 모달 열기
-      // info.dateStr은 UTC 기준이므로 로컬 날짜로 변환
-      const localDate = new Date(info.date.getFullYear(), info.date.getMonth(), info.date.getDate());
-      const dateStr = localDate.toISOString().split('T')[0]; // YYYY-MM-DD
+      // toISOString()은 UTC 변환하므로 직접 문자열 조합
+      const year = info.date.getFullYear();
+      const month = String(info.date.getMonth() + 1).padStart(2, '0');
+      const day = String(info.date.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+      console.log('📅 dateClick - 클릭한 날짜:', dateStr);
       openMemoModal(dateStr);
     },
     events: async function(fetchInfo, successCallback, failureCallback) {
