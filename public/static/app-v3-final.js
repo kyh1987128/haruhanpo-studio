@@ -3964,21 +3964,37 @@ function openTemplateModal() {
   const templateList = document.getElementById('templateList');
   
   // 템플릿 편집 UI 생성
-  const platforms = ['blog', 'instagram', 'instagram_feed', 'threads', 'twitter', 'linkedin', 'kakaotalk', 'tiktok', 'instagram_reels', 'youtube_shorts', 'shortform_multi', 'youtube_longform', 'metadata_generation'];
+  const platforms = ['blog', 'instagram', 'instagram_feed', 'threads', 'twitter', 'linkedin', 'kakaotalk', 'brunch', 'tiktok', 'instagram_reels', 'youtube_shorts', 'youtube_longform', 'metadata_generation'];
   const platformNames = {
-    blog: '📝 네이버 블로그',
-    instagram: '📸 인스타그램 (기존)',
-    instagram_feed: '📸 인스타그램 피드',
-    threads: '🧵 스레드',
-    twitter: '🐦 트위터(X)',
-    linkedin: '💼 LinkedIn',
-    kakaotalk: '💬 카카오톡',
-    tiktok: '🎵 틱톡',
-    instagram_reels: '📹 인스타그램 릴스',
-    youtube_shorts: '🎬 유튜브 쇼츠',
-    shortform_multi: '📱 숏폼 통합 (틱톡+릴스+쇼츠)',
-    youtube_longform: '🎥 유튜브 롱폼',
-    metadata_generation: '🏷️ 메타데이터 생성'
+    blog: '네이버 블로그',
+    instagram: '인스타그램 (기존)',
+    instagram_feed: '인스타그램 피드',
+    threads: '스레드',
+    twitter: '트위터(X)',
+    linkedin: 'LinkedIn',
+    kakaotalk: '카카오톡',
+    brunch: '브런치',
+    tiktok: '틱톡',
+    instagram_reels: '인스타그램 릴스',
+    youtube_shorts: '유튜브 쇼츠',
+    youtube_longform: '유튜브 롱폼',
+    metadata_generation: '메타데이터 생성'
+  };
+  
+  const platformIcons = {
+    blog: '<i class="fas fa-blog text-blue-600 mr-2"></i>',
+    instagram: '<i class="fab fa-instagram text-pink-600 mr-2"></i>',
+    instagram_feed: '<i class="fab fa-instagram text-pink-600 mr-2"></i>',
+    threads: '<i class="fas fa-at text-gray-800 mr-2"></i>',
+    twitter: '<i class="fab fa-twitter text-blue-400 mr-2"></i>',
+    linkedin: '<i class="fab fa-linkedin text-blue-700 mr-2"></i>',
+    kakaotalk: '<i class="fas fa-comment-dots text-yellow-500 mr-2"></i>',
+    brunch: '<i class="fas fa-book-open text-orange-600 mr-2"></i>',
+    tiktok: '<i class="fab fa-tiktok text-black mr-2"></i>',
+    instagram_reels: '<i class="fab fa-instagram text-purple-600 mr-2"></i>',
+    youtube_shorts: '<i class="fab fa-youtube text-red-500 mr-2"></i>',
+    youtube_longform: '<i class="fab fa-youtube text-red-600 mr-2"></i>',
+    metadata_generation: '<i class="fas fa-tags text-blue-600 mr-2"></i>'
   };
   
   templateList.innerHTML = `
@@ -4002,7 +4018,7 @@ function openTemplateModal() {
         return `
           <div class="border border-gray-200 rounded-lg p-6 bg-white">
             <div class="flex justify-between items-center mb-4">
-              <h4 class="text-lg font-bold text-gray-800">${platformNames[platform]}</h4>
+              <h4 class="text-lg font-bold text-gray-800">${platformIcons[platform] || ''}${platformNames[platform]}</h4>
               <div class="space-x-2">
                 <button
                   onclick="resetTemplate('${platform}')"
@@ -7273,36 +7289,37 @@ async function generateSingleContent(contentIndex) {
     // 로딩 숨기기
     hideContentLoading(contentIndex);
     
+    // ✅ generation_id 생성 (UUID 대신 타임스탬프 기반)
+    const generationId = result.id || result.generation_id || `gen_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     // ✅ 히스토리 저장 (캘린더 등록용)
-    if (result.id) {
-      window.lastGenerationId = result.id;
-      console.log(`📝 [콘텐츠 #${contentIndex + 1}] Generation ID 저장:`, result.id);
+    window.lastGenerationId = generationId;
+    console.log(`📝 [콘텐츠 #${contentIndex + 1}] Generation ID 저장:`, generationId);
+    
+    // 콘텐츠 블록에 저장
+    contentBlocks[contentIndex].generationId = generationId;
+    contentBlocks[contentIndex].generated = true;
+    contentBlocks[contentIndex].results = result.data;
+    
+    // ✅ 히스토리에 저장
+    try {
+      const historyEntry = {
+        id: generationId,
+        brand,
+        keywords: enhancedKeywords,
+        platforms,
+        results: result.data,
+        createdAt: new Date().toISOString()
+      };
       
-      // 콘텐츠 블록에 저장
-      contentBlocks[contentIndex].generationId = result.id;
-      contentBlocks[contentIndex].generated = true;
-      contentBlocks[contentIndex].results = result.data;
-      
-      // ✅ 히스토리에 저장
-      try {
-        const historyEntry = {
-          id: result.id,
-          brand,
-          keywords: enhancedKeywords,
-          platforms,
-          results: result.data,
-          createdAt: new Date().toISOString()
-        };
-        
-        contentHistory.unshift(historyEntry);
-        if (contentHistory.length > 50) {
-          contentHistory = contentHistory.slice(0, 50);
-        }
-        
-        console.log(`✅ 히스토리 저장 완료:`, historyEntry.id);
-      } catch (error) {
-        console.error('❌ 히스토리 저장 실패:', error);
+      contentHistory.unshift(historyEntry);
+      if (contentHistory.length > 50) {
+        contentHistory = contentHistory.slice(0, 50);
       }
+      
+      console.log(`✅ 히스토리 저장 완료:`, historyEntry.id);
+    } catch (error) {
+      console.error('❌ 히스토리 저장 실패:', error);
     }
     
     // 결과 표시
