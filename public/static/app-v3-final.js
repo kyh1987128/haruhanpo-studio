@@ -3455,7 +3455,7 @@ function formatContent(content) {
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 }
 
-function switchTab(platform) {
+function switchTab(platform, eventOrElement) {
   // 모든 탭 버튼 비활성화
   document.querySelectorAll('.tab-button').forEach(btn => {
     btn.classList.remove('active');
@@ -3467,7 +3467,20 @@ function switchTab(platform) {
   });
   
   // 선택된 탭 활성화
-  event.target.classList.add('active');
+  if (eventOrElement && eventOrElement.target) {
+    // 이벤트 객체인 경우
+    eventOrElement.target.classList.add('active');
+  } else if (eventOrElement && eventOrElement.classList) {
+    // DOM 요소인 경우
+    eventOrElement.classList.add('active');
+  } else {
+    // 문자열만 전달된 경우 - 해당 탭 버튼 찾기
+    const tabButton = document.querySelector(`[onclick*="switchTab('${platform}'"]`);
+    if (tabButton) {
+      tabButton.classList.add('active');
+    }
+  }
+  
   document.getElementById(`tab-${platform}`).classList.remove('hidden');
 }
 
@@ -5907,23 +5920,26 @@ async function loadCalendarEvents() {
 
     // 예정일 이벤트 추가
     if (scheduleData.success && scheduleData.scheduled_content) {
+      // ✅ 이모지는 캘린더용 (FullCalendar는 HTML 미지원)
       const platformEmojis = {
         blog: '📝',
-        instagram: '📸',
-        instagramFeed: '📸',
-        instagram_feed: '📸',
+        instagram: '📷',
+        instagramFeed: '📷',
+        instagram_feed: '📷',
         instagram_reels: '🎬',
-        threads: '🧵',
-        youtube: '🎥',
-        youtube_shorts: '📱',
-        youtubeLongform: '🎬',
+        threads: '@',
+        youtube: '▶️',
+        youtube_longform: '▶️',
+        youtube_shorts: '▶️',
+        youtubeLongform: '▶️',
         linkedin: '💼',
-        facebook: '👍',
+        facebook: '📘',
         twitter: '🐦',
         kakaotalk: '💬',
         naverband: '🎵',
         telegram: '✈️',
         tiktok: '🎵',
+        band: '🎵',
         shortform_multi: '🎬'
       };
 
@@ -5936,6 +5952,7 @@ async function loadCalendarEvents() {
         threads: '스레드',
         youtube: '유튜브',
         youtube_shorts: '유튜브쇼츠',
+        youtube_longform: '유튜브롱폼',
         youtubeLongform: '유튜브롱폼',
         linkedin: 'LinkedIn',
         facebook: '페이스북',
@@ -5945,6 +5962,29 @@ async function loadCalendarEvents() {
         telegram: '텔레그램',
         tiktok: '틱톡',
         shortform_multi: '숏폼'
+      };
+
+      // ✅ Font Awesome 아이콘 매핑 (목록/모달용)
+      const platformIcons = {
+        blog: { class: 'fas fa-blog', color: 'text-blue-600' },
+        instagram: { class: 'fab fa-instagram', color: 'text-pink-600' },
+        instagramFeed: { class: 'fab fa-instagram', color: 'text-pink-600' },
+        instagram_feed: { class: 'fab fa-instagram', color: 'text-pink-600' },
+        instagram_reels: { class: 'fab fa-instagram', color: 'text-purple-600' },
+        threads: { class: 'fas fa-at', color: 'text-black' },
+        youtube: { class: 'fab fa-youtube', color: 'text-red-600' },
+        youtube_longform: { class: 'fab fa-youtube', color: 'text-red-600' },
+        youtube_shorts: { class: 'fab fa-youtube', color: 'text-red-500' },
+        youtubeLongform: { class: 'fab fa-youtube', color: 'text-red-600' },
+        linkedin: { class: 'fab fa-linkedin', color: 'text-blue-700' },
+        facebook: { class: 'fab fa-facebook', color: 'text-blue-600' },
+        twitter: { class: 'fab fa-twitter', color: 'text-blue-400' },
+        kakaotalk: { class: 'fas fa-comment-dots', color: 'text-yellow-500' },
+        naverband: { class: 'fas fa-users', color: 'text-green-600' },
+        band: { class: 'fas fa-users', color: 'text-green-600' },
+        telegram: { class: 'fab fa-telegram', color: 'text-blue-500' },
+        tiktok: { class: 'fab fa-tiktok', color: 'text-black' },
+        shortform_multi: { class: 'fas fa-film', color: 'text-purple-600' }
       };
 
       scheduleData.scheduled_content.forEach(item => {
@@ -6129,8 +6169,25 @@ function showEventDetails(event) {
     telegram: '텔레그램'
   };
 
+  // ✅ Font Awesome 아이콘 매핑
+  const platformIcons = {
+    blog: { class: 'fas fa-blog', color: 'text-blue-600' },
+    instagram: { class: 'fab fa-instagram', color: 'text-pink-600' },
+    instagramFeed: { class: 'fab fa-instagram', color: 'text-pink-600' },
+    threads: { class: 'fas fa-at', color: 'text-gray-800' },
+    youtube: { class: 'fab fa-youtube', color: 'text-red-600' },
+    youtubeLongform: { class: 'fab fa-youtube', color: 'text-red-600' },
+    linkedin: { class: 'fab fa-linkedin', color: 'text-blue-700' },
+    facebook: { class: 'fab fa-facebook', color: 'text-blue-600' },
+    twitter: { class: 'fab fa-twitter', color: 'text-blue-400' },
+    kakaotalk: { class: 'fas fa-comment-dots', color: 'text-yellow-500' },
+    naverband: { class: 'fas fa-users', color: 'text-green-600' },
+    telegram: { class: 'fab fa-telegram', color: 'text-blue-500' }
+  };
+
   const status = statusLabels[props.publish_status] || '초안';
   const platform = platformNames[props.platform] || props.platform;
+  const iconData = platformIcons[props.platform] || { class: 'fas fa-file', color: 'text-gray-600' };
   const title = props.content_title || event.title.replace(/^[^\s]+\s/, ''); // 이모지 제거
   const content = props.content ? props.content.substring(0, 300) : '내용 없음';
   
@@ -6157,7 +6214,9 @@ function showEventDetails(event) {
     <div class="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center" id="eventDetailsModal">
       <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg mx-4 w-full max-h-[90vh] overflow-y-auto">
         <div class="text-center mb-6">
-          <div class="text-5xl mb-4">${event.title.split(' ')[0]}</div>
+          <div class="text-5xl mb-4">
+            <i class="${iconData.class} ${iconData.color}"></i>
+          </div>
           <h3 class="text-2xl font-bold text-gray-800 mb-2">${platform}</h3>
           <p class="text-gray-600">${status}</p>
         </div>
@@ -6194,22 +6253,22 @@ function showEventDetails(event) {
         
         <div class="flex gap-2 mb-4">
           <button onclick="changeEventStatus('${props.generation_id}', '${props.platform}', 'scheduled')" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
-            📅 예정
+            <i class="fas fa-calendar-check mr-1"></i>예정
           </button>
           <button onclick="changeEventStatus('${props.generation_id}', '${props.platform}', 'published')" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm">
-            ✅ 발행
+            <i class="fas fa-check mr-1"></i>발행
           </button>
           <button onclick="changeEventStatus('${props.generation_id}', '${props.platform}', 'cancelled')" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm">
-            ❌ 취소
+            <i class="fas fa-times mr-1"></i>취소
           </button>
         </div>
         
         <div class="flex gap-2 mb-4">
           <button onclick="viewFullContent('${props.generation_id}')" class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm">
-            📄 보기
+            <i class="fas fa-eye mr-1"></i>보기
           </button>
           <button onclick="deleteScheduledEvent('${props.generation_id}')" class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm">
-            🗑️ 삭제
+            <i class="fas fa-trash mr-1"></i>삭제
           </button>
         </div>
         
@@ -6373,8 +6432,8 @@ async function viewFullContent(generationId) {
     // 모달 닫기
     closeEventDetailsModal();
     
-    // 생성 탭으로 전환
-    switchTab('generate');
+    // 생성 탭으로 전환 (문자열만 전달)
+    switchTab('generate', null);
     
     showToast('✅ 콘텐츠를 불러왔습니다', 'success');
     
@@ -6626,25 +6685,27 @@ function renderScheduledContentList(contentList) {
     shortform_multi: '숏폼 통합'
   };
 
-  // ✅ 플랫폼 이모지 추가
-  const platformEmojis = {
-    blog: '📝',
-    instagram: '📸',
-    instagramFeed: '📸',
-    instagram_feed: '📸',
-    instagram_reels: '🎬',
-    threads: '🧵',
-    youtube: '🎥',
-    youtube_shorts: '📱',
-    youtubeLongform: '🎬',
-    linkedin: '💼',
-    facebook: '👍',
-    twitter: '🐦',
-    kakaotalk: '💬',
-    naverband: '🎵',
-    telegram: '✈️',
-    tiktok: '🎵',
-    shortform_multi: '🎬'
+  // ✅ Font Awesome 아이콘 매핑
+  const platformIcons = {
+    blog: { class: 'fas fa-blog', color: 'text-blue-600' },
+    instagram: { class: 'fab fa-instagram', color: 'text-pink-600' },
+    instagramFeed: { class: 'fab fa-instagram', color: 'text-pink-600' },
+    instagram_feed: { class: 'fab fa-instagram', color: 'text-pink-600' },
+    instagram_reels: { class: 'fab fa-instagram', color: 'text-pink-600' },
+    threads: { class: 'fas fa-at', color: 'text-gray-800' },
+    youtube: { class: 'fab fa-youtube', color: 'text-red-600' },
+    youtube_shorts: { class: 'fab fa-youtube', color: 'text-red-600' },
+    youtube_longform: { class: 'fab fa-youtube', color: 'text-red-600' },
+    youtubeLongform: { class: 'fab fa-youtube', color: 'text-red-600' },
+    linkedin: { class: 'fab fa-linkedin', color: 'text-blue-800' },
+    facebook: { class: 'fab fa-facebook', color: 'text-blue-700' },
+    twitter: { class: 'fab fa-twitter', color: 'text-blue-400' },
+    kakaotalk: { class: 'fas fa-comment-dots', color: 'text-yellow-500' },
+    naverband: { class: 'fas fa-users', color: 'text-green-700' },
+    band: { class: 'fas fa-users', color: 'text-green-700' },
+    telegram: { class: 'fab fa-telegram', color: 'text-blue-500' },
+    tiktok: { class: 'fab fa-tiktok', color: 'text-black' },
+    shortform_multi: { class: 'fas fa-film', color: 'text-purple-600' }
   };
 
   const statusBadges = {
@@ -6683,7 +6744,7 @@ function renderScheduledContentList(contentList) {
     // platforms 배열의 모든 플랫폼 표시
     const platformsList = (item.platforms || [item.platform]).map(platform => {
       const platformName = platformNames[platform] || platform || '알 수 없음';
-      const emoji = platformEmojis[platform] || '📄';
+      const iconData = platformIcons[platform] || { class: 'fas fa-file', color: 'text-gray-600' };
       
       // ✅ 플랫폼별 상태 사용
       const platformStatus = (item.platform_status && item.platform_status[platform]) || item.publish_status || 'draft';
@@ -6721,7 +6782,9 @@ function renderScheduledContentList(contentList) {
       return `
         <div class="border-l-4 border-blue-400 pl-3 mb-2">
           <div class="flex items-center gap-2 mb-1">
-            <span class="text-lg font-bold text-gray-800">${emoji} ${platformName}</span>
+            <span class="text-lg font-bold text-gray-800">
+              <i class="${iconData.class} ${iconData.color} mr-1"></i>${platformName}
+            </span>
             ${platformStatusBadge}
           </div>
           <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
@@ -6731,16 +6794,16 @@ function renderScheduledContentList(contentList) {
           <p class="text-sm text-gray-600 line-clamp-2">${content.substring(0, 100)}${content.length > 100 ? '...' : ''}</p>
           <div class="flex gap-1 mt-2">
             <button onclick="changePublishStatus('${item.id}', '${platform}', 'scheduled')" class="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition" title="예정으로 변경">
-              📅
+              <i class="fas fa-calendar-check"></i>
             </button>
             <button onclick="changePublishStatus('${item.id}', '${platform}', 'published')" class="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition" title="발행완료로 변경">
-              ✅
+              <i class="fas fa-check"></i>
             </button>
             <button onclick="changePublishStatus('${item.id}', '${platform}', 'cancelled')" class="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition" title="취소">
-              ❌
+              <i class="fas fa-times"></i>
             </button>
             <button onclick="viewFullContent('${item.id}')" class="px-2 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-700 transition" title="전체 보기">
-              📄
+              <i class="fas fa-eye"></i>
             </button>
           </div>
         </div>
