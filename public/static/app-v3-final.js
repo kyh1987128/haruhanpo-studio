@@ -5956,22 +5956,16 @@ async function loadCalendarEvents() {
             let title = platformName; // 기본값: 플랫폼 이름
             let content = '내용 없음';
             
-            // 🔍 디버깅: results 구조 출력
-            console.log(`🔍 [${platform}] results:`, item.results);
-            console.log(`🔍 [${platform}] results keys:`, item.results ? Object.keys(item.results) : 'null');
-            
             if (item.results && typeof item.results === 'object') {
               const platformData = item.results[platform];
-              console.log(`🔍 [${platform}] platformData:`, platformData);
               
               if (platformData) {
-                // 콘텐츠가 문자열로 직접 저장되어 있는 경우
+                // ✅ 콘텐츠가 문자열로 직접 저장되어 있는 경우
                 if (typeof platformData === 'string') {
                   content = platformData;
                   title = platformData.substring(0, 50) + (platformData.length > 50 ? '...' : '');
-                  console.log(`✅ [${platform}] 문자열 콘텐츠 추출 성공:`, content.substring(0, 50));
                 }
-                // 객체인 경우
+                // ✅ 객체인 경우
                 else if (typeof platformData === 'object') {
                   // 제목 추출
                   if (platformData.title) {
@@ -5986,16 +5980,9 @@ async function loadCalendarEvents() {
                   // 콘텐츠 추출
                   if (platformData.content) {
                     content = platformData.content;
-                    console.log(`✅ [${platform}] 객체 콘텐츠 추출 성공:`, content.substring(0, 50));
-                  } else {
-                    console.warn(`⚠️ [${platform}] platformData.content 없음:`, platformData);
                   }
                 }
-              } else {
-                console.warn(`⚠️ [${platform}] platformData 없음. 사용 가능한 키:`, Object.keys(item.results));
               }
-            } else {
-              console.warn(`⚠️ [${platform}] item.results가 객체가 아님:`, item.results);
             }
             
             // 이벤트 추가
@@ -6030,13 +6017,21 @@ async function loadCalendarEvents() {
             const firstPlatform = Object.keys(item.results)[0];
             if (firstPlatform && item.results[firstPlatform]) {
               const firstData = item.results[firstPlatform];
-              if (firstData.title) {
-                title = firstData.title;
-              } else if (firstData.content) {
-                title = firstData.content.substring(0, 50) + (firstData.content.length > 50 ? '...' : '');
+              // ✅ 문자열로 직접 저장된 경우
+              if (typeof firstData === 'string') {
+                content = firstData;
+                title = firstData.substring(0, 50) + (firstData.length > 50 ? '...' : '');
               }
-              if (firstData.content) {
-                content = firstData.content;
+              // ✅ 객체인 경우
+              else if (typeof firstData === 'object') {
+                if (firstData.title) {
+                  title = firstData.title;
+                } else if (firstData.content) {
+                  title = firstData.content.substring(0, 50) + (firstData.content.length > 50 ? '...' : '');
+                }
+                if (firstData.content) {
+                  content = firstData.content;
+                }
               }
             }
           }
@@ -6566,16 +6561,24 @@ function renderScheduledContentList(contentList) {
       if (item.results && typeof item.results === 'object') {
         const platformData = item.results[platform];
         if (platformData) {
-          if (platformData.title) {
-            title = platformData.title;
-          } else if (platformData.content) {
-            const contentText = platformData.content;
-            if (contentText && contentText.length > 0) {
-              title = contentText.substring(0, 50) + (contentText.length > 50 ? '...' : '');
-            }
+          // ✅ 문자열로 직접 저장된 경우
+          if (typeof platformData === 'string') {
+            content = platformData;
+            title = platformData.substring(0, 50) + (platformData.length > 50 ? '...' : '');
           }
-          if (platformData.content) {
-            content = platformData.content;
+          // 객체인 경우
+          else if (typeof platformData === 'object') {
+            if (platformData.title) {
+              title = platformData.title;
+            } else if (platformData.content) {
+              const contentText = platformData.content;
+              if (contentText && contentText.length > 0) {
+                title = contentText.substring(0, 50) + (contentText.length > 50 ? '...' : '');
+              }
+            }
+            if (platformData.content) {
+              content = platformData.content;
+            }
           }
         }
       }
