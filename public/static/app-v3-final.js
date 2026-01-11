@@ -5900,36 +5900,46 @@ function initFullCalendar() {
     eventContent: function(arg) {
       const props = arg.event.extendedProps;
       const platform = props.platform;
+      const status = props.publish_status || 'draft';
+      
+      // 상태별 배경색
+      const bgColors = {
+        published: '#10b981',
+        cancelled: '#ef4444',
+        scheduled: '#3b82f6',
+        draft: '#3b82f6'
+      };
+      const bgColor = bgColors[status] || '#3b82f6';
       
       // Font Awesome 아이콘 매핑
       const platformIcons = {
-        blog: { class: 'fas fa-blog', color: 'text-blue-600' },
-        instagram: { class: 'fab fa-instagram', color: 'text-pink-600' },
-        instagramFeed: { class: 'fab fa-instagram', color: 'text-pink-600' },
-        instagram_feed: { class: 'fab fa-instagram', color: 'text-pink-600' },
-        instagram_reels: { class: 'fab fa-instagram', color: 'text-purple-600' },
-        threads: { class: 'fas fa-at', color: 'text-gray-800' },
-        youtube: { class: 'fab fa-youtube', color: 'text-red-600' },
-        youtube_longform: { class: 'fab fa-youtube', color: 'text-red-600' },
-        youtube_shorts: { class: 'fab fa-youtube', color: 'text-red-500' },
-        youtubeLongform: { class: 'fab fa-youtube', color: 'text-red-600' },
-        linkedin: { class: 'fab fa-linkedin', color: 'text-blue-700' },
-        facebook: { class: 'fab fa-facebook', color: 'text-blue-600' },
-        twitter: { class: 'fab fa-twitter', color: 'text-blue-400' },
-        kakaotalk: { class: 'fas fa-comment-dots', color: 'text-yellow-500' },
-        naverband: { class: 'fas fa-users', color: 'text-green-600' },
-        band: { class: 'fas fa-users', color: 'text-green-600' },
-        telegram: { class: 'fab fa-telegram', color: 'text-blue-500' },
-        tiktok: { class: 'fab fa-tiktok', color: 'text-black' },
-        shortform_multi: { class: 'fas fa-film', color: 'text-purple-600' }
+        blog: { class: 'fas fa-blog', color: '#ffffff' },
+        instagram: { class: 'fab fa-instagram', color: '#ffffff' },
+        instagramFeed: { class: 'fab fa-instagram', color: '#ffffff' },
+        instagram_feed: { class: 'fab fa-instagram', color: '#ffffff' },
+        instagram_reels: { class: 'fab fa-instagram', color: '#ffffff' },
+        threads: { class: 'fas fa-at', color: '#ffffff' },
+        youtube: { class: 'fab fa-youtube', color: '#ffffff' },
+        youtube_longform: { class: 'fab fa-youtube', color: '#ffffff' },
+        youtube_shorts: { class: 'fab fa-youtube', color: '#ffffff' },
+        youtubeLongform: { class: 'fab fa-youtube', color: '#ffffff' },
+        linkedin: { class: 'fab fa-linkedin', color: '#ffffff' },
+        facebook: { class: 'fab fa-facebook', color: '#ffffff' },
+        twitter: { class: 'fab fa-twitter', color: '#ffffff' },
+        kakaotalk: { class: 'fas fa-comment-dots', color: '#ffffff' },
+        naverband: { class: 'fas fa-users', color: '#ffffff' },
+        band: { class: 'fas fa-users', color: '#ffffff' },
+        telegram: { class: 'fab fa-telegram', color: '#ffffff' },
+        tiktok: { class: 'fab fa-tiktok', color: '#ffffff' },
+        shortform_multi: { class: 'fas fa-film', color: '#ffffff' }
       };
       
-      const iconData = platformIcons[platform] || { class: 'fas fa-file', color: 'text-gray-600' };
+      const iconData = platformIcons[platform] || { class: 'fas fa-file', color: '#ffffff' };
       
       // 메모인 경우 기본 렌더링
       if (props.type === 'memo') {
         return {
-          html: `<div class="fc-event-main-frame">
+          html: `<div class="fc-event-main-frame" style="background-color: #f59e0b; color: white; padding: 2px 4px; border-radius: 3px;">
             <div class="fc-event-time">${arg.timeText}</div>
             <div class="fc-event-title-container">
               <div class="fc-event-title fc-sticky">${arg.event.title}</div>
@@ -5938,13 +5948,13 @@ function initFullCalendar() {
         };
       }
       
-      // 예정일 이벤트: Font Awesome 아이콘 + 제목
+      // 예정일 이벤트: Font Awesome 아이콘 + 제목 + 배경색
       return {
-        html: `<div class="fc-event-main-frame">
+        html: `<div class="fc-event-main-frame" style="background-color: ${bgColor}; color: white; padding: 2px 4px; border-radius: 3px;">
           <div class="fc-event-time">${arg.timeText}</div>
           <div class="fc-event-title-container">
             <div class="fc-event-title fc-sticky">
-              <i class="${iconData.class}" style="margin-right: 4px;"></i>
+              <i class="${iconData.class}" style="margin-right: 4px; color: ${iconData.color};"></i>
               ${arg.event.title}
             </div>
           </div>
