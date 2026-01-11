@@ -5938,37 +5938,61 @@ async function loadCalendarEvents() {
       };
 
       scheduleData.scheduled_content.forEach(item => {
-        const emoji = platformEmojis[item.platform] || '📄';
-        const name = platformNames[item.platform] || item.platform || '콘텐츠';
+        // platforms 배열에서 첫 번째 플랫폼 사용
+        const platform = item.platforms?.[0] || item.platform || 'unknown';
+        const emoji = platformEmojis[platform] || '📄';
+        const platformName = platformNames[platform] || platform || '콘텐츠';
         const status = item.publish_status || 'draft';
         
-        // results (jsonb)에서 콘텐츠 추출
+        // results (jsonb)에서 제목과 콘텐츠 추출
+        let title = platformName; // 기본값: 플랫폼 이름
         let content = '내용 없음';
+        
         if (item.results && typeof item.results === 'object') {
-          // item.platform에 해당하는 콘텐츠 찾기
-          const platformData = item.results[item.platform];
-          if (platformData && platformData.content) {
-            content = platformData.content;
+          // 해당 플랫폼의 데이터 찾기
+          const platformData = item.results[platform];
+          if (platformData) {
+            // 제목 추출
+            if (platformData.title) {
+              title = platformData.title;
+            } else if (platformData.content) {
+              // 제목이 없으면 콘텐츠의 첫 50자를 제목으로 사용
+              title = platformData.content.substring(0, 50) + (platformData.content.length > 50 ? '...' : '');
+            }
+            // 콘텐츠 추출
+            if (platformData.content) {
+              content = platformData.content;
+            }
           } else {
-            // 첫 번째 플랫폼 콘텐츠 사용
+            // 플랫폼 데이터가 없으면 첫 번째 플랫폼 데이터 사용
             const firstPlatform = Object.keys(item.results)[0];
-            if (firstPlatform && item.results[firstPlatform]?.content) {
-              content = item.results[firstPlatform].content;
+            if (firstPlatform && item.results[firstPlatform]) {
+              const firstData = item.results[firstPlatform];
+              if (firstData.title) {
+                title = firstData.title;
+              } else if (firstData.content) {
+                title = firstData.content.substring(0, 50) + (firstData.content.length > 50 ? '...' : '');
+              }
+              if (firstData.content) {
+                content = firstData.content;
+              }
             }
           }
         }
         
         events.push({
           id: item.id,
-          title: `${emoji} ${name}`,
+          title: `${emoji} ${title}`, // 실제 콘텐츠 제목 사용
           start: item.scheduled_date,
           backgroundColor: status === 'published' ? '#10b981' : status === 'cancelled' ? '#ef4444' : '#3b82f6',
           extendedProps: {
             type: 'schedule',
             generation_id: item.id,
-            platform: item.platform || 'unknown',
+            platform: platform,
+            platforms: item.platforms || [platform],
             publish_status: status,
             content: content,
+            content_title: title, // 제목 추가
             created_at: item.created_at,
             results: item.results // 전체 results 저장
           }
@@ -6451,18 +6475,55 @@ function renderScheduledContentList(contentList) {
         })
       : '미설정';
     
-    const platform = platformNames[item.platform] || item.platform;
+    // platforms 배열에서 첫 번째 플랫폼 사용
+    const platform = item.platforms?.[0] || item.platform || 'unknown';
+    const platformName = platformNames[platform] || platform || '알 수 없음';
     const statusBadge = statusBadges[item.publish_status] || statusBadges.draft;
+
+    // results (jsonb)에서 제목과 콘텐츠 추출
+    let title = platformName;
+    let content = '내용 없음';
+    
+    if (item.results && typeof item.results === 'object') {
+      const platformData = item.results[platform];
+      if (platformData) {
+        if (platformData.title) {
+          title = platformData.title;
+        } else if (platformData.content) {
+          title = platformData.content.substring(0, 50) + (platformData.content.length > 50 ? '...' : '');
+        }
+        if (platformData.content) {
+          content = platformData.content;
+        }
+      } else {
+        // 첫 번째 플랫폼 데이터 사용
+        const firstPlatform = Object.keys(item.results)[0];
+        if (firstPlatform && item.results[firstPlatform]) {
+          const firstData = item.results[firstPlatform];
+          if (firstData.title) {
+            title = firstData.title;
+          } else if (firstData.content) {
+            title = firstData.content.substring(0, 50) + (firstData.content.length > 50 ? '...' : '');
+          }
+          if (firstData.content) {
+            content = firstData.content;
+          }
+        }
+      }
+    }
 
     return `
       <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
         <div class="flex justify-between items-start mb-2">
           <div class="flex-1">
             <div class="flex items-center gap-2 mb-1">
-              <span class="font-semibold text-gray-800">${platform}</span>
+              <span class="font-semibold text-gray-800">${title}</span>
               ${statusBadge}
             </div>
-            <p class="text-sm text-gray-600 line-clamp-2">${item.content?.substring(0, 100) || '내용 없음'}...</p>
+            <div class="flex items-center gap-2 text-xs text-gray-500 mb-2">
+              <span><i class="fas fa-share-alt mr-1"></i>${platformName}</span>
+            </div>
+            <p class="text-sm text-gray-600 line-clamp-2">${content.substring(0, 100)}${content.length > 100 ? '...' : ''}</p>
           </div>
         </div>
         <div class="flex justify-between items-center mt-3">
