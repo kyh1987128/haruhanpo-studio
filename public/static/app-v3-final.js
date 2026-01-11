@@ -3516,7 +3516,7 @@ function displayResults(data, platforms) {
             </button>
             <button
               type="button"
-              onclick="downloadAsText('${platform}')"
+              onclick="downloadAsText(${JSON.stringify(data[platform]).replace(/"/g, '&quot;')}, '${platformNames[platform]}.txt')"
               class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold flex items-center gap-2"
               title="텍스트 파일로 다운로드"
             >
@@ -3544,12 +3544,14 @@ function displayResults(data, platforms) {
         >${data[platform]}</textarea>
         <div id="editor-actions-${platform}" class="hidden mt-3 flex gap-2 justify-end">
           <button
+            type="button"
             onclick="cancelEdit('${platform}')"
             class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
           >
             ✖ 취소
           </button>
           <button
+            type="button"
             onclick="saveEdit('${platform}')"
             class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold"
           >
@@ -3624,15 +3626,14 @@ function switchTab(platform, eventOrElement) {
   }
 }
 
-function copyToClipboard(platform) {
-  const content = resultData[platform];
+function copyToClipboard(content, platformName) {
   if (!content) {
     showToast('❌ 복사할 내용이 없습니다', 'error');
     return;
   }
   
   navigator.clipboard.writeText(content).then(() => {
-    showToast('✅ 복사됨!', 'success');
+    showToast(`✅ ${platformName || '콘텐츠'} 복사됨!`, 'success');
   }).catch(err => {
     console.error('복사 실패:', err);
     showToast('❌ 복사에 실패했습니다', 'error');
@@ -3702,30 +3703,17 @@ function saveEdit(platform) {
 // ===================================
 // 다운로드 기능
 // ===================================
-function downloadAsText(platform) {
-  const content = resultData[platform];
+function downloadAsText(content, filename) {
   if (!content) {
     showToast('❌ 다운로드할 내용이 없습니다', 'error');
     return;
   }
   
-  const platformNames = {
-    blog: '네이버블로그',
-    instagram: '인스타그램',
-    instagram_feed: '인스타그램 피드',
-    threads: '스레드',
-    youtube: '유튜브숏폼',
-    youtube_longform: '유튜브 롱폼',
-    shortform_multi: '숏폼',
-    tiktok: '틱톡',
-    instagram_reels: '인스타 릴스',
-    metadata_generation: '메타데이터',
-    twitter: '트위터(X)' // ✅ 신규 추가
-  };
-  
-  const brand = document.getElementById('brand').value.trim() || 'content';
-  const date = new Date().toISOString().split('T')[0];
-  const filename = `${brand}_${platformNames[platform]}_${date}.txt`;
+  // filename이 없으면 기본값 생성
+  if (!filename) {
+    const date = new Date().toISOString().split('T')[0];
+    filename = `content_${date}.txt`;
+  }
   
   const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
