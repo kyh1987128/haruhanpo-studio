@@ -1108,7 +1108,8 @@ export const htmlTemplate = `
                     </button>
                 </div>
                 
-                <!-- 검색 & 필터 -->
+                <!-- 검색 & 필터 (제거됨) -->
+                <!--
                 <div class="mb-4 space-y-3">
                     <div class="flex gap-3">
                         <div class="flex-1">
@@ -1185,6 +1186,7 @@ export const htmlTemplate = `
                         </select>
                     </div>
                 </div>
+                -->
                 
                 <div id="historyList" class="space-y-3 overflow-y-auto flex-1"></div>
             </div>

@@ -3461,21 +3461,21 @@ function displayResults(data, platforms) {
   const tabContents = document.getElementById('tabContents');
   
   const platformNames = {
-    blog: '📝 네이버 블로그',
-    instagram: '📸 인스타그램',
-    instagram_feed: '📸 인스타그램 피드',
-    threads: '🧵 스레드',
-    twitter: '🐦 트위터(X)',
-    linkedin: '💼 LinkedIn',
-    kakaotalk: '💬 카카오톡',
-    brunch: '📖 브런치',
-    youtube: '🎬 유튜브',
-    youtube_shorts: '🎬 유튜브 숏폼',
-    youtube_longform: '🎥 유튜브 롱폼',
-    shortform_multi: '📱 숏폼',
-    tiktok: '🎵 틱톡',
-    instagram_reels: '🎬 인스타 릴스',
-    metadata_generation: '📊 메타데이터'
+    blog: '<i class="fas fa-blog text-blue-600 mr-2"></i>네이버 블로그',
+    instagram: '<i class="fab fa-instagram text-pink-600 mr-2"></i>인스타그램',
+    instagram_feed: '<i class="fab fa-instagram text-pink-600 mr-2"></i>인스타그램 피드',
+    threads: '<i class="fas fa-at text-gray-800 mr-2"></i>스레드',
+    twitter: '<i class="fab fa-twitter text-blue-400 mr-2"></i>트위터(X)',
+    linkedin: '<i class="fab fa-linkedin text-blue-700 mr-2"></i>LinkedIn',
+    kakaotalk: '<i class="fas fa-comment text-yellow-500 mr-2"></i>카카오톡',
+    brunch: '<i class="fas fa-book-open text-orange-600 mr-2"></i>브런치',
+    youtube: '<i class="fab fa-youtube text-red-600 mr-2"></i>유튜브',
+    youtube_shorts: '<i class="fab fa-youtube text-red-600 mr-2"></i>유튜브 숏폼',
+    youtube_longform: '<i class="fab fa-youtube text-red-600 mr-2"></i>유튜브 롱폼',
+    shortform_multi: '<i class="fas fa-film text-purple-600 mr-2"></i>숏폼',
+    tiktok: '<i class="fab fa-tiktok text-gray-900 mr-2"></i>틱톡',
+    instagram_reels: '<i class="fab fa-instagram text-pink-600 mr-2"></i>인스타 릴스',
+    metadata_generation: '<i class="fas fa-tags text-purple-600 mr-2"></i>메타데이터'
   };
   
   // 탭 버튼 생성
