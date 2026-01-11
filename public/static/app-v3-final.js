@@ -6099,13 +6099,13 @@ async function loadCalendarEvents() {
             // 이벤트 추가
             events.push({
               id: `${item.id}-${platform}-${index}`, // 고유 ID
-              title: `${emoji} ${platformName}: ${title}`, // ✅ 플랫폼 이름 추가
+              title: `${platformName}: ${title}`, // ✅ 이모지 제거, 플랫폼 이름만
               start: item.scheduled_date,
               backgroundColor: backgroundColor,
               extendedProps: {
                 type: 'schedule',
                 generation_id: item.id,
-                platform: platform, // ✅ 플랫폼 정보 저장
+                platform: platform, // ✅ 플랫폼 정보 저장 (eventContent에서 사용)
                 platforms: item.platforms,
                 publish_status: status, // ✅ 플랫폼별 상태
                 content: content,
@@ -6149,13 +6149,13 @@ async function loadCalendarEvents() {
           
           events.push({
             id: item.id,
-            title: `${emoji} ${platformName}: ${title}`, // ✅ 플랫폼 이름 추가
+            title: `${platformName}: ${title}`, // ✅ 이모지 제거, 플랫폼 이름만
             start: item.scheduled_date,
             backgroundColor: backgroundColor,
             extendedProps: {
               type: 'schedule',
               generation_id: item.id,
-              platform: platform,
+              platform: platform, // ✅ 플랫폼 정보 저장 (eventContent에서 사용)
               platforms: [platform],
               publish_status: status,
               content: content,
@@ -6486,15 +6486,12 @@ async function viewFullContent(generationId) {
       return;
     }
     
-    // 결과 표시 (히스토리와 동일)
+    // ✅ 히스토리와 동일하게 처리
     resultData = item.results;
     displayResults(item.results, item.platforms);
     
     // 모달 닫기
     closeEventDetailsModal();
-    
-    // 생성 탭으로 전환 (문자열만 전달)
-    switchTab('generate', null);
     
     showToast('✅ 콘텐츠를 불러왔습니다', 'success');
     
