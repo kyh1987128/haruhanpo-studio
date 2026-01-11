@@ -6590,7 +6590,7 @@ async function deleteScheduledEvent(eventId, platform) {
 /**
  * 전체 콘텐츠 보기 (히스토리처럼)
  */
-async function viewFullContent(generationId) {
+async function viewFullContent(generationId, platform) {
   const user = window.currentUser;
   if (!user || !user.id) {
     showToast('로그인이 필요합니다.', 'error');
@@ -6632,9 +6632,15 @@ async function viewFullContent(generationId) {
       return;
     }
     
-    // ✅ 히스토리와 동일하게 처리
-    resultData = item.results;
-    displayResults(item.results, item.platforms);
+    // ✅ platform이 지정된 경우 해당 플랫폼만 표시
+    if (platform && item.results[platform]) {
+      resultData = { [platform]: item.results[platform] };
+      displayResults(resultData, [platform]);
+    } else {
+      // platform이 없으면 전체 표시
+      resultData = item.results;
+      displayResults(item.results, item.platforms);
+    }
     
     // 모달 닫기
     closeEventDetailsModal();
@@ -7007,7 +7013,7 @@ function renderScheduledContentList(contentList) {
             <button onclick="changePublishStatus('${item.id}', '${platform}', 'cancelled')" class="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition" title="취소">
               <i class="fas fa-times"></i>
             </button>
-            <button onclick="viewFullContent('${item.id}')" class="px-2 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-700 transition" title="전체 보기">
+            <button onclick="viewFullContent('${item.id}', '${platform}')" class="px-2 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-700 transition" title="전체 보기">
               <i class="fas fa-eye"></i>
             </button>
           </div>
