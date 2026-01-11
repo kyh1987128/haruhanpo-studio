@@ -3554,7 +3554,7 @@ app.get('/api/scheduled-content', async (c) => {
 app.post('/api/schedule-content', async (c) => {
   try {
     const body = await c.req.json();
-    const { generation_id, scheduled_date, publish_status, user_id } = body;
+    const { generation_id, scheduled_date, publish_status, user_id, platform } = body;
     
     if (!generation_id || !user_id) {
       return c.json({ 
@@ -3568,10 +3568,10 @@ app.post('/api/schedule-content', async (c) => {
       c.env.SUPABASE_SERVICE_KEY
     );
     
-    // 권한 확인 (본인 콘텐츠만 수정 가능)
+    // 권한 확인 및 현재 데이터 조회
     const { data: existing, error: checkError } = await supabase
       .from('generations')
-      .select('id, user_id')
+      .select('id, user_id, platform_status, publish_status')
       .eq('id', generation_id)
       .eq('user_id', user_id)
       .single();
@@ -3585,13 +3585,29 @@ app.post('/api/schedule-content', async (c) => {
     
     // 발행 예정일 설정/수정
     const updateData: any = {};
+    
+    // ✅ scheduled_date는 전체 콘텐츠에 적용 (플랫폼 공유)
     if (scheduled_date !== undefined) {
       updateData.scheduled_date = scheduled_date;
     }
-    if (publish_status !== undefined) {
+    
+    // ✅ 플랫폼별 상태 관리
+    if (publish_status !== undefined && platform) {
+      // 플랫폼이 지정된 경우: 해당 플랫폼만 업데이트
+      const currentPlatformStatus = existing.platform_status || {};
+      currentPlatformStatus[platform] = publish_status;
+      
+      updateData.platform_status = currentPlatformStatus;
+      
+      console.log(`📝 플랫폼별 상태 설정: ${generation_id} → ${platform}: ${publish_status}`);
+    } else if (publish_status !== undefined) {
+      // 플랫폼이 없는 경우: 기존 방식 (하위 호환)
       updateData.publish_status = publish_status;
+      
+      console.log(`📝 전체 상태 설정: ${generation_id} → ${publish_status}`);
     }
-    updateData.updated_at = new Date().toISOString(); // ✅ 주석 해제 (DB 컬럼 추가 완료)
+    
+    updateData.updated_at = new Date().toISOString();
     
     const { data, error } = await supabase
       .from('generations')

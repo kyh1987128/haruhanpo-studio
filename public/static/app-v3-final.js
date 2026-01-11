@@ -6657,7 +6657,8 @@ async function saveSchedule(generationId, platform, scheduledDate) {
         generation_id: generationId,
         user_id: user.id,
         scheduled_date: scheduledDate,
-        publish_status: 'scheduled'
+        publish_status: 'scheduled',
+        platform: platform // ✅ 플랫폼 정보 추가
       })
     });
 
