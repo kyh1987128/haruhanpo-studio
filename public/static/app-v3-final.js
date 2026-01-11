@@ -6100,7 +6100,8 @@ function showEventDetails(event) {
 
   const status = statusLabels[props.publish_status] || '초안';
   const platform = platformNames[props.platform] || props.platform;
-  const content = props.content ? props.content.substring(0, 200) + '...' : '내용 없음';
+  const title = props.content_title || event.title.replace(/^[^\s]+\s/, ''); // 이모지 제거
+  const content = props.content ? props.content.substring(0, 300) : '내용 없음';
   
   const scheduledDate = new Date(event.start).toLocaleString('ko-KR', {
     year: 'numeric',
@@ -6113,7 +6114,7 @@ function showEventDetails(event) {
 
   const html = `
     <div class="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center" id="eventDetailsModal">
-      <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg mx-4 w-full">
+      <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg mx-4 w-full max-h-[90vh] overflow-y-auto">
         <div class="text-center mb-6">
           <div class="text-5xl mb-4">${event.title.split(' ')[0]}</div>
           <h3 class="text-2xl font-bold text-gray-800 mb-2">${platform}</h3>
@@ -6130,23 +6131,30 @@ function showEventDetails(event) {
           
           <div class="bg-gray-50 p-4 rounded-lg">
             <p class="text-sm font-semibold text-gray-700 mb-2">
+              <i class="fas fa-heading mr-2"></i>제목
+            </p>
+            <p class="text-sm text-gray-800 font-medium">${title}</p>
+          </div>
+          
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <p class="text-sm font-semibold text-gray-700 mb-2">
               <i class="fas fa-file-alt mr-2"></i>콘텐츠 미리보기
             </p>
-            <p class="text-sm text-gray-600">${content}</p>
+            <p class="text-sm text-gray-600 whitespace-pre-wrap">${content}</p>
           </div>
         </div>
         
         <div class="flex gap-2 mb-4">
-          <button onclick="changeEventStatus('${event.id}', 'scheduled')" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
+          <button onclick="changeEventStatus('${props.generation_id}', 'scheduled')" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
             📅 예정
           </button>
-          <button onclick="changeEventStatus('${event.id}', 'published')" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm">
+          <button onclick="changeEventStatus('${props.generation_id}', 'published')" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm">
             ✅ 발행
           </button>
-          <button onclick="changeEventStatus('${event.id}', 'cancelled')" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm">
+          <button onclick="changeEventStatus('${props.generation_id}', 'cancelled')" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm">
             ❌ 취소
           </button>
-          <button onclick="deleteScheduledEvent('${event.id}')" class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm">
+          <button onclick="deleteScheduledEvent('${props.generation_id}')" class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm">
             🗑️ 삭제
           </button>
         </div>
