@@ -747,9 +747,6 @@ export const htmlTemplate = `
                     </select>
                 </div>
                 
-                <!-- 개별 콘텐츠 입력 영역 -->
-                <div id="contentBlocksContainer" class="space-y-4"></div>
-
                 <!-- 🔥 NEW v6.1: 하이브리드 전략 선택 -->
                 <div class="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl border-2 border-purple-200">
                     <div class="flex items-start mb-4">
@@ -918,6 +915,9 @@ export const htmlTemplate = `
                         </div>
                     </div>
                 </div>
+
+                <!-- 개별 콘텐츠 입력 영역 -->
+                <div id="contentBlocksContainer" class="space-y-4"></div>
 
             </form>
         </div>

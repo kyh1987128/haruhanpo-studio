@@ -79,7 +79,7 @@ function renderKeywordAnalysisCard() {
 
         <p style="opacity: 0.95; margin-bottom: 1.5rem; line-height: 1.6; font-size: 1rem;">
           키워드 분석 시 <strong>크레딧 1개</strong>가 차감됩니다.<br>
-          무료 크레딧부터 우선 사용되며, 이미 분석된 키워드는 <strong>무료로 재조회</strong> 가능합니다.
+          무료 크레딧부터 우선 사용됩니다.
         </p>
 
         <div style="position: relative; margin-bottom: 1.5rem;">

@@ -2654,6 +2654,12 @@ async function handleGenerate() {
     if (result.success) {
       hideLoadingOverlay();
       resultData = result.data;
+      
+      // ✅ generationId 저장 (캘린더 등록용)
+      const generationId = result.id || result.generation_id || `gen_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      window.lastGenerationId = generationId;
+      console.log('✅ 일괄 생성 ID 저장:', generationId);
+      
       displayResults(result.data, result.generatedPlatforms);
       saveToHistory(formData, result.data);
       
@@ -3522,7 +3528,7 @@ function displayResults(data, platforms) {
               DOC
             </button>
             <button
-              onclick="copyToClipboard('${platform}')"
+              onclick="copyToClipboard(${JSON.stringify(data[platform]).replace(/"/g, '&quot;')}, '${platformNames[platform]}')"
               class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold flex items-center gap-2"
             >
               <i class="fas fa-copy"></i>
@@ -4558,8 +4564,13 @@ async function saveToHistory(formData, results) {
       contentHistory = contentHistory.slice(0, 50);
     }
     
+    
+    // ✅ 저장된 ID 반환 (캘린더 등록용)
+    return { success: true, id: result.id };
+    
   } catch (error) {
     console.error('❌ 히스토리 저장 실패:', error);
+    return { success: false, error: error.message };
   }
 }
 
@@ -7443,7 +7454,7 @@ async function generateSingleContent(contentIndex) {
     
     // ✅ DB에 히스토리 저장 (영구 보관)
     try {
-      await saveToHistory(
+      const historyResult = await saveToHistory(
         {
           brand: brand,
           keywords: enhancedKeywords,
@@ -7451,7 +7462,15 @@ async function generateSingleContent(contentIndex) {
         },
         result.data
       );
-      console.log(`✅ DB 히스토리 저장 완료:`, generationId);
+      
+      // ✅ DB에서 반환된 ID를 generationId로 사용 (캘린더 등록용)
+      if (historyResult && historyResult.id) {
+        contentBlocks[contentIndex].generationId = historyResult.id;
+        window.lastGenerationId = historyResult.id;
+        console.log(`✅ DB 히스토리 저장 완료 및 ID 업데이트:`, historyResult.id);
+      } else {
+        console.log(`✅ DB 히스토리 저장 완료 (기존 ID 유지):`, generationId);
+      }
     } catch (error) {
       console.error('❌ DB 히스토리 저장 실패:', error);
     }
