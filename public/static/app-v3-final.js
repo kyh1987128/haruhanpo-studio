@@ -5938,12 +5938,17 @@ async function loadCalendarEvents() {
       };
 
       scheduleData.scheduled_content.forEach(item => {
-        const status = item.publish_status || 'draft';
-        const backgroundColor = status === 'published' ? '#10b981' : status === 'cancelled' ? '#ef4444' : '#3b82f6';
+        // ✅ platform_status 우선, 없으면 기존 publish_status 사용
+        const platformStatus = item.platform_status || {};
+        const fallbackStatus = item.publish_status || 'draft';
         
         // 각 플랫폼마다 별도 이벤트 생성
         if (item.platforms && Array.isArray(item.platforms)) {
           item.platforms.forEach((platform, index) => {
+            // ✅ 플랫폼별 상태 사용
+            const status = platformStatus[platform] || fallbackStatus;
+            const backgroundColor = status === 'published' ? '#10b981' : status === 'cancelled' ? '#ef4444' : '#3b82f6';
+            
             const emoji = platformEmojis[platform] || '📄';
             const platformName = platformNames[platform] || platform || '콘텐츠';
             
@@ -5981,9 +5986,9 @@ async function loadCalendarEvents() {
               extendedProps: {
                 type: 'schedule',
                 generation_id: item.id,
-                platform: platform,
+                platform: platform, // ✅ 플랫폼 정보 저장
                 platforms: item.platforms,
-                publish_status: status,
+                publish_status: status, // ✅ 플랫폼별 상태
                 content: content,
                 content_title: title,
                 created_at: item.created_at,
@@ -6145,13 +6150,13 @@ function showEventDetails(event) {
         </div>
         
         <div class="flex gap-2 mb-4">
-          <button onclick="changeEventStatus('${props.generation_id}', 'scheduled')" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
+          <button onclick="changeEventStatus('${props.generation_id}', '${props.platform}', 'scheduled')" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
             📅 예정
           </button>
-          <button onclick="changeEventStatus('${props.generation_id}', 'published')" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm">
+          <button onclick="changeEventStatus('${props.generation_id}', '${props.platform}', 'published')" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm">
             ✅ 발행
           </button>
-          <button onclick="changeEventStatus('${props.generation_id}', 'cancelled')" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm">
+          <button onclick="changeEventStatus('${props.generation_id}', '${props.platform}', 'cancelled')" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm">
             ❌ 취소
           </button>
           <button onclick="deleteScheduledEvent('${props.generation_id}')" class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm">
@@ -6180,9 +6185,12 @@ function closeEventDetailsModal() {
 }
 
 /**
- * 이벤트 상태 변경
+ * 이벤트 상태 변경 (플랫폼별)
+ * @param {string} generationId - 원본 generation ID
+ * @param {string} platform - 플랫폼 이름 (예: 'blog', 'instagram')
+ * @param {string} newStatus - 새 상태 ('draft', 'scheduled', 'published', 'cancelled')
  */
-async function changeEventStatus(eventId, newStatus) {
+async function changeEventStatus(generationId, platform, newStatus) {
   const user = window.currentUser;
   if (!user || !user.id) {
     showToast('로그인이 필요합니다.', 'error');
@@ -6190,11 +6198,12 @@ async function changeEventStatus(eventId, newStatus) {
   }
 
   try {
-    const response = await fetch(`/api/schedule-content/${eventId}`, {
+    const response = await fetch(`/api/schedule-content/${generationId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         user_id: user.id,
+        platform: platform, // ✅ 플랫폼 정보 전달
         publish_status: newStatus
       })
     });
@@ -6205,7 +6214,7 @@ async function changeEventStatus(eventId, newStatus) {
       throw new Error(data.error || '상태 변경 실패');
     }
 
-    showToast('발행 상태가 변경되었습니다.', 'success');
+    showToast(`${platform} 발행 상태가 변경되었습니다.`, 'success');
     closeEventDetailsModal();
     
     // 캘린더 새로고침
@@ -6525,6 +6534,10 @@ function renderScheduledContentList(contentList) {
     const platformsList = (item.platforms || [item.platform]).map(platform => {
       const platformName = platformNames[platform] || platform || '알 수 없음';
       
+      // ✅ 플랫폼별 상태 사용
+      const platformStatus = (item.platform_status && item.platform_status[platform]) || item.publish_status || 'draft';
+      const platformStatusBadge = statusBadges[platformStatus] || statusBadges.draft;
+      
       // results (jsonb)에서 해당 플랫폼의 제목과 콘텐츠 추출
       let title = platformName;
       let content = '내용 없음';
@@ -6550,11 +6563,23 @@ function renderScheduledContentList(contentList) {
         <div class="border-l-4 border-blue-400 pl-3 mb-2">
           <div class="flex items-center gap-2 mb-1">
             <span class="text-sm font-medium text-gray-800">${title}</span>
+            ${platformStatusBadge}
           </div>
           <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
             <span><i class="fas fa-share-alt mr-1"></i>${platformName}</span>
           </div>
           <p class="text-sm text-gray-600 line-clamp-2">${content.substring(0, 100)}${content.length > 100 ? '...' : ''}</p>
+          <div class="flex gap-1 mt-2">
+            <button onclick="changePublishStatus('${item.id}', '${platform}', 'scheduled')" class="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition" title="예정으로 변경">
+              📅
+            </button>
+            <button onclick="changePublishStatus('${item.id}', '${platform}', 'published')" class="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition" title="발행완료로 변경">
+              ✅
+            </button>
+            <button onclick="changePublishStatus('${item.id}', '${platform}', 'cancelled')" class="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition" title="취소">
+              ❌
+            </button>
+          </div>
         </div>
       `;
     }).join('');
@@ -6563,7 +6588,6 @@ function renderScheduledContentList(contentList) {
       <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
         <div class="flex justify-between items-start mb-3">
           <div class="flex items-center gap-2">
-            ${statusBadge}
             <span class="text-xs text-gray-500">
               <i class="fas fa-clock mr-1"></i>${scheduledDate}
             </span>
@@ -6573,27 +6597,15 @@ function renderScheduledContentList(contentList) {
         <div class="space-y-2">
           ${platformsList}
         </div>
-        
-        <div class="flex justify-end gap-2 mt-3 pt-3 border-t border-gray-100">
-          <button onclick="changePublishStatus('${item.id}', 'scheduled')" class="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition" title="예정으로 변경">
-            📅
-          </button>
-          <button onclick="changePublishStatus('${item.id}', 'published')" class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition" title="발행완료로 변경">
-            ✅
-          </button>
-          <button onclick="changePublishStatus('${item.id}', 'cancelled')" class="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition" title="취소">
-            ❌
-          </button>
-        </div>
       </div>
     `;
   }).join('');
 }
 
 /**
- * 발행 상태 변경 (리스트 뷰)
+ * 발행 상태 변경 (리스트 뷰 - 플랫폼별)
  */
-async function changePublishStatus(generationId, newStatus) {
+async function changePublishStatus(generationId, platform, newStatus) {
   const user = window.currentUser;
   if (!user || !user.id) {
     showToast('로그인이 필요합니다.', 'error');
@@ -6606,6 +6618,7 @@ async function changePublishStatus(generationId, newStatus) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         user_id: user.id,
+        platform: platform, // ✅ 플랫폼 정보 전달
         publish_status: newStatus
       })
     });

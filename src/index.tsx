@@ -3619,12 +3619,12 @@ app.post('/api/schedule-content', async (c) => {
   }
 });
 
-// 3️⃣ 발행 상태 변경 (예정일 삭제 포함)
+// 3️⃣ 발행 상태 변경 (플랫폼별 독립 관리)
 app.patch('/api/schedule-content/:id', async (c) => {
   try {
     const generation_id = c.req.param('id');
     const body = await c.req.json();
-    const { publish_status, user_id, scheduled_date } = body;
+    const { publish_status, user_id, scheduled_date, platform } = body;
     
     if (!generation_id || !user_id) {
       return c.json({ 
@@ -3649,10 +3649,10 @@ app.patch('/api/schedule-content/:id', async (c) => {
       c.env.SUPABASE_SERVICE_KEY
     );
     
-    // 권한 확인
+    // 권한 확인 및 현재 데이터 조회
     const { data: existing, error: checkError } = await supabase
       .from('generations')
-      .select('id, user_id')
+      .select('id, user_id, platform_status, publish_status')
       .eq('id', generation_id)
       .eq('user_id', user_id)
       .single();
@@ -3669,8 +3669,20 @@ app.patch('/api/schedule-content/:id', async (c) => {
       updated_at: new Date().toISOString()
     };
     
-    if (publish_status !== undefined) {
+    // ✅ 플랫폼별 상태 관리
+    if (publish_status !== undefined && platform) {
+      // 플랫폼이 지정된 경우: 해당 플랫폼만 업데이트
+      const currentPlatformStatus = existing.platform_status || {};
+      currentPlatformStatus[platform] = publish_status;
+      
+      updateData.platform_status = currentPlatformStatus;
+      
+      console.log(`📝 플랫폼별 상태 변경: ${generation_id} → ${platform}: ${publish_status}`);
+    } else if (publish_status !== undefined) {
+      // 플랫폼이 없는 경우: 기존 방식 (하위 호환)
       updateData.publish_status = publish_status;
+      
+      console.log(`📝 전체 상태 변경: ${generation_id} → ${publish_status}`);
     }
     
     // scheduled_date가 명시적으로 null이면 삭제
@@ -3693,7 +3705,7 @@ app.patch('/api/schedule-content/:id', async (c) => {
       return c.json({ success: false, error: error.message }, 500);
     }
     
-    console.log(`✅ 발행 상태 변경: ${generation_id} → ${publish_status || 'N/A'}`);
+    console.log(`✅ 발행 상태 변경 완료: ${generation_id}`);
     
     return c.json({
       success: true,
