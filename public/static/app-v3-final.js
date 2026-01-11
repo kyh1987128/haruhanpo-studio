@@ -5988,7 +5988,7 @@ async function loadCalendarEvents() {
             // 이벤트 추가
             events.push({
               id: `${item.id}-${platform}-${index}`, // 고유 ID
-              title: `${emoji} ${title}`,
+              title: `${emoji} ${platformName}: ${title}`, // ✅ 플랫폼 이름 추가
               start: item.scheduled_date,
               backgroundColor: backgroundColor,
               extendedProps: {
@@ -6038,7 +6038,7 @@ async function loadCalendarEvents() {
           
           events.push({
             id: item.id,
-            title: `${emoji} ${title}`,
+            title: `${emoji} ${platformName}: ${title}`, // ✅ 플랫폼 이름 추가
             start: item.scheduled_date,
             backgroundColor: backgroundColor,
             extendedProps: {
@@ -6132,6 +6132,16 @@ function showEventDetails(event) {
     minute: '2-digit',
     hour12: true
   });
+  
+  // ✅ 생성일 추가
+  const createdDate = props.created_at ? new Date(props.created_at).toLocaleString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  }) : '정보 없음';
 
   const html = `
     <div class="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center" id="eventDetailsModal">
@@ -6148,6 +6158,13 @@ function showEventDetails(event) {
               <i class="fas fa-calendar mr-2"></i>발행 예정일
             </p>
             <p class="text-gray-800">${scheduledDate}</p>
+          </div>
+          
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <p class="text-sm font-semibold text-gray-700 mb-2">
+              <i class="fas fa-clock mr-2"></i>생성일
+            </p>
+            <p class="text-gray-800">${createdDate}</p>
           </div>
           
           <div class="bg-gray-50 p-4 rounded-lg">
@@ -6174,6 +6191,12 @@ function showEventDetails(event) {
           </button>
           <button onclick="changeEventStatus('${props.generation_id}', '${props.platform}', 'cancelled')" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm">
             ❌ 취소
+          </button>
+        </div>
+        
+        <div class="flex gap-2 mb-4">
+          <button onclick="viewFullContent('${props.generation_id}')" class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm">
+            📄 보기
           </button>
           <button onclick="deleteScheduledEvent('${props.generation_id}')" class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm">
             🗑️ 삭제
@@ -6285,6 +6308,49 @@ async function deleteScheduledEvent(eventId) {
   } catch (error) {
     console.error('예정일 삭제 오류:', error);
     showToast('예정일 삭제에 실패했습니다', 'error');
+  }
+}
+
+/**
+ * 전체 콘텐츠 보기 (히스토리처럼)
+ */
+async function viewFullContent(generationId) {
+  const user = window.currentUser;
+  if (!user || !user.id) {
+    showToast('로그인이 필요합니다.', 'error');
+    return;
+  }
+
+  try {
+    // 히스토리에서 해당 콘텐츠 찾기
+    const response = await fetch(`/api/history?user_id=${user.id}`);
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error('히스토리 로드 실패');
+    }
+    
+    const item = data.history.find(h => h.id === generationId);
+    if (!item) {
+      showToast('콘텐츠를 찾을 수 없습니다', 'error');
+      return;
+    }
+    
+    // 결과 표시 (히스토리와 동일)
+    resultData = item.results;
+    displayResults(item.results, item.platforms);
+    
+    // 모달 닫기
+    closeEventDetailsModal();
+    
+    // 생성 탭으로 전환
+    switchTab('generate');
+    
+    showToast('✅ 콘텐츠를 불러왔습니다', 'success');
+    
+  } catch (error) {
+    console.error('콘텐츠 보기 오류:', error);
+    showToast('콘텐츠를 불러오는데 실패했습니다', 'error');
   }
 }
 
@@ -6699,6 +6765,7 @@ window.showEventDetails = showEventDetails;
 window.closeEventDetailsModal = closeEventDetailsModal;
 window.changeEventStatus = changeEventStatus;
 window.deleteScheduledEvent = deleteScheduledEvent;
+window.viewFullContent = viewFullContent;
 window.openDateTimeModal = openDateTimeModal;
 window.closeDateTimeModal = closeDateTimeModal;
 window.confirmDateTimeSelection = confirmDateTimeSelection;
