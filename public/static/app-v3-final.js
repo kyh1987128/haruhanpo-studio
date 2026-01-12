@@ -8996,12 +8996,15 @@ async function handleKakaoLogin() {
   try {
     console.log('🟡 Kakao 로그인 시작');
     
-    // NEW v7.7: account_email 스코프 제외 (KOE205 에러 수정)
-    // Kakao 앱은 profile_nickname, profile_image만 승인됨
+    // NEW v7.8: queryParams로 스코프 강제 설정 (KOE205 완전 수정)
+    // Supabase가 자동으로 account_email을 추가하는 것을 방지
     const { data, error } = await supabaseClient.auth.signInWithOAuth({
       provider: 'kakao',
       options: {
-        scopes: 'profile_nickname profile_image'  // account_email 제외
+        scopes: 'profile_nickname profile_image',  // account_email 제외
+        queryParams: {
+          scope: 'profile_nickname profile_image'  // 명시적 오버라이드
+        }
       }
     });
     
