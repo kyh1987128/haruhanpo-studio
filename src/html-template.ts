@@ -448,6 +448,47 @@ export const htmlTemplate = `
             <!-- 구분선 -->
             <div class="border-t border-gray-200 my-6"></div>
             
+            <!-- 하이브리드 AI 전략 선택 -->
+            <div class="mb-6">
+                <h3 class="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-robot text-purple-500"></i>
+                    하이브리드 AI 전략
+                </h3>
+                <div class="space-y-3">
+                    <label class="flex items-start gap-3 p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-500 transition">
+                        <input type="radio" name="aiStrategy" value="auto" checked class="mt-1">
+                        <div>
+                            <div class="font-semibold text-sm text-gray-800">🤖 자동 선택 (권장)</div>
+                            <div class="text-xs text-gray-500 mt-1">AI가 이미지와 키워드를 분석하여 최적의 전략을 자동으로 선택합니다.</div>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-500 transition">
+                        <input type="radio" name="aiStrategy" value="integrated" class="mt-1">
+                        <div>
+                            <div class="font-semibold text-sm text-gray-800">🔗 통합형</div>
+                            <div class="text-xs text-gray-500 mt-1">이미지와 키워드를 함께 분석하여 자연스러운 콘텐츠를 생성합니다.</div>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-500 transition">
+                        <input type="radio" name="aiStrategy" value="image-first" class="mt-1">
+                        <div>
+                            <div class="font-semibold text-sm text-gray-800">🖼️ 이미지 중심</div>
+                            <div class="text-xs text-gray-500 mt-1">이미지 분석을 우선으로 하고 키워드는 보조 정보로 활용합니다.</div>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-500 transition">
+                        <input type="radio" name="aiStrategy" value="keyword-first" class="mt-1">
+                        <div>
+                            <div class="font-semibold text-sm text-gray-800">🔑 키워드 중심</div>
+                            <div class="text-xs text-gray-500 mt-1">키워드를 중심으로 콘텐츠를 생성하고 이미지는 참고 자료로 활용합니다.</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- 구분선 -->
+            <div class="border-t border-gray-200 my-6"></div>
+            
             <!-- 입력 필드 (12개) - 2열 6행 레이아웃 -->
             <div class="mb-6">
                 <h3 class="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -538,47 +579,6 @@ export const htmlTemplate = `
                             <option value="기타">기타</option>
                         </select>
                     </div>
-                </div>
-            </div>
-            
-            <!-- 구분선 -->
-            <div class="border-t border-gray-200 my-6"></div>
-            
-            <!-- 하이브리드 AI 전략 선택 -->
-            <div class="mb-6">
-                <h3 class="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <i class="fas fa-robot text-purple-500"></i>
-                    하이브리드 AI 전략
-                </h3>
-                <div class="space-y-3">
-                    <label class="flex items-start gap-3 p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-500 transition">
-                        <input type="radio" name="aiStrategy" value="auto" checked class="mt-1">
-                        <div>
-                            <div class="font-semibold text-sm text-gray-800">🤖 자동 선택 (권장)</div>
-                            <div class="text-xs text-gray-500 mt-1">AI가 이미지와 키워드를 분석하여 최적의 전략을 자동으로 선택합니다.</div>
-                        </div>
-                    </label>
-                    <label class="flex items-start gap-3 p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-500 transition">
-                        <input type="radio" name="aiStrategy" value="integrated" class="mt-1">
-                        <div>
-                            <div class="font-semibold text-sm text-gray-800">🔗 통합형</div>
-                            <div class="text-xs text-gray-500 mt-1">이미지와 키워드를 함께 분석하여 자연스러운 콘텐츠를 생성합니다.</div>
-                        </div>
-                    </label>
-                    <label class="flex items-start gap-3 p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-500 transition">
-                        <input type="radio" name="aiStrategy" value="image-first" class="mt-1">
-                        <div>
-                            <div class="font-semibold text-sm text-gray-800">🖼️ 이미지 중심</div>
-                            <div class="text-xs text-gray-500 mt-1">이미지 분석을 우선으로 하고 키워드는 보조 정보로 활용합니다.</div>
-                        </div>
-                    </label>
-                    <label class="flex items-start gap-3 p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-500 transition">
-                        <input type="radio" name="aiStrategy" value="keyword-first" class="mt-1">
-                        <div>
-                            <div class="font-semibold text-sm text-gray-800">🔑 키워드 중심</div>
-                            <div class="text-xs text-gray-500 mt-1">키워드를 중심으로 콘텐츠를 생성하고 이미지는 참고 자료로 활용합니다.</div>
-                        </div>
-                    </label>
                 </div>
             </div>
         </aside>
@@ -1267,7 +1267,7 @@ export const htmlTemplate = `
 
     <!-- 푸터 (환불정책 포함) -->
     <footer class="bg-gray-900 text-gray-300 py-12 mt-20">
-        <div class="max-w-7xl mx-auto px-4">
+        <div class="mx-4 px-6">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
                 <!-- 서비스 정보 -->
                 <div>
@@ -1819,24 +1819,12 @@ export const htmlTemplate = `
       </div>
     </div>
 
-    <script src="/static/i18n.js?v=15.0.0"></script>
-    
-    <!-- FullCalendar JS -->
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
-    
-    <!-- Flatpickr JS -->
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ko.js"></script>
-    
-    <script src="/static/app-v3-final.js?v=15.0.0"></script>
-    <script src="/static/keyword-analysis.js?v=18.0.0"></script>
-    <script src="/static/keyword-extended.js?v=15.0.0"></script>
     </main><!-- main-content -->
     
     </div><!-- layout-container -->
     
     <!-- JavaScript -->
-    <script src="/static/i18n.js?v=15.0.0"></script>
+    <script src="/static/i18n.js?v=19.0.0"></script>
     
     <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
@@ -1845,9 +1833,9 @@ export const htmlTemplate = `
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ko.js"></script>
     
-    <script src="/static/app-v3-final.js?v=15.0.0"></script>
-    <script src="/static/keyword-analysis.js?v=18.0.0"></script>
-    <script src="/static/keyword-extended.js?v=15.0.0"></script>
+    <script src="/static/app-v3-final.js?v=19.0.0"></script>
+    <script src="/static/keyword-analysis.js?v=19.0.0"></script>
+    <script src="/static/keyword-extended.js?v=19.0.0"></script>
     
     <script>
       // ========================================
