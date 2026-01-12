@@ -21,27 +21,9 @@ function renderKeywordAnalysisCard() {
     loadKeywordCreditStatus();
   }
   
-  // ✅ 비로그인 시 안내 메시지만 표시
+  // ✅ 비로그인 시 아무것도 표시하지 않음
   if (!isLoggedIn) {
-    return `
-      <div data-keyword-analysis-card style="
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 3rem 2rem; border-radius: 20px; color: white;
-        margin-bottom: 2rem; box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-        text-align: center;
-      ">
-        <h2 style="font-size: 2rem; font-weight: 800; margin-bottom: 1rem;">
-          🔐 키워드 AI 심층 분석
-        </h2>
-        <p style="font-size: 1.1rem; margin-bottom: 1.5rem; line-height: 1.6; opacity: 0.95;">
-          AI가 키워드의 시장성, 경쟁도, 트렌드를 분석하고<br>
-          최적의 마케팅 전략을 추천해드립니다.
-        </p>
-        <p style="font-size: 1rem; margin-bottom: 1.5rem; opacity: 0.9;">
-          💎 가입만 해도 <strong>월 30크레딧 무료</strong> 제공!
-        </p>
-      </div>
-    `;
+    return '';
   }
   
   // ✅ 로그인 시에만 크레딧 정보 표시
