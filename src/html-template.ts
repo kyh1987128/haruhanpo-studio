@@ -255,17 +255,6 @@ export const htmlTemplate = `
 </head>
 <body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen">
     <!-- 사이드바 오버레이 (모바일) -->
-    <div id="sidebarOverlay" class="sidebar-overlay xl:hidden" onclick="toggleSidebar()"></div>
-    
-    <!-- 사이드바 토글 버튼 (모바일/태블릿) -->
-    <button 
-      id="sidebarToggleBtn" 
-      onclick="toggleSidebar()"
-      class="fixed top-4 right-4 z-50 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-3 rounded-full shadow-lg xl:hidden hover:shadow-xl transition"
-      title="메뉴 열기">
-      <i class="fas fa-bars text-xl"></i>
-    </button>
-    
     <!-- 네비게이션 바 (전체 너비) -->
     <nav class="bg-white shadow-md mx-4 mt-4 rounded-2xl px-6 py-4">
             <div class="flex justify-between items-center">
@@ -1945,7 +1934,7 @@ export const htmlTemplate = `
     </div><!-- layout-container -->
     
     <!-- JavaScript -->
-    <script src="/static/i18n.js?v=19.0.0"></script>
+    <script src="/static/i18n.js?v=20.0.0"></script>
     
     <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
@@ -1954,8 +1943,8 @@ export const htmlTemplate = `
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ko.js"></script>
     
-    <script src="/static/app-v3-final.js?v=19.0.0"></script>
-    <script src="/static/keyword-analysis.js?v=19.0.0"></script>
+    <script src="/static/app-v3-final.js?v=20.0.0"></script>
+    <script src="/static/keyword-analysis.js?v=20.0.0"></script>
     <script src="/static/keyword-extended.js?v=19.0.0"></script>
     
     <script>
