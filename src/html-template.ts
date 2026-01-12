@@ -1555,13 +1555,13 @@ export const htmlTemplate = `
             const freeCredits = user.free_credits || localUser.free_credits || 0;
             const paidCredits = user.paid_credits || localUser.paid_credits || 0;
             const totalCredits = freeCredits + paidCredits;
-            let creditText = `${totalCredits}크레딧`;
+            let creditText = totalCredits + '크레딧';
             if (freeCredits > 0 && paidCredits > 0) {
-                creditText = `${totalCredits}크레딧 (무료 ${freeCredits} + 유료 ${paidCredits})`;
+                creditText = totalCredits + '크레딧 (무료 ' + freeCredits + ' + 유료 ' + paidCredits + ')';
             } else if (freeCredits > 0) {
-                creditText = `${totalCredits}크레딧 (무료)`;
+                creditText = totalCredits + '크레딧 (무료)';
             } else if (paidCredits > 0) {
-                creditText = `${totalCredits}크레딧 (유료)`;
+                creditText = totalCredits + '크레딧 (유료)';
             }
             
             const tierLabels = {
