@@ -340,7 +340,7 @@ export const htmlTemplate = `
                 </div>
                 
                 <div class="flex items-center space-x-4">
-                    <!-- 사용자 정보 영역 -->
+                    <!-- 사용자 정보 영역 (로그인 시) -->
                     <div id="userInfoArea" class="hidden">
                         <div class="flex items-center space-x-3">
                             <div class="text-right">
@@ -364,24 +364,12 @@ export const htmlTemplate = `
                             </button>
                         </div>
                     </div>
-                    
-                    <!-- 게스트/로그인 버튼 영역 -->
-                    <div id="guestArea">
-                        <div class="flex items-center space-x-3">
-                            <button id="signupBtn" class="px-4 py-2 bg-white text-purple-600 border-2 border-purple-600 rounded-lg hover:bg-purple-50 transition font-semibold">
-                                회원가입
-                            </button>
-                            <button id="loginBtn" class="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition font-semibold">
-                                <i class="fas fa-sign-in-alt mr-2"></i>로그인
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </div>
         </nav>
     
     <!-- 3열 레이아웃 컨테이너 (PC: 좌측 패널 + 메인 + 우측 사이드바) -->
-    <div class="max-w-screen-2xl mx-auto px-4 py-4 layout-container">
+    <div class="mx-4 px-0 py-4 layout-container">
         
         <!-- ========================================
              좌측 패널 (회원 기능 + 키워드 분석 + 입력 필드)
@@ -496,6 +484,25 @@ export const htmlTemplate = `
                     transform: translateY(-1px);
                 }
             </style>
+            
+            <!-- 구분선 -->
+            <div class="border-t border-gray-200 my-6"></div>
+            
+            <!-- 📅 캘린더 (좌측 패널) -->
+            <div class="mb-4">
+                <h3 class="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <i class="fas fa-calendar-alt text-blue-500"></i>
+                    콘텐츠 캘린더
+                </h3>
+                <div id="leftCalendarView" class="bg-white rounded-lg border border-gray-200 p-3">
+                    <!-- 미니 캘린더 (간단한 버전) -->
+                    <div class="text-center text-gray-500 text-xs py-4">
+                        <i class="fas fa-calendar-check text-3xl mb-2 text-gray-300"></i>
+                        <p>예정된 콘텐츠</p>
+                        <p class="mt-1">준비 중...</p>
+                    </div>
+                </div>
+            </div>
         </aside>
         
         <!-- 메인 콘텐츠 영역 -->
@@ -2298,20 +2305,14 @@ export const htmlTemplate = `
         <!-- 구분선 -->
         <div class="my-3 border-t-2 border-gray-200"></div>
         
-        <!-- 크레딧 정보 -->
-        <div class="px-5 py-4 bg-gradient-to-br from-purple-50 to-blue-50 m-3 rounded-lg">
-          <div class="text-sm text-gray-600 mb-2">💎 내 크레딧</div>
-          <div class="text-2xl font-bold text-purple-600" id="sidebarCredits">-</div>
-          <button onclick="showCreditPurchaseModal()" class="mt-3 w-full px-3 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm rounded-lg hover:shadow-lg transition">
-            <i class="fas fa-plus mr-1"></i>크레딧 충전
+        <!-- 회원가입 / 로그인 버튼 (항상 표시) -->
+        <div class="px-5 py-4">
+          <button id="sidebarSignupBtn" class="w-full px-4 py-3 mb-3 bg-white text-purple-600 border-2 border-purple-600 rounded-lg hover:bg-purple-50 transition font-semibold">
+            <i class="fas fa-user-plus mr-2"></i>회원가입
           </button>
-        </div>
-        
-        <!-- 사용자 정보 -->
-        <div class="px-5 py-3">
-          <div class="text-xs text-gray-500 mb-1">로그인 사용자</div>
-          <div class="font-semibold text-gray-700" id="sidebarUserName">-</div>
-          <div class="text-xs text-gray-500 mt-1" id="sidebarUserEmail">-</div>
+          <button id="sidebarLoginBtn" class="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition font-semibold">
+            <i class="fas fa-sign-in-alt mr-2"></i>로그인
+          </button>
         </div>
       </nav>
     </aside>
@@ -2370,28 +2371,17 @@ export const htmlTemplate = `
           if (window.innerWidth < 1280) toggleSidebar();
         });
         
-        // 사이드바 크레딧/사용자 정보 업데이트 함수
-        window.updateSidebarInfo = function() {
-          const credits = document.getElementById('userCredits')?.textContent || '-';
-          const userName = document.getElementById('userName')?.textContent || '-';
-          const userEmail = sessionStorage.getItem('userEmail') || '-';
-          
-          document.getElementById('sidebarCredits').textContent = credits;
-          document.getElementById('sidebarUserName').textContent = userName;
-          document.getElementById('sidebarUserEmail').textContent = userEmail;
-        };
+        // 우측 사이드바 회원가입 버튼
+        document.getElementById('sidebarSignupBtn')?.addEventListener('click', function() {
+          document.getElementById('signupBtn')?.click();
+          if (window.innerWidth < 1280) toggleSidebar();
+        });
         
-        // 초기 업데이트
-        updateSidebarInfo();
-        
-        // MutationObserver로 크레딧 변경 감지 (폴링 대신)
-        const creditElement = document.getElementById('userCredits');
-        if (creditElement) {
-          const observer = new MutationObserver(() => {
-            updateSidebarInfo();
-          });
-          observer.observe(creditElement, { childList: true, characterData: true, subtree: true });
-        }
+        // 우측 사이드바 로그인 버튼
+        document.getElementById('sidebarLoginBtn')?.addEventListener('click', function() {
+          document.getElementById('loginBtn')?.click();
+          if (window.innerWidth < 1280) toggleSidebar();
+        });
       });
     </script>
 </body>
