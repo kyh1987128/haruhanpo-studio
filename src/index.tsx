@@ -449,16 +449,11 @@ app.post('/api/generate', async (c) => {
       console.log(`✅ 비회원 체험 허용: ${ipAddress}`);
     }
 
-    // ✅ 회원 크레딧 체크 (차등 과금 적용)
+    // ✅ 회원 크레딧 체크 (플랫폼 1개당 1크레딧)
     if (!is_guest && user_id) {
-      // 🚨 크리티컬: 차등 과금 계산 (플랫폼 수에 따라)
+      // 🚨 크리티컬: 플랫폼 개수 = 크레딧 (1개당 1크레딧)
       const platformCount = platforms.length;
-      let requiredCredits = 1;
-      if (platformCount >= 4) {
-        requiredCredits = 4;
-      } else if (platformCount >= 2) {
-        requiredCredits = 2;
-      }
+      const requiredCredits = platformCount; // 플랫폼 개수만큼 크레딧 차감
       
       // 사용자 정보 조회 (2지갑 시스템)
       const { data: user, error: userError } = await supabase
@@ -655,15 +650,11 @@ app.post('/api/generate', async (c) => {
 
     console.log(`전략 결정: ${contentStrategy}. 콘텐츠 생성 시작...`);
 
-    // ✅ 차등 과금 시스템 (플랫폼 개수별 크레딧 차감)
+    // ✅ 크레딧 차감 시스템 (플랫폼 1개당 1크레딧)
     
-    // 1. 필요 크레딧 계산 함수
+    // 1. 필요 크레딧 계산 함수 (플랫폼 개수 = 크레딧)
     const calculateRequiredCredits = (platformCount: number): number => {
-      if (platformCount === 0) return 0;
-      if (platformCount === 1) return 1;
-      if (platformCount <= 3) return 2;    // 2-3개: 2크레딧
-      if (platformCount <= 9) return 4;    // 4-9개: 4크레딧
-      return 5;                            // 10-13개: 5크레딧 ✅
+      return platformCount; // 플랫폼 1개당 1크레딧
     };
     
     const requiredCredits = calculateRequiredCredits(platforms.length);
@@ -1236,6 +1227,517 @@ async function generateContent(
 // ========================================
 // 인증 API (NEW v7.2)
 // ========================================
+
+// 이메일 회원가입 엔드포인트 (NEW v7.3)
+app.post('/api/auth/signup', async (c) => {
+  try {
+    console.log('📝 /api/auth/signup 요청 받음');
+    
+    const { email, password } = await c.req.json();
+    const ip = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown';
+    const userAgent = c.req.header('user-agent') || 'unknown';
+    
+    console.log('📧 회원가입 요청:', { email, ip });
+    
+    if (!email || !password) {
+      return c.json({ 
+        success: false, 
+        error: '이메일과 비밀번호는 필수입니다' 
+      }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // 1️⃣ IP 차단 여부 확인
+    const { data: blockedIP } = await supabase
+      .from('ip_blocklist')
+      .select('*')
+      .eq('ip_address', ip)
+      .gt('blocked_until', new Date().toISOString())
+      .maybeSingle();
+    
+    if (blockedIP) {
+      const blockedUntil = new Date(blockedIP.blocked_until);
+      const hoursRemaining = Math.ceil((blockedUntil.getTime() - Date.now()) / (1000 * 60 * 60));
+      
+      console.warn('🚫 차단된 IP 접근:', { ip, blockedUntil });
+      
+      return c.json({ 
+        success: false, 
+        error: `이 IP는 24시간 동안 차단되었습니다. (남은 시간: ${hoursRemaining}시간)`,
+        blocked_until: blockedIP.blocked_until
+      }, 403);
+    }
+    
+    // 2️⃣ 24시간 내 가입 수 확인 (3개 제한)
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    
+    const { data: recentSignups, error: signupError } = await supabase
+      .from('ip_signup_tracking')
+      .select('id, email')
+      .eq('ip_address', ip)
+      .gte('signup_at', oneDayAgo);
+    
+    if (signupError) {
+      console.error('❌ IP 조회 실패:', signupError);
+      return c.json({ 
+        success: false, 
+        error: 'IP 확인 중 오류가 발생했습니다' 
+      }, 500);
+    }
+    
+    const signupCount = recentSignups?.length || 0;
+    const remainingSignups = Math.max(0, 3 - signupCount);
+    
+    console.log('📊 IP 가입 현황:', { ip, signupCount, remainingSignups });
+    
+    if (signupCount >= 3) {
+      // 3개 초과 시 IP 차단
+      const blockedUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      
+      await supabase
+        .from('ip_blocklist')
+        .insert({
+          ip_address: ip,
+          blocked_until: blockedUntil,
+          reason: '24시간 내 3개 계정 초과',
+          signup_attempts: signupCount
+        });
+      
+      console.warn('🚫 IP 차단 처리:', { ip, blockedUntil });
+      
+      return c.json({ 
+        success: false, 
+        error: '24시간 내 최대 3개 계정까지만 생성할 수 있습니다. IP가 24시간 동안 차단되었습니다.',
+        blocked_until: blockedUntil
+      }, 403);
+    }
+    
+    // 3️⃣ 이메일 재가입 제한 확인 (Supabase 가입 전 사전 체크)
+    const { data: restriction, error: restrictionError } = await supabase
+      .from('email_restriction')
+      .select('*')
+      .eq('email', email)
+      .maybeSingle();
+    
+    if (restrictionError) {
+      console.error('❌ 이메일 제한 조회 실패:', restrictionError);
+    }
+    
+    if (restriction) {
+      const now = new Date();
+      const restrictionUntil = restriction.restriction_until ? new Date(restriction.restriction_until) : null;
+      const deletionDate = restriction.last_deletion_at ? new Date(restriction.last_deletion_at).toISOString().split('T')[0] : 'Unknown';
+      
+      // 영구 차단
+      if (restriction.is_permanently_banned) {
+        console.warn('🚫 영구 차단된 이메일:', email);
+        return c.json({ 
+          success: false, 
+          error: '이 이메일은 영구적으로 가입이 제한되어 있습니다. 고객센터에 문의해주세요.',
+          error_code: 'ERR_PERMANENT_BAN'
+        }, 403);
+      }
+      
+      // 30일 재가입 제한
+      if (restrictionUntil && restrictionUntil > now) {
+        console.warn('⏰ 재가입 제한 중:', { email, restrictionUntil, deletionDate });
+        return c.json({ 
+          success: false, 
+          error: `탈퇴한 계정은 30일 후 재가입이 가능합니다. (탈퇴일: ${deletionDate})`,
+          error_code: 'ERR_REJOIN_LIMIT',
+          restriction_until: restriction.restriction_until,
+          deletion_date: deletionDate
+        }, 400);
+      }
+    }
+    
+    // 4️⃣ Supabase Auth 회원가입
+    console.log('🔐 Supabase 회원가입 시작:', email);
+    
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: false, // 이메일 인증 필요
+      user_metadata: {
+        signup_method: 'email',
+        ip_address: ip,
+        user_agent: userAgent
+      }
+    });
+    
+    if (authError) {
+      console.error('❌ Supabase 회원가입 실패:', authError);
+      
+      // NEW v7.5: DB 트리거 에러 파싱 (간단한 메시지)
+      const errorMsg = authError.message || '';
+      
+      // 재가입 제한 - DB 메시지 그대로 전달
+      if (errorMsg.includes('탈퇴한 계정은') || errorMsg.includes('30일 후 재가입')) {
+        return c.json({ 
+          success: false, 
+          error: errorMsg, // DB 메시지 그대로 (탈퇴일 포함)
+          error_code: 'ERR_REJOIN_LIMIT'
+        }, 400);
+      }
+      
+      // 영구 차단 (ERR_PERMANENT_BAN)
+      if (errorMsg.includes('영구적으로 가입이 제한') || errorMsg.includes('ERR_PERMANENT_BAN')) {
+        return c.json({ 
+          success: false, 
+          error: 'ERR_PERMANENT_BAN: 이 이메일은 가입이 제한되어 있습니다. 고객센터에 문의해주세요.',
+          error_code: 'ERR_PERMANENT_BAN'
+        }, 403);
+      }
+      
+      // 이미 존재하는 이메일
+      if (errorMsg.includes('already registered') || errorMsg.includes('이미 등록된')) {
+        return c.json({ 
+          success: false, 
+          error: '이미 가입된 이메일입니다. 로그인해주세요.',
+          error_code: 'EMAIL_EXISTS'
+        }, 400);
+      }
+      
+      // 기타 에러
+      return c.json({ 
+        success: false, 
+        error: errorMsg || '회원가입 중 오류가 발생했습니다'
+      }, 500);
+    }
+    
+    const userId = authData.user?.id;
+    
+    console.log('✅ Supabase 회원가입 성공:', { userId, email });
+    
+    // 5️⃣ 이메일 인증 발송
+    const { error: resendError } = await supabase.auth.resend({
+      type: 'signup',
+      email
+    });
+    
+    if (resendError) {
+      console.error('❌ 인증 이메일 발송 실패:', resendError);
+      // 회원가입은 성공했으므로 경고만 표시
+    } else {
+      console.log('📨 인증 이메일 발송 성공:', email);
+    }
+    
+    // 6️⃣ ip_signup_tracking 기록
+    const { error: trackingError } = await supabase
+      .from('ip_signup_tracking')
+      .insert({
+        ip_address: ip,
+        email,
+        signup_at: new Date().toISOString(),
+        user_agent: userAgent,
+        is_verified: false
+      });
+    
+    if (trackingError) {
+      console.error('❌ IP 추적 기록 실패:', trackingError);
+      // 회원가입은 성공했으므로 계속 진행
+    }
+    
+    // 7️⃣ 성공 응답
+    return c.json({
+      success: true,
+      message: '회원가입이 완료되었습니다. 이메일을 확인하여 인증을 완료해주세요.',
+      user_id: userId,
+      email,
+      email_confirmation_required: true,
+      remaining_signups: remainingSignups - 1
+    });
+    
+  } catch (error: any) {
+    console.error('❌ /api/auth/signup 오류:', error);
+    return c.json({ 
+      success: false, 
+      error: error.message || '회원가입 중 오류가 발생했습니다' 
+    }, 500);
+  }
+});
+
+// ========================================
+// 이메일 인증 콜백 (NEW v7.4)
+// ========================================
+app.get('/auth/callback', async (c) => {
+  const code = c.req.query('code');
+  const token_hash = c.req.query('token_hash');
+  const type = c.req.query('type');
+  
+  console.log('🔐 Auth callback:', { code: !!code, token_hash: !!token_hash, type });
+
+  if (!code && !token_hash) {
+    return c.redirect('/?error=no_token');
+  }
+
+  // HTML 페이지 반환 (클라이언트에서 토큰 처리)
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="ko">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>이메일 인증 처리 중...</title>
+      <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+      <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="bg-gray-100 flex items-center justify-center min-h-screen">
+      <div class="bg-white p-8 rounded-lg shadow-lg text-center max-w-md">
+        <div id="loading">
+          <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">✅ 이메일 인증 완료!</h2>
+          <p class="text-gray-600">자동 로그인 중입니다...</p>
+        </div>
+        <div id="error" class="hidden">
+          <h2 class="text-2xl font-bold text-red-600 mb-2">❌ 인증 실패</h2>
+          <p class="text-gray-600 mb-4">이메일 인증에 실패했습니다.</p>
+          <a href="/" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+            메인으로 돌아가기
+          </a>
+        </div>
+      </div>
+      
+      <script>
+        const SUPABASE_URL = '${c.env.SUPABASE_URL}';
+        const SUPABASE_ANON_KEY = '${c.env.SUPABASE_ANON_KEY}';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        async function processAuth() {
+          try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const tokenHash = urlParams.get('token_hash');
+            const type = urlParams.get('type') || 'signup';
+            
+            console.log('🔐 Processing auth:', { code: !!code, tokenHash: !!tokenHash, type });
+            
+            if (code) {
+              // PKCE 흐름 (OAuth - 카카오 로그인 포함)
+              const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+              if (error) throw error;
+              
+              console.log('✅ Session created via code exchange');
+              
+              // NEW v7.6: 카카오 로그인 DB 동기화
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user) {
+                const kakaoIdentity = user.identities?.find(
+                  identity => identity.provider === 'kakao'
+                );
+                
+                if (kakaoIdentity) {
+                  console.log('🟡 Kakao login detected, syncing DB...');
+                  
+                  const kakaoId = kakaoIdentity.identity_data?.sub || kakaoIdentity.id;
+                  const nickname = kakaoIdentity.identity_data?.nickname || user.user_metadata?.nickname || '카카오 사용자';
+                  
+                  // 백엔드 API 호출하여 DB 동기화
+                  try {
+                    const response = await fetch('/api/auth/sync-kakao', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({
+                        user_id: user.id,
+                        kakao_id: kakaoId,
+                        nickname: nickname
+                      })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (!response.ok) {
+                      console.error('❌ Kakao sync failed:', result.error);
+                      if (result.error?.includes('재가입 제한')) {
+                        alert('⚠️ ' + result.error);
+                        window.location.href = '/';
+                        return;
+                      }
+                    } else {
+                      console.log('✅ Kakao login synced:', result);
+                    }
+                  } catch (syncError) {
+                    console.error('❌ Failed to sync Kakao:', syncError);
+                  }
+                }
+              }
+            } else if (tokenHash) {
+              // 이메일 인증 토큰
+              const { data, error } = await supabase.auth.verifyOtp({
+                token_hash: tokenHash,
+                type: type
+              });
+              if (error) throw error;
+              
+              console.log('✅ Email verified via token');
+            }
+            
+            // 성공 - 메인 페이지로 리디렉트
+            setTimeout(() => {
+              window.location.href = '/?welcome=true';
+            }, 1500);
+            
+          } catch (error) {
+            console.error('❌ Auth error:', error);
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('error').classList.remove('hidden');
+          }
+        }
+        
+        processAuth();
+      </script>
+    </body>
+    </html>
+  `);
+});
+
+// ========================================
+// 회원 탈퇴 API (NEW v7.4)
+// ========================================
+app.post('/api/auth/delete-account', async (c) => {
+  const { env } = c;
+
+  try {
+    // Authorization 헤더에서 토큰 추출
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json({ success: false, error: '인증이 필요합니다' }, 401);
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+
+    // Supabase Admin 클라이언트 생성
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabaseAdmin = createClient(
+      env.SUPABASE_URL,
+      env.SUPABASE_SERVICE_KEY,
+      { auth: { persistSession: false } }
+    );
+
+    // 사용자 클라이언트로 현재 사용자 확인
+    const supabaseUser = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const { data: { user }, error: userError } = await supabaseUser.auth.getUser(token);
+
+    if (userError || !user) {
+      console.error('❌ User verification failed:', userError);
+      return c.json({ success: false, error: '사용자 인증 실패' }, 401);
+    }
+
+    console.log('🗑️ Deleting user account:', user.id);
+
+    // 1. DB 함수 호출 (user_credits, ip_signup_tracking, generations 삭제)
+    const { data: deleteData, error: deleteError } = await supabaseAdmin
+      .rpc('delete_user_account');
+
+    if (deleteError) {
+      console.error('❌ Failed to delete user data:', deleteError);
+      return c.json({ success: false, error: 'DB 삭제 실패', details: deleteError.message }, 500);
+    }
+
+    console.log('✅ User data deleted from DB:', deleteData);
+
+    // 2. auth.users 삭제 (Admin API)
+    const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
+
+    if (authDeleteError) {
+      console.error('❌ Failed to delete auth user:', authDeleteError);
+      return c.json({ success: false, error: '인증 사용자 삭제 실패', details: authDeleteError.message }, 500);
+    }
+
+    console.log('✅ Auth user deleted:', user.id);
+
+    return c.json({
+      success: true,
+      message: '회원 탈퇴가 완료되었습니다',
+      deleted: {
+        user_id: user.id,
+        email: user.email
+      }
+    });
+
+  } catch (error: any) {
+    console.error('❌ Unexpected error in delete-account:', error);
+    return c.json({
+      success: false,
+      error: '예상치 못한 오류가 발생했습니다',
+      details: error.message
+    }, 500);
+  }
+});
+
+// ========================================
+// 카카오 로그인 DB 동기화 API (NEW v7.6)
+// ========================================
+app.post('/api/auth/sync-kakao', async (c) => {
+  try {
+    console.log('📝 /api/auth/sync-kakao 요청 받음');
+    
+    const { user_id, kakao_id, nickname } = await c.req.json();
+    const ip = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown';
+    
+    console.log('🟡 카카오 로그인 동기화:', { user_id, kakao_id, nickname, ip });
+    
+    if (!user_id || !kakao_id) {
+      return c.json({ 
+        success: false, 
+        error: 'user_id와 kakao_id는 필수입니다' 
+      }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // sync_kakao_login DB 함수 호출
+    const { data, error } = await supabase.rpc('sync_kakao_login', {
+      p_user_id: user_id,
+      p_kakao_id: kakao_id,
+      p_nickname: nickname || '카카오 사용자',
+      p_ip_address: ip.split(',')[0].trim()
+    });
+    
+    if (error) {
+      console.error('❌ sync_kakao_login 실패:', error);
+      
+      // 재가입 제한 에러
+      if (error.message?.includes('재가입 제한')) {
+        return c.json({ 
+          success: false, 
+          error: error.message,
+          error_code: 'ERR_REJOIN_LIMIT'
+        }, 403);
+      }
+      
+      return c.json({ 
+        success: false, 
+        error: error.message || '카카오 로그인 동기화 실패' 
+      }, 500);
+    }
+    
+    console.log('✅ 카카오 로그인 동기화 완료:', data);
+    
+    return c.json({
+      success: true,
+      message: '카카오 로그인이 완료되었습니다',
+      data: data
+    });
+    
+  } catch (error: any) {
+    console.error('❌ /api/auth/sync-kakao 오류:', error);
+    return c.json({ 
+      success: false, 
+      error: error.message || '카카오 로그인 처리 중 오류가 발생했습니다' 
+    }, 500);
+  }
+});
 
 // 사용자 동기화 엔드포인트 (하이브리드 플랜)
 app.post('/api/auth/sync', async (c) => {

@@ -212,36 +212,47 @@ export const htmlTemplate = `
       }
       
       /* ========================================
-         2열 레이아웃 스타일 (Trend Finder Style)
+         3열 레이아웃 스타일 (Trend Finder Full Style)
          ======================================== */
-      /* PC: 2열 Flex 레이아웃 */
+      /* PC: 3열 Flex 레이아웃 */
       @media (min-width: 1280px) {
         .layout-container {
           display: flex;
           gap: 1.5rem;
         }
         
+        /* 좌측 패널 */
+        .left-panel {
+          width: 280px;
+          flex-shrink: 0;
+          background: white;
+          border-radius: 1rem;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+          padding: 1.5rem;
+        }
+        
+        /* 메인 콘텐츠 */
         .main-content {
           flex: 1;
           min-width: 0; /* flex 오버플로우 방지 */
         }
         
+        /* 우측 사이드바 */
         .sidebar {
           width: 320px;
           flex-shrink: 0;
-          position: sticky;
-          top: 1rem;
-          height: fit-content;
-          max-height: calc(100vh - 2rem);
-          overflow-y: auto;
           background: white;
           border-radius: 1rem;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
       }
       
-      /* 모바일/태블릿: 오버레이 슬라이드 */
+      /* 태블릿/모바일: 좌측 패널 숨김, 우측만 슬라이드 */
       @media (max-width: 1279px) {
+        .left-panel {
+          display: none; /* 모바일에서는 숨김 */
+        }
+        
         .sidebar {
           position: fixed;
           right: 0;
@@ -369,8 +380,124 @@ export const htmlTemplate = `
             </div>
         </nav>
     
-    <!-- 2열 레이아웃 컨테이너 (PC: Flex, 모바일: 단일 컬럼) -->
-    <div class="max-w-7xl mx-auto px-4 py-4 layout-container">
+    <!-- 3열 레이아웃 컨테이너 (PC: 좌측 패널 + 메인 + 우측 사이드바) -->
+    <div class="max-w-screen-2xl mx-auto px-4 py-4 layout-container">
+        
+        <!-- ========================================
+             좌측 패널 (회원 기능 + 키워드 분석 + 입력 필드)
+             ======================================== -->
+        <aside class="left-panel">
+            <!-- 회원 전용 기능 (로그인 시 표시) -->
+            <div id="leftPanelMemberFeatures" class="hidden mb-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-star text-yellow-500"></i>
+                    빠른 기능
+                </h3>
+                <div class="space-y-2">
+                    <button id="saveProfileBtn" class="w-full px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium flex items-center justify-center gap-2">
+                        <i class="fas fa-save"></i>
+                        <span>새 프로필 저장</span>
+                    </button>
+                    <button id="loadProfileBtn" class="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium flex items-center justify-center gap-2">
+                        <i class="fas fa-folder-open"></i>
+                        <span>프로필 관리</span>
+                    </button>
+                    <button id="historyBtn" class="w-full px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm font-medium flex items-center justify-center gap-2">
+                        <i class="fas fa-history"></i>
+                        <span>히스토리</span>
+                    </button>
+                    <button id="templateBtn" class="w-full px-4 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm font-medium flex items-center justify-center gap-2">
+                        <i class="fas fa-file-alt"></i>
+                        <span>템플릿</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 구분선 -->
+            <div id="leftPanelDivider" class="hidden border-t border-gray-200 my-6"></div>
+            
+            <!-- 키워드 분석 UI -->
+            <div id="keywordAnalysisContainer">
+                <!-- 비로그인 시 안내 (기본 표시) -->
+                <div id="keywordGuestView" class="mb-6 p-6 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl text-white text-center">
+                    <h3 class="text-xl font-bold mb-3">🔐 키워드 AI 심층 분석</h3>
+                    <p class="text-sm mb-3 opacity-90 leading-relaxed">
+                        AI가 키워드의 시장성, 경쟁도, 트렌드를 분석하고<br>
+                        최적의 마케팅 전략을 추천해드립니다.
+                    </p>
+                    <p class="text-sm opacity-90">
+                        💎 가입만 해도 <strong>월 30크레딧 무료</strong> 제공!
+                    </p>
+                </div>
+                
+                <!-- 로그인 시 키워드 분석 카드 (동적으로 표시) -->
+                <div id="keywordMemberView" class="hidden mb-6 p-6 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl text-white relative overflow-hidden">
+                    <!-- 배경 패턴 -->
+                    <div class="absolute top-0 right-0 w-32 h-32 opacity-30">
+                        <div class="w-full h-full" style="background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 10px 10px;"></div>
+                    </div>
+                    
+                    <div class="relative z-10">
+                        <!-- 헤더 -->
+                        <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+                            <h3 class="text-lg font-bold">📊 키워드 AI 분석</h3>
+                            <div class="text-xs bg-white bg-opacity-20 px-3 py-1.5 rounded-full font-semibold">
+                                무료 <span id="freeKeywordCredits">0</span> · 유료 <span id="paidKeywordCredits">0</span>
+                            </div>
+                        </div>
+                        
+                        <p class="text-sm mb-4 opacity-95 leading-relaxed">
+                            키워드 분석 시 <strong>크레딧 1개</strong>가 차감됩니다.<br>
+                            무료 크레딧부터 우선 사용됩니다.
+                        </p>
+                        
+                        <!-- 입력 필드 -->
+                        <div class="relative mb-4">
+                            <input
+                                type="text"
+                                id="keywordAnalysisInput"
+                                placeholder="분석할 키워드 입력 (예: 수분크림, 여름 화장품)"
+                                class="w-full py-3 pr-24 pl-4 rounded-xl text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
+                                onkeydown="if(event.key === 'Enter') analyzeKeywordsQuality()"
+                            />
+                            <button
+                                onclick="analyzeKeywordsQuality()"
+                                class="absolute right-2 top-2 bottom-2 px-4 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg font-bold text-sm hover:scale-105 transition-transform"
+                            >
+                                🎯 분석
+                            </button>
+                        </div>
+                        
+                        <!-- 빠른 테스트 샘플 -->
+                        <div class="flex gap-2 flex-wrap items-center text-xs">
+                            <span class="opacity-90">빠른 테스트:</span>
+                            <button onclick="setKeywordSample('비건 화장품, 친환경 패키지, 제로웨이스트')" class="sample-btn">🌿 친환경</button>
+                            <button onclick="setKeywordSample('홈트레이닝, 요가 매트, 필라테스')" class="sample-btn">💪 운동</button>
+                            <button onclick="setKeywordSample('반려동물 용품, 강아지 간식')" class="sample-btn">🐕 펫케어</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <style>
+                .sample-btn {
+                    background: rgba(255,255,255,0.2);
+                    border: none;
+                    padding: 0.4rem 0.8rem;
+                    border-radius: 12px;
+                    color: white;
+                    font-size: 0.75rem;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    font-weight: 500;
+                }
+                .sample-btn:hover {
+                    background: rgba(255,255,255,0.3);
+                    transform: translateY(-1px);
+                }
+            </style>
+        </aside>
+        
         <!-- 메인 콘텐츠 영역 -->
         <main class="main-content">
         <!-- 히어로 섹션 (비로그인 시만 표시) -->
