@@ -364,9 +364,51 @@ export const htmlTemplate = `
                             </button>
                         </div>
                     </div>
+                    
+                    <!-- 게스트/로그인 버튼 영역 -->
+                    <div id="guestArea">
+                        <div class="flex items-center space-x-3">
+                            <button id="signupBtn" class="px-4 py-2 bg-white text-purple-600 border-2 border-purple-600 rounded-lg hover:bg-purple-50 transition font-semibold">
+                                회원가입
+                            </button>
+                            <button id="loginBtn" class="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition font-semibold">
+                                <i class="fas fa-sign-in-alt mr-2"></i>로그인
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </nav>
+    
+    <!-- 헤더 아래 기능 버튼 영역 -->
+    <div class="bg-white shadow-sm mx-4 mt-2 rounded-xl px-4 py-3">
+        <div class="flex items-center justify-center gap-3 flex-wrap">
+            <button id="headerHistoryBtn" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm font-medium flex items-center gap-2">
+                <i class="fas fa-history"></i>
+                <span>히스토리</span>
+            </button>
+            <button id="headerTemplateBtn" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm font-medium flex items-center gap-2">
+                <i class="fas fa-file-alt"></i>
+                <span>템플릿</span>
+            </button>
+            <button id="headerSaveProfileBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium flex items-center gap-2">
+                <i class="fas fa-save"></i>
+                <span>프로필 저장</span>
+            </button>
+            <button id="headerLoadProfileBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium flex items-center gap-2">
+                <i class="fas fa-folder-open"></i>
+                <span>프로필 불러오기</span>
+            </button>
+            <button id="headerFavoritesBtn" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition text-sm font-medium flex items-center gap-2">
+                <i class="fas fa-star"></i>
+                <span>즐겨찾기</span>
+            </button>
+            <button id="headerSnsBtn" class="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition text-sm font-medium flex items-center gap-2">
+                <i class="fas fa-share-alt"></i>
+                <span>SNS 바로가기</span>
+            </button>
+        </div>
+    </div>
     
     <!-- 3열 레이아웃 컨테이너 (PC: 좌측 패널 + 메인 + 우측 사이드바) -->
     <div class="mx-4 px-0 py-4 layout-container">
@@ -404,22 +446,9 @@ export const htmlTemplate = `
             <!-- 구분선 -->
             <div id="leftPanelDivider" class="hidden border-t border-gray-200 my-6"></div>
             
-            <!-- 키워드 분석 UI -->
+            <!-- 키워드 분석 UI (항상 표시) -->
             <div id="keywordAnalysisContainer">
-                <!-- 비로그인 시 안내 (기본 표시) -->
-                <div id="keywordGuestView" class="mb-6 p-6 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl text-white text-center">
-                    <h3 class="text-xl font-bold mb-3">🔐 키워드 AI 심층 분석</h3>
-                    <p class="text-sm mb-3 opacity-90 leading-relaxed">
-                        AI가 키워드의 시장성, 경쟁도, 트렌드를 분석하고<br>
-                        최적의 마케팅 전략을 추천해드립니다.
-                    </p>
-                    <p class="text-sm opacity-90">
-                        💎 가입만 해도 <strong>월 30크레딧 무료</strong> 제공!
-                    </p>
-                </div>
-                
-                <!-- 로그인 시 키워드 분석 카드 (동적으로 표시) -->
-                <div id="keywordMemberView" class="hidden mb-6 p-6 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl text-white relative overflow-hidden">
+                <div class="mb-6 p-6 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl text-white relative overflow-hidden">
                     <!-- 배경 패턴 -->
                     <div class="absolute top-0 right-0 w-32 h-32 opacity-30">
                         <div class="w-full h-full" style="background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 10px 10px;"></div>
@@ -488,19 +517,136 @@ export const htmlTemplate = `
             <!-- 구분선 -->
             <div class="border-t border-gray-200 my-6"></div>
             
-            <!-- 📅 캘린더 (좌측 패널) -->
-            <div class="mb-4">
-                <h3 class="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
-                    <i class="fas fa-calendar-alt text-blue-500"></i>
-                    콘텐츠 캘린더
+            <!-- 입력 필드 (12개) -->
+            <div class="mb-6">
+                <h3 class="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-edit text-blue-500"></i>
+                    프로필 정보
                 </h3>
-                <div id="leftCalendarView" class="bg-white rounded-lg border border-gray-200 p-3">
-                    <!-- 미니 캘린더 (간단한 버전) -->
-                    <div class="text-center text-gray-500 text-xs py-4">
-                        <i class="fas fa-calendar-check text-3xl mb-2 text-gray-300"></i>
-                        <p>예정된 콘텐츠</p>
-                        <p class="mt-1">준비 중...</p>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">브랜드명</label>
+                        <input type="text" id="brandName" placeholder="예: 하루한포" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
                     </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">서비스명</label>
+                        <input type="text" id="serviceName" placeholder="예: AI 콘텐츠 생성 서비스" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">회사·상호명</label>
+                        <input type="text" id="companyName" placeholder="예: (주)하루한포" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">사업자 유형</label>
+                        <select id="businessType" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option value="">선택하세요</option>
+                            <option value="개인사업자">개인사업자</option>
+                            <option value="법인사업자">법인사업자</option>
+                            <option value="프리랜서">프리랜서</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">지역</label>
+                        <input type="text" id="region" placeholder="예: 서울특별시 강남구" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">타겟 성별</label>
+                        <select id="targetGender" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option value="">선택하세요</option>
+                            <option value="남성">남성</option>
+                            <option value="여성">여성</option>
+                            <option value="전체">전체</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">연락처</label>
+                        <input type="text" id="contact" placeholder="예: 02-1234-5678" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">웹사이트</label>
+                        <input type="url" id="website" placeholder="예: https://example.com" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">SNS 계정</label>
+                        <input type="text" id="snsAccount" placeholder="예: @haruhanpo" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">톤앤매너</label>
+                        <select id="toneAndManner" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option value="">선택하세요</option>
+                            <option value="전문적">전문적</option>
+                            <option value="친근한">친근한</option>
+                            <option value="캐주얼">캐주얼</option>
+                            <option value="격식있는">격식있는</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">타겟 연령대</label>
+                        <select id="targetAge" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option value="">선택하세요</option>
+                            <option value="10대">10대</option>
+                            <option value="20대">20대</option>
+                            <option value="30대">30대</option>
+                            <option value="40대">40대</option>
+                            <option value="50대 이상">50대 이상</option>
+                            <option value="전체">전체</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">산업 분야</label>
+                        <select id="industry" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option value="">선택하세요</option>
+                            <option value="IT/소프트웨어">IT/소프트웨어</option>
+                            <option value="제조/생산">제조/생산</option>
+                            <option value="유통/판매">유통/판매</option>
+                            <option value="서비스">서비스</option>
+                            <option value="교육">교육</option>
+                            <option value="의료/건강">의료/건강</option>
+                            <option value="금융">金융</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 구분선 -->
+            <div class="border-t border-gray-200 my-6"></div>
+            
+            <!-- 하이브리드 AI 전략 선택 -->
+            <div class="mb-6">
+                <h3 class="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-robot text-purple-500"></i>
+                    하이브리드 AI 전략
+                </h3>
+                <div class="space-y-3">
+                    <label class="flex items-start gap-3 p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-500 transition">
+                        <input type="radio" name="aiStrategy" value="auto" checked class="mt-1">
+                        <div>
+                            <div class="font-semibold text-sm text-gray-800">🤖 자동 선택 (권장)</div>
+                            <div class="text-xs text-gray-500 mt-1">AI가 이미지와 키워드를 분석하여 최적의 전략을 자동으로 선택합니다.</div>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-500 transition">
+                        <input type="radio" name="aiStrategy" value="integrated" class="mt-1">
+                        <div>
+                            <div class="font-semibold text-sm text-gray-800">🔗 통합형</div>
+                            <div class="text-xs text-gray-500 mt-1">이미지와 키워드를 함께 분석하여 자연스러운 콘텐츠를 생성합니다.</div>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-500 transition">
+                        <input type="radio" name="aiStrategy" value="image-first" class="mt-1">
+                        <div>
+                            <div class="font-semibold text-sm text-gray-800">🖼️ 이미지 중심</div>
+                            <div class="text-xs text-gray-500 mt-1">이미지 분석을 우선으로 하고 키워드는 보조 정보로 활용합니다.</div>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-500 transition">
+                        <input type="radio" name="aiStrategy" value="keyword-first" class="mt-1">
+                        <div>
+                            <div class="font-semibold text-sm text-gray-800">🔑 키워드 중심</div>
+                            <div class="text-xs text-gray-500 mt-1">키워드를 중심으로 콘텐츠를 생성하고 이미지는 참고 자료로 활용합니다.</div>
+                        </div>
+                    </label>
                 </div>
             </div>
         </aside>
@@ -2227,15 +2373,15 @@ export const htmlTemplate = `
     </main><!-- main-content -->
     
     <!-- ========================================
-         우측 사이드바 패널 (v7.9 - Trend Finder Style)
+         우측 사이드바 - 콘텐츠 캘린더
          ======================================== -->
     <aside id="sidebar" class="sidebar">
       <!-- 사이드바 헤더 -->
-      <div class="sticky top-0 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-5 z-10">
+      <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-5 z-10">
         <div class="flex justify-between items-center">
           <h2 class="text-xl font-bold flex items-center gap-2">
-            <i class="fas fa-th-large"></i>
-            빠른 메뉴
+            <i class="fas fa-calendar-alt"></i>
+            콘텐츠 캘린더
           </h2>
           <button onclick="toggleSidebar()" class="xl:hidden hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition">
             <i class="fas fa-times text-xl"></i>
@@ -2243,78 +2389,48 @@ export const htmlTemplate = `
         </div>
       </div>
       
-      <!-- 사이드바 메뉴 -->
-      <nav class="py-2">
-        <!-- 히스토리 -->
-        <div class="sidebar-menu-item" id="sidebarHistoryBtn">
-          <i class="fas fa-history text-purple-600"></i>
-          <div>
-            <div class="font-semibold">히스토리</div>
-            <div class="text-xs text-gray-500">생성 기록 보기</div>
-          </div>
-        </div>
-        
-        <!-- 템플릿 -->
-        <div class="sidebar-menu-item" id="sidebarTemplateBtn">
-          <i class="fas fa-file-alt text-orange-600"></i>
-          <div>
-            <div class="font-semibold">템플릿</div>
-            <div class="text-xs text-gray-500">저장된 템플릿</div>
-          </div>
-        </div>
-        
-        <!-- 프로필 저장 -->
-        <div class="sidebar-menu-item" id="sidebarSaveProfileBtn">
-          <i class="fas fa-save text-green-600"></i>
-          <div>
-            <div class="font-semibold">프로필 저장</div>
-            <div class="text-xs text-gray-500">새 프로필 생성</div>
-          </div>
-        </div>
-        
-        <!-- 프로필 불러오기 -->
-        <div class="sidebar-menu-item" id="sidebarLoadProfileBtn">
-          <i class="fas fa-folder-open text-blue-600"></i>
-          <div>
-            <div class="font-semibold">프로필 관리</div>
-            <div class="text-xs text-gray-500">저장된 프로필</div>
-          </div>
-        </div>
-        
-        <!-- 구분선 -->
-        <div class="my-3 border-t-2 border-gray-200"></div>
-        
-        <!-- 즐겨찾기 (추후 구현) -->
-        <div class="sidebar-menu-item opacity-50 cursor-not-allowed">
-          <i class="fas fa-star text-yellow-600"></i>
-          <div>
-            <div class="font-semibold">즐겨찾기</div>
-            <div class="text-xs text-gray-500">준비 중...</div>
-          </div>
-        </div>
-        
-        <!-- SNS 바로가기 (추후 구현) -->
-        <div class="sidebar-menu-item opacity-50 cursor-not-allowed">
-          <i class="fas fa-share-alt text-pink-600"></i>
-          <div>
-            <div class="font-semibold">SNS 바로가기</div>
-            <div class="text-xs text-gray-500">준비 중...</div>
-          </div>
-        </div>
-        
-        <!-- 구분선 -->
-        <div class="my-3 border-t-2 border-gray-200"></div>
-        
-        <!-- 회원가입 / 로그인 버튼 (항상 표시) -->
-        <div class="px-5 py-4">
-          <button id="sidebarSignupBtn" class="w-full px-4 py-3 mb-3 bg-white text-purple-600 border-2 border-purple-600 rounded-lg hover:bg-purple-50 transition font-semibold">
-            <i class="fas fa-user-plus mr-2"></i>회원가입
+      <!-- 캘린더 본문 -->
+      <div class="p-4">
+        <!-- 뷰 전환 버튼 -->
+        <div class="flex gap-2 mb-4">
+          <button onclick="toggleCalendarView()" class="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
+            <i class="fas fa-calendar mr-1"></i>달력
           </button>
-          <button id="sidebarLoginBtn" class="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition font-semibold">
-            <i class="fas fa-sign-in-alt mr-2"></i>로그인
+          <button onclick="toggleCalendarView()" class="flex-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
+            <i class="fas fa-list mr-1"></i>목록
           </button>
         </div>
-      </nav>
+        
+        <!-- 달력 뷰 -->
+        <div id="sidebarCalendarView">
+          <div id="sidebarFullCalendar" class="bg-white rounded-lg"></div>
+        </div>
+        
+        <!-- 리스트 뷰 (숨김) -->
+        <div id="sidebarListView" class="hidden">
+          <!-- 필터 버튼 -->
+          <div class="flex flex-wrap gap-2 mb-4">
+            <button onclick="loadScheduledContent('all')" class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs hover:bg-gray-300">
+              전체
+            </button>
+            <button onclick="loadScheduledContent('scheduled')" class="px-2 py-1 bg-blue-200 text-blue-700 rounded text-xs hover:bg-blue-300">
+              📅 예정
+            </button>
+            <button onclick="loadScheduledContent('published')" class="px-2 py-1 bg-green-200 text-green-700 rounded text-xs hover:bg-green-300">
+              ✅ 완료
+            </button>
+          </div>
+          
+          <!-- 발행 예정 목록 -->
+          <div id="sidebarScheduledList" class="space-y-2">
+            <div class="text-center text-gray-500 py-8 text-sm">
+              <i class="fas fa-calendar-check text-4xl mb-3 text-gray-300"></i>
+              <p>예정된 콘텐츠가 없습니다</p>
+              <p class="text-xs text-gray-400 mt-1">히스토리에서 발행 일정을 설정하세요</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </aside>
     
     </div><!-- layout-container -->
@@ -2347,40 +2463,31 @@ export const htmlTemplate = `
       
       // 사이드바 메뉴 클릭 이벤트 연결
       document.addEventListener('DOMContentLoaded', function() {
-        // 히스토리
-        document.getElementById('sidebarHistoryBtn')?.addEventListener('click', function() {
+        // 헤더 기능 버튼 이벤트 연결
+        document.getElementById('headerHistoryBtn')?.addEventListener('click', function() {
           document.getElementById('historyBtn')?.click();
-          if (window.innerWidth < 1280) toggleSidebar();
         });
         
-        // 템플릿
-        document.getElementById('sidebarTemplateBtn')?.addEventListener('click', function() {
+        document.getElementById('headerTemplateBtn')?.addEventListener('click', function() {
           document.getElementById('templateBtn')?.click();
-          if (window.innerWidth < 1280) toggleSidebar();
         });
         
-        // 프로필 저장
-        document.getElementById('sidebarSaveProfileBtn')?.addEventListener('click', function() {
+        document.getElementById('headerSaveProfileBtn')?.addEventListener('click', function() {
           document.getElementById('saveProfileBtn')?.click();
-          if (window.innerWidth < 1280) toggleSidebar();
         });
         
-        // 프로필 불러오기
-        document.getElementById('sidebarLoadProfileBtn')?.addEventListener('click', function() {
+        document.getElementById('headerLoadProfileBtn')?.addEventListener('click', function() {
           document.getElementById('loadProfileBtn')?.click();
-          if (window.innerWidth < 1280) toggleSidebar();
         });
         
-        // 우측 사이드바 회원가입 버튼
-        document.getElementById('sidebarSignupBtn')?.addEventListener('click', function() {
-          document.getElementById('signupBtn')?.click();
-          if (window.innerWidth < 1280) toggleSidebar();
+        document.getElementById('headerFavoritesBtn')?.addEventListener('click', function() {
+          // 즐겨찾기 기능 (추후 구현)
+          alert('즐겨찾기 기능은 준비 중입니다.');
         });
         
-        // 우측 사이드바 로그인 버튼
-        document.getElementById('sidebarLoginBtn')?.addEventListener('click', function() {
-          document.getElementById('loginBtn')?.click();
-          if (window.innerWidth < 1280) toggleSidebar();
+        document.getElementById('headerSnsBtn')?.addEventListener('click', function() {
+          // SNS 바로가기 기능 (추후 구현)
+          alert('SNS 바로가기 기능은 준비 중입니다.');
         });
       });
     </script>
