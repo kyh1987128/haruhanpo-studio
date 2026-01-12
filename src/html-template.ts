@@ -293,9 +293,6 @@ export const htmlTemplate = `
                             <button id="logoutBtn" class="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 transition">
                                 <i class="fas fa-sign-out-alt mr-1"></i>로그아웃
                             </button>
-                            <button id="deleteAccountBtn" onclick="handleDeleteAccount()" class="px-3 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition">
-                                <i class="fas fa-user-slash mr-1"></i>회원 탈퇴
-                            </button>
                         </div>
                     </div>
                     
@@ -451,20 +448,21 @@ export const htmlTemplate = `
             <!-- 구분선 -->
             <div class="border-t border-gray-200 my-6"></div>
             
-            <!-- 입력 필드 (12개) -->
+            <!-- 입력 필드 (12개) - 2열 6행 레이아웃 -->
             <div class="mb-6">
                 <h3 class="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
                     <i class="fas fa-edit text-blue-500"></i>
                     프로필 정보
                 </h3>
-                <div class="space-y-3">
+                <!-- 2열 그리드 레이아웃 -->
+                <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">브랜드명</label>
                         <input type="text" id="brandName" placeholder="예: 하루한포" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">서비스명</label>
-                        <input type="text" id="serviceName" placeholder="예: AI 콘텐츠 생성 서비스" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <input type="text" id="serviceName" placeholder="예: AI 콘텐츠 생성" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">회사·상호명</label>
@@ -481,7 +479,7 @@ export const htmlTemplate = `
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">지역</label>
-                        <input type="text" id="region" placeholder="예: 서울특별시 강남구" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <input type="text" id="region" placeholder="예: 서울 강남구" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">타겟 성별</label>
@@ -498,7 +496,7 @@ export const htmlTemplate = `
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">웹사이트</label>
-                        <input type="url" id="website" placeholder="예: https://example.com" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <input type="url" id="website" placeholder="예: example.com" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">SNS 계정</label>
@@ -536,7 +534,7 @@ export const htmlTemplate = `
                             <option value="서비스">서비스</option>
                             <option value="교육">교육</option>
                             <option value="의료/건강">의료/건강</option>
-                            <option value="금융">金융</option>
+                            <option value="금융">금융</option>
                             <option value="기타">기타</option>
                         </select>
                     </div>
