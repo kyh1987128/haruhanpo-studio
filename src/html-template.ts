@@ -1543,14 +1543,42 @@ export const htmlTemplate = `
         function showSettingsModal() {
             // 현재 사용자 정보 가져오기
             const user = window.currentUser || {};
-            const email = user.email || '-';
-            const tier = document.getElementById('userTier')?.textContent || '-';
-            const credits = document.getElementById('userCredits')?.textContent || '-';
+            
+            // localStorage에서도 시도
+            const storedUser = localStorage.getItem('postflow_user');
+            const localUser = storedUser ? JSON.parse(storedUser) : {};
+            
+            const email = user.email || localUser.email || '-';
+            const tier = user.tier || localUser.tier || '무료';
+            
+            // 크레딧 정보
+            const freeCredits = user.free_credits || localUser.free_credits || 0;
+            const paidCredits = user.paid_credits || localUser.paid_credits || 0;
+            const totalCredits = freeCredits + paidCredits;
+            let creditText = `${totalCredits}크레딧`;
+            if (freeCredits > 0 && paidCredits > 0) {
+                creditText = `${totalCredits}크레딧 (무료 ${freeCredits} + 유료 ${paidCredits})`;
+            } else if (freeCredits > 0) {
+                creditText = `${totalCredits}크레딧 (무료)`;
+            } else if (paidCredits > 0) {
+                creditText = `${totalCredits}크레딧 (유료)`;
+            }
+            
+            const tierLabels = {
+                'guest': '비회원',
+                'free': '무료회원',
+                'paid': '유료회원'
+            };
+            const tierText = tierLabels[tier] || tier;
             
             // 설정 모달에 정보 표시
-            document.getElementById('settingsUserEmail').textContent = email;
-            document.getElementById('settingsUserTier').textContent = tier;
-            document.getElementById('settingsUserCredits').textContent = credits;
+            const emailEl = document.getElementById('settingsUserEmail');
+            const tierEl = document.getElementById('settingsUserTier');
+            const creditsEl = document.getElementById('settingsUserCredits');
+            
+            if (emailEl) emailEl.textContent = email;
+            if (tierEl) tierEl.textContent = tierText;
+            if (creditsEl) creditsEl.textContent = creditText;
             
             // 모달 표시
             document.getElementById('settingsModal').style.display = 'flex';

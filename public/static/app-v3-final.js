@@ -5248,6 +5248,15 @@ async function syncUserToBackend(session, isNewUser = false) {
         statusText: response.statusText,
         error: errorData
       });
+      
+      // 🔥 API 실패 시에도 최소한의 정보 저장 (히스토리 접근 가능하도록)
+      window.currentUser.id = session.user.id;
+      window.currentUser.email = session.user.email;
+      window.currentUser.isGuest = false;
+      window.currentUser.isLoggedIn = true;
+      localStorage.setItem('postflow_user', JSON.stringify(window.currentUser));
+      updateAuthUI();
+      console.log('⚠️ API 실패했지만 기본 정보는 저장함');
     }
   } catch (error) {
     console.error('❌ 사용자 동기화 에러:', error);
@@ -7472,21 +7481,28 @@ async function generateSingleContent(contentIndex) {
     console.log(`✅ [콘텐츠 #${contentIndex + 1}] 크레딧 검증 통과: 필요 ${creditsNeeded}, 보유 ${totalCredits}`);
   }
   
-  // 브랜드 정보 가져오기
-  const brand = document.getElementById('brand')?.value.trim() || '';
+  // 브랜드 정보 가져오기 (좌측 패널 필드 ID 사용)
+  const brand = document.getElementById('brandName')?.value.trim() || '';
+  const serviceName = document.getElementById('serviceName')?.value.trim() || '';
   const companyName = document.getElementById('companyName')?.value.trim() || '';
   const businessType = document.getElementById('businessType')?.value.trim() || '';
-  const location = document.getElementById('location')?.value.trim() || '';
+  const region = document.getElementById('region')?.value.trim() || '';
   const targetGender = document.getElementById('targetGender')?.value || '';
   const contact = document.getElementById('contact')?.value.trim() || '';
   let website = document.getElementById('website')?.value.trim() || '';
   if (website && !website.startsWith('http://') && !website.startsWith('https://')) {
     website = 'https://' + website;
   }
-  const sns = document.getElementById('sns')?.value.trim() || '';
-  const tone = document.getElementById('tone')?.value || '친근한';
+  const snsAccount = document.getElementById('snsAccount')?.value.trim() || '';
+  const tone = document.getElementById('toneAndManner')?.value || '친근한';
   const targetAge = document.getElementById('targetAge')?.value || '20대';
   const industry = document.getElementById('industry')?.value || '라이프스타일';
+  
+  // 🔥 필수 입력 검증 추가
+  if (!brand || brand.length === 0) {
+    alert('⚠️ 브랜드명을 입력해주세요!\n\n좌측 패널의 "프로필 정보"에서 브랜드명을 입력해야 콘텐츠를 생성할 수 있습니다.');
+    return;
+  }
   
   // 키워드에 주제와 설명 추가
   let enhancedKeywords = content.keywords;
