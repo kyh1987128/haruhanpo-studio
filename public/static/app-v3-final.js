@@ -5594,9 +5594,9 @@ function updateAuthUI() {
   
   if (user.isLoggedIn && !user.isGuest) {
     // 로그인 상태 (하이브리드 플랜)
-    userInfoArea.classList.remove('hidden');
-    guestArea.classList.add('hidden');
-    memberFeaturesArea.classList.remove('hidden');
+    if (userInfoArea) userInfoArea.classList.remove('hidden');
+    if (guestArea) guestArea.classList.add('hidden');
+    if (memberFeaturesArea) memberFeaturesArea.classList.remove('hidden');
     
     // 📅 Phase 3: 캘린더 섹션 표시
     showScheduledContentArea();
@@ -5606,14 +5606,14 @@ function updateAuthUI() {
       heroSection.classList.add('hidden');
     }
     
-    userName.textContent = user.name || user.email?.split('@')[0] || '회원';
+    if (userName) userName.textContent = user.name || user.email?.split('@')[0] || '회원';
     // Tier 표시
     const tierLabels = {
       'guest': '비회원',
       'free': '무료',
       'paid': '유료'
     };
-    userTier.textContent = tierLabels[user.tier] || '무료';
+    if (userTier) userTier.textContent = tierLabels[user.tier] || '무료';
     
     // ✅ 2지갑 크레딧 표시 개선
     const freeCredits = user.free_credits || 0;
@@ -5640,14 +5640,16 @@ function updateAuthUI() {
       }
     }
     
-    userCredits.textContent = creditText;
+    if (userCredits) userCredits.textContent = creditText;
     
     // 시각적 효과
-    userCredits.style.transition = 'color 0.3s ease';
-    userCredits.style.color = '#4f46e5';
-    setTimeout(() => {
-      userCredits.style.color = '';
-    }, 500);
+    if (userCredits) {
+      userCredits.style.transition = 'color 0.3s ease';
+      userCredits.style.color = '#4f46e5';
+      setTimeout(() => {
+        userCredits.style.color = '';
+      }, 500);
+    }
     
     console.log('✅ updateAuthUI 크레딧 표시 업데이트:', {
       free: freeCredits,
@@ -5657,9 +5659,9 @@ function updateAuthUI() {
     });
   } else {
     // 비회원/게스트 상태
-    userInfoArea.classList.add('hidden');
-    guestArea.classList.remove('hidden');
-    memberFeaturesArea.classList.add('hidden');
+    if (userInfoArea) userInfoArea.classList.add('hidden');
+    if (guestArea) guestArea.classList.remove('hidden');
+    if (memberFeaturesArea) memberFeaturesArea.classList.add('hidden');
     
     // 📅 Phase 3: 캘린더 섹션 숨김
     hideScheduledContentArea();

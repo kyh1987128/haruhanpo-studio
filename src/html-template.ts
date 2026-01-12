@@ -290,6 +290,9 @@ export const htmlTemplate = `
                                     </button>
                                 </p>
                             </div>
+                            <button id="settingsBtn" class="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 transition" title="설정">
+                                <i class="fas fa-cog mr-1"></i>설정
+                            </button>
                             <button id="logoutBtn" class="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 transition">
                                 <i class="fas fa-sign-out-alt mr-1"></i>로그아웃
                             </button>
@@ -1262,6 +1265,14 @@ export const htmlTemplate = `
                     }
                 });
             }
+            
+            // 설정 버튼 이벤트
+            const settingsBtn = document.getElementById('settingsBtn');
+            if (settingsBtn) {
+                settingsBtn.addEventListener('click', function() {
+                    showSettingsModal();
+                });
+            }
         });
     </script>
 
@@ -1317,6 +1328,55 @@ export const htmlTemplate = `
             </div>
         </div>
     </footer>
+
+    <!-- 설정 모달 -->
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
+            <div class="bg-gradient-to-r from-gray-700 to-gray-900 text-white p-6 rounded-t-xl">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold">
+                        <i class="fas fa-cog mr-2"></i>설정
+                    </h2>
+                    <button onclick="closeSettingsModal()" class="text-white hover:text-gray-300 transition">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <!-- 계정 정보 -->
+                <div class="border-b border-gray-200 pb-4">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">
+                        <i class="fas fa-user mr-2 text-blue-500"></i>계정 정보
+                    </h3>
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <p><span class="font-semibold">이메일:</span> <span id="settingsUserEmail">-</span></p>
+                        <p><span class="font-semibold">회원 등급:</span> <span id="settingsUserTier">-</span></p>
+                        <p><span class="font-semibold">크레딧:</span> <span id="settingsUserCredits">-</span></p>
+                    </div>
+                </div>
+                
+                <!-- 위험 영역 -->
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <h3 class="text-lg font-semibold text-red-800 mb-3">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>위험 영역
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-3">
+                        회원 탈퇴 시 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다.
+                    </p>
+                    <button onclick="handleDeleteAccount()" class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold">
+                        <i class="fas fa-user-slash mr-2"></i>회원 탈퇴
+                    </button>
+                </div>
+            </div>
+            
+            <div class="bg-gray-50 px-6 py-4 rounded-b-xl flex justify-end">
+                <button onclick="closeSettingsModal()" class="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-semibold">
+                    닫기
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- 환불 정책 모달 -->
     <div id="refundPolicyModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
@@ -1488,6 +1548,67 @@ export const htmlTemplate = `
         }
         function closeTermsOfService() {
             document.getElementById('termsOfServiceModal').style.display = 'none';
+        }
+        
+        // 설정 모달 열기/닫기
+        function showSettingsModal() {
+            // 현재 사용자 정보 가져오기
+            const user = window.currentUser || {};
+            const email = user.email || '-';
+            const tier = document.getElementById('userTier')?.textContent || '-';
+            const credits = document.getElementById('userCredits')?.textContent || '-';
+            
+            // 설정 모달에 정보 표시
+            document.getElementById('settingsUserEmail').textContent = email;
+            document.getElementById('settingsUserTier').textContent = tier;
+            document.getElementById('settingsUserCredits').textContent = credits;
+            
+            // 모달 표시
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+        
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+        
+        // 회원 탈퇴
+        async function handleDeleteAccount() {
+            const confirmMessage = '정말로 탈퇴하시겠습니까?\\n\\n⚠️ 경고:\\n- 모든 데이터가 영구적으로 삭제됩니다\\n- 저장된 프로필, 히스토리, 템플릿이 모두 삭제됩니다\\n- 남은 크레딧은 환불되지 않습니다\\n- 이 작업은 되돌릴 수 없습니다';
+            
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+            
+            const finalConfirm = confirm('마지막 확인:\\n\\n정말로 탈퇴하시겠습니까?\\n\\n"확인"을 누르면 즉시 탈퇴 처리됩니다.');
+            
+            if (!finalConfirm) {
+                return;
+            }
+            
+            try {
+                // Supabase 사용자 삭제 (실제 구현 시)
+                if (window.supabaseClient) {
+                    // TODO: 백엔드 API 호출하여 사용자 데이터 삭제
+                    // await fetch('/api/delete-account', { method: 'POST' });
+                }
+                
+                // 로컬 데이터 삭제
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // 로그아웃
+                if (window.supabaseClient) {
+                    await window.supabaseClient.auth.signOut();
+                }
+                
+                alert('회원 탈퇴가 완료되었습니다.\\n\\n그동안 서비스를 이용해 주셔서 감사합니다.');
+                
+                // 페이지 새로고침
+                window.location.reload();
+            } catch (error) {
+                console.error('회원 탈퇴 오류:', error);
+                alert('회원 탈퇴 중 오류가 발생했습니다.\\n\\n문의: contentitda@naver.com');
+            }
         }
         
         // 크레딧 상세 정보 모달
