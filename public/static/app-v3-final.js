@@ -4,6 +4,7 @@
 // ===================================
 
 // 전역 변수
+let authMode = 'signup'; // 인증 모드 (signup or login)
 let selectedImages = []; // 더 이상 사용 안 함 (개별 콘텐츠로 변경)
 let contentBlocks = {}; // { 0: { images: [], keywords: '', topic: '', description: '' }, 1: {...}, ... }
 let contentPlatforms = {}; // 콘텐츠별 플랫폼 선택 상태 (Option B)
@@ -1612,18 +1613,11 @@ function updateCostEstimate() {
   const totalTimeMinutes = Math.ceil(totalTimeSeconds / 60);
 
   // ===================================
-  // NEW v11.34.0: 차등 과금 크레딧 계산
+  // NEW v11.34.0: 크레딧 계산 (플랫폼 1개당 1크레딧)
   // ===================================
   
-  // 차등 과금 로직: 1개=1크레딧, 2-3개=2크레딧, 4-9개=4크레딧, 10-13개=5크레딧
-  let creditsNeeded = 1;
-  if (platformCount >= 10) {
-    creditsNeeded = 5;
-  } else if (platformCount >= 4) {
-    creditsNeeded = 4;
-  } else if (platformCount >= 2) {
-    creditsNeeded = 2;
-  }
+  // 플랫폼 1개당 1크레딧 로직 (콘텐츠 개수 × 플랫폼 개수)
+  const creditsNeeded = contentCount * platformCount;
   
   // 🔥 크레딧 정보 가져오기 (window.userCreditsInfo 우선, 없으면 currentUser 사용)
   const freeCredits = window.userCreditsInfo?.free_credits ?? currentUser.free_credits ?? 0;
@@ -1754,7 +1748,7 @@ function updateCostEstimate() {
       </div>
       
       <p style="font-size: 0.85rem; opacity: 0.9; margin-top: 1rem; text-align: center; margin-bottom: 0;">
-        차등 과금: 1개 플랫폼=1크레딧, 2-3개=2크레딧, 4-9개=4크레딧, 10-12개=5크레딧
+        💡 플랫폼 1개당 1크레딧 (선택한 플랫폼 개수만큼 차감)
       </p>
     </div>
   `;
@@ -2108,7 +2102,7 @@ function generateContentBlocks() {
             </button>
           </div>
           <p class="text-xs text-gray-500">
-            💡 차등 과금: 1개=1크레딧 | 2-3개=2크레딧 | 4-9개=4크레딧 | 10-12개=5크레딧
+            💡 플랫폼 1개당 1크레딧 (선택한 플랫폼 개수만큼 차감)
           </p>
         </div>
         
@@ -2467,14 +2461,7 @@ async function handleGenerate() {
   
   // 🚨 크리티컬: 서버 요청 전 크레딧 사전 검증 (API 비용 낭비 방지)
   const platformCount = platforms.length;
-  let creditPerContent = 1;
-  if (platformCount >= 10) {
-    creditPerContent = 5;
-  } else if (platformCount >= 4) {
-    creditPerContent = 4;
-  } else if (platformCount >= 2) {
-    creditPerContent = 2;
-  }
+  const creditPerContent = platformCount;
   
   // ✅ 콘텐츠 개수 확인
   const contentCount = Object.keys(contentBlocks).length;
@@ -2703,7 +2690,7 @@ async function handleGenerate() {
         // 4️⃣ 하단 크레딧 박스 업데이트 (즉시 반영)
         updateCostEstimate();
         
-        // 5️⃣ 토스트 메시지 (2지갑 정보 + 차등 과금)
+        // 5️⃣ 토스트 메시지 (2지갑 정보 + 플랫폼당 1크레딧)
         const freeCredits = currentUser.free_credits || 0;
         const paidCredits = currentUser.paid_credits || 0;
         const totalCredits = freeCredits + paidCredits;
@@ -3351,7 +3338,7 @@ async function forceGenerate() {
         // 4️⃣ 하단 크레딧 박스 업데이트 (즉시 반영)
         updateCostEstimate();
         
-        // 5️⃣ 토스트 메시지 (2지갑 정보 + 차등 과금)
+        // 5️⃣ 토스트 메시지 (2지갑 정보 + 플랫폼당 1크레딧)
         const freeCredits = currentUser.free_credits || 0;
         const paidCredits = currentUser.paid_credits || 0;
         const totalCredits = freeCredits + paidCredits;
@@ -5530,6 +5517,14 @@ function showRegistrationCompleteModal(userId) {
 function initializeAuth() {
   console.log('🚀 [초기화] initializeAuth 시작');
   
+  // ✅ NEW v7.4: 이메일 인증 완료 환영 메시지
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('welcome') === 'true') {
+    showToast('🎉 이메일 인증이 완료되었습니다! 30개 무료 크레딧이 지급되었습니다.', 'success');
+    // URL 정리
+    window.history.replaceState(null, '', window.location.pathname);
+  }
+  
   // Supabase 초기화
   initSupabase();
   
@@ -5634,6 +5629,15 @@ function updateAuthUI() {
       creditText = `${totalCredits}크레딧 (유료)`;
     } else {
       creditText = '0크레딧';
+      
+      // NEW v7.5: 재가입 사용자 안내
+      // 최초 1회만 표시 (sessionStorage 사용)
+      if (!sessionStorage.getItem('rejoin_notice_shown')) {
+        setTimeout(() => {
+          showToast('ℹ️ 재가입 계정은 무료 크레딧이 제공되지 않습니다. 크레딧을 구매해주세요.', 'info');
+          sessionStorage.setItem('rejoin_notice_shown', 'true');
+        }, 1000);
+      }
     }
     
     userCredits.textContent = creditText;
@@ -5779,9 +5783,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const logoutBtn = document.getElementById('logoutBtn');
   const heroTrialBtn = document.getElementById('heroTrialBtn');
   
-  // 회원가입과 로그인 모두 Google OAuth로 연결
-  if (signupBtn) signupBtn.addEventListener('click', handleLogin);
-  if (loginBtn) loginBtn.addEventListener('click', handleLogin);
+  // 회원가입과 로그인 버튼 (NEW v7.3 - 모드 분리)
+  if (signupBtn) {
+    signupBtn.addEventListener('click', () => openAuthModal('signup'));
+  }
+  if (loginBtn) {
+    loginBtn.addEventListener('click', () => openAuthModal('login'));
+  }
   if (heroLoginBtn) heroLoginBtn.addEventListener('click', handleLogin);
   if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
   if (heroTrialBtn) heroTrialBtn.addEventListener('click', handleTrial);
@@ -5839,6 +5847,33 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
   });
+  
+  // 🆕 인증 모달 내부 버튼 이벤트 리스너 (NEW v7.3)
+  const emailAuthBtn = document.getElementById('emailAuthBtn');
+  const googleLoginBtn = document.getElementById('googleLoginBtn');
+  const kakaoLoginBtn = document.getElementById('kakaoLoginBtn');
+  const authEmail = document.getElementById('authEmail');
+  const authModeToggle = document.getElementById('authModeToggle');
+  
+  if (emailAuthBtn) {
+    emailAuthBtn.addEventListener('click', handleEmailAuth);
+  }
+  
+  if (googleLoginBtn) {
+    googleLoginBtn.addEventListener('click', handleGoogleLogin);
+  }
+  
+  if (kakaoLoginBtn) {
+    kakaoLoginBtn.addEventListener('click', handleKakaoLogin);
+  }
+  
+  if (authEmail) {
+    authEmail.addEventListener('input', updateEmailDomainHint);
+  }
+  
+  if (authModeToggle) {
+    authModeToggle.addEventListener('click', toggleAuthMode);
+  }
 });
 
 // 선택된 템플릿 가져오기 (향후 UI 연동용)
@@ -7340,18 +7375,9 @@ function updateContentPlatforms(contentIndex) {
   contentBlocks[contentIndex].platforms = platforms;
   contentPlatforms[contentIndex] = platforms;
   
-  // 크레딧 계산
+  // 크레딧 계산 (플랫폼당 1크레딧)
   const platformCount = platforms.length;
-  let credit = 1;
-  if (platformCount >= 10) {
-    credit = 5;
-  } else if (platformCount >= 4) {
-    credit = 4;
-  } else if (platformCount >= 2) {
-    credit = 2;
-  } else if (platformCount === 0) {
-    credit = 0;
-  }
+  const credit = platformCount;
   
   // 예상 소요 시간 계산 (플랫폼당 약 10초)
   const estimatedSeconds = platformCount > 0 ? Math.max(10, platformCount * 10) : 0;
@@ -7413,16 +7439,9 @@ async function generateSingleContent(contentIndex) {
     return;
   }
   
-  // 크레딧 계산
+  // 크레딧 계산 (플랫폼당 1크레딧)
   const platformCount = platforms.length;
-  let creditsNeeded = 1;
-  if (platformCount >= 10) {
-    creditsNeeded = 5;
-  } else if (platformCount >= 4) {
-    creditsNeeded = 4;
-  } else if (platformCount >= 2) {
-    creditsNeeded = 2;
-  }
+  const creditsNeeded = platformCount;
   
   console.log(`💰 [콘텐츠 #${contentIndex + 1}] 크레딧 계산: ${platformCount}개 플랫폼 = ${creditsNeeded} 크레딧`);
   
@@ -7520,6 +7539,62 @@ async function generateSingleContent(contentIndex) {
     
     console.log(`🔍 [콘텐츠 #${contentIndex + 1}] 백엔드 응답:`, result);
     
+    // 🔥 중요: 크레딧 동기화 (UI 실시간 반영)
+    if (result.usage && (result.usage.free_credits !== undefined || result.usage.paid_credits !== undefined)) {
+      const free_credits = result.usage.free_credits ?? result.usage.free_remaining ?? 0;
+      const paid_credits = result.usage.paid_credits ?? result.usage.paid_remaining ?? 0;
+      
+      // window.userCreditsInfo 업데이트
+      window.userCreditsInfo = {
+        free_credits,
+        paid_credits,
+        total_credits: free_credits + paid_credits
+      };
+      
+      // currentUser 동기화
+      if (window.currentUser) {
+        window.currentUser.free_credits = free_credits;
+        window.currentUser.paid_credits = paid_credits;
+      }
+      
+      // 상단 크레딧 UI 업데이트
+      const userCreditsElement = document.getElementById('userCredits');
+      if (userCreditsElement) {
+        userCreditsElement.textContent = free_credits + paid_credits;
+      }
+      
+      // 키워드 분석 화면 크레딧 표시 업데이트 (정확한 ID 사용)
+      const freeKeywordCreditsElement = document.getElementById('freeKeywordCredits');
+      const paidKeywordCreditsElement = document.getElementById('paidKeywordCredits');
+      
+      if (freeKeywordCreditsElement) {
+        freeKeywordCreditsElement.textContent = free_credits;
+        console.log(`✅ 무료 크레딧 업데이트: ${free_credits}`);
+      }
+      
+      if (paidKeywordCreditsElement) {
+        paidKeywordCreditsElement.textContent = paid_credits;
+        console.log(`✅ 유료 크레딧 업데이트: ${paid_credits}`);
+      }
+      
+      // 추가: 다른 형식의 크레딧 표시도 업데이트
+      const keywordCreditsElements = document.querySelectorAll('[id^="keywordCredits"], .keyword-credits-display');
+      keywordCreditsElements.forEach(element => {
+        if (element.textContent.includes('무료') && element.textContent.includes('유료')) {
+          element.textContent = `무료 ${free_credits} · 유료 ${paid_credits}`;
+        }
+      });
+      
+      console.log(`✅ [콘텐츠 #${contentIndex + 1}] 크레딧 동기화 완료:`, {
+        free_credits,
+        paid_credits,
+        total_credits: free_credits + paid_credits,
+        usage: result.usage
+      });
+    } else {
+      console.warn(`⚠️ [콘텐츠 #${contentIndex + 1}] 크레딧 정보 없음:`, result);
+    }
+    
     if (!result.success) {
       hideContentLoading(contentIndex);
       showToast(`❌ ${result.error || '콘텐츠 생성 실패'}`, 'error');
@@ -7592,11 +7667,6 @@ async function generateSingleContent(contentIndex) {
     const contentBlock = document.getElementById(`contentBlock_${contentIndex}`);
     if (contentBlock) {
       contentBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-    
-    // 크레딧 갱신
-    if (result.remaining_credits !== undefined) {
-      updateUserCredits(result.remaining_credits);
     }
     
     showToast(`✅ 콘텐츠 #${contentIndex + 1} 생성 완료!`, 'success');
@@ -8552,4 +8622,498 @@ window.deleteMemo = deleteMemo;
 window.editMemo = editMemo;
 window.cancelEditMemo = cancelEditMemo;
 window.updateMemo = updateMemo;
+
+// ========================================
+// 인증 모달 함수 (NEW v7.3 - Updated with Login Mode)
+// ========================================
+
+// 회원가입 모달 열기 (회원가입 모드)
+function openAuthModal(mode = 'signup') {
+  authMode = mode;
+  updateAuthModalUI();
+  
+  const modal = document.getElementById('authModal');
+  if (modal) {
+    modal.classList.remove('hidden');
+  }
+}
+
+// 회원가입 모달 닫기
+function closeAuthModal() {
+  const modal = document.getElementById('authModal');
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+  
+  // 입력 필드 초기화
+  const emailInput = document.getElementById('authEmail');
+  const passwordInput = document.getElementById('authPassword');
+  if (emailInput) emailInput.value = '';
+  if (passwordInput) passwordInput.value = '';
+}
+
+// 인증 모달 UI 업데이트 (회원가입 vs 로그인)
+function updateAuthModalUI() {
+  const titleIcon = document.querySelector('#authModalTitle i');
+  const titleText = document.getElementById('authModalTitleText');
+  const subtitle = document.getElementById('authModalSubtitle');
+  const passwordHint = document.getElementById('passwordHint');
+  const authBtn = document.getElementById('emailAuthBtn');
+  const authBtnText = document.getElementById('emailAuthBtnText');
+  const signupNotice = document.getElementById('signupNotice');
+  const modeToggle = document.getElementById('authModeToggle');
+  const modeToggleText = document.getElementById('authModeToggleText');
+  
+  if (authMode === 'signup') {
+    // 회원가입 모드
+    if (titleIcon) titleIcon.className = 'fas fa-user-plus mr-2 text-purple-600';
+    if (titleText) titleText.textContent = '회원가입';
+    if (subtitle) subtitle.textContent = '30개 무료 크레딧으로 시작하세요!';
+    if (passwordHint) passwordHint.textContent = '(8자 이상)';
+    if (authBtnText) authBtnText.textContent = '이메일로 가입하기';
+    if (signupNotice) signupNotice.classList.remove('hidden');
+    if (modeToggleText) modeToggleText.textContent = '로그인';
+    if (modeToggle) modeToggle.innerHTML = '계정이 있으신가요? <span id="authModeToggleText">로그인</span>';
+  } else {
+    // 로그인 모드
+    if (titleIcon) titleIcon.className = 'fas fa-sign-in-alt mr-2 text-purple-600';
+    if (titleText) titleText.textContent = '로그인';
+    if (subtitle) subtitle.textContent = '다시 만나서 반갑습니다!';
+    if (passwordHint) passwordHint.textContent = '';
+    if (authBtnText) authBtnText.textContent = '이메일로 로그인';
+    if (signupNotice) signupNotice.classList.add('hidden');
+    if (modeToggle) modeToggle.innerHTML = '계정이 없으신가요? <span id="authModeToggleText">회원가입</span>';
+  }
+}
+
+// 인증 모드 전환
+function toggleAuthMode() {
+  authMode = authMode === 'signup' ? 'login' : 'signup';
+  updateAuthModalUI();
+  console.log('🔄 인증 모드 전환:', authMode);
+}
+
+// 이메일 인증 모달 열기
+function openEmailVerificationModal(email) {
+  const modal = document.getElementById('emailVerificationModal');
+  const emailSpan = document.getElementById('verificationEmail');
+  
+  if (modal && emailSpan) {
+    emailSpan.textContent = email;
+    modal.classList.remove('hidden');
+  }
+}
+
+// 이메일 인증 모달 닫기
+function closeEmailVerificationModal() {
+  const modal = document.getElementById('emailVerificationModal');
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+}
+
+// 이메일 인증 완료 후 로그인 (NEW v7.3)
+function handleLoginAfterVerification() {
+  console.log('📧 이메일 인증 완료 → 로그인 모드로 전환');
+  
+  // 1. 이메일 인증 모달 닫기
+  closeEmailVerificationModal();
+  
+  // 2. 로그인 모드로 인증 모달 열기
+  openAuthModal('login');
+  
+  // 3. 안내 토스트 표시
+  showToast('이메일 인증이 완료되었습니다! 로그인해주세요', 'success');
+  
+  // 4. 이메일 필드에 인증된 이메일 자동 입력
+  const verificationEmail = document.getElementById('verificationEmail');
+  const authEmail = document.getElementById('authEmail');
+  
+  if (verificationEmail && authEmail) {
+    authEmail.value = verificationEmail.textContent;
+  }
+}
+
+// 이메일 도메인 안내
+function updateEmailDomainHint() {
+  const emailInput = document.getElementById('authEmail');
+  const hintElement = document.getElementById('emailDomainHint');
+  
+  if (!emailInput || !hintElement) return;
+  
+  const email = emailInput.value.toLowerCase();
+  
+  if (email.includes('@naver.com')) {
+    hintElement.textContent = '✅ 네이버 메일 사용 가능';
+    hintElement.className = 'text-xs text-green-600 mt-1';
+  } else if (email.includes('@hanmail.net') || email.includes('@daum.net')) {
+    hintElement.textContent = '✅ 한메일/다음 메일 사용 가능';
+    hintElement.className = 'text-xs text-green-600 mt-1';
+  } else if (email.includes('@gmail.com')) {
+    hintElement.textContent = '✅ Gmail 사용 가능';
+    hintElement.className = 'text-xs text-green-600 mt-1';
+  } else if (email.includes('@')) {
+    hintElement.textContent = '✅ 모든 도메인 사용 가능';
+    hintElement.className = 'text-xs text-blue-600 mt-1';
+  } else {
+    hintElement.textContent = '';
+  }
+}
+
+// 통합 이메일 인증 핸들러 (회원가입 + 로그인)
+async function handleEmailAuth() {
+  if (authMode === 'signup') {
+    await handleEmailSignup();
+  } else {
+    await handleEmailLogin();
+  }
+}
+
+// 이메일 회원가입
+async function handleEmailSignup() {
+  const emailInput = document.getElementById('authEmail');
+  const passwordInput = document.getElementById('authPassword');
+  
+  if (!emailInput || !passwordInput) {
+    showToast('입력 양식을 찾을 수 없습니다', 'error');
+    return;
+  }
+  
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+  
+  // 유효성 검사
+  if (!email || !password) {
+    showToast('이메일과 비밀번호를 입력해주세요', 'warning');
+    return;
+  }
+  
+  if (password.length < 8) {
+    showToast('비밀번호는 8자 이상이어야 합니다', 'warning');
+    return;
+  }
+  
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    showToast('올바른 이메일 형식이 아닙니다', 'warning');
+    return;
+  }
+  
+  try {
+    console.log('📧 이메일 회원가입 시작:', email);
+    
+    // 버튼 비활성화
+    const authBtn = document.getElementById('emailAuthBtn');
+    if (authBtn) {
+      authBtn.disabled = true;
+      authBtn.textContent = '처리 중...';
+    }
+    
+    const response = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || '회원가입에 실패했습니다');
+    }
+    
+    console.log('✅ 회원가입 성공:', data);
+    
+    // 회원가입 모달 닫기
+    closeAuthModal();
+    
+    // 이메일 인증 안내 모달 표시
+    openEmailVerificationModal(email);
+    
+    showToast(`회원가입 완료! ${email}로 인증 메일을 발송했습니다`, 'success');
+    
+    // 남은 가입 가능 횟수 표시
+    if (data.remaining_signups !== undefined) {
+      console.log(`ℹ️ 24시간 내 남은 가입 가능 횟수: ${data.remaining_signups}회`);
+    }
+    
+  } catch (error) {
+    console.error('❌ 회원가입 오류:', error);
+    
+    // DB 에러 코드별 처리 (NEW v7.5 - 간단한 메시지)
+    const errorMsg = error.message || '회원가입에 실패했습니다';
+    
+    if (errorMsg.includes('탈퇴한 계정은') || errorMsg.includes('30일 후 재가입')) {
+      // 재가입 제한 - DB 메시지 그대로 표시 (탈퇴일 포함)
+      showToast(`⏰ ${errorMsg}`, 'warning');
+    } else if (errorMsg.includes('ERR_PERMANENT_BAN') || errorMsg.includes('영구적으로 가입이 제한')) {
+      // 영구 차단
+      showToast('🚫 이 이메일은 가입이 제한되어 있습니다. 고객센터에 문의해주세요.', 'error');
+    } else if (errorMsg.includes('이미 등록된')) {
+      // 이메일 중복
+      showToast('이미 가입된 이메일입니다. 로그인해주세요.', 'warning');
+    } else if (errorMsg.includes('IP')) {
+      // IP 제한
+      showToast('⚠️ 동일 IP에서 가입 제한을 초과했습니다. 24시간 후 시도해주세요.', 'warning');
+    } else {
+      // 기타 에러
+      showToast(errorMsg, 'error');
+    }
+  } finally {
+    // 버튼 재활성화
+    const authBtn = document.getElementById('emailAuthBtn');
+    if (authBtn) {
+      authBtn.disabled = false;
+      authBtn.innerHTML = '<i class="fas fa-envelope mr-2"></i><span id="emailAuthBtnText">이메일로 가입하기</span>';
+      updateAuthModalUI(); // UI 복원
+    }
+  }
+}
+
+// 이메일 로그인
+async function handleEmailLogin() {
+  const emailInput = document.getElementById('authEmail');
+  const passwordInput = document.getElementById('authPassword');
+  
+  if (!emailInput || !passwordInput) {
+    showToast('입력 양식을 찾을 수 없습니다', 'error');
+    return;
+  }
+  
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+  
+  // 유효성 검사
+  if (!email || !password) {
+    showToast('이메일과 비밀번호를 입력해주세요', 'warning');
+    return;
+  }
+  
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    showToast('올바른 이메일 형식이 아닙니다', 'warning');
+    return;
+  }
+  
+  try {
+    console.log('🔐 이메일 로그인 시작:', email);
+    
+    // 버튼 비활성화
+    const authBtn = document.getElementById('emailAuthBtn');
+    if (authBtn) {
+      authBtn.disabled = true;
+      authBtn.textContent = '로그인 중...';
+    }
+    
+    if (!supabaseClient) {
+      throw new Error('인증 시스템을 초기화하는 중입니다');
+    }
+    
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email,
+      password
+    });
+    
+    if (error) {
+      throw error;
+    }
+    
+    console.log('✅ 로그인 성공:', data);
+    
+    // 회원가입 모달 닫기
+    closeAuthModal();
+    
+    showToast('로그인 성공!', 'success');
+    
+    // 페이지 새로고침 (인증 상태 반영)
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
+    
+  } catch (error) {
+    console.error('❌ 로그인 오류:', error);
+    
+    if (error.message.includes('Invalid login credentials')) {
+      showToast('이메일 또는 비밀번호가 올바르지 않습니다', 'error');
+    } else if (error.message.includes('Email not confirmed')) {
+      showToast('이메일 인증을 먼저 완료해주세요', 'warning');
+    } else {
+      showToast(error.message || '로그인에 실패했습니다', 'error');
+    }
+  } finally {
+    // 버튼 재활성화
+    const authBtn = document.getElementById('emailAuthBtn');
+    if (authBtn) {
+      authBtn.disabled = false;
+      authBtn.innerHTML = '<i class="fas fa-envelope mr-2"></i><span id="emailAuthBtnText">이메일로 로그인</span>';
+      updateAuthModalUI(); // UI 복원
+    }
+  }
+}
+
+// Google 로그인 (모달에서)
+async function handleGoogleLogin() {
+  if (!supabaseClient) {
+    showToast('인증 시스템을 초기화하는 중입니다', 'warning');
+    return;
+  }
+  
+  try {
+    console.log('🔐 Google 로그인 시작');
+    
+    const { data, error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent'
+        }
+      }
+    });
+    
+    if (error) {
+      throw error;
+    }
+    
+    // OAuth는 자동으로 리디렉션됩니다
+    console.log('✅ Google OAuth 리디렉션 시작');
+    
+  } catch (error) {
+    console.error('❌ Google 로그인 오류:', error);
+    showToast('Google 로그인에 실패했습니다', 'error');
+  }
+}
+
+// Kakao 로그인 (모달에서)
+async function handleKakaoLogin() {
+  if (!supabaseClient) {
+    showToast('인증 시스템을 초기화하는 중입니다', 'warning');
+    return;
+  }
+  
+  try {
+    console.log('🟡 Kakao 로그인 시작');
+    
+    // NEW v7.7: account_email 스코프 제외 (KOE205 에러 수정)
+    // Kakao 앱은 profile_nickname, profile_image만 승인됨
+    const { data, error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'kakao',
+      options: {
+        scopes: 'profile_nickname profile_image'  // account_email 제외
+      }
+    });
+    
+    if (error) {
+      throw error;
+    }
+    
+    // OAuth는 자동으로 리디렉션됩니다
+    console.log('✅ Kakao OAuth 리디렉션 시작');
+    
+  } catch (error) {
+    console.error('❌ Kakao 로그인 오류:', error);
+    showToast('Kakao 로그인에 실패했습니다', 'error');
+  }
+}
+
+// ========================================
+// 회원 탈퇴 (NEW v7.4)
+// ========================================
+async function handleDeleteAccount() {
+  // 1차 확인 (NEW v7.5: 30일 제한 안내 추가)
+  const confirmed = confirm(
+    '⚠️ 정말로 회원 탈퇴하시겠습니까?\n\n' +
+    '• 모든 크레딧이 삭제됩니다\n' +
+    '• 생성한 콘텐츠 기록이 삭제됩니다\n' +
+    '• 복구할 수 없습니다\n' +
+    '• 탈퇴 후 30일 동안 재가입이 불가능합니다\n' +
+    '• 30일 후 재가입 시 무료 크레딧이 지급되지 않습니다\n\n' +
+    '탈퇴하시려면 "확인"을 클릭하세요.'
+  );
+  
+  if (!confirmed) {
+    return;
+  }
+
+  // 2차 확인
+  const doubleConfirm = confirm('마지막 확인입니다. 정말로 탈퇴하시겠습니까?');
+  if (!doubleConfirm) {
+    return;
+  }
+
+  try {
+    console.log('🗑️ 회원 탈퇴 시작...');
+
+    // Supabase 클라이언트 확인
+    if (!supabaseClient) {
+      showToast('Supabase 초기화가 필요합니다. 페이지를 새로고침해주세요.', 'error');
+      return;
+    }
+
+    // 현재 세션 토큰 가져오기
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) {
+      showToast('로그인이 필요합니다', 'error');
+      return;
+    }
+
+    // API 호출
+    const response = await fetch('/api/auth/delete-account', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || '회원 탈퇴에 실패했습니다');
+    }
+
+    console.log('✅ 회원 탈퇴 완료:', data);
+
+    // 로그아웃 (세션 정리)
+    await supabaseClient.auth.signOut();
+    
+    // 로컬 스토리지 정리
+    localStorage.removeItem('postflow_user');
+    localStorage.removeItem('postflow_token');
+
+    // 성공 메시지 (NEW v7.5: 30일 제한 안내)
+    const restrictionDate = data.restriction_until ? new Date(data.restriction_until).toLocaleDateString('ko-KR') : '30일 후';
+    alert(
+      '회원 탈퇴가 완료되었습니다.\n\n' +
+      `• 재가입 가능 날짜: ${restrictionDate}\n` +
+      '• 재가입 시 무료 크레딧은 제공되지 않습니다\n\n' +
+      '그동안 이용해주셔서 감사합니다.'
+    );
+
+    // 메인 페이지로 리디렉트
+    window.location.href = '/';
+
+  } catch (error) {
+    console.error('❌ 회원 탈퇴 오류:', error);
+    showToast(`회원 탈퇴 중 오류가 발생했습니다: ${error.message}`, 'error');
+  }
+}
+
+// 전역 노출
+window.openAuthModal = openAuthModal;
+window.closeAuthModal = closeAuthModal;
+window.toggleAuthMode = toggleAuthMode;
+window.updateAuthModalUI = updateAuthModalUI;
+window.openEmailVerificationModal = openEmailVerificationModal;
+window.closeEmailVerificationModal = closeEmailVerificationModal;
+window.handleLoginAfterVerification = handleLoginAfterVerification;
+window.handleEmailAuth = handleEmailAuth;
+window.handleEmailSignup = handleEmailSignup;
+window.handleEmailLogin = handleEmailLogin;
+window.handleGoogleLogin = handleGoogleLogin;
+window.handleKakaoLogin = handleKakaoLogin;
+window.updateEmailDomainHint = updateEmailDomainHint;
+window.handleDeleteAccount = handleDeleteAccount;
 
