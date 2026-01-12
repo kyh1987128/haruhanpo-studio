@@ -212,36 +212,52 @@ export const htmlTemplate = `
       }
       
       /* ========================================
-         사이드바 스타일 (NEW)
+         2열 레이아웃 스타일 (Trend Finder Style)
          ======================================== */
-      .sidebar {
-        position: fixed;
-        right: 0;
-        top: 0;
-        height: 100vh;
-        width: 320px;
-        background: white;
-        box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
-        transform: translateX(100%);
-        transition: transform 0.3s ease-in-out;
-        z-index: 1000;
-        overflow-y: auto;
-      }
-      
-      .sidebar.open {
-        transform: translateX(0);
-      }
-      
-      /* PC에서는 항상 표시 */
+      /* PC: 2열 Flex 레이아웃 */
       @media (min-width: 1280px) {
-        .sidebar {
-          position: sticky;
-          transform: translateX(0);
-          box-shadow: -2px 0 10px rgba(0, 0, 0, 0.05);
+        .layout-container {
+          display: flex;
+          gap: 1.5rem;
         }
         
-        .main-content-with-sidebar {
-          margin-right: 340px;
+        .main-content {
+          flex: 1;
+          min-width: 0; /* flex 오버플로우 방지 */
+        }
+        
+        .sidebar {
+          width: 320px;
+          flex-shrink: 0;
+          position: sticky;
+          top: 1rem;
+          height: fit-content;
+          max-height: calc(100vh - 2rem);
+          overflow-y: auto;
+          background: white;
+          border-radius: 1rem;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+      }
+      
+      /* 모바일/태블릿: 오버레이 슬라이드 */
+      @media (max-width: 1279px) {
+        .sidebar {
+          position: fixed;
+          right: 0;
+          top: 0;
+          height: 100vh;
+          width: 320px;
+          background: white;
+          box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+          transform: translateX(100%);
+          transition: transform 0.3s ease-in-out;
+          z-index: 1000;
+          overflow-y: auto;
+        }
+        
+        .sidebar.open {
+          transform: translateX(0);
         }
       }
       
@@ -291,7 +307,7 @@ export const htmlTemplate = `
 </head>
 <body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen">
     <!-- 사이드바 오버레이 (모바일) -->
-    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="sidebarOverlay" class="sidebar-overlay xl:hidden" onclick="toggleSidebar()"></div>
     
     <!-- 사이드바 토글 버튼 (모바일/태블릿) -->
     <button 
@@ -302,9 +318,8 @@ export const htmlTemplate = `
       <i class="fas fa-bars text-xl"></i>
     </button>
     
-    <div class="max-w-7xl mx-auto px-4 py-4">
-        <!-- 네비게이션 바 -->
-        <nav class="bg-white shadow-md rounded-2xl mb-8 px-6 py-4">
+    <!-- 네비게이션 바 (전체 너비) -->
+    <nav class="bg-white shadow-md mx-4 mt-4 rounded-2xl px-6 py-4">
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-2">
                     <h1 class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
@@ -353,7 +368,11 @@ export const htmlTemplate = `
                 </div>
             </div>
         </nav>
-
+    
+    <!-- 2열 레이아웃 컨테이너 (PC: Flex, 모바일: 단일 컬럼) -->
+    <div class="max-w-7xl mx-auto px-4 py-4 layout-container">
+        <!-- 메인 콘텐츠 영역 -->
+        <main class="main-content">
         <!-- 히어로 섹션 (비로그인 시만 표시) -->
         <div id="heroSection" class="bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl shadow-xl p-12 mb-8 text-white text-center">
             <h2 class="text-4xl font-bold mb-4 flex items-center justify-center">
@@ -2071,10 +2090,10 @@ export const htmlTemplate = `
     <script src="/static/app-v3-final.js?v=15.0.0"></script>
     <script src="/static/keyword-analysis.js?v=17.0.0"></script>
     <script src="/static/keyword-extended.js?v=15.0.0"></script>
-    </div><!-- max-w-7xl container -->
+    </main><!-- main-content -->
     
     <!-- ========================================
-         우측 사이드바 패널 (NEW v7.9)
+         우측 사이드바 패널 (v7.9 - Trend Finder Style)
          ======================================== -->
     <aside id="sidebar" class="sidebar">
       <!-- 사이드바 헤더 -->
@@ -2170,6 +2189,22 @@ export const htmlTemplate = `
       </nav>
     </aside>
     
+    </div><!-- layout-container -->
+    
+    <!-- JavaScript -->
+    <script src="/static/i18n.js?v=15.0.0"></script>
+    
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ko.js"></script>
+    
+    <script src="/static/app-v3-final.js?v=15.0.0"></script>
+    <script src="/static/keyword-analysis.js?v=17.0.0"></script>
+    <script src="/static/keyword-extended.js?v=15.0.0"></script>
+    
     <script>
       // ========================================
       // 사이드바 토글 함수 (NEW v7.9)
@@ -2208,7 +2243,7 @@ export const htmlTemplate = `
           if (window.innerWidth < 1280) toggleSidebar();
         });
         
-        // 사이드바 크레딧/사용자 정보 업데이트 (기존 체크 함수에 연동)
+        // 사이드바 크레딧/사용자 정보 업데이트 함수
         window.updateSidebarInfo = function() {
           const credits = document.getElementById('userCredits')?.textContent || '-';
           const userName = document.getElementById('userName')?.textContent || '-';
@@ -2219,8 +2254,17 @@ export const htmlTemplate = `
           document.getElementById('sidebarUserEmail').textContent = userEmail;
         };
         
-        // 주기적으로 사이드바 정보 업데이트
-        setInterval(updateSidebarInfo, 1000);
+        // 초기 업데이트
+        updateSidebarInfo();
+        
+        // MutationObserver로 크레딧 변경 감지 (폴링 대신)
+        const creditElement = document.getElementById('userCredits');
+        if (creditElement) {
+          const observer = new MutationObserver(() => {
+            updateSidebarInfo();
+          });
+          observer.observe(creditElement, { childList: true, characterData: true, subtree: true });
+        }
       });
     </script>
 </body>
