@@ -221,9 +221,9 @@ export const htmlTemplate = `
           gap: 1.5rem;
         }
         
-        /* 좌측 패널 */
+        /* 좌측 패널 (35%) */
         .left-panel {
-          width: 280px;
+          width: 35%;
           flex-shrink: 0;
           background: white;
           border-radius: 1rem;
@@ -231,89 +231,26 @@ export const htmlTemplate = `
           padding: 1.5rem;
         }
         
-        /* 메인 콘텐츠 */
+        /* 메인 콘텐츠 (65%) */
         .main-content {
-          flex: 1;
-          min-width: 0; /* flex 오버플로우 방지 */
-        }
-        
-        /* 우측 사이드바 */
-        .sidebar {
-          width: 320px;
+          width: 65%;
           flex-shrink: 0;
-          background: white;
-          border-radius: 1rem;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+          min-width: 0; /* flex 오버플로우 방지 */
         }
       }
       
-      /* 태블릿/모바일: 좌측 패널 숨김, 우측만 슬라이드 */
+      /* 태블릿/모바일: 좌측 패널 숨김 */
       @media (max-width: 1279px) {
         .left-panel {
           display: none; /* 모바일에서는 숨김 */
         }
         
-        .sidebar {
-          position: fixed;
-          right: 0;
-          top: 0;
-          height: 100vh;
-          width: 320px;
-          background: white;
-          box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
-          transform: translateX(100%);
-          transition: transform 0.3s ease-in-out;
-          z-index: 1000;
-          overflow-y: auto;
-        }
-        
-        .sidebar.open {
-          transform: translateX(0);
+        .main-content {
+          width: 100%; /* 모바일에서는 전체 너비 */
         }
       }
       
-      /* 모바일에서 사이드바 열릴 때 배경 어둡게 */
-      .sidebar-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 999;
-      }
-      
-      .sidebar-overlay.active {
-        display: block;
-      }
-      
-      /* 사이드바 메뉴 항목 */
-      .sidebar-menu-item {
-        padding: 14px 20px;
-        border-bottom: 1px solid #e5e7eb;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-      
-      .sidebar-menu-item:hover {
-        background: #f3f4f6;
-        padding-left: 24px;
-      }
-      
-      .sidebar-menu-item.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-      }
-      
-      .sidebar-menu-item i {
-        width: 24px;
-        text-align: center;
-        font-size: 18px;
-      }
+
     </style>
 </head>
 <body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen">
@@ -348,9 +285,6 @@ export const htmlTemplate = `
                                 <p class="text-xs text-gray-500">
                                     <span id="userTier" class="font-semibold">무료회원</span> | 
                                     <span id="userCredits" class="text-purple-600 font-bold">3</span> 크레딧
-                                    <button onclick="showCreditDetailsModal()" class="ml-2 text-blue-600 hover:text-blue-700">
-                                        <i class="fas fa-info-circle"></i>
-                                    </button>
                                     <button onclick="showCreditPurchaseModal()" class="ml-2 px-3 py-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs rounded-lg hover:shadow-lg transition">
                                         <i class="fas fa-plus mr-1"></i>충전
                                     </button>
@@ -410,7 +344,7 @@ export const htmlTemplate = `
         </div>
     </div>
     
-    <!-- 3열 레이아웃 컨테이너 (PC: 좌측 패널 + 메인 + 우측 사이드바) -->
+    <!-- 2열 레이아웃 컨테이너 (PC: 좌측 패널 35% + 메인 콘텐츠 65%) -->
     <div class="mx-4 px-0 py-4 layout-container">
         
         <!-- ========================================
@@ -653,30 +587,6 @@ export const htmlTemplate = `
         
         <!-- 메인 콘텐츠 영역 -->
         <main class="main-content">
-        <!-- 회원 전용 기능 버튼 (로그인 후 표시) -->
-        <div id="memberFeaturesArea" class="hidden bg-white rounded-2xl shadow-md p-6 mb-8">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold text-gray-700">
-                    <i class="fas fa-star mr-2 text-yellow-500"></i>회원 전용 기능
-                </h3>
-                <span class="text-xs text-gray-500">프로필 저장, 히스토리, 템플릿 관리</span>
-            </div>
-            <div class="flex justify-center space-x-3 flex-wrap gap-2">
-                <button id="saveProfileBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
-                    <i class="fas fa-save mr-2"></i><span data-i18n="saveProfile">새 프로필 저장</span>
-                </button>
-                <button id="loadProfileBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                    <i class="fas fa-folder-open mr-2"></i><span data-i18n="loadProfile">프로필 관리</span>
-                </button>
-                <button id="historyBtn" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
-                    <i class="fas fa-history mr-2"></i><span data-i18n="viewHistory">히스토리</span>
-                </button>
-                <button id="templateBtn" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition">
-                    <i class="fas fa-file-alt mr-2"></i><span data-i18n="templates">템플릿</span>
-                </button>
-            </div>
-        </div>
-
         <!-- 📅 콘텐츠 관리 캘린더 (Phase 3 - 완전 개편) -->
         <div id="scheduledContentArea" class="hidden bg-white rounded-2xl shadow-md p-6 mb-8">
             <div class="flex justify-between items-center mb-4">
@@ -837,185 +747,7 @@ export const htmlTemplate = `
         <!-- 입력 폼 -->
         <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
             <form id="contentForm" class="space-y-6">
-
-                <!-- 기본 정보 -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block mb-2 font-semibold text-gray-700">
-                            <i class="fas fa-tag mr-2"></i>브랜드명 / 서비스명 / 상품명 <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            id="brand"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                            placeholder="예: 올리브영 / 스킨케어 라인 / 수분크림"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label class="block mb-2 font-semibold text-gray-700">
-                            <i class="fas fa-building mr-2"></i>회사 상호명
-                        </label>
-                        <input
-                            type="text"
-                            id="companyName"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                            placeholder="예: (주)올리브영"
-                        />
-                    </div>
-                </div>
-
-                <!-- 사업자 정보 -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block mb-2 font-semibold text-gray-700">
-                            <i class="fas fa-briefcase mr-2"></i>사업자 유형
-                        </label>
-                        <select id="businessType" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
-                            <option value="">선택 안 함</option>
-                            <option value="개인">개인</option>
-                            <option value="법인">법인</option>
-                            <option value="프리랜서">프리랜서</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block mb-2 font-semibold text-gray-700">
-                            <i class="fas fa-map-marker-alt mr-2"></i>지역
-                        </label>
-                        <select id="location" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
-                            <option value="">선택 안 함</option>
-                            <option value="서울">서울</option>
-                            <option value="경기">경기</option>
-                            <option value="인천">인천</option>
-                            <option value="부산">부산</option>
-                            <option value="대구">대구</option>
-                            <option value="대전">대전</option>
-                            <option value="광주">광주</option>
-                            <option value="울산">울산</option>
-                            <option value="세종">세종</option>
-                            <option value="강원">강원</option>
-                            <option value="충북">충북</option>
-                            <option value="충남">충남</option>
-                            <option value="전북">전북</option>
-                            <option value="전남">전남</option>
-                            <option value="경북">경북</option>
-                            <option value="경남">경남</option>
-                            <option value="제주">제주</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block mb-2 font-semibold text-gray-700">
-                            <i class="fas fa-venus-mars mr-2"></i>타겟 성별
-                        </label>
-                        <select id="targetGender" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
-                            <option value="전체">전체</option>
-                            <option value="남성">남성</option>
-                            <option value="여성">여성</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- 연락처 정보 -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block mb-2 font-semibold text-gray-700">
-                            <i class="fas fa-phone mr-2"></i>연락처
-                        </label>
-                        <input
-                            type="text"
-                            id="contact"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                            placeholder="예: 010-1234-5678"
-                        />
-                    </div>
-                    <div>
-                        <label class="block mb-2 font-semibold text-gray-700">
-                            <i class="fas fa-globe mr-2"></i>웹사이트
-                        </label>
-                        <input
-                            type="text"
-                            id="website"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                            placeholder="예: www.example.com (http:// 자동 추가됨)"
-                        />
-                    </div>
-                    <div>
-                        <label class="block mb-2 font-semibold text-gray-700">
-                            <i class="fab fa-instagram mr-2"></i>SNS 계정
-                        </label>
-                        <input
-                            type="text"
-                            id="sns"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                            placeholder="예: @brandname"
-                        />
-                    </div>
-                </div>
-
-                <!-- 톤앤매너, 연령대, 산업 (연락처 정보 바로 아래로 이동) -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block mb-2 font-semibold text-gray-700">
-                            <i class="fas fa-palette mr-2"></i>톤앤매너
-                        </label>
-                        <select id="tone" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
-                            <option value="친근한">친근한</option>
-                            <option value="전문가">전문가</option>
-                            <option value="감성">감성</option>
-                            <option value="유머러스">유머러스</option>
-                            <option value="신뢰감">신뢰감</option>
-                            <option value="트렌디">트렌디</option>
-                            <option value="고급스러운">고급스러운</option>
-                            <option value="실용적">실용적</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block mb-2 font-semibold text-gray-700">
-                            <i class="fas fa-users mr-2"></i>타겟 연령대
-                        </label>
-                        <select id="targetAge" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
-                            <option value="10대">10대</option>
-                            <option value="20대" selected>20대</option>
-                            <option value="30대">30대</option>
-                            <option value="40대">40대</option>
-                            <option value="50대+">50대+</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block mb-2 font-semibold text-gray-700">
-                            <i class="fas fa-industry mr-2"></i>산업 분야
-                        </label>
-                        <select id="industry" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
-                            <option value="" selected>선택안함 (AI가 자동 판단)</option>
-                            <option value="라이프스타일">라이프스타일</option>
-                            <option value="뷰티/코스메틱">뷰티/코스메틱</option>
-                            <option value="패션/의류">패션/의류</option>
-                            <option value="음식/외식">음식/외식 (F&B)</option>
-                            <option value="카페/디저트">카페/디저트</option>
-                            <option value="IT/테크">IT/테크</option>
-                            <option value="제조/엔지니어링">제조/엔지니어링</option>
-                            <option value="건설/건축">건설/건축</option>
-                            <option value="헬스/피트니스">헬스/피트니스</option>
-                            <option value="의료/병원">의료/병원</option>
-                            <option value="교육/학원">교육/학원</option>
-                            <option value="부동산/인테리어">부동산/인테리어</option>
-                            <option value="금융/보험">금융/보험</option>
-                            <option value="법률/컨설팅">법률/컨설팅</option>
-                            <option value="여행/관광">여행/관광</option>
-                            <option value="숙박/호텔">숙박/호텔</option>
-                            <option value="반려동물">반려동물</option>
-                            <option value="자동차/정비">자동차/정비</option>
-                            <option value="가전/전자">가전/전자</option>
-                            <option value="스포츠/레저">스포츠/레저</option>
-                            <option value="문화/예술">문화/예술</option>
-                            <option value="웨딩/이벤트">웨딩/이벤트</option>
-                            <option value="미용/헤어">미용/헤어</option>
-                            <option value="유통/물류">유통/물류</option>
-                            <option value="농업/수산">농업/수산</option>
-                        </select>
-                    </div>
-                </div>
-
+                
                 <!-- 생성할 콘텐츠 블록 개수 -->
                 <div>
                     <label class="block mb-2 font-semibold text-gray-700">
@@ -1036,175 +768,6 @@ export const htmlTemplate = `
                         <option value="15">15개</option>
                         <option value="20">20개</option>
                     </select>
-                </div>
-                
-                <!-- 🔥 NEW v6.1: 하이브리드 전략 선택 -->
-                <div class="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl border-2 border-purple-200">
-                    <div class="flex items-start mb-4">
-                        <div class="flex-shrink-0">
-                            <div class="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
-                                <i class="fas fa-brain text-white text-lg"></i>
-                            </div>
-                        </div>
-                        <div class="ml-4 flex-1">
-                            <h3 class="text-lg font-bold text-gray-800 mb-1">
-                                🧠 하이브리드 AI 전략 선택 
-                                <span class="ml-2 text-xs bg-purple-600 text-white px-2 py-1 rounded-full">NEW v6.1</span>
-                            </h3>
-                            <p class="text-sm text-gray-600">
-                                이미지와 변수(키워드/산업/톤/타깃)의 우선순위를 어떻게 조정할까요?
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                        <!-- 자동 선택 (권장) -->
-                        <label class="relative cursor-pointer">
-                            <input type="radio" name="contentStrategy" value="auto" checked class="peer sr-only">
-                            <div class="p-4 border-2 border-gray-300 rounded-lg peer-checked:border-green-500 peer-checked:bg-green-50 hover:border-green-300 transition-all">
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-lg">🤖</span>
-                                    <span class="text-xs bg-green-500 text-white px-2 py-0.5 rounded-full peer-checked:block hidden">선택됨</span>
-                                </div>
-                                <div class="font-bold text-gray-800 mb-1">자동 선택 ✅</div>
-                                <div class="text-xs text-gray-600 leading-relaxed">
-                                    AI가 이미지-변수 일치도를 분석해서 최적의 전략을 자동으로 선택합니다
-                                </div>
-                                <div class="mt-2 text-xs text-green-600 font-semibold">
-                                    💡 권장 옵션
-                                </div>
-                            </div>
-                        </label>
-
-                        <!-- 통합형 (균형) -->
-                        <label class="relative cursor-pointer">
-                            <input type="radio" name="contentStrategy" value="integrated" class="peer sr-only">
-                            <div class="p-4 border-2 border-gray-300 rounded-lg peer-checked:border-purple-500 peer-checked:bg-purple-50 hover:border-purple-300 transition-all">
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-lg">⚖️</span>
-                                    <span class="text-xs bg-purple-500 text-white px-2 py-0.5 rounded-full peer-checked:block hidden">선택됨</span>
-                                </div>
-                                <div class="font-bold text-gray-800 mb-1">통합형</div>
-                                <div class="text-xs text-gray-600 leading-relaxed">
-                                    이미지 시각적 묘사 + 변수로 맥락/타깃팅 균형있게 활용
-                                </div>
-                                <div class="mt-2 text-xs text-purple-600">
-                                    예: 카페 사진 + "브런치" → 둘 다 활용
-                                </div>
-                            </div>
-                        </label>
-
-                        <!-- 이미지 중심 -->
-                        <label class="relative cursor-pointer">
-                            <input type="radio" name="contentStrategy" value="image-first" class="peer sr-only">
-                            <div class="p-4 border-2 border-gray-300 rounded-lg peer-checked:border-blue-500 peer-checked:bg-blue-50 hover:border-blue-300 transition-all">
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-lg">📸</span>
-                                    <span class="text-xs bg-blue-500 text-white px-2 py-0.5 rounded-full peer-checked:block hidden">선택됨</span>
-                                </div>
-                                <div class="font-bold text-gray-800 mb-1">이미지 중심</div>
-                                <div class="text-xs text-gray-600 leading-relaxed">
-                                    이미지에 실제로 보이는 것을 중심으로 작성, 변수는 보조
-                                </div>
-                                <div class="mt-2 text-xs text-blue-600">
-                                    예: 명확한 제품 사진 → 이미지 우선
-                                </div>
-                            </div>
-                        </label>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- 변수 중심 (SEO) -->
-                        <label class="relative cursor-pointer">
-                            <input type="radio" name="contentStrategy" value="keyword-first" class="peer sr-only">
-                            <div class="p-4 border-2 border-gray-300 rounded-lg peer-checked:border-orange-500 peer-checked:bg-orange-50 hover:border-orange-300 transition-all">
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-lg">🔑</span>
-                                    <span class="text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full peer-checked:block hidden">선택됨</span>
-                                </div>
-                                <div class="font-bold text-gray-800 mb-1">변수 중심 (SEO 최우선)</div>
-                                <div class="text-xs text-gray-600 leading-relaxed">
-                                    키워드/산업/톤/타깃 변수를 우선 활용, 이미지는 무시/배경
-                                </div>
-                                <div class="mt-2 text-xs text-orange-600">
-                                    예: 이미지와 키워드 불일치 → SEO 우선
-                                </div>
-                            </div>
-                        </label>
-
-                        <!-- 전략 설명 펼치기/접기 -->
-                        <div class="flex items-center justify-center">
-                            <button 
-                                type="button"
-                                id="strategyToggle"
-                                class="w-full h-full px-6 py-4 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-purple-400 transition-all text-center"
-                            >
-                                <i class="fas fa-info-circle text-purple-600 text-2xl mb-2"></i>
-                                <div class="font-semibold text-gray-700 text-sm">전략 자세히 보기</div>
-                                <div class="text-xs text-gray-500 mt-1">각 전략의 차이점 확인</div>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 전략 상세 설명 (접힌 상태) -->
-                    <div id="strategyDetails" class="hidden mt-4 p-4 bg-white rounded-lg border border-gray-200">
-                        <h4 class="font-bold text-gray-800 mb-3 flex items-center">
-                            <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
-                            전략별 상세 설명
-                        </h4>
-                        
-                        <div class="space-y-3 text-sm">
-                            <div class="p-3 bg-green-50 rounded-lg border-l-4 border-green-500">
-                                <div class="font-bold text-green-800 mb-1">🤖 자동 선택 (권장)</div>
-                                <div class="text-gray-700 text-xs leading-relaxed">
-                                    • AI가 이미지-변수 일치도를 0-100점으로 자동 분석<br>
-                                    • 70점 이상: 통합형 / 50-69점: 이미지 중심 / 50점 미만: 변수 중심<br>
-                                    • 30점 미만이면 경고 후 사용자 확인<br>
-                                    • <strong>가장 자연스러운 콘텐츠 보장 ✅</strong>
-                                </div>
-                            </div>
-
-                            <div class="p-3 bg-purple-50 rounded-lg border-l-4 border-purple-500">
-                                <div class="font-bold text-purple-800 mb-1">⚖️ 통합형</div>
-                                <div class="text-gray-700 text-xs leading-relaxed">
-                                    • 이미지: 시각적 요소 구체 묘사 (제품 외관, 색상, 분위기)<br>
-                                    • 변수: 맥락, 타깃팅, SEO 키워드 자연스럽게 삽입<br>
-                                    • 예: "이 카페의 브런치 플레이트 (이미지) + 20-30대 감성 (변수)"
-                                </div>
-                            </div>
-
-                            <div class="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-                                <div class="font-bold text-blue-800 mb-1">📸 이미지 중심</div>
-                                <div class="text-gray-700 text-xs leading-relaxed">
-                                    • 이미지에 실제로 보이는 것을 중심으로 작성<br>
-                                    • 변수는 자연스럽게 연결될 때만 사용<br>
-                                    • 예: 명확한 제품 사진 → 제품 중심 작성, 키워드는 보조
-                                </div>
-                            </div>
-
-                            <div class="p-3 bg-orange-50 rounded-lg border-l-4 border-orange-500">
-                                <div class="font-bold text-orange-800 mb-1">🔑 변수 중심 (SEO)</div>
-                                <div class="text-gray-700 text-xs leading-relaxed">
-                                    • 키워드, 산업분야, 톤앤매너, 타깃 연령대를 필수 반영<br>
-                                    • 이미지는 배경 요소로만 활용하거나 무시<br>
-                                    • 키워드 밀도 1-2% 유지 필수<br>
-                                    • 예: 이미지와 키워드 불일치 → 키워드 중심 SEO 최적화
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mt-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                            <div class="flex items-start">
-                                <i class="fas fa-exclamation-triangle text-yellow-600 mt-0.5 mr-2"></i>
-                                <div class="text-xs text-gray-700">
-                                    <strong>언제 수동 선택하나요?</strong><br>
-                                    • 특정 전략을 강제하고 싶을 때 (예: SEO 우선 필수)<br>
-                                    • AI 자동 선택 결과가 만족스럽지 않을 때<br>
-                                    • <strong>대부분의 경우 "자동 선택"을 권장합니다 ✅</strong>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- 개별 콘텐츠 입력 영역 -->
@@ -1937,7 +1500,7 @@ export const htmlTemplate = `
         
         // 크레딧 충전 모달
         function showCreditPurchaseModal() {
-            const confirmed = confirm(\`크레딧 충전 페이지로 이동하시겠습니까?\\n\\n충전 옵션:\\n- STARTER (10크레딧): ₩2,000\\n- PRO (50크레딧): ₩9,000 (10% 할인) 🔥\\n- BUSINESS (100크레딧): ₩17,000 (15% 할인)\`);
+            const confirmed = confirm(\`크레딧 충전 페이지로 이동하시겠습니까?\\n\\n충전 옵션:\\n- BASIC (100크레딧): ₩3,000\\n- STANDARD (500크레딧): ₩14,250 (5% 할인) 🔥\\n- PREMIUM (1000크레딧): ₩27,000 (10% 할인) 💎\`);
             if (confirmed) {
                 window.location.href = '/static/payment.html';
             }
@@ -2271,67 +1834,6 @@ export const htmlTemplate = `
     <script src="/static/keyword-analysis.js?v=18.0.0"></script>
     <script src="/static/keyword-extended.js?v=15.0.0"></script>
     </main><!-- main-content -->
-    
-    <!-- ========================================
-         우측 사이드바 - 콘텐츠 캘린더
-         ======================================== -->
-    <aside id="sidebar" class="sidebar">
-      <!-- 사이드바 헤더 -->
-      <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-5 z-10">
-        <div class="flex justify-between items-center">
-          <h2 class="text-xl font-bold flex items-center gap-2">
-            <i class="fas fa-calendar-alt"></i>
-            콘텐츠 캘린더
-          </h2>
-          <button onclick="toggleSidebar()" class="xl:hidden hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition">
-            <i class="fas fa-times text-xl"></i>
-          </button>
-        </div>
-      </div>
-      
-      <!-- 캘린더 본문 -->
-      <div class="p-4">
-        <!-- 뷰 전환 버튼 -->
-        <div class="flex gap-2 mb-4">
-          <button onclick="toggleCalendarView()" class="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
-            <i class="fas fa-calendar mr-1"></i>달력
-          </button>
-          <button onclick="toggleCalendarView()" class="flex-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
-            <i class="fas fa-list mr-1"></i>목록
-          </button>
-        </div>
-        
-        <!-- 달력 뷰 -->
-        <div id="sidebarCalendarView">
-          <div id="sidebarFullCalendar" class="bg-white rounded-lg"></div>
-        </div>
-        
-        <!-- 리스트 뷰 (숨김) -->
-        <div id="sidebarListView" class="hidden">
-          <!-- 필터 버튼 -->
-          <div class="flex flex-wrap gap-2 mb-4">
-            <button onclick="loadScheduledContent('all')" class="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs hover:bg-gray-300">
-              전체
-            </button>
-            <button onclick="loadScheduledContent('scheduled')" class="px-2 py-1 bg-blue-200 text-blue-700 rounded text-xs hover:bg-blue-300">
-              📅 예정
-            </button>
-            <button onclick="loadScheduledContent('published')" class="px-2 py-1 bg-green-200 text-green-700 rounded text-xs hover:bg-green-300">
-              ✅ 완료
-            </button>
-          </div>
-          
-          <!-- 발행 예정 목록 -->
-          <div id="sidebarScheduledList" class="space-y-2">
-            <div class="text-center text-gray-500 py-8 text-sm">
-              <i class="fas fa-calendar-check text-4xl mb-3 text-gray-300"></i>
-              <p>예정된 콘텐츠가 없습니다</p>
-              <p class="text-xs text-gray-400 mt-1">히스토리에서 발행 일정을 설정하세요</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </aside>
     
     </div><!-- layout-container -->
     
