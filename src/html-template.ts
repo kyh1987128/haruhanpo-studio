@@ -210,9 +210,98 @@ export const htmlTemplate = `
         background: #6b7280 !important;
         color: white;
       }
+      
+      /* ========================================
+         사이드바 스타일 (NEW)
+         ======================================== */
+      .sidebar {
+        position: fixed;
+        right: 0;
+        top: 0;
+        height: 100vh;
+        width: 320px;
+        background: white;
+        box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+        transform: translateX(100%);
+        transition: transform 0.3s ease-in-out;
+        z-index: 1000;
+        overflow-y: auto;
+      }
+      
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      
+      /* PC에서는 항상 표시 */
+      @media (min-width: 1280px) {
+        .sidebar {
+          position: sticky;
+          transform: translateX(0);
+          box-shadow: -2px 0 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .main-content-with-sidebar {
+          margin-right: 340px;
+        }
+      }
+      
+      /* 모바일에서 사이드바 열릴 때 배경 어둡게 */
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+      }
+      
+      .sidebar-overlay.active {
+        display: block;
+      }
+      
+      /* 사이드바 메뉴 항목 */
+      .sidebar-menu-item {
+        padding: 14px 20px;
+        border-bottom: 1px solid #e5e7eb;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      
+      .sidebar-menu-item:hover {
+        background: #f3f4f6;
+        padding-left: 24px;
+      }
+      
+      .sidebar-menu-item.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+      
+      .sidebar-menu-item i {
+        width: 24px;
+        text-align: center;
+        font-size: 18px;
+      }
     </style>
 </head>
 <body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen">
+    <!-- 사이드바 오버레이 (모바일) -->
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    
+    <!-- 사이드바 토글 버튼 (모바일/태블릿) -->
+    <button 
+      id="sidebarToggleBtn" 
+      onclick="toggleSidebar()"
+      class="fixed top-4 right-4 z-50 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-3 rounded-full shadow-lg xl:hidden hover:shadow-xl transition"
+      title="메뉴 열기">
+      <i class="fas fa-bars text-xl"></i>
+    </button>
+    
     <div class="max-w-7xl mx-auto px-4 py-4">
         <!-- 네비게이션 바 -->
         <nav class="bg-white shadow-md rounded-2xl mb-8 px-6 py-4">
@@ -243,6 +332,9 @@ export const htmlTemplate = `
                             </div>
                             <button id="logoutBtn" class="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 transition">
                                 <i class="fas fa-sign-out-alt mr-1"></i>로그아웃
+                            </button>
+                            <button id="deleteAccountBtn" onclick="handleDeleteAccount()" class="px-3 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition">
+                                <i class="fas fa-user-slash mr-1"></i>회원 탈퇴
                             </button>
                         </div>
                     </div>
@@ -935,6 +1027,136 @@ export const htmlTemplate = `
                 </div>
                 <p class="text-gray-600" id="loadingMessage">이미지 분석 중...</p>
                 <p class="text-gray-500 text-sm mt-2">예상 소요 시간: <span id="estimatedTime">30초</span></p>
+            </div>
+        </div>
+
+        <!-- 회원가입/로그인 모달 (NEW v7.3) -->
+        <div id="authModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 w-full">
+                <div class="text-center mb-6">
+                    <h3 id="authModalTitle" class="text-2xl font-bold text-gray-800 mb-2">
+                        <i class="fas fa-user-plus mr-2 text-purple-600"></i><span id="authModalTitleText">회원가입</span>
+                    </h3>
+                    <p id="authModalSubtitle" class="text-gray-600">30개 무료 크레딧으로 시작하세요!</p>
+                </div>
+                
+                <!-- 이메일 인증 폼 (회원가입/로그인 공용) -->
+                <div id="emailAuthSection" class="space-y-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">이메일</label>
+                        <input 
+                            type="email" 
+                            id="authEmail" 
+                            placeholder="your@email.com"
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                        >
+                        <p class="text-xs text-gray-500 mt-1" id="emailDomainHint"></p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">비밀번호 <span id="passwordHint">(8자 이상)</span></label>
+                        <input 
+                            type="password" 
+                            id="authPassword" 
+                            placeholder="비밀번호"
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+                        >
+                    </div>
+                    <button 
+                        id="emailAuthBtn" 
+                        class="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition font-semibold"
+                    >
+                        <i class="fas fa-envelope mr-2"></i><span id="emailAuthBtnText">이메일로 가입하기</span>
+                    </button>
+                </div>
+                
+                <!-- 구분선 -->
+                <div class="flex items-center mb-6">
+                    <div class="flex-1 border-t border-gray-300"></div>
+                    <span class="px-4 text-gray-500 text-sm">또는</span>
+                    <div class="flex-1 border-t border-gray-300"></div>
+                </div>
+                
+                <!-- OAuth 로그인 버튼들 -->
+                <div class="space-y-3 mb-6">
+                    <!-- Google 로그인 -->
+                    <button 
+                        id="googleLoginBtn" 
+                        class="w-full px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition font-semibold flex items-center justify-center"
+                    >
+                        <img src="https://www.google.com/favicon.ico" alt="Google" class="w-5 h-5 mr-2">
+                        Google로 계속하기
+                    </button>
+                    
+                    <!-- Kakao 로그인 -->
+                    <button 
+                        id="kakaoLoginBtn" 
+                        class="w-full px-6 py-3 bg-yellow-400 text-gray-900 rounded-lg hover:bg-yellow-500 transition font-semibold flex items-center justify-center"
+                    >
+                        <i class="fas fa-comment mr-2"></i>
+                        카카오로 계속하기
+                    </button>
+                </div>
+                
+                <!-- 안내 문구 (회원가입 모드) -->
+                <div id="signupNotice" class="bg-purple-50 border-l-4 border-purple-500 p-4 mb-4">
+                    <p class="text-sm text-gray-700">
+                        <strong>✨ 이메일 인증 완료 시 30개 무료 크레딧!</strong><br>
+                        <span class="text-gray-600">• 동일 IP에서 24시간 내 최대 3개 계정<br>
+                        • 이메일 인증을 완료해야 크레딧이 지급됩니다</span>
+                    </p>
+                </div>
+                
+                <!-- 모드 전환 링크 -->
+                <div class="text-center mb-4">
+                    <button id="authModeToggle" class="text-sm text-purple-600 hover:text-purple-700 font-semibold">
+                        계정이 있으신가요? <span id="authModeToggleText">로그인</span>
+                    </button>
+                </div>
+                
+                <!-- 닫기 버튼 -->
+                <button 
+                    onclick="closeAuthModal()" 
+                    class="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                >
+                    닫기
+                </button>
+            </div>
+        </div>
+        
+        <!-- 이메일 인증 대기 모달 (NEW v7.3) -->
+        <div id="emailVerificationModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 w-full text-center">
+                <div class="text-6xl mb-4">📧</div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">이메일 인증이 필요합니다</h3>
+                <p class="text-gray-600 mb-6">
+                    <span id="verificationEmail" class="font-semibold text-purple-600"></span>으로<br>
+                    인증 메일을 발송했습니다.<br><br>
+                    메일함을 확인하여 인증을 완료해주세요.<br>
+                    <strong class="text-purple-600">인증 완료 시 30개 무료 크레딧이 자동으로 지급됩니다!</strong>
+                </p>
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 text-left">
+                    <p class="text-sm text-gray-700">
+                        <strong>💡 메일이 오지 않나요?</strong><br>
+                        • 스팸/프로모션 폴더를 확인하세요<br>
+                        • 메일 수신까지 최대 5분 소요될 수 있습니다<br><br>
+                        <strong>✅ 인증 완료 후:</strong><br>
+                        • 아래 "로그인" 버튼을 클릭하여 로그인하세요<br>
+                        • 30개 크레딧이 자동으로 충전됩니다
+                    </p>
+                </div>
+                <div class="space-y-3">
+                    <button 
+                        onclick="handleLoginAfterVerification()" 
+                        class="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition font-semibold"
+                    >
+                        <i class="fas fa-check-circle mr-2"></i>인증 완료! 로그인하기
+                    </button>
+                    <button 
+                        onclick="closeEmailVerificationModal()" 
+                        class="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                    >
+                    확인
+                </button>
             </div>
         </div>
 
@@ -1850,6 +2072,157 @@ export const htmlTemplate = `
     <script src="/static/keyword-analysis.js?v=17.0.0"></script>
     <script src="/static/keyword-extended.js?v=15.0.0"></script>
     </div><!-- max-w-7xl container -->
+    
+    <!-- ========================================
+         우측 사이드바 패널 (NEW v7.9)
+         ======================================== -->
+    <aside id="sidebar" class="sidebar">
+      <!-- 사이드바 헤더 -->
+      <div class="sticky top-0 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-5 z-10">
+        <div class="flex justify-between items-center">
+          <h2 class="text-xl font-bold flex items-center gap-2">
+            <i class="fas fa-th-large"></i>
+            빠른 메뉴
+          </h2>
+          <button onclick="toggleSidebar()" class="xl:hidden hover:bg-white hover:bg-opacity-20 p-2 rounded-lg transition">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+      </div>
+      
+      <!-- 사이드바 메뉴 -->
+      <nav class="py-2">
+        <!-- 히스토리 -->
+        <div class="sidebar-menu-item" id="sidebarHistoryBtn">
+          <i class="fas fa-history text-purple-600"></i>
+          <div>
+            <div class="font-semibold">히스토리</div>
+            <div class="text-xs text-gray-500">생성 기록 보기</div>
+          </div>
+        </div>
+        
+        <!-- 템플릿 -->
+        <div class="sidebar-menu-item" id="sidebarTemplateBtn">
+          <i class="fas fa-file-alt text-orange-600"></i>
+          <div>
+            <div class="font-semibold">템플릿</div>
+            <div class="text-xs text-gray-500">저장된 템플릿</div>
+          </div>
+        </div>
+        
+        <!-- 프로필 저장 -->
+        <div class="sidebar-menu-item" id="sidebarSaveProfileBtn">
+          <i class="fas fa-save text-green-600"></i>
+          <div>
+            <div class="font-semibold">프로필 저장</div>
+            <div class="text-xs text-gray-500">새 프로필 생성</div>
+          </div>
+        </div>
+        
+        <!-- 프로필 불러오기 -->
+        <div class="sidebar-menu-item" id="sidebarLoadProfileBtn">
+          <i class="fas fa-folder-open text-blue-600"></i>
+          <div>
+            <div class="font-semibold">프로필 관리</div>
+            <div class="text-xs text-gray-500">저장된 프로필</div>
+          </div>
+        </div>
+        
+        <!-- 구분선 -->
+        <div class="my-3 border-t-2 border-gray-200"></div>
+        
+        <!-- 즐겨찾기 (추후 구현) -->
+        <div class="sidebar-menu-item opacity-50 cursor-not-allowed">
+          <i class="fas fa-star text-yellow-600"></i>
+          <div>
+            <div class="font-semibold">즐겨찾기</div>
+            <div class="text-xs text-gray-500">준비 중...</div>
+          </div>
+        </div>
+        
+        <!-- SNS 바로가기 (추후 구현) -->
+        <div class="sidebar-menu-item opacity-50 cursor-not-allowed">
+          <i class="fas fa-share-alt text-pink-600"></i>
+          <div>
+            <div class="font-semibold">SNS 바로가기</div>
+            <div class="text-xs text-gray-500">준비 중...</div>
+          </div>
+        </div>
+        
+        <!-- 구분선 -->
+        <div class="my-3 border-t-2 border-gray-200"></div>
+        
+        <!-- 크레딧 정보 -->
+        <div class="px-5 py-4 bg-gradient-to-br from-purple-50 to-blue-50 m-3 rounded-lg">
+          <div class="text-sm text-gray-600 mb-2">💎 내 크레딧</div>
+          <div class="text-2xl font-bold text-purple-600" id="sidebarCredits">-</div>
+          <button onclick="showCreditPurchaseModal()" class="mt-3 w-full px-3 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm rounded-lg hover:shadow-lg transition">
+            <i class="fas fa-plus mr-1"></i>크레딧 충전
+          </button>
+        </div>
+        
+        <!-- 사용자 정보 -->
+        <div class="px-5 py-3">
+          <div class="text-xs text-gray-500 mb-1">로그인 사용자</div>
+          <div class="font-semibold text-gray-700" id="sidebarUserName">-</div>
+          <div class="text-xs text-gray-500 mt-1" id="sidebarUserEmail">-</div>
+        </div>
+      </nav>
+    </aside>
+    
+    <script>
+      // ========================================
+      // 사이드바 토글 함수 (NEW v7.9)
+      // ========================================
+      function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('active');
+      }
+      
+      // 사이드바 메뉴 클릭 이벤트 연결
+      document.addEventListener('DOMContentLoaded', function() {
+        // 히스토리
+        document.getElementById('sidebarHistoryBtn')?.addEventListener('click', function() {
+          document.getElementById('historyBtn')?.click();
+          if (window.innerWidth < 1280) toggleSidebar();
+        });
+        
+        // 템플릿
+        document.getElementById('sidebarTemplateBtn')?.addEventListener('click', function() {
+          document.getElementById('templateBtn')?.click();
+          if (window.innerWidth < 1280) toggleSidebar();
+        });
+        
+        // 프로필 저장
+        document.getElementById('sidebarSaveProfileBtn')?.addEventListener('click', function() {
+          document.getElementById('saveProfileBtn')?.click();
+          if (window.innerWidth < 1280) toggleSidebar();
+        });
+        
+        // 프로필 불러오기
+        document.getElementById('sidebarLoadProfileBtn')?.addEventListener('click', function() {
+          document.getElementById('loadProfileBtn')?.click();
+          if (window.innerWidth < 1280) toggleSidebar();
+        });
+        
+        // 사이드바 크레딧/사용자 정보 업데이트 (기존 체크 함수에 연동)
+        window.updateSidebarInfo = function() {
+          const credits = document.getElementById('userCredits')?.textContent || '-';
+          const userName = document.getElementById('userName')?.textContent || '-';
+          const userEmail = sessionStorage.getItem('userEmail') || '-';
+          
+          document.getElementById('sidebarCredits').textContent = credits;
+          document.getElementById('sidebarUserName').textContent = userName;
+          document.getElementById('sidebarUserEmail').textContent = userEmail;
+        };
+        
+        // 주기적으로 사이드바 정보 업데이트
+        setInterval(updateSidebarInfo, 1000);
+      });
+    </script>
 </body>
 </html>
 `;
