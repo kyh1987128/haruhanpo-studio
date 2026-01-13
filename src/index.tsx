@@ -2647,6 +2647,155 @@ app.delete('/api/profiles/:id', async (c) => {
     return c.json({ error: '프로필 삭제 중 오류가 발생했습니다', details: error.message }, 500);
   }
 });
+// ==================== Phase 1: SNS Links & AI Tools API ====================
+
+// GET /api/profile/sns-links - SNS 링크 조회
+app.get('/api/profile/sns-links', async (c) => {
+  try {
+    const user_id = c.req.query('user_id');
+    
+    if (!user_id) {
+      return c.json({ error: 'user_id는 필수입니다' }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('my_sns_links')
+      .eq('id', user_id)
+      .single();
+    
+    if (error) {
+      console.error('❌ SNS 링크 조회 실패:', error);
+      return c.json({ success: false, error: error.message }, 500);
+    }
+    
+    return c.json({
+      success: true,
+      sns_links: user.my_sns_links || {}
+    });
+  } catch (error: any) {
+    console.error('❌ SNS 링크 조회 예외:', error);
+    return c.json({ error: 'SNS 링크 조회 중 오류가 발생했습니다' }, 500);
+  }
+});
+
+// POST /api/profile/sns-links - SNS 링크 저장
+app.post('/api/profile/sns-links', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { user_id, sns_links } = body;
+    
+    if (!user_id) {
+      return c.json({ error: 'user_id는 필수입니다' }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    const { data, error } = await supabase
+      .from('users')
+      .update({ my_sns_links: sns_links || {} })
+      .eq('id', user_id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ SNS 링크 저장 실패:', error);
+      return c.json({ success: false, error: error.message }, 500);
+    }
+    
+    console.log('✅ SNS 링크 저장 완료:', user_id);
+    
+    return c.json({
+      success: true,
+      sns_links: data.my_sns_links
+    });
+  } catch (error: any) {
+    console.error('❌ SNS 링크 저장 예외:', error);
+    return c.json({ error: 'SNS 링크 저장 중 오류가 발생했습니다' }, 500);
+  }
+});
+
+// GET /api/profile/ai-tools - AI 도구 설정 조회
+app.get('/api/profile/ai-tools', async (c) => {
+  try {
+    const user_id = c.req.query('user_id');
+    
+    if (!user_id) {
+      return c.json({ error: 'user_id는 필수입니다' }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('my_ai_tools')
+      .eq('id', user_id)
+      .single();
+    
+    if (error) {
+      console.error('❌ AI 도구 설정 조회 실패:', error);
+      return c.json({ success: false, error: error.message }, 500);
+    }
+    
+    return c.json({
+      success: true,
+      ai_tools: user.my_ai_tools || {}
+    });
+  } catch (error: any) {
+    console.error('❌ AI 도구 설정 조회 예외:', error);
+    return c.json({ error: 'AI 도구 설정 조회 중 오류가 발생했습니다' }, 500);
+  }
+});
+
+// POST /api/profile/ai-tools - AI 도구 설정 저장
+app.post('/api/profile/ai-tools', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { user_id, ai_tools } = body;
+    
+    if (!user_id) {
+      return c.json({ error: 'user_id는 필수입니다' }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    const { data, error } = await supabase
+      .from('users')
+      .update({ my_ai_tools: ai_tools || {} })
+      .eq('id', user_id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ AI 도구 설정 저장 실패:', error);
+      return c.json({ success: false, error: error.message }, 500);
+    }
+    
+    console.log('✅ AI 도구 설정 저장 완료:', user_id);
+    
+    return c.json({
+      success: true,
+      ai_tools: data.my_ai_tools
+    });
+  } catch (error: any) {
+    console.error('❌ AI 도구 설정 저장 예외:', error);
+    return c.json({ error: 'AI 도구 설정 저장 중 오류가 발생했습니다' }, 500);
+  }
+});
 
 // ==================== 히스토리 API ====================
 
@@ -2697,7 +2846,16 @@ app.get('/api/history', async (c) => {
 app.post('/api/history', async (c) => {
   try {
     const body = await c.req.json();
-    const { user_id, brand, keywords, results, platforms } = body;
+    const { 
+      user_id, 
+      brand, 
+      keywords, 
+      results, 
+      platforms,
+      workflow_data,      // Phase 1: 워크플로우 정보
+      platform_contents,  // Phase 1: 플랫폼별 콘텐츠
+      used_images         // Phase 1: 사용된 이미지
+    } = body;
     
     if (!user_id) {
       console.error('❌ user_id 누락');
@@ -2711,7 +2869,7 @@ app.post('/api/history', async (c) => {
       c.env.SUPABASE_SERVICE_KEY
     );
     
-    // 🔥 generations 테이블에 저장 (brand, keywords, results 포함)
+    // 🔥 generations 테이블에 저장 (Phase 1 필드 포함)
     const { data: newHistory, error: insertError } = await supabase
       .from('generations')
       .insert({
@@ -2720,6 +2878,9 @@ app.post('/api/history', async (c) => {
         keywords: Array.isArray(keywords) ? keywords : [],
         results: results || {},
         platforms: Array.isArray(platforms) ? platforms : [],
+        workflow_data: workflow_data || {},          // Phase 1
+        platform_contents: platform_contents || {},  // Phase 1
+        used_images: used_images || [],              // Phase 1
         created_at: new Date().toISOString()
       })
       .select()
