@@ -16,6 +16,9 @@ let currentEditImageIndex = null;
 let currentEditingProfileId = null; // 프로필 수정 시 사용
 let lastFormData = null; // 재시도용
 
+// 🔄 멀티탭 크레딧 동기화
+const creditSyncChannel = new BroadcastChannel('marketing_hub_credits');
+
 // LocalStorage 키
 const STORAGE_KEYS = {
   PROFILES: 'content_generator_profiles',
@@ -4990,25 +4993,94 @@ function exportHistoryAsExcel() {
 }
 
 function viewHistory(id) {
+  console.log('🔵 viewHistory 실행:', id);
+  
   const item = contentHistory.find(h => h.id === id);
-  if (!item) return;
+  if (!item) {
+    console.error('❌ 히스토리 항목 없음:', id);
+    return;
+  }
+  
+  console.log('✅ 히스토리 항목 발견:', item);
   
   // ✅ generation_id 저장 (캘린더 등록 및 수정 기능에 필요)
   window.lastGenerationId = id;
-  
   resultData = item.results;
   
-  // 🔥 main-content 영역이 숨겨져 있으면 표시
+  // 🔥 화면 모드 전환: 캘린더 뷰 → 콘텐츠 뷰
+  const calendarWrapper = document.getElementById('calendarWrapper');
   const mainContent = document.querySelector('.main-content');
-  if (mainContent) {
-    mainContent.style.display = 'block';
+  const leftPanel = document.querySelector('.left-panel');
+  
+  // 캘린더 숨기기
+  if (calendarWrapper) {
+    calendarWrapper.classList.add('hidden');
+    calendarWrapper.style.display = 'none';
+    console.log('✅ 캘린더 숨김');
   }
   
-  displayResults(item.results, item.platforms);
+  // 메인 콘텐츠 영역 표시
+  if (mainContent) {
+    mainContent.classList.remove('hidden');
+    mainContent.style.setProperty('display', 'block', 'important');
+    console.log('✅ 메인 콘텐츠 표시');
+  }
   
+  // 좌측 패널 표시 (입력 폼)
+  if (leftPanel) {
+    leftPanel.classList.remove('hidden');
+    leftPanel.style.setProperty('display', 'block', 'important');
+    console.log('✅ 좌측 패널 표시');
+  }
+  
+  // 🔥 결과 영역 강제 표시
+  const resultArea = document.getElementById('resultArea');
+  if (resultArea) {
+    resultArea.classList.remove('hidden');
+    resultArea.style.setProperty('display', 'block', 'important');
+    resultArea.style.setProperty('width', '100%', 'important');
+    resultArea.style.setProperty('max-width', '1200px', 'important');
+    resultArea.style.setProperty('margin', '20px auto', 'important');
+    resultArea.style.setProperty('padding', '32px', 'important');
+    resultArea.style.setProperty('background', 'white', 'important');
+    resultArea.style.setProperty('border-radius', '16px', 'important');
+    resultArea.style.setProperty('box-shadow', '0 10px 40px rgba(0,0,0,0.1)', 'important');
+    console.log('✅ 결과 영역 강제 표시');
+  }
+  
+  // 콘텐츠 렌더링
+  displayResults(item.results, item.platforms);
+  console.log('✅ displayResults 호출 완료');
+  
+  // 모달 닫기
   closeModal('historyModal');
+  console.log('✅ 히스토리 모달 닫기');
+  
+  // 화면 상태 변경
+  window.isCalendarView = false;
+  
+  // 스크롤 이동 (약간 지연)
+  setTimeout(() => {
+    if (resultArea) {
+      resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      console.log('✅ 결과 영역으로 스크롤 완료');
+      
+      // 최종 크기 확인
+      const rect = resultArea.getBoundingClientRect();
+      console.log('📊 최종 resultArea 크기:', {
+        width: rect.width,
+        height: rect.height,
+        top: rect.top
+      });
+    }
+  }, 300);
+  
   showToast('✅ 콘텐츠를 불러왔습니다', 'success');
+  console.log('🎉 viewHistory 실행 완료!');
 }
+
+// 전역 노출 확인
+window.viewHistory = viewHistory;
 
 // 🔥 DB 기반 히스토리 삭제 (실제 삭제)
 async function deleteHistory(id) {
@@ -9293,4 +9365,128 @@ window.handleGoogleLogin = handleGoogleLogin;
 window.handleKakaoLogin = handleKakaoLogin;
 window.updateEmailDomainHint = updateEmailDomainHint;
 window.handleDeleteAccount = handleDeleteAccount;
+
+// ===================================
+// 🔄 멀티탭 크레딧 동기화 시스템
+// ===================================
+
+/**
+ * 크레딧 UI 업데이트 함수
+ */
+function updateCreditsUI(credits) {
+  console.log('💳 크레딧 UI 업데이트:', credits);
+  
+  if (!credits) return;
+  
+  const userCreditsElement = document.getElementById('userCredits');
+  if (userCreditsElement) {
+    const totalCredits = (credits.free_credits || 0) + (credits.paid_credits || 0);
+    userCreditsElement.textContent = `${totalCredits} 크레딧`;
+  }
+  
+  // currentUser 객체 업데이트
+  if (window.currentUser) {
+    window.currentUser.free_credits = credits.free_credits || 0;
+    window.currentUser.paid_credits = credits.paid_credits || 0;
+    
+    // LocalStorage 업데이트
+    const userData = localStorage.getItem('postflow_user');
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        user.free_credits = credits.free_credits || 0;
+        user.paid_credits = credits.paid_credits || 0;
+        localStorage.setItem('postflow_user', JSON.stringify(user));
+      } catch (e) {
+        console.error('❌ LocalStorage 업데이트 실패:', e);
+      }
+    }
+  }
+}
+
+/**
+ * 다른 탭에 크레딧 변경 알림
+ */
+function broadcastCreditUpdate(newCredits) {
+  try {
+    creditSyncChannel.postMessage({
+      type: 'CREDIT_UPDATE',
+      data: {
+        free_credits: newCredits.free_credits,
+        paid_credits: newCredits.paid_credits,
+        timestamp: Date.now(),
+        source_tab: document.title
+      }
+    });
+    console.log('📡 크레딧 변경 알림 전송:', newCredits);
+  } catch (error) {
+    console.error('❌ BroadcastChannel 오류:', error);
+  }
+}
+
+/**
+ * 다른 탭에서 크레딧 변경 알림 수신
+ */
+creditSyncChannel.addEventListener('message', (event) => {
+  if (event.data.type === 'CREDIT_UPDATE') {
+    console.log('📡 다른 탭에서 크레딧 변경 감지:', event.data);
+    
+    // UI 즉시 업데이트
+    updateCreditsUI(event.data.data);
+    
+    // 사용자에게 알림 (선택사항)
+    // showToast(`💳 크레딧이 업데이트되었습니다 (${event.data.source_tab})`, 'info');
+  }
+});
+
+/**
+ * 탭 활성화 시 크레딧 동기화
+ */
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && window.currentUser && !window.currentUser.isGuest) {
+    console.log('🔄 탭 활성화: 크레딧 정보 동기화 중...');
+    
+    try {
+      const response = await fetch(`/api/users/${window.currentUser.id}/credits`);
+      const data = await response.json();
+      
+      if (data.success) {
+        updateCreditsUI({
+          free_credits: data.free_credits,
+          paid_credits: data.paid_credits
+        });
+        
+        console.log('✅ 크레딧 동기화 완료:', data);
+      }
+    } catch (error) {
+      console.error('❌ 크레딧 동기화 실패:', error);
+    }
+  }
+});
+
+/**
+ * LocalStorage 변경 감지 (다른 탭에서 사용자 정보 변경 시)
+ */
+window.addEventListener('storage', (event) => {
+  if (event.key === 'postflow_user' && event.newValue) {
+    try {
+      const userData = JSON.parse(event.newValue);
+      console.log('💾 LocalStorage 변경 감지:', userData);
+      
+      // 크레딧 정보가 변경되었으면 UI 업데이트
+      if (userData.free_credits !== undefined || userData.paid_credits !== undefined) {
+        updateCreditsUI({
+          free_credits: userData.free_credits || 0,
+          paid_credits: userData.paid_credits || 0
+        });
+      }
+    } catch (error) {
+      console.error('❌ LocalStorage 파싱 오류:', error);
+    }
+  }
+});
+
+// 전역 노출
+window.updateCreditsUI = updateCreditsUI;
+window.broadcastCreditUpdate = broadcastCreditUpdate;
 
