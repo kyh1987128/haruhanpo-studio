@@ -1,8 +1,8 @@
-# 하루한포 (PostFlow)
+# 마케팅허브 (Marketing Hub)
 
 ## 프로젝트 개요
-- **이름**: 하루한포 (PostFlow)
-- **부제**: 이미지/문서로 4개 플랫폼 콘텐츠 자동 생성 + 회원/결제 시스템
+- **이름**: 마케팅허브 (Marketing Hub)
+- **부제**: 이미지/문서로 12개 플랫폼 콘텐츠 자동 생성 + 회원/결제 시스템
 - **목표**: 이미지와 문서(PDF/DOCX/TXT)를 입력받아 원하는 플랫폼만 선택하여 최적화된 콘텐츠를 AI로 자동 생성
 - **기술 스택**: 
   - Frontend: Hono + TypeScript + Vite + TailwindCSS

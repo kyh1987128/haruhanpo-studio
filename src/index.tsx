@@ -9,6 +9,8 @@ import { analyzeImageWithGemini, generateContentWithGemini, calculateGeminiCost,
 import { createSupabaseAdmin, createSupabaseClient, grantMilestoneCredit, updateConsecutiveLogin, checkAndUseMonthlyQuota } from './lib/supabase';
 import { parseMultipleDocuments, combineDocumentTexts, truncateText } from './document-parser';
 import payments from './routes/payments';
+import images, { fetchSmartImages } from './routes/images';
+import { injectImagesIntoBlogContent, injectImagesIntoBrunchContent, convertHtmlToNaverText } from './image-injection';
 
 type Bindings = {
   OPENAI_API_KEY: string;
@@ -16,6 +18,7 @@ type Bindings = {
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
   SUPABASE_SERVICE_KEY: string;
+  UNSPLASH_ACCESS_KEY?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -287,6 +290,13 @@ app.post('/api/generate/batch', async (c) => {
           if (platforms.includes('metadata_generation')) {
             generationTasks.push(
               generateContent(openai, 'metadata', getMetadataPrompt(promptParams), aiModel)
+            );
+          }
+          
+          // 브런치
+          if (platforms.includes('brunch')) {
+            generationTasks.push(
+              generateContent(openai, 'brunch', getBrunchPrompt(promptParams), aiModel)
             );
           }
 
@@ -1073,10 +1083,38 @@ app.post('/api/generate', async (c) => {
       }
     }
 
-    // 결과를 객체로 변환
+    // 🖼️ 이미지 자동 배치 (네이버 블로그 & 브런치)
+    console.log('🖼️ 이미지 자동 배치 시작...');
+    const smartImages = images.length > 0 ? await fetchSmartImages({
+      userImages: images,
+      keywords: keywords.split(',').map(k => k.trim()),
+      requiredCount: Math.min(3, images.length || 3), // 최대 3개
+      unsplashKey: c.env.UNSPLASH_ACCESS_KEY,
+      openaiKey: c.env.OPENAI_API_KEY
+    }) : [];
+    
+    console.log(`✅ 이미지 ${smartImages.length}개 준비 완료`);
+
+    // 결과를 객체로 변환 + 이미지 배치 적용
     const data: Record<string, string> = {};
     results.forEach(({ platform, content }) => {
-      data[platform] = content;
+      // 네이버 블로그: HTML 이미지 배치
+      if (platform === 'blog' && smartImages.length > 0) {
+        console.log('  📝 네이버 블로그에 이미지 배치 중...');
+        const contentWithImages = injectImagesIntoBlogContent(content, smartImages);
+        data[platform] = convertHtmlToNaverText(contentWithImages); // 네이버 복사-붙여넣기 최적화
+        console.log(`  ✅ 네이버 블로그 이미지 ${smartImages.length}개 배치 완료`);
+      }
+      // 브런치: 마크다운 이미지 배치
+      else if (platform === 'brunch' && smartImages.length > 0) {
+        console.log('  📖 브런치에 이미지 배치 중...');
+        data[platform] = injectImagesIntoBrunchContent(content, smartImages);
+        console.log(`  ✅ 브런치 이미지 ${smartImages.length}개 배치 완료`);
+      }
+      // 기타 플랫폼: 원본 유지
+      else {
+        data[platform] = content;
+      }
     });
 
     console.log('콘텐츠 생성 완료!');
@@ -2963,6 +3001,9 @@ app.get('/payment/fail', (c) => {
 
 // 결제 라우트 연결
 app.route('/api/payments', payments);
+
+// 이미지 라우트 연결
+app.route('/api/images', images);
 
 // ===================================
 // 🔥 하이브리드 크레딧 시스템 (키워드 분석)

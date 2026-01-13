@@ -1,5 +1,5 @@
 // ===================================
-// 하루한포 AI 스튜디오 - 비회원 랜딩 페이지
+// 마케팅허브 AI 스튜디오 - 비회원 랜딩 페이지
 // ===================================
 
 export const landingPageTemplate = `
@@ -8,7 +8,7 @@ export const landingPageTemplate = `
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>하루한포 AI 스튜디오 - AI로 콘텐츠 제작을 10배 빠르게</title>
+    <title>마케팅허브 AI 스튜디오 - AI로 콘텐츠 제작을 10배 빠르게</title>
     <meta name="description" content="30초 만에 12개 플랫폼 콘텐츠 자동 생성, 유튜브 AI 분석, 영상 스토리보드 제작까지. 1개 계정으로 3개 서비스 모두 이용하세요.">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
@@ -21,7 +21,7 @@ export const landingPageTemplate = `
                 <!-- 로고 -->
                 <div class="flex items-center gap-2">
                     <div class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                        🏠 하루한포 AI 스튜디오
+                        🏠 마케팅허브 AI 스튜디오
                     </div>
                 </div>
                 
@@ -342,7 +342,7 @@ export const landingPageTemplate = `
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid md:grid-cols-4 gap-8 mb-8">
                 <div>
-                    <h3 class="font-bold text-lg mb-4">하루한포 AI 스튜디오</h3>
+                    <h3 class="font-bold text-lg mb-4">마케팅허브 AI 스튜디오</h3>
                     <p class="text-gray-400 text-sm">AI로 콘텐츠 제작을 10배 빠르게</p>
                 </div>
                 <div>
@@ -370,7 +370,7 @@ export const landingPageTemplate = `
                 </div>
             </div>
             <div class="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
-                <p>© 2026 하루한포 AI 스튜디오. All rights reserved.</p>
+                <p>© 2026 마케팅허브 AI 스튜디오. All rights reserved.</p>
                 <p class="mt-2">문의: contentitda@naver.com</p>
             </div>
         </div>

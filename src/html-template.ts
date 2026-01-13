@@ -260,7 +260,7 @@ export const htmlTemplate = `
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-2">
                     <a href="/" class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition cursor-pointer">
-                        하루한포 (PostFlow)
+                        마케팅허브 (Marketing Hub)
                     </a>
                     <span class="text-sm text-gray-500">v8.0</span>
                 </div>
@@ -410,11 +410,11 @@ export const htmlTemplate = `
                         <label class="block text-xs font-semibold text-gray-700 mb-1">
                             브랜드, 서비스, 상품명 <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" id="brandName" placeholder="예: 하루한포 AI 콘텐츠 생성 서비스" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <input type="text" id="brandName" placeholder="예: 마케팅허브 AI 콘텐츠 생성 서비스" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">회사·상호명</label>
-                        <input type="text" id="companyName" placeholder="예: (주)하루한포" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <input type="text" id="companyName" placeholder="예: (주)마케팅허브" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">사업자 유형</label>
@@ -1274,7 +1274,7 @@ export const htmlTemplate = `
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
                 <!-- 서비스 정보 -->
                 <div>
-                    <h3 class="text-white text-lg font-bold mb-4">☕️ 하루한포 AI Studio</h3>
+                    <h3 class="text-white text-lg font-bold mb-4">☕️ 마케팅허브 AI Studio</h3>
                     <p class="text-sm text-gray-400 mb-4">
                         이미지를 업로드하면 AI가 블로그·인스타·유튜브 등<br>
                         5개 플랫폼 맞춤 콘텐츠를 30초 안에 자동 생성합니다.
@@ -1311,7 +1311,7 @@ export const htmlTemplate = `
 
             <!-- 저작권 및 법적 고지 -->
             <div class="border-t border-gray-800 pt-8 text-center text-sm text-gray-500">
-                <p class="mb-2">© 2026 하루한포 AI Studio. All rights reserved.</p>
+                <p class="mb-2">© 2026 마케팅허브 AI Studio. All rights reserved.</p>
                 <p class="text-xs">
                     본 서비스는 AI 기술을 활용한 콘텐츠 생성 도구입니다. 
                     생성된 콘텐츠의 저작권은 사용자에게 있으며, 
@@ -1388,7 +1388,7 @@ export const htmlTemplate = `
                         <i class="fas fa-info-circle text-blue-600 mr-2"></i>환불 기본 원칙
                     </h3>
                     <p class="text-gray-600 leading-relaxed">
-                        하루한포 AI Studio는 고객님의 권익 보호를 최우선으로 생각합니다. 
+                        마케팅허브 AI Studio는 고객님의 권익 보호를 최우선으로 생각합니다. 
                         아래 환불 정책에 따라 공정하고 투명하게 환불 처리를 진행합니다.
                     </p>
                 </div>
@@ -1733,7 +1733,7 @@ export const htmlTemplate = `
           
           <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">1. 개인정보의 수집 및 이용 목적</h3>
           <p style="margin-bottom: 15px;">
-            하루한포 스튜디오(이하 "회사")는 다음의 목적을 위하여 개인정보를 처리합니다:
+            마케팅허브 스튜디오(이하 "회사")는 다음의 목적을 위하여 개인정보를 처리합니다:
           </p>
           <ul style="list-style: disc; margin-left: 20px; margin-bottom: 15px;">
             <li>회원 가입 및 관리</li>
@@ -1837,7 +1837,7 @@ export const htmlTemplate = `
           
           <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">제1조 (목적)</h3>
           <p style="margin-bottom: 15px;">
-            본 약관은 하루한포 스튜디오(이하 "회사")가 제공하는 AI 콘텐츠 생성 서비스(이하 "서비스")의 이용과 관련하여 회사와 이용자 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.
+            본 약관은 마케팅허브 스튜디오(이하 "회사")가 제공하는 AI 콘텐츠 생성 서비스(이하 "서비스")의 이용과 관련하여 회사와 이용자 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.
           </p>
 
           <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">제2조 (정의)</h3>

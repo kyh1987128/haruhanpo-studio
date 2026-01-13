@@ -57,9 +57,9 @@ payments.post('/create', authMiddleware, async (c: Context<{ Bindings: Env }>) =
     // 결제 이름 생성
     let orderName = '';
     if (paymentType === 'subscription') {
-      orderName = plan === 'pro' ? '하루한포 PRO 월구독' : '하루한포 EASY 월구독';
+      orderName = plan === 'pro' ? '마케팅허브 PRO 월구독' : '마케팅허브 EASY 월구독';
     } else {
-      orderName = `하루한포 크레딧 ${creditPackSize}회`;
+      orderName = `마케팅허브 크레딧 ${creditPackSize}회`;
     }
     
     // Supabase에 결제 기록 생성 (pending 상태)
