@@ -637,7 +637,7 @@ export const htmlTemplate = `
         </div>
 
         <!-- 날짜/시간 선택 모달 -->
-        <div id="dateTimeModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center" style="z-index: 2147483648;">
+        <div id="dateTimeModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center" style="z-index: 9500;">
             <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 w-full">
                 <div class="text-center mb-6">
                     <div class="text-5xl mb-4">📅</div>
@@ -1080,7 +1080,7 @@ export const htmlTemplate = `
         </div>
 
         <!-- 히스토리 모달 -->
-        <div id="historyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="display: none; z-index: 9999;">
+        <div id="historyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="display: none; z-index: 9000;">
             <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-4xl w-full mx-4 max-h-[85vh] overflow-hidden flex flex-col">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-2xl font-bold text-gray-800">
@@ -2025,6 +2025,25 @@ export const htmlTemplate = `
           alert('SNS 바로가기 기능은 준비 중입니다.');
         });
       });
+      
+      // ✅ 날짜 선택 UI z-index 강제 (최상위 레이어)
+      const datePickerStyle = document.createElement('style');
+      datePickerStyle.textContent = `
+        /* 날짜 선택 UI - 최상위 레이어 (z-index: 9999) */
+        .flatpickr-calendar {
+          z-index: 9999 !important;
+        }
+        .flatpickr-wrapper {
+          z-index: 9999 !important;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+          z-index: 9999 !important;
+        }
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+          z-index: 9999 !important;
+        }
+      `;
+      document.head.appendChild(datePickerStyle);
     </script>
 </body>
 </html>

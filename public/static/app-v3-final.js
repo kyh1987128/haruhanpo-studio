@@ -4751,7 +4751,7 @@ async function openHistoryModal() {
   // 로딩 표시
   historyList.innerHTML = '<p class="text-gray-500 text-center py-8">🔄 히스토리 불러오는 중...</p>';
   
-  // ✅ 강력한 CSS로 모달 표시
+  // ✅ 히스토리 모달 표시 (z-index: 9000)
   modal.classList.remove('hidden');
   modal.classList.add('flex');
   modal.style.cssText = `
@@ -4764,7 +4764,7 @@ async function openHistoryModal() {
     width: 100vw !important;
     height: 100vh !important;
     background-color: rgba(0, 0, 0, 0.5) !important;
-    z-index: 2147483647 !important;
+    z-index: 9000 !important;
     align-items: center !important;
     justify-content: center !important;
     visibility: visible !important;
@@ -5730,9 +5730,10 @@ function updateAuthUI() {
       
       // NEW v7.5: 재가입 사용자 안내
       // 최초 1회만 표시 (sessionStorage 사용)
-      if (!sessionStorage.getItem('rejoin_notice_shown')) {
+      // ✅ 수정: totalCredits가 실제로 0일 때만 표시
+      if (totalCredits === 0 && !sessionStorage.getItem('rejoin_notice_shown')) {
         setTimeout(() => {
-          showToast('ℹ️ 재가입 계정은 무료 크레딧이 제공되지 않습니다. 크레딧을 구매해주세요.', 'info');
+          showToast('ℹ️ 크레딧을 충전해주세요.', 'info');
           sessionStorage.setItem('rejoin_notice_shown', 'true');
         }, 1000);
       }
