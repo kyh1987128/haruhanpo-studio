@@ -4997,10 +4997,17 @@ function viewHistory(id) {
   window.lastGenerationId = id;
   
   resultData = item.results;
+  
+  // 🔥 main-content 영역이 숨겨져 있으면 표시
+  const mainContent = document.querySelector('.main-content');
+  if (mainContent) {
+    mainContent.style.display = 'block';
+  }
+  
   displayResults(item.results, item.platforms);
   
   closeModal('historyModal');
-  showToast('✅ 히스토리를 불러왔습니다', 'success');
+  showToast('✅ 콘텐츠를 불러왔습니다', 'success');
 }
 
 // 🔥 DB 기반 히스토리 삭제 (실제 삭제)
