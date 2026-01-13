@@ -5158,13 +5158,14 @@ async function checkSupabaseSession() {
       };
       currentUser = window.currentUser; // 로컬 참조 동기화
       
-      // ⚠️ 주의: localStorage에 저장하지 않음 (서버 동기화 후에만 저장)
-      // localStorage.setItem('postflow_user', JSON.stringify(currentUser));
+      // ⚠️ 리디렉션 전에 localStorage에 최소 정보 저장
+      localStorage.setItem('postflow_user', JSON.stringify(window.currentUser));
       localStorage.setItem('postflow_token', session.access_token);
       
       // ✅ 랜딩 페이지에서 로그인되어 있으면 PostFlow로 자동 리디렉션
       if (window.location.pathname === '/') {
         console.log('🔄 로그인 상태 감지 - PostFlow로 리디렉션');
+        // 서버 동기화는 리디렉션 후에 PostFlow에서 수행
         window.location.href = '/postflow';
         return; // 리디렉션 중이므로 아래 코드 실행 방지
       }
