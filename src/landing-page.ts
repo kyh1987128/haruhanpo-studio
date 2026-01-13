@@ -10,7 +10,7 @@ export const landingPageTemplate = `
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>마케팅허브 AI 스튜디오 - AI로 콘텐츠 제작을 10배 빠르게</title>
     <meta name="description" content="30초 만에 12개 플랫폼 콘텐츠 자동 생성, 유튜브 AI 분석, 영상 스토리보드 제작까지. 1개 계정으로 3개 서비스 모두 이용하세요.">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="/static/styles.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-50">

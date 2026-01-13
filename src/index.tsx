@@ -1532,7 +1532,7 @@ app.get('/auth/callback', async (c) => {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>이메일 인증 처리 중...</title>
       <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-      <script src="https://cdn.tailwindcss.com"></script>
+      <link href="/static/styles.css" rel="stylesheet">
     </head>
     <body class="bg-gray-100 flex items-center justify-center min-h-screen">
       <div class="bg-white p-8 rounded-lg shadow-lg text-center max-w-md">
