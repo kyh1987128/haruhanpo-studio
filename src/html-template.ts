@@ -259,10 +259,10 @@ export const htmlTemplate = `
     <nav class="bg-white shadow-md mx-4 mt-4 rounded-2xl px-6 py-4">
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-2">
-                    <h1 class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                    <a href="/" class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition cursor-pointer">
                         하루한포 (PostFlow)
-                    </h1>
-                    <span class="text-sm text-gray-500">v7.0</span>
+                    </a>
+                    <span class="text-sm text-gray-500">v8.0</span>
                 </div>
                 
                 <div class="flex items-center space-x-4">

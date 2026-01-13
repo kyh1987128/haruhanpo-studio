@@ -56,7 +56,7 @@ export const landingPageTemplate = `
                 <div class="flex items-center gap-3">
                     <a href="/postflow" class="text-gray-700 hover:text-purple-600 font-medium px-4 py-2">로그인</a>
                     <a href="/postflow" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:shadow-lg transition-all">
-                        무료 시작하기
+                        회원가입
                     </a>
                 </div>
             </div>
@@ -77,7 +77,7 @@ export const landingPageTemplate = `
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
                     <a href="/postflow" class="bg-white text-purple-600 px-8 py-4 rounded-xl font-bold text-lg hover:shadow-2xl transition-all hover:scale-105">
-                        🎁 무료로 시작하기 (500 크레딧 증정)
+                        🎁 무료로 시작하기 (30 크레딧 증정 + 매월 30 크레딧)
                     </a>
                     <a href="#services" class="border-2 border-white text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-white hover:text-purple-600 transition-all">
                         서비스 둘러보기
@@ -125,9 +125,6 @@ export const landingPageTemplate = `
                                 <span><strong>톤앤매너 맞춤</strong> 브랜드 맞춤 콘텐츠</span>
                             </li>
                         </ul>
-                        <a href="/postflow" class="inline-block bg-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-all">
-                            무료 체험하기 →
-                        </a>
                     </div>
                     <div class="bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl p-8 h-96 flex items-center justify-center">
                         <div class="text-center">
@@ -175,9 +172,6 @@ export const landingPageTemplate = `
                                 <span><strong>썸네일 분석</strong> CTR 예측 모델</span>
                             </li>
                         </ul>
-                        <a href="/postflow" class="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all">
-                            무료 체험하기 →
-                        </a>
                     </div>
                 </div>
             </div>
@@ -209,9 +203,6 @@ export const landingPageTemplate = `
                                 <span><strong>프리뷰 영상</strong> 자동 생성 (곧 출시)</span>
                             </li>
                         </ul>
-                        <a href="/postflow" class="inline-block bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition-all">
-                            무료 체험하기 →
-                        </a>
                     </div>
                     <div class="bg-gradient-to-br from-green-100 to-teal-100 rounded-2xl p-8 h-96 flex items-center justify-center">
                         <div class="text-center">
@@ -230,106 +221,104 @@ export const landingPageTemplate = `
     <section id="pricing" class="py-20 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold text-gray-900 mb-4">간단하고 명확한 가격</h2>
-                <p class="text-xl text-gray-600">크레딧 기반 요금제로 필요한 만큼만 사용하세요</p>
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">사용한 만큼만 결제</h2>
+                <p class="text-xl text-gray-600">구독료 없음 · 크레딧 선불 충전 방식</p>
             </div>
 
-            <div class="grid md:grid-cols-3 gap-8">
-                <!-- Lite -->
+            <!-- 크레딧 패키지 -->
+            <div class="grid md:grid-cols-3 gap-8 mb-16">
+                <!-- 100 크레딧 -->
                 <div class="bg-white rounded-2xl p-8 shadow-lg">
-                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Lite</h3>
-                    <p class="text-gray-600 mb-6">개인 사용자</p>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">스타터</h3>
                     <div class="mb-6">
-                        <span class="text-4xl font-bold text-gray-900">9,900원</span>
-                        <span class="text-gray-600">/월</span>
+                        <span class="text-4xl font-bold text-gray-900">3,000원</span>
                     </div>
-                    <ul class="space-y-3 mb-8">
-                        <li class="flex items-center gap-2">
-                            <i class="fas fa-check text-purple-600"></i>
-                            <span>월 100 크레딧</span>
-                        </li>
-                        <li class="flex items-center gap-2">
-                            <i class="fas fa-check text-purple-600"></i>
-                            <span>3개 서비스 모두 이용</span>
-                        </li>
-                        <li class="flex items-center gap-2">
-                            <i class="fas fa-check text-purple-600"></i>
-                            <span>기본 검색·필터</span>
-                        </li>
-                    </ul>
-                    <a href="/postflow" class="block text-center bg-gray-200 text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-all">
-                        시작하기
-                    </a>
+                    <p class="text-gray-600 mb-6">100 크레딧</p>
+                    <p class="text-sm text-gray-500 mb-4">30원/크레딧</p>
                 </div>
 
-                <!-- Pro (추천) -->
+                <!-- 500 크레딧 (인기) -->
                 <div class="bg-gradient-to-br from-purple-600 to-blue-600 text-white rounded-2xl p-8 shadow-2xl transform scale-105">
                     <div class="text-center mb-4">
                         <span class="bg-yellow-400 text-purple-900 px-4 py-1 rounded-full text-sm font-bold">인기</span>
                     </div>
-                    <h3 class="text-2xl font-bold mb-2">Pro</h3>
-                    <p class="opacity-90 mb-6">프로 크리에이터</p>
+                    <h3 class="text-2xl font-bold mb-2">프로</h3>
                     <div class="mb-6">
-                        <span class="text-4xl font-bold">29,900원</span>
-                        <span class="opacity-90">/월</span>
+                        <span class="text-4xl font-bold">14,250원</span>
+                        <span class="text-sm line-through opacity-75 ml-2">15,000원</span>
                     </div>
-                    <ul class="space-y-3 mb-8">
-                        <li class="flex items-center gap-2">
-                            <i class="fas fa-check"></i>
-                            <span>월 500 크레딧</span>
-                        </li>
-                        <li class="flex items-center gap-2">
-                            <i class="fas fa-check"></i>
-                            <span>AI 추천·경쟁자 알람</span>
-                        </li>
-                        <li class="flex items-center gap-2">
-                            <i class="fas fa-check"></i>
-                            <span>썸네일·댓글 분석</span>
-                        </li>
-                        <li class="flex items-center gap-2">
-                            <i class="fas fa-check"></i>
-                            <span>우선 지원</span>
-                        </li>
-                    </ul>
-                    <a href="/postflow" class="block text-center bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:shadow-xl transition-all">
-                        지금 시작하기
-                    </a>
+                    <p class="opacity-90 mb-6">500 크레딧</p>
+                    <p class="text-sm opacity-75 mb-4">28.5원/크레딧 (5% 할인)</p>
                 </div>
 
-                <!-- Agency -->
+                <!-- 1,000 크레딧 -->
                 <div class="bg-white rounded-2xl p-8 shadow-lg">
-                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Agency</h3>
-                    <p class="text-gray-600 mb-6">팀 & 에이전시</p>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">프리미엄</h3>
                     <div class="mb-6">
-                        <span class="text-4xl font-bold text-gray-900">99,900원</span>
-                        <span class="text-gray-600">/월</span>
+                        <span class="text-4xl font-bold text-gray-900">27,000원</span>
+                        <span class="text-sm line-through text-gray-400 ml-2">30,000원</span>
                     </div>
-                    <ul class="space-y-3 mb-8">
-                        <li class="flex items-center gap-2">
-                            <i class="fas fa-check text-purple-600"></i>
-                            <span>무제한 크레딧</span>
-                        </li>
-                        <li class="flex items-center gap-2">
-                            <i class="fas fa-check text-purple-600"></i>
-                            <span>멀티 채널 관리</span>
-                        </li>
-                        <li class="flex items-center gap-2">
-                            <i class="fas fa-check text-purple-600"></i>
-                            <span>팀 협업 기능</span>
-                        </li>
-                        <li class="flex items-center gap-2">
-                            <i class="fas fa-check text-purple-600"></i>
-                            <span>API 제공</span>
-                        </li>
-                        <li class="flex items-center gap-2">
-                            <i class="fas fa-check text-purple-600"></i>
-                            <span>전담 지원</span>
-                        </li>
-                    </ul>
-                    <a href="/postflow" class="block text-center bg-gray-200 text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-all">
-                        문의하기
-                    </a>
+                    <p class="text-gray-600 mb-6">1,000 크레딧</p>
+                    <p class="text-sm text-gray-500 mb-4">27원/크레딧 (10% 할인)</p>
                 </div>
+            </div>
+
+            <!-- 서비스별 크레딧 사용량 -->
+            <div class="bg-white rounded-2xl p-8 shadow-lg">
+                <h3 class="text-2xl font-bold text-gray-900 mb-8 text-center">서비스별 크레딧 사용량</h3>
+                
+                <div class="grid md:grid-cols-3 gap-8">
+                    <!-- PostFlow -->
+                    <div>
+                        <h4 class="font-bold text-purple-600 mb-4 flex items-center gap-2">
+                            <i class="fas fa-edit"></i> PostFlow
+                        </h4>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li>• 1개 플랫폼 콘텐츠 생성 = <strong>1 크레딧</strong></li>
+                            <li>• 12개 플랫폼 전체 생성 = <strong>12 크레딧</strong></li>
+                            <li class="text-xs text-gray-500 pt-2">
+                                예시: 이미지 1장 → 블로그/인스타/유튜브 등 12개 콘텐츠 자동 생성
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- TrendFinder -->
+                    <div>
+                        <h4 class="font-bold text-blue-600 mb-4 flex items-center gap-2">
+                            <i class="fas fa-chart-line"></i> TrendFinder
+                        </h4>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li>• 영상 검색·필터링 = <strong>1 크레딧</strong></li>
+                            <li>• 썸네일 AI 분석 = <strong>3 크레딧</strong></li>
+                            <li>• 댓글 감정 분석 = <strong>5 크레딧</strong></li>
+                            <li>• AI 콘텐츠 전략 제안 = <strong>5 크레딧</strong></li>
+                            <li>• 경쟁 채널 비교 = <strong>10 크레딧</strong></li>
+                        </ul>
+                    </div>
+
+                    <!-- StoryMaker -->
+                    <div>
+                        <h4 class="font-bold text-green-600 mb-4 flex items-center gap-2">
+                            <i class="fas fa-film"></i> StoryMaker
+                        </h4>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            <li>• 짧은 스토리보드 (30초) = <strong>5 크레딧</strong></li>
+                            <li>• 중간 스토리보드 (1~3분) = <strong>10 크레딧</strong></li>
+                            <li>• 긴 스토리보드 (3~10분) = <strong>20 크레딧</strong></li>
+                            <li>• 상세 콘티 생성 = <strong>+5 크레딧</strong></li>
+                            <li>• AI 비디오 프리뷰 = <strong>+10 크레딧</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 무료 크레딧 안내 -->
+            <div class="mt-8 bg-gradient-to-r from-purple-100 to-blue-100 rounded-2xl p-6 text-center">
+                <h4 class="font-bold text-gray-900 mb-2">🎁 무료 크레딧 혜택</h4>
+                <p class="text-gray-700">
+                    신규 가입 시 <strong class="text-purple-600">30 크레딧</strong> 무료 제공 + 
+                    매월 <strong class="text-blue-600">30 크레딧</strong> 자동 지급
+                </p>
             </div>
         </div>
     </section>
@@ -339,7 +328,7 @@ export const landingPageTemplate = `
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
             <h2 class="text-4xl font-bold mb-6">지금 시작하세요</h2>
             <p class="text-xl mb-8 opacity-90">
-                신규 가입 시 500 크레딧을 무료로 드립니다.<br>
+                신규 가입 시 30 크레딧을 무료로 드리고, 매월 30 크레딧이 자동 지급됩니다.<br>
                 신용카드 등록 없이 3초 만에 시작할 수 있어요.
             </p>
             <a href="/postflow" class="inline-block bg-white text-purple-600 px-12 py-4 rounded-xl font-bold text-lg hover:shadow-2xl transition-all hover:scale-105">
