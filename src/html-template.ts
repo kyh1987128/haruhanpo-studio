@@ -16,7 +16,7 @@ export const htmlTemplate = `
     </script>
     
     <!-- Tailwind CSS - Built by Vite -->
-    <link href="/static/style.css" rel="stylesheet">
+    <link href="/static/styles.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     
     <!-- FullCalendar CSS -->
