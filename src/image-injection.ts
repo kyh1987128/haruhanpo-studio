@@ -102,6 +102,38 @@ export function injectImagesIntoBrunchContent(
 }
 
 /**
+ * 인스타그램 콘텐츠에 이미지 메타데이터를 추가합니다.
+ * 
+ * @param content - AI가 생성한 인스타그램 콘텐츠
+ * @param images - 사용할 이미지 배열
+ * @returns 이미지 메타데이터가 포함된 콘텐츠
+ */
+export function addInstagramImageMetadata(
+  content: string,
+  images: SmartImageResult[]
+): string {
+  if (!images || images.length === 0) {
+    return content;
+  }
+  
+  // 인스타그램은 이미지를 별도로 업로드하므로
+  // 콘텐츠에는 이미지 설명만 추가
+  let result = content;
+  
+  // 이미지 정보를 콘텐츠 하단에 메모로 추가
+  result += '\n\n---\n📸 이미지 정보:\n';
+  images.forEach((img, index) => {
+    result += `${index + 1}. ${img.alt}\n`;
+    result += `   출처: ${img.source === 'user_upload' ? '사용자 업로드' : img.source === 'unsplash' ? 'Unsplash' : 'AI 생성'}\n`;
+    if (img.caption) {
+      result += `   캡션: ${img.caption}\n`;
+    }
+  });
+  
+  return result;
+}
+
+/**
  * HTML을 네이버 블로그 복사-붙여넣기 최적화 형식으로 변환합니다.
  * - HTML 태그 제거
  * - 이미지는 [이미지] 표시로 변환

@@ -10,7 +10,7 @@ import { createSupabaseAdmin, createSupabaseClient, grantMilestoneCredit, update
 import { parseMultipleDocuments, combineDocumentTexts, truncateText } from './document-parser';
 import payments from './routes/payments';
 import images, { fetchSmartImages } from './routes/images';
-import { injectImagesIntoBlogContent, injectImagesIntoBrunchContent, convertHtmlToNaverText } from './image-injection';
+import { injectImagesIntoBlogContent, injectImagesIntoBrunchContent, convertHtmlToNaverText, addInstagramImageMetadata } from './image-injection';
 
 type Bindings = {
   OPENAI_API_KEY: string;
@@ -1110,6 +1110,12 @@ app.post('/api/generate', async (c) => {
         console.log('  📖 브런치에 이미지 배치 중...');
         data[platform] = injectImagesIntoBrunchContent(content, smartImages);
         console.log(`  ✅ 브런치 이미지 ${smartImages.length}개 배치 완료`);
+      }
+      // 인스타그램: 이미지 메타데이터 추가
+      else if ((platform === 'instagram' || platform === 'instagram_feed') && smartImages.length > 0) {
+        console.log('  📸 인스타그램에 이미지 메타데이터 추가 중...');
+        data[platform] = addInstagramImageMetadata(content, smartImages);
+        console.log(`  ✅ 인스타그램 이미지 ${smartImages.length}개 메타데이터 추가 완료`);
       }
       // 기타 플랫폼: 원본 유지
       else {
