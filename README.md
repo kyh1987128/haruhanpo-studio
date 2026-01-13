@@ -9,9 +9,44 @@
   - Backend: Cloudflare Workers + Supabase PostgreSQL + 토스페이먼츠
   - AI: OpenAI GPT-4o + Google Gemini Flash (하이브리드)
 
-## 🌟 최신 업데이트 (v8.6 - Tailwind 프로덕션 최적화) ⭐⭐⭐ NEW
+## 🌟 최신 업데이트
 
-### 🚀 **v8.6 Tailwind CSS 프로덕션 최적화** ⭐⭐⭐ NEW (2026-01-13)
+### 🚀 **v8.8 히스토리 보기 + 멀티탭 크레딧 동기화** ⭐⭐⭐ NEW (2026-01-13)
+**완전 해결: 히스토리 "보기" 버튼 + 멀티탭 크레딧 동기화**
+
+**주요 변경사항:**
+- ✅ **히스토리 "보기" 버튼 완전 수정**:
+  - `viewHistory()` 함수 강화 - 화면 전환 로직 추가
+  - 캘린더 뷰 → 콘텐츠 뷰 자동 전환
+  - `resultArea` 강제 표시 및 스크롤 이동
+  - 좌측 패널 + 메인 콘텐츠 영역 동시 표시
+  - 전체 로그 추가로 문제 추적 가능
+- ✅ **멀티탭 크레딧 동기화 시스템**:
+  - **BroadcastChannel API** - 크로스 탭 실시간 통신
+  - **visibilitychange 이벤트** - 탭 활성화 시 자동 동기화
+  - **LocalStorage 이벤트** - 다른 탭 변경 감지
+  - 모든 탭에서 크레딧 정보 실시간 반영
+- ✅ **백엔드 트랜잭션 강화**:
+  - **Supabase RPC 함수** `deduct_credits_safe()` 구현
+  - **PostgreSQL FOR UPDATE** - 행 잠금으로 동시 접근 차단
+  - Race Condition 완전 방지
+  - 무료 크레딧 우선 차감 로직 유지
+
+**안전성:**
+- 여러 탭/창을 동시에 열어도 안전
+- 크레딧 중복 차감 방지
+- 모든 탭에서 크레딧 정보 실시간 동기화
+- 데이터베이스 무결성 보장 (ACID 트랜잭션)
+
+**기술 상세:**
+- **Frontend**: BroadcastChannel + visibilitychange + storage event
+- **Backend**: Supabase RPC + PostgreSQL FOR UPDATE
+- **파일**: 
+  - `public/static/app-v3-final.js` - 동기화 로직
+  - `src/index.tsx` - 트랜잭션 API
+  - `supabase-functions/deduct_credits_safe.sql` - DB 함수
+
+### 🚀 **v8.7 모달 계층 문제 완전 해결** ⭐⭐⭐ (2026-01-13)
 **CDN 제거 완료! 프로덕션 빌드 최적화!**
 
 **주요 변경사항:**
