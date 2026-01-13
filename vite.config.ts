@@ -1,12 +1,11 @@
 import { defineConfig } from 'vite'
 import pages from '@hono/vite-cloudflare-pages'
-import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
-  plugins: [
-    pages(),
-    tailwindcss(),
-  ],
+  plugins: [pages()],
+  css: {
+    postcss: './postcss.config.js',
+  },
   build: {
     outDir: 'dist',
     rollupOptions: {
