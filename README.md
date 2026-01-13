@@ -19,8 +19,13 @@
 - ✅ **브런치 플랫폼 추가**: 마크다운 형식 지원
 - ✅ **이미지 소스 통합 API** (`/api/images/smart-fetch`):
   1. 사용자 업로드 이미지 우선 사용
-  2. 부족 시 Unsplash API로 무료 이미지 검색
+  2. 부족 시 **3개 무료 이미지 API**로 검색 (Unsplash → Pexels → Pixabay)
   3. 여전히 부족하면 AI 이미지 생성 (DALL-E 3)
+- ✅ **무료 이미지 API 3개 통합**:
+  - **Unsplash**: 300만+ 고품질 전문가 사진 (50 requests/hour)
+  - **Pexels**: 300만+ 상업용 무료 사진 (200 requests/hour)
+  - **Pixabay**: 430만+ 사진/일러스트/벡터 (100 requests/minute)
+  - **총 1,000만+ 이미지 선택지**
 - ✅ **네이버 블로그 완벽 붙여넣기**:
   - HTML 형식 자동 이미지 배치
   - `<figure>` + `<figcaption>` 자동 생성
@@ -36,6 +41,11 @@
 - 네이버 블로그: HTML `<figure>` 태그로 자동 배치
 - 브런치: 마크다운 `![alt](url)` 형식으로 자동 배치
 - 인스타그램: 이미지 메타데이터를 콘텐츠 하단에 추가
+
+**무료 이미지 API 설정 가이드:**
+1. **Unsplash** (권장, 고품질): https://unsplash.com/developers → Register as a Developer
+2. **Pexels** (상업용): https://www.pexels.com/api/ → Create API Key
+3. **Pixabay** (일러스트): https://pixabay.com/api/docs/ → Get API Key
 
 ### 🧹 **v7.11.1 UI 정리 - 히어로 섹션 제거** ⭐ (2026-01-12)
 **깔끔한 사용자 경험!**

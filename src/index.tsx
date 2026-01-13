@@ -1090,6 +1090,8 @@ app.post('/api/generate', async (c) => {
       keywords: keywords.split(',').map(k => k.trim()),
       requiredCount: Math.min(3, images.length || 3), // 최대 3개
       unsplashKey: c.env.UNSPLASH_ACCESS_KEY,
+      pexelsKey: c.env.PEXELS_API_KEY,
+      pixabayKey: c.env.PIXABAY_API_KEY,
       openaiKey: c.env.OPENAI_API_KEY
     }) : [];
     
