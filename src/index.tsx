@@ -4,6 +4,7 @@ import { serveStatic } from 'hono/cloudflare-workers';
 import OpenAI from 'openai';
 import { getBlogPrompt, getInstagramPrompt, getThreadsPrompt, getYouTubePrompt, getYoutubeLongformPrompt, getShortformPrompt, getMetadataPrompt, getInstagramFeedPrompt, getTwitterPrompt, getLinkedInPrompt, getKakaoTalkPrompt, getBrunchPrompt, getTikTokPrompt, getInstagramReelsPrompt } from './prompts';
 import { htmlTemplate } from './html-template';
+import { landingPageTemplate } from './landing-page';
 import { analyzeImageWithGemini, generateContentWithGemini, calculateGeminiCost, estimateTokens } from './gemini';
 import { createSupabaseAdmin, createSupabaseClient, grantMilestoneCredit, updateConsecutiveLogin, checkAndUseMonthlyQuota } from './lib/supabase';
 import { parseMultipleDocuments, combineDocumentTexts, truncateText } from './document-parser';
@@ -2801,8 +2802,13 @@ app.patch('/api/history', async (c) => {
   }
 });
 
-// 메인 페이지
+// 비회원 랜딩 페이지
 app.get('/', (c) => {
+  return c.html(landingPageTemplate);
+});
+
+// PostFlow 앱 (로그인 필수)
+app.get('/postflow', (c) => {
   return c.html(htmlTemplate);
 });
 
