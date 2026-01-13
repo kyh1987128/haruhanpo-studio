@@ -335,11 +335,15 @@ async function analyzeKeywordsQuality() {
           window.updateCostEstimate();
         }
         
-        // 키워드 분석 카드 UI 업데이트
-        const cardEl = document.querySelector('[data-keyword-analysis-card]');
-        if (cardEl) {
-          cardEl.outerHTML = renderKeywordAnalysisCard();
-        }
+        // 키워드 분석 카드 UI 즉시 업데이트
+        const freeEl = document.getElementById('freeKeywordCredits');
+        const paidEl = document.getElementById('paidKeywordCredits');
+        if (freeEl) freeEl.textContent = ci.remaining_free_credits;
+        if (paidEl) paidEl.textContent = ci.remaining_paid_credits;
+        console.log('✅ 키워드 분석 카드 크레딧 표시 업데이트:', {
+          free: ci.remaining_free_credits,
+          paid: ci.remaining_paid_credits
+        });
         
         // 성공 메시지
         let message = '✅ 분석 완료!';

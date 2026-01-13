@@ -489,13 +489,9 @@ export const htmlTemplate = `
                 </h3>
                 <!-- 2열 그리드 레이아웃 -->
                 <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">브랜드명</label>
-                        <input type="text" id="brandName" placeholder="예: 하루한포" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">서비스명</label>
-                        <input type="text" id="serviceName" placeholder="예: AI 콘텐츠 생성" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">브랜드, 서비스, 상품명</label>
+                        <input type="text" id="brandName" placeholder="예: 하루한포 AI 콘텐츠 생성 서비스" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">회사·상호명</label>
@@ -560,15 +556,32 @@ export const htmlTemplate = `
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">산업 분야</label>
                         <select id="industry" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
-                            <option value="">선택하세요</option>
-                            <option value="IT/소프트웨어">IT/소프트웨어</option>
-                            <option value="제조/생산">제조/생산</option>
-                            <option value="유통/판매">유통/판매</option>
-                            <option value="서비스">서비스</option>
-                            <option value="교육">교육</option>
-                            <option value="의료/건강">의료/건강</option>
-                            <option value="금융">금융</option>
-                            <option value="기타">기타</option>
+                            <option value="">선택안함 (AI가 자동 판단)</option>
+                            <option value="라이프스타일">라이프스타일</option>
+                            <option value="뷰티/코스메틱">뷰티/코스메틱</option>
+                            <option value="패션/의류">패션/의류</option>
+                            <option value="음식/외식">음식/외식 (F&B)</option>
+                            <option value="카페/디저트">카페/디저트</option>
+                            <option value="IT/테크">IT/테크</option>
+                            <option value="제조/엔지니어링">제조/엔지니어링</option>
+                            <option value="건설/건축">건설/건축</option>
+                            <option value="헬스/피트니스">헬스/피트니스</option>
+                            <option value="의료/병원">의료/병원</option>
+                            <option value="교육/학원">교육/학원</option>
+                            <option value="부동산/인테리어">부동산/인테리어</option>
+                            <option value="금융/보험">금융/보험</option>
+                            <option value="법률/컨설팅">법률/컨설팅</option>
+                            <option value="여행/관광">여행/관광</option>
+                            <option value="숙박/호텔">숙박/호텔</option>
+                            <option value="반려동물">반려동물</option>
+                            <option value="자동차/정비">자동차/정비</option>
+                            <option value="가전/전자">가전/전자</option>
+                            <option value="스포츠/레저">스포츠/레저</option>
+                            <option value="문화/예술">문화/예술</option>
+                            <option value="웨딩/이벤트">웨딩/이벤트</option>
+                            <option value="미용/헤어">미용/헤어</option>
+                            <option value="유통/물류">유통/물류</option>
+                            <option value="농업/수산">농업/수산</option>
                         </select>
                     </div>
                 </div>
@@ -1962,7 +1975,7 @@ export const htmlTemplate = `
     </div><!-- layout-container -->
     
     <!-- JavaScript -->
-    <script src="/static/i18n.js?v=20.0.0"></script>
+    <script src="/static/i18n.js?v=21.0.0"></script>
     
     <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
@@ -1971,8 +1984,8 @@ export const htmlTemplate = `
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ko.js"></script>
     
-    <script src="/static/app-v3-final.js?v=20.0.0"></script>
-    <script src="/static/keyword-analysis.js?v=20.0.0"></script>
+    <script src="/static/app-v3-final.js?v=21.0.0"></script>
+    <script src="/static/keyword-analysis.js?v=21.0.0"></script>
     <script src="/static/keyword-extended.js?v=19.0.0"></script>
     
     <script>
