@@ -20,9 +20,9 @@ export const landingPageTemplate = `
             <div class="flex justify-between items-center h-16">
                 <!-- 로고 -->
                 <div class="flex items-center gap-2">
-                    <div class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                    <a href="/" onclick="sessionStorage.removeItem('landing_page_visited');" class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition cursor-pointer">
                         🏠 마케팅허브 AI 스튜디오
-                    </div>
+                    </a>
                 </div>
                 
                 <!-- 네비게이션 -->

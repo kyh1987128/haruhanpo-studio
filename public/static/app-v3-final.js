@@ -5163,11 +5163,18 @@ async function checkSupabaseSession() {
       localStorage.setItem('postflow_token', session.access_token);
       
       // ✅ 랜딩 페이지에서 로그인되어 있으면 PostFlow로 자동 리디렉션
+      // ⚠️ 단, 사용자가 직접 랜딩 페이지를 선택한 경우(sessionStorage 체크)는 리디렉션 안 함
       if (window.location.pathname === '/') {
-        console.log('🔄 로그인 상태 감지 - PostFlow로 리디렉션');
-        // 서버 동기화는 리디렉션 후에 PostFlow에서 수행
-        window.location.href = '/postflow';
-        return; // 리디렉션 중이므로 아래 코드 실행 방지
+        // 이미 리디렉션 체크를 한 경우 스킵
+        if (sessionStorage.getItem('landing_page_visited')) {
+          console.log('⏭️ 사용자가 랜딩 페이지를 직접 선택 - 리디렉션 스킵');
+        } else {
+          console.log('🔄 로그인 상태 감지 - PostFlow로 리디렉션');
+          sessionStorage.setItem('landing_page_visited', 'true');
+          // 서버 동기화는 리디렉션 후에 PostFlow에서 수행
+          window.location.href = '/postflow';
+          return; // 리디렉션 중이므로 아래 코드 실행 방지
+        }
       }
       
       // ✅ UI는 일단 기본 상태로 업데이트

@@ -259,7 +259,7 @@ export const htmlTemplate = `
     <nav class="bg-white shadow-md mx-4 mt-4 rounded-2xl px-6 py-4">
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-2">
-                    <a href="/" class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition cursor-pointer">
+                    <a href="/" onclick="sessionStorage.removeItem('landing_page_visited');" class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition cursor-pointer">
                         마케팅허브 (Marketing Hub)
                     </a>
                     <span class="text-sm text-gray-500">v8.0</span>
