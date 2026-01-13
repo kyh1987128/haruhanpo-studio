@@ -4723,8 +4723,19 @@ async function saveToHistory(formData, results) {
 
 // ✅ DB 기반 히스토리 모달 (자동 로드)
 async function openHistoryModal() {
+  console.log('🔵 openHistoryModal 호출됨');
+  
   const modal = document.getElementById('historyModal');
   const historyList = document.getElementById('historyList');
+  
+  console.log('🔵 modal:', modal);
+  console.log('🔵 historyList:', historyList);
+  
+  if (!modal || !historyList) {
+    console.error('❌ 히스토리 모달 요소를 찾을 수 없습니다!');
+    showToast('히스토리 모달을 열 수 없습니다.', 'error');
+    return;
+  }
   
   // 검색/필터 초기화 (UI 제거로 주석 처리)
   // document.getElementById('historySearch').value = '';
@@ -4736,11 +4747,17 @@ async function openHistoryModal() {
   modal.classList.remove('hidden');
   modal.style.display = 'flex';
   
+  console.log('🔵 모달 표시 완료, 히스토리 로드 시작');
+  
   // DB에서 히스토리 로드
   await loadHistory();
   
+  console.log('🔵 히스토리 로드 완료, contentHistory:', contentHistory.length);
+  
   // 렌더링
   renderHistory();
+  
+  console.log('🔵 렌더링 완료');
 }
 
 function renderHistory() {
@@ -5876,7 +5893,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // 히스토리 버튼
   if (historyBtn) {
     historyBtn.addEventListener('click', (e) => {
+      console.log('🟢 히스토리 버튼 클릭됨', currentUser);
+      
       if (currentUser.isGuest) {
+        console.log('🟡 게스트 상태 - 로그인 유도');
         e.preventDefault();
         e.stopPropagation();
         if (confirm('이 기능은 회원 전용입니다. 로그인 하시겠습니까?')) {
@@ -5885,8 +5905,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return false;
       }
       // 로그인 상태: 히스토리 모달 열기
+      console.log('🟢 로그인 상태 - openHistoryModal 호출');
       openHistoryModal();
     });
+    console.log('✅ 히스토리 버튼 이벤트 리스너 등록 완료');
+  } else {
+    console.error('❌ historyBtn 요소를 찾을 수 없습니다!');
   }
   
   // 템플릿 버튼
@@ -7125,7 +7149,11 @@ async function loadScheduledContent(status = 'all') {
       throw new Error(data.error || '발행 예정 콘텐츠 조회 실패');
     }
 
-    renderScheduledContentList(data.scheduled_content || []);
+    // ✅ scheduled_date가 있는 콘텐츠만 필터링
+    const scheduledOnly = (data.scheduled_content || []).filter(item => item.scheduled_date);
+    console.log(`✅ 캘린더 목록 보기: 전체 ${data.scheduled_content?.length || 0}개 중 예정일 설정 ${scheduledOnly.length}개`);
+    
+    renderScheduledContentList(scheduledOnly);
   } catch (error) {
     console.error('발행 예정 콘텐츠 로드 오류:', error);
     showToast('발행 예정 콘텐츠를 불러올 수 없습니다.', 'error');
