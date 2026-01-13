@@ -5267,10 +5267,13 @@ async function syncUserToBackend(session, isNewUser = false) {
       } else {
         console.log('✅ 회원가입 이미 완료 - 모달 표시 안 함');
         // 신규 사용자 / 기존 사용자 환영 메시지
-        if (isNewUser) {
-          showWelcomeMessage('signup');
-        } else {
-          showWelcomeMessage('login');
+        // ⚠️ 랜딩 페이지에서는 환영 메시지 표시 안 함 (리디렉션 중)
+        if (window.location.pathname !== '/') {
+          if (isNewUser) {
+            showWelcomeMessage('signup');
+          } else {
+            showWelcomeMessage('login');
+          }
         }
       }
     } else {
