@@ -5162,6 +5162,13 @@ async function checkSupabaseSession() {
       // localStorage.setItem('postflow_user', JSON.stringify(currentUser));
       localStorage.setItem('postflow_token', session.access_token);
       
+      // ✅ 랜딩 페이지에서 로그인되어 있으면 PostFlow로 자동 리디렉션
+      if (window.location.pathname === '/') {
+        console.log('🔄 로그인 상태 감지 - PostFlow로 리디렉션');
+        window.location.href = '/postflow';
+        return; // 리디렉션 중이므로 아래 코드 실행 방지
+      }
+      
       // ✅ UI는 일단 기본 상태로 업데이트
       updateAuthUI();
       
