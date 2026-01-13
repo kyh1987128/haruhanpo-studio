@@ -4744,12 +4744,16 @@ async function openHistoryModal() {
   
   // 로딩 표시
   historyList.innerHTML = '<p class="text-gray-500 text-center py-8">🔄 히스토리 불러오는 중...</p>';
+  
+  // ✅ 가장 강력한 방식으로 모달 표시 (!important 사용)
   modal.classList.remove('hidden');
   modal.classList.add('flex');
-  modal.style.display = 'flex';
+  modal.style.setProperty('display', 'flex', 'important');
+  modal.style.setProperty('visibility', 'visible', 'important');
+  modal.style.setProperty('z-index', '9999', 'important');
   
-  console.log('🔵 모달 표시 완료, classList:', modal.classList.toString());
-  console.log('🔵 모달 style.display:', modal.style.display);
+  console.log('🔵 모달 강제 표시 완료 - display:', modal.style.display);
+  console.log('🔵 모달 classList:', modal.classList.toString());
   
   // DB에서 히스토리 로드
   await loadHistory();
@@ -5033,9 +5037,11 @@ async function deleteHistory(id) {
 function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) {
+    // ✅ 확실한 숨김 처리 (!important 사용)
     modal.classList.add('hidden');
     modal.classList.remove('flex');
-    modal.style.display = 'none';
+    modal.style.setProperty('display', 'none', 'important');
+    modal.style.setProperty('visibility', 'hidden', 'important');
   }
 }
 
