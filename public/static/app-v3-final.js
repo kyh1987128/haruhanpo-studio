@@ -5909,6 +5909,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
+  // 🔍 디버깅: 함수와 데이터 검증 (개발자 콘솔에서 확인 가능)
+  setTimeout(() => {
+    console.log('🔍 === 히스토리/캘린더 검증 ===');
+    console.log('1️⃣ openHistoryModal:', typeof window.openHistoryModal);
+    console.log('2️⃣ viewHistory:', typeof window.viewHistory);
+    console.log('3️⃣ loadCalendarEvents:', typeof window.loadCalendarEvents);
+    console.log('4️⃣ contentHistory:', window.contentHistory ? `${window.contentHistory.length}개` : 'undefined');
+    console.log('5️⃣ historyBtn:', document.getElementById('historyBtn') ? '✅ 존재' : '❌ 없음');
+    console.log('6️⃣ currentUser:', window.currentUser);
+    console.log('================================');
+  }, 1000);
+  
   // 🆕 인증 모달 내부 버튼 이벤트 리스너 (NEW v7.3)
   const emailAuthBtn = document.getElementById('emailAuthBtn');
   const googleLoginBtn = document.getElementById('googleLoginBtn');
