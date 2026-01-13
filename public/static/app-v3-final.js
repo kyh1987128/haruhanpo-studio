@@ -4745,9 +4745,11 @@ async function openHistoryModal() {
   // 로딩 표시
   historyList.innerHTML = '<p class="text-gray-500 text-center py-8">🔄 히스토리 불러오는 중...</p>';
   modal.classList.remove('hidden');
+  modal.classList.add('flex');
   modal.style.display = 'flex';
   
-  console.log('🔵 모달 표시 완료, 히스토리 로드 시작');
+  console.log('🔵 모달 표시 완료, classList:', modal.classList.toString());
+  console.log('🔵 모달 style.display:', modal.style.display);
   
   // DB에서 히스토리 로드
   await loadHistory();
@@ -5032,6 +5034,7 @@ function closeModal(modalId) {
   const modal = document.getElementById(modalId);
   if (modal) {
     modal.classList.add('hidden');
+    modal.classList.remove('flex');
     modal.style.display = 'none';
   }
 }
