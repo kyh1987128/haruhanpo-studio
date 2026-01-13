@@ -743,24 +743,8 @@ app.post('/api/generate', async (c) => {
           message: error.message || '크레딧 차감 중 문제가 발생했습니다.'
         }, 500);
       }
-        console.log(`✅ 크레딧 차감 완료:`, {
-          used: `${requiredCredits}크레딧 (무료 ${freeUsed} + 유료 ${paidUsed})`,
-          free: `${initialFreeCredits} → ${updatedUser.free_credits}`,
-          paid: `${initialPaidCredits} → ${updatedUser.paid_credits}`,
-          total: (updatedUser.free_credits || 0) + (updatedUser.paid_credits || 0)
-        });
-        
-        initialFreeCredits = updatedUser.free_credits || 0;
-        initialPaidCredits = updatedUser.paid_credits || 0;
-      } else {
-        console.error('❌ 크레딧 차감 실패:', updateError);
-        return c.json({
-          success: false,
-          error: '크레딧 차감 실패',
-          message: '크레딧 차감 중 오류가 발생했습니다.'
-        }, 500);
-      }
     }
+
 
     // 3단계: 선택된 플랫폼만 콘텐츠 생성 (병렬 처리)
     const promptParams = {
