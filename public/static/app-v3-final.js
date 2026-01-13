@@ -7132,6 +7132,11 @@ async function saveSchedule(generationId, platform, scheduledDate) {
     if (calendarInstance) {
       calendarInstance.refetchEvents();
     }
+    
+    // 🔥 목록 보기도 새로고침 (현재 목록 보기 상태라면)
+    if (!isCalendarView) {
+      await loadScheduledContent('all');
+    }
   } catch (error) {
     console.error('발행 예정일 저장 오류:', error);
     showToast('발행 예정일 설정에 실패했습니다.', 'error');
