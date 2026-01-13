@@ -5,13 +5,39 @@
 - **부제**: 이미지/문서로 12개 플랫폼 콘텐츠 자동 생성 + 회원/결제 시스템
 - **목표**: 이미지와 문서(PDF/DOCX/TXT)를 입력받아 원하는 플랫폼만 선택하여 최적화된 콘텐츠를 AI로 자동 생성
 - **기술 스택**: 
-  - Frontend: Hono + TypeScript + Vite + TailwindCSS
+  - Frontend: Hono + TypeScript + Vite + **Tailwind CSS v3 (Production Build)**
   - Backend: Cloudflare Workers + Supabase PostgreSQL + 토스페이먼츠
   - AI: OpenAI GPT-4o + Google Gemini Flash (하이브리드)
 
-## 🌟 최신 업데이트 (v8.5 - 히스토리/캘린더 수정) ⭐⭐⭐ NEW
+## 🌟 최신 업데이트 (v8.6 - Tailwind 프로덕션 최적화) ⭐⭐⭐ NEW
 
-### 🐛 **v8.5 히스토리/캘린더 버그 수정** ⭐⭐⭐ NEW (2026-01-13)
+### 🚀 **v8.6 Tailwind CSS 프로덕션 최적화** ⭐⭐⭐ NEW (2026-01-13)
+**CDN 제거 완료! 프로덕션 빌드 최적화!**
+
+**주요 변경사항:**
+- ✅ **Tailwind CDN 완전 제거**:
+  - 개발용 `cdn.tailwindcss.com` 제거
+  - 프로덕션 빌드 시스템으로 전환
+  - 파일 크기 및 로딩 속도 최적화
+- ✅ **Tailwind v3 + PostCSS 통합**:
+  - `@tailwindcss/postcss` 플러그인 사용
+  - 빌드 시 CSS 자동 생성 (`public/static/styles.css`)
+  - 필요한 CSS만 포함 (Tree Shaking)
+- ✅ **빌드 프로세스 개선**:
+  - `npm run build:css` - Tailwind CSS 빌드
+  - `npm run build` - CSS + Vite 통합 빌드
+  - 프로덕션 배포 시 자동 CSS 최적화
+- ✅ **파일 크기**:
+  - 빌드된 CSS: 39KB (minified)
+  - 기존 CDN: 3.5MB+ (전체 유틸리티 로드)
+  - **99% 이상 크기 감소**
+
+**기술 스택 업데이트:**
+- Frontend: Hono + TypeScript + Vite + **Tailwind CSS v3 (Production Build)**
+- Backend: Cloudflare Workers + Supabase PostgreSQL + 토스페이먼츠
+- AI: OpenAI GPT-4o + Google Gemini Flash (하이브리드)
+
+### 🐛 **v8.5 히스토리/캘린더 버그 수정** ⭐⭐⭐ (2026-01-13)
 **핵심 기능 안정화 완료!**
 
 **수정 사항:**
