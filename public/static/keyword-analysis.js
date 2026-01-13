@@ -830,30 +830,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('ℹ️ [초기화] 비로그인 상태로 카드 렌더링');
   }
   
-  // 카드 렌더링 - 콘텐츠 생성 폼 위에 삽입
-  const contentForm = document.querySelector('#contentForm, .content-form, form');
-  if (contentForm && contentForm.parentNode) {
-    const cardContainer = document.createElement('div');
-    cardContainer.setAttribute('data-keyword-analysis-section', '');
-    cardContainer.innerHTML = renderKeywordAnalysisCard();
-    
-    // 폼 바로 위에 삽입
-    contentForm.parentNode.insertBefore(cardContainer, contentForm);
-    console.log('✅ 키워드 분석 카드 삽입 완료 (폼 위)');
-  } else {
-    // 대안: body 맨 위에 삽입
-    const body = document.body;
-    if (body) {
-      const cardContainer = document.createElement('div');
-      cardContainer.setAttribute('data-keyword-analysis-section', '');
-      cardContainer.innerHTML = renderKeywordAnalysisCard();
-      cardContainer.style.maxWidth = '1200px';
-      cardContainer.style.margin = '2rem auto';
-      cardContainer.style.padding = '0 1rem';
-      body.insertAdjacentElement('afterbegin', cardContainer);
-      console.log('✅ 키워드 분석 카드 삽입 완료 (body 상단)');
-    }
-  }
+  // ✅ 메인 영역 자동 생성 제거 - 좌측 패널의 키워드 분석 UI만 사용
+  console.log('ℹ️ [초기화] 좌측 패널의 키워드 분석 UI 사용 (메인 영역 중복 제거)');
   
   // 🔔 사용자 정보 변경 감지 리스너 추가 (핵심!)
   window.addEventListener('userUpdated', (event) => {

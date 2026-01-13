@@ -368,68 +368,6 @@ export const htmlTemplate = `
             
             <!-- 구분선 -->
             <div id="leftPanelDivider" class="hidden border-t border-gray-200 my-6"></div>
-            
-            <!-- 키워드 분석 UI (항상 표시) -->
-            <div id="keywordAnalysisContainer">
-                <div class="mb-6 p-6 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl text-white relative overflow-hidden">
-                    <!-- 배경 패턴 -->
-                    <div class="absolute top-0 right-0 w-32 h-32 opacity-30">
-                        <div class="w-full h-full" style="background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 10px 10px;"></div>
-                    </div>
-                    
-                    <div class="relative z-10">
-                        <!-- 헤더 -->
-                        <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
-                            <h3 class="text-lg font-bold">📊 키워드 AI 분석</h3>
-                            <div class="text-xs bg-white bg-opacity-20 px-3 py-1.5 rounded-full font-semibold">
-                                무료 <span id="freeKeywordCredits">0</span> · 유료 <span id="paidKeywordCredits">0</span>
-                            </div>
-                        </div>
-                        
-                        <p class="text-sm mb-4 opacity-95 leading-relaxed">
-                            키워드 분석 시 <strong>크레딧 1개</strong>가 차감됩니다.<br>
-                            무료 크레딧부터 우선 사용됩니다.
-                        </p>
-                        
-                        <!-- 입력 필드 -->
-                        <div class="relative mb-4">
-                            <input
-                                type="text"
-                                id="keywordAnalysisInput"
-                                placeholder="분석할 키워드 입력 (예: 수분크림, 여름 화장품)"
-                                class="w-full py-3 pr-24 pl-4 rounded-xl text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
-                                onkeydown="if(event.key === 'Enter') analyzeKeywordsQuality()"
-                            />
-                            <button
-                                onclick="analyzeKeywordsQuality()"
-                                class="absolute right-2 top-2 bottom-2 px-4 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg font-bold text-sm hover:scale-105 transition-transform"
-                            >
-                                🎯 분석
-                            </button>
-                        </div>
-                        
-                        <!-- 빠른 테스트 샘플 -->
-                        <div class="flex gap-2 flex-wrap items-center text-xs">
-                            <span class="opacity-90">빠른 테스트:</span>
-                            <button onclick="setKeywordSample('비건 화장품, 친환경 패키지, 제로웨이스트')" class="sample-btn">🌿 친환경</button>
-                            <button onclick="setKeywordSample('홈트레이닝, 요가 매트, 필라테스')" class="sample-btn">💪 운동</button>
-                            <button onclick="setKeywordSample('반려동물 용품, 강아지 간식')" class="sample-btn">🐕 펫케어</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <style>
-                .sample-btn {
-                    background: rgba(255,255,255,0.2);
-                    border: none;
-                    padding: 0.4rem 0.8rem;
-                    border-radius: 12px;
-                    color: white;
-                    font-size: 0.75rem;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    font-weight: 500;
                 }
                 .sample-btn:hover {
                     background: rgba(255,255,255,0.3);
@@ -490,7 +428,9 @@ export const htmlTemplate = `
                 <!-- 2열 그리드 레이아웃 -->
                 <div class="grid grid-cols-2 gap-3">
                     <div class="col-span-2">
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">브랜드, 서비스, 상품명</label>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">
+                            브랜드, 서비스, 상품명 <span class="text-red-500">*</span>
+                        </label>
                         <input type="text" id="brandName" placeholder="예: 하루한포 AI 콘텐츠 생성 서비스" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
                     </div>
                     <div>
@@ -586,6 +526,77 @@ export const htmlTemplate = `
                     </div>
                 </div>
             </div>
+            
+            <!-- 구분선 -->
+            <div class="border-t border-gray-200 my-6"></div>
+            
+            <!-- 키워드 분석 UI (프로필 정보 아래) -->
+            <div id="keywordAnalysisContainer">
+                <div class="mb-6 p-6 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl text-white relative overflow-hidden">
+                    <!-- 배경 패턴 -->
+                    <div class="absolute top-0 right-0 w-32 h-32 opacity-30">
+                        <div class="w-full h-full" style="background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 10px 10px;"></div>
+                    </div>
+                    
+                    <div class="relative z-10">
+                        <!-- 헤더 -->
+                        <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+                            <h3 class="text-lg font-bold">📊 키워드 AI 분석</h3>
+                            <div class="text-xs bg-white bg-opacity-20 px-3 py-1.5 rounded-full font-semibold">
+                                무료 <span id="freeKeywordCredits">0</span> · 유료 <span id="paidKeywordCredits">0</span>
+                            </div>
+                        </div>
+                        
+                        <p class="text-sm mb-4 opacity-95 leading-relaxed">
+                            키워드 분석 시 <strong>크레딧 1개</strong>가 차감됩니다.<br>
+                            무료 크레딧부터 우선 사용됩니다.
+                        </p>
+                        
+                        <!-- 입력 필드 -->
+                        <div class="relative mb-4">
+                            <input
+                                type="text"
+                                id="keywordAnalysisInput"
+                                placeholder="분석할 키워드 입력 (예: 수분크림, 여름 화장품)"
+                                class="w-full py-3 pr-24 pl-4 rounded-xl text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
+                                onkeydown="if(event.key === 'Enter') analyzeKeywordsQuality()"
+                            />
+                            <button
+                                onclick="analyzeKeywordsQuality()"
+                                class="absolute right-2 top-2 bottom-2 px-4 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg font-bold text-sm hover:scale-105 transition-transform"
+                            >
+                                🎯 분석
+                            </button>
+                        </div>
+                        
+                        <!-- 빠른 테스트 샘플 -->
+                        <div class="flex gap-2 flex-wrap items-center text-xs">
+                            <span class="opacity-90">빠른 테스트:</span>
+                            <button onclick="setKeywordSample('비건 화장품, 친환경 패키지, 제로웨이스트')" class="sample-btn">🌿 친환경</button>
+                            <button onclick="setKeywordSample('홈트레이닝, 요가 매트, 필라테스')" class="sample-btn">💪 운동</button>
+                            <button onclick="setKeywordSample('반려동물 용품, 강아지 간식')" class="sample-btn">🐕 펫케어</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <style>
+                .sample-btn {
+                    background: rgba(255,255,255,0.2);
+                    border: none;
+                    padding: 0.4rem 0.8rem;
+                    border-radius: 12px;
+                    color: white;
+                    font-size: 0.75rem;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    font-weight: 500;
+                }
+                .sample-btn:hover {
+                    background: rgba(255,255,255,0.3);
+                    transform: scale(1.05);
+                }
+            </style>
         </aside>
         
         <!-- 메인 콘텐츠 영역 -->
@@ -1975,7 +1986,7 @@ export const htmlTemplate = `
     </div><!-- layout-container -->
     
     <!-- JavaScript -->
-    <script src="/static/i18n.js?v=21.0.0"></script>
+    <script src="/static/i18n.js?v=22.0.0"></script>
     
     <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
@@ -1984,8 +1995,8 @@ export const htmlTemplate = `
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ko.js"></script>
     
-    <script src="/static/app-v3-final.js?v=21.0.0"></script>
-    <script src="/static/keyword-analysis.js?v=21.0.0"></script>
+    <script src="/static/app-v3-final.js?v=22.0.0"></script>
+    <script src="/static/keyword-analysis.js?v=22.0.0"></script>
     <script src="/static/keyword-extended.js?v=19.0.0"></script>
     
     <script>
