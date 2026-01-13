@@ -5800,12 +5800,13 @@ async function handleLogout() {
       
       localStorage.removeItem('postflow_token');
       localStorage.removeItem('postflow_user');
+      sessionStorage.removeItem('landing_page_visited'); // 세션 스토리지도 초기화
       handleAuthError();
       showToast('로그아웃되었습니다', 'success');
       
-      // 페이지 새로고침
+      // 랜딩 페이지로 리디렉션
       setTimeout(() => {
-        window.location.reload();
+        window.location.href = '/';
       }, 500);
     } catch (error) {
       console.error('로그아웃 오류:', error);

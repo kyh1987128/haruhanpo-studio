@@ -538,6 +538,7 @@ export const htmlTemplate = `
                                 id="keywordAnalysisInput"
                                 placeholder="분석할 키워드 입력 (예: 수분크림, 여름 화장품)"
                                 class="w-full py-3 pr-24 pl-4 rounded-xl text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"
+                                autocomplete="off"
                                 onkeydown="if(event.key === 'Enter') analyzeKeywordsQuality()"
                             />
                             <button
