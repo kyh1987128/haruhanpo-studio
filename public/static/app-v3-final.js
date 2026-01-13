@@ -4763,8 +4763,11 @@ async function openHistoryModal() {
 function renderHistory() {
   const historyList = document.getElementById('historyList');
   
+  console.log('🔵 renderHistory 시작, contentHistory:', contentHistory.length);
+  
   if (contentHistory.length === 0) {
     historyList.innerHTML = '<p class="text-gray-500 text-center py-8">생성 히스토리가 없습니다</p>';
+    console.log('🔵 히스토리 없음 - 빈 메시지 표시');
     return;
   }
   
@@ -4772,6 +4775,8 @@ function renderHistory() {
   const sorted = [...contentHistory].sort((a, b) => 
     new Date(b.createdAt) - new Date(a.createdAt)
   );
+  
+  console.log('🔵 정렬 완료:', sorted.length, '개');
   
   // 🔥 플랫폼 표시명 확장 (FontAwesome 아이콘 사용, 콘텐츠 블록과 동일)
   const platformNames = {
@@ -4853,6 +4858,9 @@ function renderHistory() {
     </div>
   `;
   }).join('');
+  
+  console.log('🔵 historyList HTML 길이:', historyList.innerHTML.length);
+  console.log('🔵 historyList 첫 100자:', historyList.innerHTML.substring(0, 100));
 }
 
 function exportHistoryAsExcel() {
@@ -6618,7 +6626,10 @@ async function loadCalendarEvents() {
       });
     }
 
-    console.log(`✅ 캘린더 이벤트 로드: 예정일 ${scheduleData.scheduled_content?.length || 0}개, 메모 ${memoData.memos?.length || 0}개`);
+    const scheduledEventCount = events.filter(e => e.extendedProps?.type !== 'memo').length;
+    const memoCount = events.filter(e => e.extendedProps?.type === 'memo').length;
+    
+    console.log(`✅ 캘린더 이벤트 로드: API ${scheduleData.scheduled_content?.length || 0}개 → 필터링 후 ${scheduledEventCount}개 (scheduled_date 있음), 메모 ${memoCount}개`);
     return events;
     
   } catch (error) {
