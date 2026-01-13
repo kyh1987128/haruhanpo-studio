@@ -11,6 +11,7 @@ import { parseMultipleDocuments, combineDocumentTexts, truncateText } from './do
 import payments from './routes/payments';
 import images, { fetchSmartImages } from './routes/images';
 import { injectImagesIntoBlogContent, injectImagesIntoBrunchContent, convertHtmlToNaverText, addInstagramImageMetadata } from './image-injection';
+import './styles.css'; // ✅ Tailwind CSS import
 
 type Bindings = {
   OPENAI_API_KEY: string;

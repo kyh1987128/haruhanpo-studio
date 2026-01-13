@@ -1,8 +1,12 @@
 import { defineConfig } from 'vite'
 import pages from '@hono/vite-cloudflare-pages'
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
-  plugins: [pages()],
+  plugins: [
+    pages(),
+    tailwindcss()
+  ],
   build: {
     outDir: 'dist',
     rollupOptions: {
