@@ -4161,6 +4161,14 @@ function downloadBatchExcel() {
 function showToast(message, type = 'success') {
   const container = document.getElementById('toastContainer');
   
+  // 컨테이너가 없으면 생성
+  if (!container) {
+    const newContainer = document.createElement('div');
+    newContainer.id = 'toastContainer';
+    newContainer.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 10000;';
+    document.body.appendChild(newContainer);
+  }
+  
   const colors = {
     success: '#10b981',
     error: '#ef4444',
@@ -4170,17 +4178,34 @@ function showToast(message, type = 'success') {
   
   const toast = document.createElement('div');
   toast.className = 'toast';
-  toast.style.background = colors[type] || colors.success;
+  toast.style.cssText = `
+    background: ${colors[type] || colors.success};
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    min-width: 300px;
+    max-width: 500px;
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    animation: slideIn 0.3s ease-out;
+  `;
   toast.textContent = message;
   
-  container.appendChild(toast);
+  const toastContainer = document.getElementById('toastContainer');
+  toastContainer.appendChild(toast);
   
   setTimeout(() => {
     toast.style.animation = 'slideOut 0.3s ease-out';
     setTimeout(() => {
-      container.removeChild(toast);
+      if (toastContainer.contains(toast)) {
+        toastContainer.removeChild(toast);
+      }
     }, 300);
-  }, 3000);
+  }, 5000); // 5초로 증가 (긴 메시지 읽기 시간 확보)
 }
 
 // ===================================
@@ -8959,12 +8984,19 @@ async function handleEmailLogin() {
   } catch (error) {
     console.error('❌ 로그인 오류:', error);
     
+    // 오류 메시지 분석 및 사용자 친화적 메시지 표시
     if (error.message.includes('Invalid login credentials')) {
-      showToast('이메일 또는 비밀번호가 올바르지 않습니다', 'error');
+      showToast('⚠️ 로그인 실패: 이메일 또는 비밀번호가 올바르지 않습니다.\n탈퇴한 계정이거나 등록되지 않은 이메일일 수 있습니다.', 'error');
     } else if (error.message.includes('Email not confirmed')) {
-      showToast('이메일 인증을 먼저 완료해주세요', 'warning');
+      showToast('📧 이메일 인증이 필요합니다. 가입 시 받은 인증 메일을 확인해주세요.', 'warning');
+    } else if (error.message.includes('User not found')) {
+      showToast('❌ 등록되지 않은 이메일입니다. 회원가입을 먼저 진행해주세요.', 'error');
+    } else if (error.message.includes('account has been deleted')) {
+      showToast('🚫 탈퇴한 계정입니다. 다시 가입하려면 회원가입을 진행해주세요.', 'error');
+    } else if (error.message.includes('Too many requests')) {
+      showToast('⏰ 로그인 시도 횟수 초과. 잠시 후 다시 시도해주세요.', 'warning');
     } else {
-      showToast(error.message || '로그인에 실패했습니다', 'error');
+      showToast(`❌ 로그인 실패: ${error.message || '알 수 없는 오류가 발생했습니다'}`, 'error');
     }
   } finally {
     // 버튼 재활성화

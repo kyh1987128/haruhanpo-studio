@@ -469,6 +469,9 @@ export const landingPageTemplate = `
         </div>
     </div>
 
+    <!-- Toast 컨테이너 (알림 메시지용) -->
+    <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 10000;"></div>
+
     <!-- app-v3-final.js 로드 (인증 시스템) -->
     <script src="/static/app-v3-final.js?v=23.0.0"></script>
 </body>
