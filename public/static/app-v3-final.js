@@ -4728,6 +4728,12 @@ async function openHistoryModal() {
   const modal = document.getElementById('historyModal');
   const historyList = document.getElementById('historyList');
   
+  // 🔥 핵심 수정: 모달을 body 직속으로 이동 (부모의 display:none 영향 차단)
+  if (modal.parentElement !== document.body) {
+    document.body.appendChild(modal);
+    console.log('✅ historyModal을 body 직속으로 이동');
+  }
+  
   console.log('🔵 modal:', modal);
   console.log('🔵 historyList:', historyList);
   
@@ -4745,12 +4751,25 @@ async function openHistoryModal() {
   // 로딩 표시
   historyList.innerHTML = '<p class="text-gray-500 text-center py-8">🔄 히스토리 불러오는 중...</p>';
   
-  // ✅ 가장 강력한 방식으로 모달 표시 (!important 사용)
+  // ✅ 강력한 CSS로 모달 표시
   modal.classList.remove('hidden');
   modal.classList.add('flex');
-  modal.style.setProperty('display', 'flex', 'important');
-  modal.style.setProperty('visibility', 'visible', 'important');
-  modal.style.setProperty('z-index', '9999', 'important');
+  modal.style.cssText = `
+    display: flex !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    z-index: 2147483647 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  `;
   
   console.log('🔵 모달 강제 표시 완료 - display:', modal.style.display);
   console.log('🔵 모달 classList:', modal.classList.toString());
