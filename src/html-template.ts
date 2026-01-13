@@ -367,15 +367,6 @@ export const htmlTemplate = `
             </div>
             
             <!-- 구분선 -->
-            <div id="leftPanelDivider" class="hidden border-t border-gray-200 my-6"></div>
-                }
-                .sample-btn:hover {
-                    background: rgba(255,255,255,0.3);
-                    transform: translateY(-1px);
-                }
-            </style>
-            
-            <!-- 구분선 -->
             <div class="border-t border-gray-200 my-6"></div>
             
             <!-- 하이브리드 AI 전략 선택 -->
@@ -1986,7 +1977,7 @@ export const htmlTemplate = `
     </div><!-- layout-container -->
     
     <!-- JavaScript -->
-    <script src="/static/i18n.js?v=22.0.0"></script>
+    <script src="/static/i18n.js?v=23.0.0"></script>
     
     <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
@@ -1995,8 +1986,8 @@ export const htmlTemplate = `
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ko.js"></script>
     
-    <script src="/static/app-v3-final.js?v=22.0.0"></script>
-    <script src="/static/keyword-analysis.js?v=22.0.0"></script>
+    <script src="/static/app-v3-final.js?v=23.0.0"></script>
+    <script src="/static/keyword-analysis.js?v=23.0.0"></script>
     <script src="/static/keyword-extended.js?v=19.0.0"></script>
     
     <script>
