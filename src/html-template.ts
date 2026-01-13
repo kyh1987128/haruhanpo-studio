@@ -2028,21 +2028,7 @@ export const htmlTemplate = `
       
       // ✅ 날짜 선택 UI z-index 강제 (최상위 레이어)
       const datePickerStyle = document.createElement('style');
-      datePickerStyle.textContent = `
-        /* 날짜 선택 UI - 최상위 레이어 (z-index: 9999) */
-        .flatpickr-calendar {
-          z-index: 9999 !important;
-        }
-        .flatpickr-wrapper {
-          z-index: 9999 !important;
-        }
-        input[type="date"]::-webkit-calendar-picker-indicator {
-          z-index: 9999 !important;
-        }
-        input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-          z-index: 9999 !important;
-        }
-      `;
+      datePickerStyle.textContent = '.flatpickr-calendar { z-index: 9999 !important; } .flatpickr-wrapper { z-index: 9999 !important; } input[type="date"]::-webkit-calendar-picker-indicator { z-index: 9999 !important; } input[type="datetime-local"]::-webkit-calendar-picker-indicator { z-index: 9999 !important; }';
       document.head.appendChild(datePickerStyle);
     </script>
 </body>
