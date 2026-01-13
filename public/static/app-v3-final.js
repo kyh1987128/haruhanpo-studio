@@ -5051,6 +5051,8 @@ window.viewHistory = viewHistory;
 window.deleteHistory = deleteHistory;
 window.closeErrorModal = closeErrorModal;
 window.retryGeneration = retryGeneration;
+window.openHistoryModal = openHistoryModal;
+window.closeHistoryModal = () => closeModal('historyModal');
 
 // 콘텐츠 블록 생성 함수
 window.generateContentBlocks = generateContentBlocks;
@@ -5887,21 +5889,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
-  // 히스토리, 템플릿 버튼
-  [historyBtn, templateBtn].forEach(btn => {
-    if (btn) {
-      btn.addEventListener('click', (e) => {
-        if (currentUser.isGuest) {
-          e.preventDefault();
-          e.stopPropagation();
-          if (confirm('이 기능은 회원 전용입니다. 로그인 하시겠습니까?')) {
-            handleLogin();
-          }
-          return false;
+  // 히스토리 버튼
+  if (historyBtn) {
+    historyBtn.addEventListener('click', (e) => {
+      if (currentUser.isGuest) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (confirm('이 기능은 회원 전용입니다. 로그인 하시겠습니까?')) {
+          handleLogin();
         }
-      });
-    }
-  });
+        return false;
+      }
+      // 로그인 상태: 히스토리 모달 열기
+      openHistoryModal();
+    });
+  }
+  
+  // 템플릿 버튼
+  if (templateBtn) {
+    templateBtn.addEventListener('click', (e) => {
+      if (currentUser.isGuest) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (confirm('이 기능은 회원 전용입니다. 로그인 하시겠습니까?')) {
+          handleLogin();
+        }
+        return false;
+      }
+      // 로그인 상태: 템플릿 기능 체크
+      if (FEATURE_FLAGS.ENABLE_CUSTOM_TEMPLATES) {
+        openTemplateEditor();
+      } else {
+        showToast('⚠️ 템플릿 기능은 현재 준비 중입니다', 'warning');
+      }
+    });
+  }
   
   // 🆕 인증 모달 내부 버튼 이벤트 리스너 (NEW v7.3)
   const emailAuthBtn = document.getElementById('emailAuthBtn');
@@ -7373,9 +7395,9 @@ window.openDateTimeModal = openDateTimeModal;
 window.closeDateTimeModal = closeDateTimeModal;
 window.confirmDateTimeSelection = confirmDateTimeSelection;
 window.saveSchedule = saveSchedule;
-window.openQuickAddModal = openQuickAddModal;
-window.closeQuickAddModal = closeQuickAddModal;
-window.confirmQuickAdd = confirmQuickAdd;
+// window.openQuickAddModal = openQuickAddModal; // ❌ 함수 미구현으로 주석 처리
+// window.closeQuickAddModal = closeQuickAddModal; // ❌ 함수 미구현으로 주석 처리
+// window.confirmQuickAdd = confirmQuickAdd; // ❌ 함수 미구현으로 주석 처리
 window.toggleCalendarView = toggleCalendarView;
 window.loadScheduledContent = loadScheduledContent;
 window.renderScheduledContentList = renderScheduledContentList;
