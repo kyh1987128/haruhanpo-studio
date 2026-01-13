@@ -1302,23 +1302,7 @@ function setupEventListeners() {
     loadProfileBtn.addEventListener('click', openLoadProfileModal);
   }
 
-  // 히스토리
-  const historyBtn = document.getElementById('historyBtn');
-  if (historyBtn) {
-    historyBtn.addEventListener('click', openHistoryModal);
-  }
-
-  // 템플릿 관리
-  const templateBtn = document.getElementById('templateBtn');
-  if (templateBtn) {
-    templateBtn.addEventListener('click', () => {
-      if (FEATURE_FLAGS.ENABLE_CUSTOM_TEMPLATES) {
-        openTemplateEditor();
-      } else {
-        showToast('⚠️ 템플릿 기능은 현재 준비 중입니다', 'warning');
-      }
-    });
-  }
+  // 히스토리와 템플릿 버튼은 5857줄에서 처리됨 (중복 제거)
 
   // 플랫폼 선택 변경 시 비용 재계산 및 배치 계산
   const platformCheckboxes = document.querySelectorAll('input[name="platform"]');
@@ -6445,8 +6429,8 @@ async function loadCalendarEvents() {
             // ✅ 플랫폼별 상태 사용
             const status = platformStatus[platform] || fallbackStatus;
             
-            // ✅ draft 상태인 플랫폼은 캘린더에 표시하지 않음
-            if (status === 'draft') {
+            // ✅ scheduled_date가 없으면 캘린더에 표시하지 않음 (목록 보기에만 표시)
+            if (!item.scheduled_date) {
               return; // 건너뛰기
             }
             
