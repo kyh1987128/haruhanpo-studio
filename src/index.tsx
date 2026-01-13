@@ -2809,7 +2809,24 @@ app.get('/', (c) => {
 
 // PostFlow 앱 (로그인 필수)
 app.get('/postflow', (c) => {
-  return c.html(htmlTemplate);
+  // 클라이언트 측에서 인증 체크 후 리다이렉트 처리
+  const authCheckScript = `
+    <script>
+      // 즉시 실행: 비로그인 시 랜딩 페이지로 리다이렉트
+      (function() {
+        const user = localStorage.getItem('postflow_user');
+        const token = localStorage.getItem('postflow_token');
+        
+        if (!user || !token) {
+          console.log('🔒 비로그인 상태: 랜딩 페이지로 리다이렉트');
+          window.location.href = '/';
+        }
+      })();
+    </script>
+  `;
+  
+  const htmlWithAuthCheck = htmlTemplate.replace('</head>', authCheckScript + '</head>');
+  return c.html(htmlWithAuthCheck);
 });
 
 // ===================================

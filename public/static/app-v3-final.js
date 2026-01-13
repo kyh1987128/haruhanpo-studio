@@ -8944,10 +8944,17 @@ async function handleEmailLogin() {
     
     showToast('로그인 성공!', 'success');
     
-    // 페이지 새로고침 (인증 상태 반영)
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
+    // 랜딩 페이지에서 로그인한 경우 PostFlow로 이동
+    if (window.location.pathname === '/') {
+      setTimeout(() => {
+        window.location.href = '/postflow';
+      }, 500);
+    } else {
+      // PostFlow 페이지에서 로그인한 경우 새로고침
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    }
     
   } catch (error) {
     console.error('❌ 로그인 오류:', error);

@@ -266,8 +266,8 @@ export const htmlTemplate = `
                 </div>
                 
                 <div class="flex items-center space-x-4">
-                    <!-- 사용자 정보 영역 (로그인 시) -->
-                    <div id="userInfoArea" class="hidden">
+                    <!-- 사용자 정보 영역 (로그인 상태만 표시) -->
+                    <div id="userInfoArea">
                         <div class="flex items-center space-x-3">
                             <div class="text-right">
                                 <p class="text-sm font-semibold text-gray-700" id="userName">사용자</p>
@@ -284,18 +284,6 @@ export const htmlTemplate = `
                             </button>
                             <button id="logoutBtn" class="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 transition">
                                 <i class="fas fa-sign-out-alt mr-1"></i>로그아웃
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- 게스트/로그인 버튼 영역 -->
-                    <div id="guestArea">
-                        <div class="flex items-center space-x-3">
-                            <button id="signupBtn" class="px-4 py-2 bg-white text-purple-600 border-2 border-purple-600 rounded-lg hover:bg-purple-50 transition font-semibold">
-                                회원가입
-                            </button>
-                            <button id="loginBtn" class="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition font-semibold">
-                                <i class="fas fa-sign-in-alt mr-2"></i>로그인
                             </button>
                         </div>
                     </div>
