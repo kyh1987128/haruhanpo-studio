@@ -6618,8 +6618,8 @@ async function loadCalendarEvents() {
             // ✅ 플랫폼별 상태 사용
             const status = platformStatus[platform] || fallbackStatus;
             
-            // ✅ scheduled_date가 없으면 캘린더에 표시하지 않음 (목록 보기에만 표시)
-            if (!item.scheduled_date) {
+            // ✅ scheduled_date가 없거나 draft 상태면 캘린더에 표시하지 않음
+            if (!item.scheduled_date || status === 'draft') {
               return; // 건너뛰기
             }
             
@@ -7415,8 +7415,14 @@ function renderScheduledContentList(contentList) {
     
     const statusBadge = statusBadges[item.publish_status] || statusBadges.draft;
 
-    // platforms 배열의 모든 플랫폼 표시
-    const platformsList = (item.platforms || [item.platform]).map(platform => {
+    // platforms 배열의 모든 플랫폼 표시 (draft 제외)
+    const platformsList = (item.platforms || [item.platform])
+      .filter(platform => {
+        // ✅ draft 상태인 플랫폼 제외
+        const platformStatus = (item.platform_status && item.platform_status[platform]) || item.publish_status || 'draft';
+        return platformStatus !== 'draft';
+      })
+      .map(platform => {
       const platformName = platformNames[platform] || platform || '알 수 없음';
       const iconData = platformIcons[platform] || { class: 'fas fa-file', color: 'text-gray-600' };
       
@@ -7484,6 +7490,11 @@ function renderScheduledContentList(contentList) {
       `;
     }).join('');
 
+    // ✅ 모든 플랫폼이 draft면 카드 전체를 숨김
+    if (!platformsList || platformsList.trim() === '') {
+      return '';
+    }
+
     return `
       <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition mb-3">
         <div class="flex justify-between items-start mb-3">
@@ -7499,7 +7510,7 @@ function renderScheduledContentList(contentList) {
         </div>
       </div>
     `;
-  }).join('');
+  }).filter(html => html !== '').join('');
 }
 
 /**
