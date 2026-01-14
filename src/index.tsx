@@ -635,11 +635,12 @@ app.post('/api/generate', async (c) => {
     }
 
     // 2단계: 간소화된 검증 - 매우 낮은 confidence만 경고
-    let contentStrategy: 'integrated' | 'image-first' | 'keyword-first' | 'document-first' = 'image-first'; // 기본값을 image-first로
+    let contentStrategy: 'integrated' | 'image-first' | 'keyword-first' | 'document-first' = 
+      images.length > 0 ? 'image-first' : 'keyword-first'; // 이미지 있으면 image-first, 없으면 keyword-first
     let comprehensiveValidation: any = null;
 
-    // forceGenerate가 아니고, 이미지 설명이 너무 짧으면 경고
-    if (!forceGenerate && combinedImageDescription.length < 100) {
+    // ✅ 이미지가 있을 때만 검증 (이미지 없으면 키워드 중심 생성)
+    if (images.length > 0 && !forceGenerate && combinedImageDescription.length < 100) {
       return c.json({
         success: false,
         requireConfirmation: true,
