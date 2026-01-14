@@ -4592,7 +4592,7 @@ async function loadHistory() {
   const userData = localStorage.getItem('postflow_user');
   if (!userData) {
     console.warn('⚠️ 로그인 정보 없음 - 히스토리 로드 불가');
-    contentHistory = [];
+    window.contentHistory = [];
     return;
   }
   
@@ -4601,7 +4601,7 @@ async function loadHistory() {
   
   if (!userId) {
     console.warn('⚠️ 사용자 ID 없음 - 히스토리 로드 불가');
-    contentHistory = [];
+    window.contentHistory = [];
     return;
   }
   
@@ -4619,12 +4619,12 @@ async function loadHistory() {
     
     if (!result.success) {
       console.warn('⚠️ 히스토리 조회 실패:', result.error);
-      contentHistory = [];
+      window.contentHistory = [];
       return;
     }
     
-    // 🔥 핵심 수정: DB 데이터를 프론트엔드 형식으로 변환
-    contentHistory = (result.data || []).map(item => {
+    // 🔥 핵심 수정: DB 데이터를 프론트엔드 형식으로 변환 + 전역 변수에 저장
+    window.contentHistory = (result.data || []).map(item => {
       return {
         id: item.id,
         brand: item.brand || '',
@@ -4635,12 +4635,13 @@ async function loadHistory() {
       };
     });
     
-    console.log(`✅ 히스토리 변환 완료: ${contentHistory.length}개`);
-    console.log('📊 변환된 데이터 샘플:', contentHistory[0]);
+    console.log(`✅ 히스토리 변환 완료: ${window.contentHistory.length}개`);
+    console.log('📊 변환된 데이터 샘플:', window.contentHistory[0]);
+    console.log('🌐 window.contentHistory 전역 저장 완료');
     
   } catch (error) {
     console.error('❌ 히스토리 로드 실패:', error);
-    contentHistory = [];
+    window.contentHistory = [];
   }
 }
 
@@ -4780,7 +4781,7 @@ async function openHistoryModal() {
   // DB에서 히스토리 로드
   await loadHistory();
   
-  console.log('🔵 히스토리 로드 완료, contentHistory:', contentHistory.length);
+  console.log('🔵 히스토리 로드 완료, window.contentHistory:', window.contentHistory?.length || 0);
   
   // 렌더링
   renderHistory();
@@ -4791,16 +4792,16 @@ async function openHistoryModal() {
 function renderHistory() {
   const historyList = document.getElementById('historyList');
   
-  console.log('🔵 renderHistory 시작, contentHistory:', contentHistory.length);
+  console.log('🔵 renderHistory 시작, window.contentHistory:', window.contentHistory?.length || 0);
   
-  if (contentHistory.length === 0) {
+  if (!window.contentHistory || window.contentHistory.length === 0) {
     historyList.innerHTML = '<p class="text-gray-500 text-center py-8">생성 히스토리가 없습니다</p>';
     console.log('🔵 히스토리 없음 - 빈 메시지 표시');
     return;
   }
   
   // 최신순으로 정렬 (검색/필터 기능 제거)
-  const sorted = [...contentHistory].sort((a, b) => 
+  const sorted = [...window.contentHistory].sort((a, b) => 
     new Date(b.createdAt) - new Date(a.createdAt)
   );
   
@@ -4995,9 +4996,17 @@ function exportHistoryAsExcel() {
 function viewHistory(id) {
   console.log('🔵 viewHistory 실행:', id);
   
-  const item = contentHistory.find(h => h.id === id);
+  // 🔥 전역 변수 확인
+  if (!window.contentHistory || window.contentHistory.length === 0) {
+    console.error('❌ window.contentHistory가 비어있습니다!');
+    showToast('히스토리 데이터를 불러올 수 없습니다', 'error');
+    return;
+  }
+  
+  const item = window.contentHistory.find(h => h.id === id);
   if (!item) {
     console.error('❌ 히스토리 항목 없음:', id);
+    showToast('해당 히스토리를 찾을 수 없습니다', 'error');
     return;
   }
   
