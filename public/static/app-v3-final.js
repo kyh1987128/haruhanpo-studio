@@ -2634,8 +2634,20 @@ async function handleGenerate() {
       window.lastGenerationId = generationId;
       console.log('✅ 일괄 생성 ID 저장:', generationId);
       
-      displayResults(result.data, result.generatedPlatforms);
-      saveToHistory(formData, result.data);
+      // ✅ 날짜 + 이미지 정보 포함해서 표시
+      displayResults(result.data, result.generatedPlatforms, {
+        createdAt: result.created_at || new Date().toISOString(),
+        scheduledDate: null,  // 아직 등록 전
+        images: result.images || []
+      });
+      
+      // ✅ 백엔드에서 이미 저장했으면 중복 저장 방지
+      if (result.id) {
+        console.log('✅ 백엔드에서 저장 완료, 프론트 중복 저장 스킵');
+      } else {
+        console.warn('⚠️ 백엔드 저장 실패, 프론트엔드에서 저장 시도');
+        saveToHistory(formData, result.data);
+      }
       
       // ✅ 크레딧 정보 업데이트 (키 매핑 + 2지갑 시스템)
       if (result.usage) {
