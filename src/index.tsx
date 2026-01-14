@@ -1130,6 +1130,46 @@ app.post('/api/generate', async (c) => {
     console.log('콘텐츠 생성 완료!');
     console.log(`💰 비용 추정: OpenAI $${totalCost.openai.toFixed(3)}, Gemini $${totalCost.gemini.toFixed(3)}, 총 $${(totalCost.openai + totalCost.gemini).toFixed(3)}`);
 
+    // ✅ DB에 저장 (이미지 정보 포함)
+    let savedGenerationId = null;
+    let savedCreatedAt = new Date().toISOString();
+    
+    if (!is_guest && user_id) {
+      try {
+        console.log('💾 DB에 콘텐츠 저장 시작...');
+        
+        const { data: savedGeneration, error: saveError } = await supabase
+          .from('generations')
+          .insert({
+            user_id: user_id,
+            platforms: platforms,
+            results: data,
+            images: smartImages.length > 0 ? smartImages : null,  // ✅ 이미지 정보 저장
+            brand: brand,
+            keywords: keywords,
+            tone: tone,
+            target_age: targetAge,
+            industry: industry || '',
+            prompt_params: JSON.stringify(promptParams),
+            publish_status: 'draft',
+            created_at: savedCreatedAt
+          })
+          .select()
+          .single();
+        
+        if (saveError) {
+          console.error('❌ DB 저장 실패:', saveError);
+          // DB 저장 실패해도 콘텐츠는 반환 (프론트에서 재시도 가능)
+        } else {
+          savedGenerationId = savedGeneration.id;
+          savedCreatedAt = savedGeneration.created_at;
+          console.log(`✅ DB 저장 완료: ID ${savedGenerationId}`);
+        }
+      } catch (dbError) {
+        console.error('❌ DB 저장 예외:', dbError);
+      }
+    }
+
     // ✅ 사용량 정보 반환 (차등 과금 정보 포함)
     let deducted = {
       type: 'credit',
@@ -1194,8 +1234,12 @@ app.post('/api/generate', async (c) => {
 
     return c.json({
       success: true,
+      id: savedGenerationId,  // ✅ DB 저장된 ID (프론트 중복 저장 방지)
+      generation_id: savedGenerationId,  // ✅ 하위 호환
+      created_at: savedCreatedAt,  // ✅ 생성 날짜
       data,
       generatedPlatforms: platforms,
+      images: smartImages,  // ✅ 사용된 이미지 배열 (출처 정보 포함)
       imageCount: images.length,
       strategy: {
         selected: contentStrategy,
