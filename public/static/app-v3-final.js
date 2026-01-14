@@ -5042,32 +5042,38 @@ function viewHistory(id) {
     console.log('✅ 좌측 패널 표시');
   }
   
-  // 🔥 결과 영역 강제 표시
+  // 🔥 결과 영역을 정상 위치로 이동 및 표시
   const resultArea = document.getElementById('resultArea');
   if (resultArea) {
-    // 🔥 핵심 수정: 부모 요소들도 모두 표시
-    let parent = resultArea.parentElement;
-    while (parent && parent !== document.body) {
-      if (parent.classList.contains('hidden')) {
-        parent.classList.remove('hidden');
-        console.log('✅ 부모 요소 hidden 제거:', parent.id || parent.className);
+    // 🔥 핵심: resultArea가 이상한 곳에 있으면 원래 위치로 이동
+    const currentParent = resultArea.parentElement;
+    if (currentParent && currentParent.id === 'emailVerificationModal') {
+      console.log('⚠️ resultArea가 emailVerificationModal 안에 있음! 빼내기 시작...');
+      
+      // main-content 찾기 (콘텐츠 블록이 있는 곳)
+      const mainContent = document.querySelector('.main-content');
+      if (mainContent) {
+        // main-content 끝에 추가 (푸터 바로 위)
+        mainContent.appendChild(resultArea);
+        console.log('✅ resultArea를 main-content로 이동 완료');
+      } else {
+        // main-content가 없으면 body에 추가
+        document.body.appendChild(resultArea);
+        console.log('✅ resultArea를 body로 이동 완료');
       }
-      if (window.getComputedStyle(parent).display === 'none') {
-        parent.style.setProperty('display', 'block', 'important');
-        console.log('✅ 부모 요소 display 변경:', parent.id || parent.className);
-      }
-      parent = parent.parentElement;
     }
     
     resultArea.classList.remove('hidden');
-    resultArea.style.setProperty('display', 'block', 'important');
-    resultArea.style.setProperty('width', '100%', 'important');
-    resultArea.style.setProperty('max-width', '1200px', 'important');
-    resultArea.style.setProperty('margin', '20px auto', 'important');
-    resultArea.style.setProperty('padding', '32px', 'important');
-    resultArea.style.setProperty('background', 'white', 'important');
-    resultArea.style.setProperty('border-radius', '16px', 'important');
-    resultArea.style.setProperty('box-shadow', '0 10px 40px rgba(0,0,0,0.1)', 'important');
+    resultArea.style.cssText = `
+      display: block !important;
+      width: 100% !important;
+      max-width: 1200px !important;
+      margin: 20px auto !important;
+      padding: 32px !important;
+      background: white !important;
+      border-radius: 16px !important;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1) !important;
+    `;
     console.log('✅ 결과 영역 강제 표시');
   }
   
