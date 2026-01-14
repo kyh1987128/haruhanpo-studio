@@ -4420,25 +4420,25 @@ async function loadProfileFromDB(userId) {
     if (result.success && result.profile) {
       const p = result.profile;
       
-      // 🔥 11개 필드 정확한 매핑 (NULL 체크 없이 모두 적용)
-      setElementValue('brand', p.brand || '');
+      // 🔥 11개 필드 정확한 매핑 (HTML ID와 DB 컬럼 매핑)
+      setElementValue('brandName', p.brand || '');  // ✅ brand → brandName
       setElementValue('companyName', p.company_name || '');
-      setElementValue('businessType', p.business_type || '선택 안 함');
-      setElementValue('location', p.location || '선택 안 함');
-      setElementValue('targetGender', p.target_gender || '전체');
+      setElementValue('businessType', p.business_type || '');
+      setElementValue('region', p.location || '');  // ✅ location → region
+      setElementValue('targetGender', p.target_gender || '');
       setElementValue('contact', p.contact || '');
       setElementValue('website', p.website || '');
-      setElementValue('sns', p.sns || '');
+      setElementValue('snsAccount', p.sns || '');  // ✅ sns → snsAccount
       
-      // 키워드 배열 처리
+      // 키워드 배열 처리 → keywordAnalysisInput에 입력
       const keywordsStr = Array.isArray(p.keywords) 
         ? p.keywords.join(', ') 
         : (p.keywords || '');
-      setElementValue('keywords', keywordsStr);
+      setElementValue('keywordAnalysisInput', keywordsStr);  // ✅ keywords → keywordAnalysisInput
       
-      setElementValue('tone', p.tone || '친근한');
-      setElementValue('targetAge', p.target_age || '20-30대');
-      setElementValue('industry', p.industry || '선택안함 (AI가 자동 판단)');
+      setElementValue('toneAndManner', p.tone || '');  // ✅ tone → toneAndManner
+      setElementValue('targetAge', p.target_age || '');
+      setElementValue('industry', p.industry || '');
       
       console.log('✅ 11개 필드 모두 자동 입력 완료');
     } else {
@@ -7080,6 +7080,37 @@ async function viewFullContent(generationId, platform) {
     // ✅ generation_id 저장 (캘린더 등록 및 수정 기능에 필요)
     window.lastGenerationId = generationId;
     
+    // 🔥 결과 영역을 정상 위치로 이동 및 표시
+    const resultArea = document.getElementById('resultArea');
+    if (resultArea) {
+      // 🔥 핵심: resultArea가 이상한 곳에 있으면 원래 위치로 이동
+      const currentParent = resultArea.parentElement;
+      if (currentParent && currentParent.id === 'emailVerificationModal') {
+        console.log('⚠️ resultArea가 emailVerificationModal 안에 있음! 빼내기 시작...');
+        
+        // 푸터 찾기
+        const footer = document.querySelector('footer');
+        if (footer) {
+          // 푸터 바로 앞에 삽입
+          footer.parentElement.insertBefore(resultArea, footer);
+          console.log('✅ resultArea를 푸터 바로 위로 이동 완료');
+        }
+      }
+      
+      resultArea.classList.remove('hidden');
+      resultArea.style.cssText = `
+        display: block !important;
+        width: 100% !important;
+        max-width: 1200px !important;
+        margin: 20px auto !important;
+        padding: 32px !important;
+        background: white !important;
+        border-radius: 16px !important;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1) !important;
+      `;
+      console.log('✅ 결과 영역 강제 표시');
+    }
+    
     // ✅ 방법 1: platform이 없으면 전체 표시, 있으면 해당 플랫폼만 표시
     if (platform && item.results[platform]) {
       // 특정 플랫폼만 표시
@@ -7098,6 +7129,14 @@ async function viewFullContent(generationId, platform) {
     
     // 모달 닫기
     closeEventDetailsModal();
+    
+    // 결과 영역으로 스크롤
+    setTimeout(() => {
+      if (resultArea) {
+        resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        console.log('📍 스크롤: resultArea로 이동');
+      }
+    }, 300);
     
     showToast('✅ 콘텐츠를 불러왔습니다', 'success');
     
@@ -8463,33 +8502,44 @@ async function applyProfile(profileId) {
       throw new Error('프로필을 찾을 수 없습니다');
     }
     
-    // 폼에 값 채우기 (모든 필드 포함)
+    // 폼에 값 채우기 (모든 필드 포함, HTML ID와 DB 컬럼 매핑)
     const setFieldValue = (id, value) => {
       const el = document.getElementById(id);
-      if (el) el.value = value || '';
+      if (el) {
+        el.value = value || '';
+        // ✅ 값 변경 이벤트 트리거 (자동완성, validation 등 작동하도록)
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        console.log(`✅ ${id} = ${value}`);
+      } else {
+        console.warn(`⚠️ Element not found: ${id}`);
+      }
     };
     
-    setFieldValue('brand', profile.brand);
+    setFieldValue('brandName', profile.brand);  // ✅ brand → brandName
     setFieldValue('companyName', profile.company_name);
     setFieldValue('businessType', profile.business_type);
-    setFieldValue('location', profile.location);
+    setFieldValue('region', profile.location);  // ✅ location → region
     setFieldValue('targetGender', profile.target_gender);
     setFieldValue('contact', profile.contact);
     setFieldValue('website', profile.website);
-    setFieldValue('sns', profile.sns);
-    setFieldValue('keywords', profile.keywords);
-    setFieldValue('tone', profile.tone || '친근한');
-    setFieldValue('targetAge', profile.target_age || '20대');
-    setFieldValue('industry', profile.industry || '라이프스타일');
+    setFieldValue('snsAccount', profile.sns);  // ✅ sns → snsAccount
+    setFieldValue('keywordAnalysisInput', profile.keywords);  // ✅ keywords → keywordAnalysisInput
+    setFieldValue('toneAndManner', profile.tone || '');  // ✅ tone → toneAndManner
+    setFieldValue('targetAge', profile.target_age || '');
+    setFieldValue('industry', profile.industry || '');
     
     showToast('✅ 프로필이 적용되었습니다', 'success');
     closeProfileListModal();
     
-    // 스크롤을 폼 상단으로 이동
-    const formEl = document.getElementById('contentForm');
-    if (formEl) {
-      formEl.scrollIntoView({ behavior: 'smooth' });
-    }
+    // 스크롤을 프로필 입력 필드 영역으로 이동 (leftPanel의 상단)
+    setTimeout(() => {
+      const leftPanel = document.querySelector('.left-panel');
+      if (leftPanel) {
+        leftPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        console.log('📍 스크롤: 프로필 입력 필드로 이동');
+      }
+    }, 100);
   } catch (error) {
     console.error('프로필 적용 오류:', error);
     showToast(`프로필 적용 실패: ${error.message}`, 'error');
