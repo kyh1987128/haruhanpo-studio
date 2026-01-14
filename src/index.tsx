@@ -1089,17 +1089,20 @@ app.post('/api/generate', async (c) => {
 
     // 🖼️ 이미지 자동 배치 (네이버 블로그 & 브런치)
     console.log('🖼️ 이미지 자동 배치 시작...');
-    const smartImages = images.length > 0 ? await fetchSmartImages({
+    console.log(`📸 사용자 업로드 이미지: ${images.length}개`);
+    
+    // 🔥 이미지가 없어도 무료 API로 자동 다운로드 (항상 3개 이미지 제공)
+    const smartImages = await fetchSmartImages({
       userImages: images,
       keywords: keywords.split(',').map(k => k.trim()),
-      requiredCount: Math.min(3, images.length || 3), // 최대 3개
+      requiredCount: 3, // 🔥 항상 3개 이미지 요청 (사용자 이미지 + 무료 API)
       unsplashKey: c.env.UNSPLASH_ACCESS_KEY,
       pexelsKey: c.env.PEXELS_API_KEY,
       pixabayKey: c.env.PIXABAY_API_KEY,
       openaiKey: c.env.OPENAI_API_KEY
-    }) : [];
+    });
     
-    console.log(`✅ 이미지 ${smartImages.length}개 준비 완료`);
+    console.log(`✅ 이미지 ${smartImages.length}개 준비 완료 (사용자: ${images.length}개 + 무료 API: ${smartImages.length - images.length}개)`);
 
     // 결과를 객체로 변환 + 이미지 배치 적용
     const data: Record<string, string> = {};
