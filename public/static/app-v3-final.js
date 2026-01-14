@@ -3438,6 +3438,10 @@ function displayResults(data, platforms, options = {}) {
   // ✅ 옵션: hideCalendarButton (캘린더 버튼 숨기기)
   const hideCalendarButton = options.hideCalendarButton || false;
   
+  // ✅ 날짜 정보 옵션
+  const createdAt = options.createdAt || null;
+  const scheduledDate = options.scheduledDate || null;
+  
   const platformNames = {
     blog: '<i class="fas fa-blog text-blue-600 mr-2"></i>네이버 블로그',
     instagram: '<i class="fab fa-instagram text-pink-600 mr-2"></i>인스타그램',
@@ -3462,8 +3466,45 @@ function displayResults(data, platforms, options = {}) {
     return html.replace(/<[^>]*>/g, '').trim();
   };
   
+  // ✅ 날짜 정보 헤더 생성
+  let dateInfoHTML = '';
+  if (createdAt || scheduledDate) {
+    dateInfoHTML = `
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 flex gap-6">
+        ${createdAt ? `
+          <div class="flex items-center gap-2">
+            <i class="fas fa-clock text-blue-600"></i>
+            <span class="text-sm font-semibold text-gray-700">생성일:</span>
+            <span class="text-sm text-gray-900">${new Date(createdAt).toLocaleString('ko-KR', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric', 
+              hour: '2-digit', 
+              minute: '2-digit',
+              hour12: true 
+            })}</span>
+          </div>
+        ` : ''}
+        ${scheduledDate ? `
+          <div class="flex items-center gap-2">
+            <i class="fas fa-calendar-check text-green-600"></i>
+            <span class="text-sm font-semibold text-gray-700">발행 예정일:</span>
+            <span class="text-sm text-gray-900">${new Date(scheduledDate).toLocaleString('ko-KR', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric', 
+              hour: '2-digit', 
+              minute: '2-digit',
+              hour12: true 
+            })}</span>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+  
   // 탭 버튼 생성
-  tabButtons.innerHTML = platforms.map((platform, index) => `
+  tabButtons.innerHTML = dateInfoHTML + platforms.map((platform, index) => `
     <button
       type="button"
       class="tab-button ${index === 0 ? 'active' : ''} px-6 py-3 rounded-lg font-semibold transition"
@@ -3815,6 +3856,16 @@ function saveEdit(platform) {
       historyItem.results[platform] = newContent;
       console.log('✅ window.contentHistory 업데이트 완료');
     }
+  }
+  
+  // ✅ 히스토리 모달이 열려있으면 히스토리 새로고침 (즉시 반영)
+  const historyModal = document.getElementById('historyModal');
+  if (historyModal && !historyModal.classList.contains('hidden')) {
+    console.log('🔄 히스토리 모달이 열려있어서 히스토리 새로고침 시작...');
+    setTimeout(() => {
+      loadHistory();
+      console.log('✅ 히스토리 새로고침 완료');
+    }, 500);
   }
   
   showToast('✅ 수정 내용이 저장되었습니다', 'success');
@@ -5103,9 +5154,12 @@ function viewHistory(id) {
     console.log('✅ 결과 영역 강제 표시');
   }
   
-  // 콘텐츠 렌더링
-  displayResults(item.results, item.platforms);
-  console.log('✅ displayResults 호출 완료');
+  // 콘텐츠 렌더링 (날짜 정보 포함)
+  displayResults(item.results, item.platforms, {
+    createdAt: item.created_at,
+    scheduledDate: item.scheduled_date
+  });
+  console.log('✅ displayResults 호출 완료 (생성일:', item.created_at, ', 예정일:', item.scheduled_date, ')');
   
   // 모달 닫기
   closeModal('historyModal');
@@ -7133,12 +7187,20 @@ async function viewFullContent(generationId, platform) {
     if (platform && item.results[platform]) {
       // 특정 플랫폼만 표시
       resultData = { [platform]: item.results[platform] };
-      displayResults(resultData, [platform], { hideCalendarButton: true });
+      displayResults(resultData, [platform], { 
+        hideCalendarButton: true,
+        createdAt: item.created_at,
+        scheduledDate: item.scheduled_date
+      });
     } else if (!platform) {
       // platform이 없으면 전체 표시
       resultData = item.results;
       const allPlatforms = Object.keys(item.results);
-      displayResults(item.results, allPlatforms, { hideCalendarButton: true });
+      displayResults(item.results, allPlatforms, { 
+        hideCalendarButton: true,
+        createdAt: item.created_at,
+        scheduledDate: item.scheduled_date
+      });
     } else {
       // platform은 있는데 해당 데이터가 없는 경우만 에러
       showToast('❌ 해당 플랫폼의 콘텐츠가 없습니다', 'error');
