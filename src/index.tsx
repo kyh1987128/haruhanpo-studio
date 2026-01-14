@@ -405,15 +405,16 @@ app.post('/api/generate', async (c) => {
       );
     }
 
-    if (images.length === 0) {
-      return c.json(
-        {
-          success: false,
-          error: '최소 1장의 이미지를 업로드해주세요.',
-        },
-        400
-      );
-    }
+    // ✅ 이미지 없어도 콘텐츠 생성 허용 (이미지 API 통합 후 자동으로 이미지 삽입)
+    // if (images.length === 0) {
+    //   return c.json(
+    //     {
+    //       success: false,
+    //       error: '최소 1장의 이미지를 업로드해주세요.',
+    //     },
+    //     400
+    //   );
+    // }
 
     // ✅ Supabase Admin 클라이언트 초기화
     const supabase = createSupabaseAdmin(
