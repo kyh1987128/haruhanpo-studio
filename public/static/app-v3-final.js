@@ -5050,16 +5050,24 @@ function viewHistory(id) {
     if (currentParent && currentParent.id === 'emailVerificationModal') {
       console.log('⚠️ resultArea가 emailVerificationModal 안에 있음! 빼내기 시작...');
       
-      // main-content 찾기 (콘텐츠 블록이 있는 곳)
-      const mainContent = document.querySelector('.main-content');
-      if (mainContent) {
-        // main-content 끝에 추가 (푸터 바로 위)
-        mainContent.appendChild(resultArea);
-        console.log('✅ resultArea를 main-content로 이동 완료');
+      // 푸터 찾기
+      const footer = document.querySelector('footer');
+      if (footer) {
+        // 푸터 바로 앞에 삽입
+        footer.parentElement.insertBefore(resultArea, footer);
+        console.log('✅ resultArea를 푸터 바로 위로 이동 완료');
       } else {
-        // main-content가 없으면 body에 추가
-        document.body.appendChild(resultArea);
-        console.log('✅ resultArea를 body로 이동 완료');
+        // main-content 찾기 (콘텐츠 블록이 있는 곳)
+        const mainContent = document.querySelector('.main-content');
+        if (mainContent) {
+          // main-content 끝에 추가
+          mainContent.appendChild(resultArea);
+          console.log('✅ resultArea를 main-content로 이동 완료');
+        } else {
+          // 둘 다 없으면 body에 추가
+          document.body.appendChild(resultArea);
+          console.log('✅ resultArea를 body로 이동 완료');
+        }
       }
     }
     
