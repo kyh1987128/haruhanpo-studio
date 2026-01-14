@@ -3292,10 +3292,27 @@ async function forceGenerate() {
     if (result.success) {
       hideLoadingOverlay();
       resultData = result.data;
-      displayResults(result.data, result.generatedPlatforms);
       
-      // 🔥 히스토리 자동저장 (await 추가)
-      await saveToHistory(formDataWithForce, result.data);
+      // ✅ generationId 저장 (캘린더 등록용)
+      const generationId = result.id || result.generation_id || `gen_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      window.lastGenerationId = generationId;
+      console.log('✅ 재생성 ID 저장:', generationId);
+      
+      // ✅ 날짜 + 이미지 정보 포함해서 표시
+      displayResults(result.data, result.generatedPlatforms, {
+        createdAt: result.created_at || new Date().toISOString(),
+        scheduledDate: null,  // 아직 등록 전
+        images: result.images || []
+      });
+      
+      // ✅ 백엔드에서 이미 저장했으면 중복 저장 방지
+      if (result.id) {
+        console.log('✅ 백엔드에서 저장 완료, 프론트 중복 저장 스킵');
+      } else {
+        console.warn('⚠️ 백엔드 저장 실패, 프론트엔드에서 저장 시도');
+        // 🔥 히스토리 자동저장 (await 추가)
+        await saveToHistory(formDataWithForce, result.data);
+      }
       
       // ✅ 크레딧 정보 업데이트 (키 매핑 + 2지갑 시스템)
       if (result.usage) {
