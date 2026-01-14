@@ -76,9 +76,9 @@ export const landingPageTemplate = `
                     유튜브 분석부터 영상 기획까지, 모든 것을 한 곳에서
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                    <a href="/postflow" class="bg-white text-purple-600 px-8 py-4 rounded-xl font-bold text-lg hover:shadow-2xl transition-all hover:scale-105">
+                    <button onclick="openAuthModal('signup')" class="bg-white text-purple-600 px-8 py-4 rounded-xl font-bold text-lg hover:shadow-2xl transition-all hover:scale-105">
                         🎁 무료로 시작하기 (30 크레딧 증정 + 매월 30 크레딧)
-                    </a>
+                    </button>
                     <a href="#services" class="border-2 border-white text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-white hover:text-purple-600 transition-all">
                         서비스 둘러보기
                     </a>
