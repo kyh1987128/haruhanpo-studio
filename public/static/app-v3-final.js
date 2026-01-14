@@ -3799,6 +3799,24 @@ function saveEdit(platform) {
   editor.classList.add('hidden');
   actions.classList.add('hidden');
   
+  // ✅ 캘린더가 열려있으면 이벤트 새로고침
+  if (window.calendarInstance) {
+    console.log('🔄 캘린더 이벤트 새로고침 시작...');
+    setTimeout(() => {
+      window.calendarInstance.refetchEvents();
+      console.log('✅ 캘린더 이벤트 새로고침 완료');
+    }, 500);
+  }
+  
+  // ✅ window.contentHistory도 업데이트 (히스토리 모달용)
+  if (window.contentHistory && window.lastGenerationId) {
+    const historyItem = window.contentHistory.find(h => h.id === window.lastGenerationId);
+    if (historyItem && historyItem.results) {
+      historyItem.results[platform] = newContent;
+      console.log('✅ window.contentHistory 업데이트 완료');
+    }
+  }
+  
   showToast('✅ 수정 내용이 저장되었습니다', 'success');
 }
 
@@ -8342,22 +8360,22 @@ async function confirmSaveProfile() {
     return;
   }
   
-  // 폼 데이터 수집 (모든 필드 포함)
+  // 폼 데이터 수집 (모든 필드 포함, HTML ID와 DB 컬럼 매핑)
   const profileData = {
     user_id: user.id,
     profile_name: profileName,
-    brand: document.getElementById('brand')?.value.trim() || '',
+    brand: document.getElementById('brandName')?.value.trim() || '',  // ✅ brandName
     company_name: document.getElementById('companyName')?.value.trim() || '',
     business_type: document.getElementById('businessType')?.value.trim() || '',
-    location: document.getElementById('location')?.value.trim() || '',
+    location: document.getElementById('region')?.value.trim() || '',  // ✅ region
     target_gender: document.getElementById('targetGender')?.value || '',
     contact: document.getElementById('contact')?.value.trim() || '',
     website: document.getElementById('website')?.value.trim() || '',
-    sns: document.getElementById('sns')?.value.trim() || '',
-    keywords: document.getElementById('keywords')?.value.trim() || '',
-    tone: document.getElementById('tone')?.value || '친근한',
-    target_age: document.getElementById('targetAge')?.value || '20대',
-    industry: document.getElementById('industry')?.value || '라이프스타일'
+    sns: document.getElementById('snsAccount')?.value.trim() || '',  // ✅ snsAccount
+    keywords: document.getElementById('keywordAnalysisInput')?.value.trim() || '',  // ✅ keywordAnalysisInput
+    tone: document.getElementById('toneAndManner')?.value || '',  // ✅ toneAndManner (기본값 제거)
+    target_age: document.getElementById('targetAge')?.value || '',  // ✅ 기본값 제거
+    industry: document.getElementById('industry')?.value || ''  // ✅ 기본값 제거
   };
   
   try {
