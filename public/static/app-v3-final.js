@@ -5045,6 +5045,20 @@ function viewHistory(id) {
   // 🔥 결과 영역 강제 표시
   const resultArea = document.getElementById('resultArea');
   if (resultArea) {
+    // 🔥 핵심 수정: 부모 요소들도 모두 표시
+    let parent = resultArea.parentElement;
+    while (parent && parent !== document.body) {
+      if (parent.classList.contains('hidden')) {
+        parent.classList.remove('hidden');
+        console.log('✅ 부모 요소 hidden 제거:', parent.id || parent.className);
+      }
+      if (window.getComputedStyle(parent).display === 'none') {
+        parent.style.setProperty('display', 'block', 'important');
+        console.log('✅ 부모 요소 display 변경:', parent.id || parent.className);
+      }
+      parent = parent.parentElement;
+    }
+    
     resultArea.classList.remove('hidden');
     resultArea.style.setProperty('display', 'block', 'important');
     resultArea.style.setProperty('width', '100%', 'important');
