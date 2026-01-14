@@ -3869,13 +3869,19 @@ function saveEdit(platform) {
   editor.classList.add('hidden');
   actions.classList.add('hidden');
   
-  // ✅ 캘린더가 열려있으면 이벤트 새로고침
+  // ✅ 캘린더 새로고침 플래그 설정 (항상 실행)
+  window.needsCalendarRefresh = true;
+  
+  // ✅ 캘린더가 열려있으면 즉시 이벤트 새로고침
   if (window.calendarInstance) {
     console.log('🔄 캘린더 이벤트 새로고침 시작...');
     setTimeout(() => {
       window.calendarInstance.refetchEvents();
+      window.needsCalendarRefresh = false; // 새로고침 완료 후 플래그 해제
       console.log('✅ 캘린더 이벤트 새로고침 완료');
     }, 500);
+  } else {
+    console.log('📌 캘린더가 숨겨져 있음. 다음 열릴 때 새로고침 예정');
   }
   
   // ✅ window.contentHistory도 업데이트 (히스토리 모달용)
@@ -5113,6 +5119,18 @@ function viewHistory(id) {
   // ✅ generation_id 저장 (캘린더 등록 및 수정 기능에 필요)
   window.lastGenerationId = id;
   resultData = item.results;
+  
+  // 🔥 contentBlocks 배열 초기화 (캘린더 등록 기능에 필요)
+  contentBlocks = [{
+    generationId: id,
+    images: [],
+    platforms: item.platforms || [],
+    keywords: item.keywords || '',
+    brand: item.brand || '',
+    topic: '',
+    description: ''
+  }];
+  console.log('✅ contentBlocks 초기화 완료:', contentBlocks[0]);
   
   // 🔥 화면 모드 전환: 캘린더 뷰 → 콘텐츠 뷰
   const calendarWrapper = document.getElementById('calendarWrapper');
@@ -7421,9 +7439,16 @@ function toggleCalendarView() {
     listView.classList.add('hidden');
     toggleBtn.innerHTML = '<i class="fas fa-list mr-1"></i>목록 보기';
     
-    // 캘린더 새로고침
+    // 🔥 캘린더 새로고침 (플래그 확인)
     if (calendarInstance) {
-      calendarInstance.refetchEvents();
+      if (window.needsCalendarRefresh) {
+        console.log('🔄 플래그 감지! 캘린더 새로고침 실행...');
+        calendarInstance.refetchEvents();
+        window.needsCalendarRefresh = false;
+        console.log('✅ 캘린더 새로고침 완료 (플래그 해제)');
+      } else {
+        calendarInstance.refetchEvents();
+      }
     }
   } else {
     calendarView.classList.add('hidden');
