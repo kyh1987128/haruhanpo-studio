@@ -279,14 +279,26 @@ export const htmlTemplate = `
                 </div>
                 
                 <div class="flex items-center space-x-4">
+                    <!-- 비회원 영역 (로그아웃 상태) -->
+                    <div id="guestArea" class="hidden">
+                        <div class="flex items-center space-x-3">
+                            <button id="loginBtn" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm font-medium">
+                                <i class="fas fa-sign-in-alt mr-2"></i>로그인
+                            </button>
+                            <button id="signupBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium">
+                                <i class="fas fa-user-plus mr-2"></i>회원가입
+                            </button>
+                        </div>
+                    </div>
+                    
                     <!-- 사용자 정보 영역 (로그인 상태만 표시) -->
-                    <div id="userInfoArea">
+                    <div id="userInfoArea" class="hidden">
                         <div class="flex items-center space-x-3">
                             <div class="text-right">
                                 <p class="text-sm font-semibold text-gray-700" id="userName">사용자</p>
                                 <p class="text-xs text-gray-500">
                                     <span id="userTier" class="font-semibold">무료회원</span> | 
-                                    <span id="userCredits" class="text-purple-600 font-bold">3</span> 크레딧
+                                    <span id="userCredits" class="text-purple-600 font-bold">0크레딧</span>
                                     <button onclick="showCreditPurchaseModal()" class="ml-2 px-3 py-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs rounded-lg hover:shadow-lg transition">
                                         <i class="fas fa-plus mr-1"></i>충전
                                     </button>
