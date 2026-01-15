@@ -1,0 +1,523 @@
+<!-- 온보딩 모달 시스템 -->
+<style>
+  /* 온보딩 오버레이 */
+  .onboarding-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+  }
+
+  .onboarding-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* 온보딩 모달 */
+  .onboarding-modal {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: scale(0.9);
+    transition: transform 0.3s;
+  }
+
+  .onboarding-overlay.active .onboarding-modal {
+    transform: scale(1);
+  }
+
+  /* 단계 표시 */
+  .step-indicator {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .step-dot {
+    height: 0.5rem;
+    flex: 1;
+    background: #e5e7eb;
+    border-radius: 0.25rem;
+    transition: background 0.3s;
+  }
+
+  .step-dot.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .step-dot.completed {
+    background: #10b981;
+  }
+
+  /* 템플릿 선택 */
+  .template-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .template-card:hover {
+    border-color: #667eea;
+    background: #f9fafb;
+  }
+
+  .template-card.selected {
+    border-color: #667eea;
+    background: #ede9fe;
+  }
+
+  /* 버튼 */
+  .onboarding-button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .onboarding-button-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+  }
+
+  .onboarding-button-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+
+  .onboarding-button-secondary {
+    background: white;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
+  }
+
+  .onboarding-button-secondary:hover {
+    background: #f9fafb;
+  }
+
+  /* 입력 필드 */
+  .onboarding-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: all 0.2s;
+  }
+
+  .onboarding-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  /* 체크박스 */
+  .platform-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .platform-checkbox:hover {
+    border-color: #667eea;
+    background: #f9fafb;
+  }
+
+  .platform-checkbox.checked {
+    border-color: #667eea;
+    background: #ede9fe;
+  }
+
+  .platform-checkbox input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+</style>
+
+<!-- 온보딩 오버레이 -->
+<div class="onboarding-overlay" id="onboardingOverlay">
+  <div class="onboarding-modal">
+    <!-- Step 1: 환영 & 템플릿 선택 -->
+    <div class="onboarding-step" id="step1" style="display: none;">
+      <div style="padding: 2rem;">
+        <!-- 단계 표시 -->
+        <div class="step-indicator">
+          <div class="step-dot active"></div>
+          <div class="step-dot"></div>
+          <div class="step-dot"></div>
+        </div>
+
+        <!-- 헤더 -->
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
+          <h2 style="font-size: 1.875rem; font-weight: 700; color: #1f2937; margin-bottom: 0.5rem;">
+            환영합니다!
+          </h2>
+          <p style="color: #6b7280;">
+            첫 콘텐츠를 3분 안에 만들어보세요
+          </p>
+        </div>
+
+        <!-- 템플릿 선택 -->
+        <div style="margin-bottom: 2rem;">
+          <h3 style="font-weight: 600; margin-bottom: 1rem; color: #374151;">
+            어떤 콘텐츠를 만들까요?
+          </h3>
+          <div style="display: grid; gap: 1rem;">
+            <div class="template-card" data-template="travel">
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="font-size: 2rem;">✈️</div>
+                <div>
+                  <div style="font-weight: 600; color: #1f2937;">여행 브이로그</div>
+                  <div style="font-size: 0.875rem; color: #6b7280;">유튜브 쇼츠, 인스타그램 릴스</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="template-card" data-template="food">
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="font-size: 2rem;">🍜</div>
+                <div>
+                  <div style="font-weight: 600; color: #1f2937;">맛집 리뷰</div>
+                  <div style="font-size: 0.875rem; color: #6b7280;">네이버 블로그, 인스타그램</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="template-card" data-template="business">
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="font-size: 2rem;">💼</div>
+                <div>
+                  <div style="font-weight: 600; color: #1f2937;">비즈니스 콘텐츠</div>
+                  <div style="font-size: 0.875rem; color: #6b7280;">브런치, 유튜브 롱폼</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="template-card" data-template="custom">
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="font-size: 2rem;">✨</div>
+                <div>
+                  <div style="font-weight: 600; color: #1f2937;">직접 설정하기</div>
+                  <div style="font-size: 0.875rem; color: #6b7280;">나만의 맞춤 콘텐츠</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 버튼 -->
+        <div style="display: flex; gap: 1rem;">
+          <button class="onboarding-button onboarding-button-secondary" onclick="skipOnboarding()" style="flex: 1;">
+            나중에 하기
+          </button>
+          <button class="onboarding-button onboarding-button-primary" onclick="nextStep(2)" style="flex: 2;" id="step1Next" disabled>
+            다음 단계
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: 기본 정보 입력 -->
+    <div class="onboarding-step" id="step2" style="display: none;">
+      <div style="padding: 2rem;">
+        <!-- 단계 표시 -->
+        <div class="step-indicator">
+          <div class="step-dot completed"></div>
+          <div class="step-dot active"></div>
+          <div class="step-dot"></div>
+        </div>
+
+        <!-- 헤더 -->
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">✍️</div>
+          <h2 style="font-size: 1.875rem; font-weight: 700; color: #1f2937; margin-bottom: 0.5rem;">
+            기본 정보 입력
+          </h2>
+          <p style="color: #6b7280;">
+            브랜드 정보를 입력하면 AI가 맞춤 콘텐츠를 만들어요
+          </p>
+        </div>
+
+        <!-- 입력 필드 -->
+        <div style="margin-bottom: 2rem;">
+          <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">
+              브랜드/채널 이름
+            </label>
+            <input type="text" class="onboarding-input" id="onboardingBrand" placeholder="예: 여행가 철수">
+          </div>
+
+          <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">
+              산업/분야
+            </label>
+            <select class="onboarding-input" id="onboardingIndustry">
+              <option value="">선택하세요</option>
+              <option value="여행/맛집">여행/맛집</option>
+              <option value="뷰티/패션">뷰티/패션</option>
+              <option value="IT/기술">IT/기술</option>
+              <option value="교육">교육</option>
+              <option value="비즈니스">비즈니스</option>
+              <option value="라이프스타일">라이프스타일</option>
+              <option value="기타">기타</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">
+              주요 키워드 (선택)
+            </label>
+            <input type="text" class="onboarding-input" id="onboardingKeywords" placeholder="예: 가성비, 힐링, 로컬 맛집">
+            <p style="font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">
+              쉼표(,)로 구분해주세요
+            </p>
+          </div>
+        </div>
+
+        <!-- 버튼 -->
+        <div style="display: flex; gap: 1rem;">
+          <button class="onboarding-button onboarding-button-secondary" onclick="prevStep(1)" style="flex: 1;">
+            이전
+          </button>
+          <button class="onboarding-button onboarding-button-primary" onclick="nextStep(3)" style="flex: 2;" id="step2Next">
+            다음 단계
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: 플랫폼 선택 -->
+    <div class="onboarding-step" id="step3" style="display: none;">
+      <div style="padding: 2rem;">
+        <!-- 단계 표시 -->
+        <div class="step-indicator">
+          <div class="step-dot completed"></div>
+          <div class="step-dot completed"></div>
+          <div class="step-dot active"></div>
+        </div>
+
+        <!-- 헤더 -->
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">🎯</div>
+          <h2 style="font-size: 1.875rem; font-weight: 700; color: #1f2937; margin-bottom: 0.5rem;">
+            플랫폼 선택
+          </h2>
+          <p style="color: #6b7280;">
+            어디에 올릴 콘텐츠를 만들까요?
+          </p>
+        </div>
+
+        <!-- 플랫폼 선택 -->
+        <div style="margin-bottom: 2rem;">
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+            <label class="platform-checkbox">
+              <input type="checkbox" name="platform" value="youtube_shorts">
+              <div>
+                <div style="font-weight: 600;">📹 유튜브 쇼츠</div>
+                <div style="font-size: 0.875rem; color: #6b7280;">15-60초 영상</div>
+              </div>
+            </label>
+
+            <label class="platform-checkbox">
+              <input type="checkbox" name="platform" value="instagram_reels">
+              <div>
+                <div style="font-weight: 600;">📷 인스타그램 릴스</div>
+                <div style="font-size: 0.875rem; color: #6b7280;">15-90초 영상</div>
+              </div>
+            </label>
+
+            <label class="platform-checkbox">
+              <input type="checkbox" name="platform" value="naver_blog">
+              <div>
+                <div style="font-weight: 600;">📝 네이버 블로그</div>
+                <div style="font-size: 0.875rem; color: #6b7280;">긴 글 콘텐츠</div>
+              </div>
+            </label>
+
+            <label class="platform-checkbox">
+              <input type="checkbox" name="platform" value="youtube_longform">
+              <div>
+                <div style="font-weight: 600;">🎬 유튜브 롱폼</div>
+                <div style="font-size: 0.875rem; color: #6b7280;">5-15분 영상</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- 예상 크레딧 -->
+        <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 2rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <i class="fas fa-coins" style="color: #10b981;"></i>
+            <span style="font-weight: 600; color: #065f46;">예상 사용 크레딧</span>
+          </div>
+          <div style="font-size: 1.5rem; font-weight: 700; color: #065f46;" id="estimatedCredits">0 크레딧</div>
+          <div style="font-size: 0.875rem; color: #047857; margin-top: 0.5rem;">
+            💡 플랫폼 1개당 1크레딧이 사용됩니다
+          </div>
+        </div>
+
+        <!-- 버튼 -->
+        <div style="display: flex; gap: 1rem;">
+          <button class="onboarding-button onboarding-button-secondary" onclick="prevStep(2)" style="flex: 1;">
+            이전
+          </button>
+          <button class="onboarding-button onboarding-button-primary" onclick="completeOnboarding()" style="flex: 2;" id="step3Next">
+            🎉 콘텐츠 생성하기
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 온보딩 상태
+  let onboardingState = {
+    currentStep: 1,
+    template: null,
+    brand: '',
+    industry: '',
+    keywords: '',
+    platforms: []
+  };
+
+  // 온보딩 시작
+  function startOnboarding() {
+    const overlay = document.getElementById('onboardingOverlay');
+    overlay.classList.add('active');
+    showStep(1);
+  }
+
+  // 단계 표시
+  function showStep(step) {
+    // 모든 단계 숨기기
+    for (let i = 1; i <= 3; i++) {
+      document.getElementById(`step${i}`).style.display = 'none';
+    }
+    // 현재 단계 표시
+    document.getElementById(`step${step}`).style.display = 'block';
+    onboardingState.currentStep = step;
+  }
+
+  // 다음 단계
+  function nextStep(step) {
+    // 현재 단계 데이터 저장
+    if (onboardingState.currentStep === 1) {
+      if (!onboardingState.template) {
+        alert('템플릿을 선택해주세요!');
+        return;
+      }
+    } else if (onboardingState.currentStep === 2) {
+      onboardingState.brand = document.getElementById('onboardingBrand').value;
+      onboardingState.industry = document.getElementById('onboardingIndustry').value;
+      onboardingState.keywords = document.getElementById('onboardingKeywords').value;
+      
+      if (!onboardingState.brand || !onboardingState.industry) {
+        alert('브랜드 이름과 산업/분야를 입력해주세요!');
+        return;
+      }
+    }
+    
+    showStep(step);
+  }
+
+  // 이전 단계
+  function prevStep(step) {
+    showStep(step);
+  }
+
+  // 온보딩 건너뛰기
+  function skipOnboarding() {
+    if (confirm('온보딩을 건너뛰시겠습니까?\n언제든 설정에서 다시 볼 수 있습니다.')) {
+      document.getElementById('onboardingOverlay').classList.remove('active');
+      // 온보딩 완료 상태 저장
+      if (typeof updateUserOnboardingStatus === 'function') {
+        updateUserOnboardingStatus(true);
+      }
+    }
+  }
+
+  // 온보딩 완료
+  function completeOnboarding() {
+    // 플랫폼 선택 확인
+    const selectedPlatforms = Array.from(document.querySelectorAll('input[name="platform"]:checked'))
+      .map(cb => cb.value);
+    
+    if (selectedPlatforms.length === 0) {
+      alert('최소 1개의 플랫폼을 선택해주세요!');
+      return;
+    }
+    
+    onboardingState.platforms = selectedPlatforms;
+    
+    // 온보딩 완료 상태 저장
+    if (typeof updateUserOnboardingStatus === 'function') {
+      updateUserOnboardingStatus(true);
+    }
+    
+    // 메인 폼에 데이터 자동 입력
+    if (typeof fillFormWithOnboardingData === 'function') {
+      fillFormWithOnboardingData(onboardingState);
+    }
+    
+    // 오버레이 닫기
+    document.getElementById('onboardingOverlay').classList.remove('active');
+    
+    // 성공 메시지
+    alert('🎉 설정이 완료되었습니다!\n이제 첫 콘텐츠를 생성해보세요.');
+  }
+
+  // 템플릿 선택 이벤트
+  document.addEventListener('DOMContentLoaded', () => {
+    // 템플릿 카드 클릭
+    document.querySelectorAll('.template-card').forEach(card => {
+      card.addEventListener('click', () => {
+        // 모든 카드 선택 해제
+        document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+        // 현재 카드 선택
+        card.classList.add('selected');
+        onboardingState.template = card.dataset.template;
+        // 다음 버튼 활성화
+        document.getElementById('step1Next').disabled = false;
+      });
+    });
+
+    // 플랫폼 체크박스 스타일
+    document.querySelectorAll('.platform-checkbox').forEach(label => {
+      const checkbox = label.querySelector('input[type="checkbox"]');
+      checkbox.addEventListener('change', () => {
+        if (checkbox.checked) {
+          label.classList.add('checked');
+        } else {
+          label.classList.remove('checked');
+        }
+        updateEstimatedCredits();
+      });
+    });
+  });
+
+  // 예상 크레딧 업데이트
+  function updateEstimatedCredits() {
+    const selectedCount = document.querySelectorAll('input[name="platform"]:checked').length;
+    document.getElementById('estimatedCredits').textContent = `${selectedCount} 크레딧`;
+  }
+</script>

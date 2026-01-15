@@ -1,0 +1,229 @@
+// 온보딩 시스템 통합 스크립트
+// app-v3-final.js에 추가될 코드
+
+// 1. 사용자 온보딩 상태 확인
+async function getUserOnboardingState(userId) {
+  try {
+    // Supabase에서 사용자 정보 가져오기
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('onboarding_completed, content_generated_count, first_visit_date')
+      .eq('id', userId)
+      .single();
+
+    if (error) throw error;
+
+    // 상태 분류
+    if (!user.onboarding_completed && (user.content_generated_count === 0 || !user.content_generated_count)) {
+      return 'NEW_USER'; // 신규 사용자
+    } else if (user.content_generated_count > 0 && user.content_generated_count < 5) {
+      return 'LEARNING'; // 학습 중
+    } else {
+      return 'EXPERIENCED'; // 숙련자
+    }
+  } catch (error) {
+    console.error('온보딩 상태 확인 실패:', error);
+    return 'EXPERIENCED'; // 오류 시 기본값
+  }
+}
+
+// 2. 온보딩 초기화
+async function initOnboarding(userId) {
+  const state = await getUserOnboardingState(userId);
+
+  if (state === 'NEW_USER') {
+    // 신규 사용자: 풀 온보딩 표시
+    showFullOnboarding();
+  } else if (state === 'LEARNING') {
+    // 학습 중: 간단 팁 토스트
+    showLearningTip();
+  } else {
+    // 숙련자: 마지막 작업 이어서 하기 제안
+    showContinueLastWork();
+  }
+}
+
+// 3. 풀 온보딩 표시
+function showFullOnboarding() {
+  // 온보딩 HTML 로드
+  fetch('/static/onboarding.html')
+    .then(res => res.text())
+    .then(html => {
+      // body에 추가
+      const div = document.createElement('div');
+      div.innerHTML = html;
+      document.body.appendChild(div);
+      
+      // 온보딩 시작
+      setTimeout(() => {
+        if (typeof startOnboarding === 'function') {
+          startOnboarding();
+        }
+      }, 500);
+    })
+    .catch(err => console.error('온보딩 로드 실패:', err));
+}
+
+// 4. 학습 팁 토스트
+function showLearningTip() {
+  const tips = [
+    '💡 Tip: AI 키워드 분석 기능을 사용해보세요! (일일 3회 무료)',
+    '💡 Tip: 템플릿을 저장하면 다음에 빠르게 생성할 수 있어요',
+    '💡 Tip: 여러 플랫폼을 선택하면 한 번에 생성됩니다',
+    '💡 Tip: 캘린더에서 생성한 콘텐츠를 확인하세요'
+  ];
+  
+  const randomTip = tips[Math.floor(Math.random() * tips.length)];
+  
+  // 토스트 메시지 표시
+  showToast(randomTip, 'info', 5000);
+}
+
+// 5. 마지막 작업 이어서 하기
+async function showContinueLastWork() {
+  try {
+    // 최근 생성 히스토리 가져오기
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    if (!userId) return;
+
+    const { data: lastWork, error } = await supabase
+      .from('generated_contents')
+      .select('brand_name, keywords, platforms')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error || !lastWork) return;
+
+    // 토스트로 제안
+    const message = `마지막 작업: "${lastWork.brand_name}" - 이어서 하시겠어요?`;
+    
+    // 커스텀 토스트 (클릭 가능)
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+      position: fixed;
+      top: 5rem;
+      right: 1.5rem;
+      background: white;
+      padding: 1rem 1.5rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      z-index: 9998;
+      max-width: 350px;
+      cursor: pointer;
+      transition: all 0.3s;
+    `;
+    toast.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <div style="font-size: 1.5rem;">🔄</div>
+        <div>
+          <div style="font-weight: 600; margin-bottom: 0.25rem;">${message}</div>
+          <div style="font-size: 0.875rem; color: #6b7280;">클릭하여 설정 불러오기</div>
+        </div>
+      </div>
+    `;
+    
+    toast.addEventListener('click', () => {
+      // 폼에 데이터 자동 입력
+      if (document.getElementById('brandName')) {
+        document.getElementById('brandName').value = lastWork.brand_name || '';
+      }
+      if (document.getElementById('keywords')) {
+        document.getElementById('keywords').value = lastWork.keywords || '';
+      }
+      
+      // 토스트 닫기
+      toast.remove();
+      
+      showToast('✅ 설정을 불러왔습니다!', 'success');
+    });
+    
+    document.body.appendChild(toast);
+    
+    // 10초 후 자동 닫기
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      setTimeout(() => toast.remove(), 300);
+    }, 10000);
+  } catch (error) {
+    console.error('마지막 작업 불러오기 실패:', error);
+  }
+}
+
+// 6. 온보딩 완료 상태 업데이트
+async function updateUserOnboardingStatus(completed) {
+  try {
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    if (!userId) return;
+
+    await supabase
+      .from('users')
+      .update({ 
+        onboarding_completed: completed,
+        last_active_date: new Date().toISOString()
+      })
+      .eq('id', userId);
+
+    console.log('온보딩 상태 업데이트 완료:', completed);
+  } catch (error) {
+    console.error('온보딩 상태 업데이트 실패:', error);
+  }
+}
+
+// 7. 온보딩 데이터로 폼 채우기
+function fillFormWithOnboardingData(data) {
+  console.log('온보딩 데이터로 폼 채우기:', data);
+  
+  // 브랜드 이름
+  if (data.brand && document.getElementById('brandName')) {
+    document.getElementById('brandName').value = data.brand;
+  }
+  
+  // 산업/분야
+  if (data.industry && document.getElementById('industry')) {
+    document.getElementById('industry').value = data.industry;
+  }
+  
+  // 키워드
+  if (data.keywords && document.getElementById('keywords')) {
+    document.getElementById('keywords').value = data.keywords;
+  }
+  
+  // 플랫폼 선택
+  if (data.platforms && data.platforms.length > 0) {
+    data.platforms.forEach(platform => {
+      const checkbox = document.querySelector(`input[name="platforms"][value="${platform}"]`);
+      if (checkbox) {
+        checkbox.checked = true;
+        // 체크박스 변경 이벤트 트리거
+        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
+  }
+  
+  showToast('✅ 설정이 완료되었습니다! 생성 버튼을 눌러주세요.', 'success', 5000);
+}
+
+// 8. 콘텐츠 생성 시 카운트 증가
+async function incrementContentCount(userId) {
+  try {
+    await supabase.rpc('increment_content_count', { user_id: userId });
+    console.log('콘텐츠 생성 카운트 증가');
+  } catch (error) {
+    console.error('콘텐츠 카운트 증가 실패:', error);
+  }
+}
+
+// 9. 온보딩 재실행 (설정 페이지에서 호출)
+function restartOnboarding() {
+  showFullOnboarding();
+}
+
+// 전역으로 노출
+window.getUserOnboardingState = getUserOnboardingState;
+window.initOnboarding = initOnboarding;
+window.updateUserOnboardingStatus = updateUserOnboardingStatus;
+window.fillFormWithOnboardingData = fillFormWithOnboardingData;
+window.incrementContentCount = incrementContentCount;
+window.restartOnboarding = restartOnboarding;
