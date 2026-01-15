@@ -6000,13 +6000,21 @@ function initializeAuth() {
   
   // 로컬 스토리지에서 사용자 정보 확인
   const savedUser = localStorage.getItem('postflow_user');
-  if (savedUser) {
+  const savedToken = localStorage.getItem('postflow_token');
+  
+  if (savedUser && savedToken) {
     window.currentUser = JSON.parse(savedUser);
     console.log('✅ [초기화] localStorage에서 사용자 복원:', window.currentUser);
+    
+    // 🔥 로그인 상태 명시적 설정 (중요!)
+    window.currentUser.isGuest = false;
+    window.currentUser.isLoggedIn = true;
+    
     updateAuthUI();
   } else {
     // 비회원 상태로 시작
     window.currentUser.isGuest = true;
+    window.currentUser.isLoggedIn = false;
     window.currentUser.tier = 'guest';
     window.currentUser.credits = 1;
     console.log('📝 [초기화] 비회원 상태로 시작:', window.currentUser);
