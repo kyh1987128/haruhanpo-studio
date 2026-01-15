@@ -1,0 +1,488 @@
+<!-- 워크플로우 허브 UI -->
+<style>
+  .workflow-hub {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    color: white;
+    margin-bottom: 1.5rem;
+  }
+
+  .workflow-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .workflow-header:hover {
+    opacity: 0.9;
+  }
+
+  .workflow-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .workflow-toggle {
+    font-size: 1.25rem;
+    transition: transform 0.3s;
+  }
+
+  .workflow-toggle.expanded {
+    transform: rotate(180deg);
+  }
+
+  .workflow-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+  }
+
+  .workflow-content.expanded {
+    max-height: 600px;
+    overflow-y: auto;
+  }
+
+  .workflow-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .workflow-tab {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .workflow-tab:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .workflow-tab.active {
+    background: white;
+    color: #667eea;
+  }
+
+  .workflow-list {
+    display: none;
+  }
+
+  .workflow-list.active {
+    display: block;
+  }
+
+  .workflow-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .workflow-item:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateX(4px);
+  }
+
+  .workflow-item-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+  }
+
+  .workflow-icon {
+    font-size: 1.5rem;
+  }
+
+  .workflow-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .workflow-username {
+    font-size: 0.75rem;
+    opacity: 0.8;
+    margin-top: 0.125rem;
+  }
+
+  .workflow-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .workflow-favorite {
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .workflow-favorite:hover {
+    transform: scale(1.2);
+  }
+
+  .workflow-favorite.active {
+    color: #fbbf24;
+  }
+
+  .workflow-delete {
+    font-size: 1rem;
+    opacity: 0.6;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .workflow-delete:hover {
+    opacity: 1;
+    color: #ef4444;
+  }
+
+  .workflow-add-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px dashed rgba(255, 255, 255, 0.4);
+    border-radius: 0.5rem;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .workflow-add-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.6);
+  }
+
+  .workflow-empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    opacity: 0.8;
+    font-size: 0.875rem;
+  }
+
+  /* 스크롤바 스타일 */
+  .workflow-content::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .workflow-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
+
+  .workflow-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+  }
+
+  .workflow-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+
+  /* 모달 스타일 */
+  .workflow-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .workflow-modal.active {
+    display: flex;
+  }
+
+  .workflow-modal-content {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+  }
+
+  .workflow-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .workflow-modal-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+  }
+
+  .workflow-modal-close {
+    font-size: 1.5rem;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .workflow-modal-close:hover {
+    color: #1f2937;
+  }
+
+  .workflow-form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .workflow-form-label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .workflow-form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+  }
+
+  .workflow-form-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .workflow-form-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    background: white;
+    cursor: pointer;
+  }
+
+  .workflow-form-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  .workflow-form-btn {
+    flex: 1;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+
+  .workflow-form-btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .workflow-form-btn-primary:hover {
+    opacity: 0.9;
+  }
+
+  .workflow-form-btn-secondary {
+    background: #e5e7eb;
+    color: #374151;
+  }
+
+  .workflow-form-btn-secondary:hover {
+    background: #d1d5db;
+  }
+</style>
+
+<div id="workflowHub" class="workflow-hub hidden">
+  <!-- 헤더 -->
+  <div class="workflow-header" onclick="toggleWorkflowHub()">
+    <div class="workflow-title">
+      <i class="fas fa-star"></i>
+      <span>나의 워크플로우</span>
+    </div>
+    <div class="workflow-toggle" id="workflowToggle">
+      <i class="fas fa-chevron-down"></i>
+    </div>
+  </div>
+
+  <!-- 콘텐츠 -->
+  <div class="workflow-content" id="workflowContent">
+    <!-- 탭 메뉴 -->
+    <div class="workflow-tabs">
+      <button class="workflow-tab active" onclick="switchWorkflowTab('sns')" data-tab="sns">
+        <i class="fas fa-share-alt"></i>
+        <span>내 SNS 채널</span>
+      </button>
+      <button class="workflow-tab" onclick="switchWorkflowTab('image_tool')" data-tab="image_tool">
+        <i class="fas fa-image"></i>
+        <span>이미지 AI</span>
+      </button>
+      <button class="workflow-tab" onclick="switchWorkflowTab('video_tool')" data-tab="video_tool">
+        <i class="fas fa-video"></i>
+        <span>영상 AI</span>
+      </button>
+      <button class="workflow-tab" onclick="switchWorkflowTab('other_tool')" data-tab="other_tool">
+        <i class="fas fa-robot"></i>
+        <span>기타 AI</span>
+      </button>
+    </div>
+
+    <!-- SNS 채널 리스트 -->
+    <div class="workflow-list active" id="workflowList-sns">
+      <div class="workflow-empty" id="emptyState-sns">
+        <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+        <p>등록된 SNS 채널이 없습니다</p>
+      </div>
+      <div id="workflowItems-sns"></div>
+      <button class="workflow-add-btn" onclick="openWorkflowModal('sns')">
+        <i class="fas fa-plus"></i>
+        <span>SNS 채널 추가</span>
+      </button>
+    </div>
+
+    <!-- 이미지 AI 도구 리스트 -->
+    <div class="workflow-list" id="workflowList-image_tool">
+      <div class="workflow-empty" id="emptyState-image_tool">
+        <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+        <p>등록된 이미지 AI 도구가 없습니다</p>
+      </div>
+      <div id="workflowItems-image_tool"></div>
+      <button class="workflow-add-btn" onclick="openWorkflowModal('image_tool')">
+        <i class="fas fa-plus"></i>
+        <span>이미지 AI 도구 추가</span>
+      </button>
+    </div>
+
+    <!-- 영상 AI 도구 리스트 -->
+    <div class="workflow-list" id="workflowList-video_tool">
+      <div class="workflow-empty" id="emptyState-video_tool">
+        <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+        <p>등록된 영상 AI 도구가 없습니다</p>
+      </div>
+      <div id="workflowItems-video_tool"></div>
+      <button class="workflow-add-btn" onclick="openWorkflowModal('video_tool')">
+        <i class="fas fa-plus"></i>
+        <span>영상 AI 도구 추가</span>
+      </button>
+    </div>
+
+    <!-- 기타 AI 도구 리스트 -->
+    <div class="workflow-list" id="workflowList-other_tool">
+      <div class="workflow-empty" id="emptyState-other_tool">
+        <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+        <p>등록된 기타 AI 도구가 없습니다</p>
+      </div>
+      <div id="workflowItems-other_tool"></div>
+      <button class="workflow-add-btn" onclick="openWorkflowModal('other_tool')">
+        <i class="fas fa-plus"></i>
+        <span>기타 AI 도구 추가</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 워크플로우 추가/수정 모달 -->
+<div class="workflow-modal" id="workflowModal">
+  <div class="workflow-modal-content">
+    <div class="workflow-modal-header">
+      <h3 class="workflow-modal-title" id="workflowModalTitle">도구 추가</h3>
+      <i class="fas fa-times workflow-modal-close" onclick="closeWorkflowModal()"></i>
+    </div>
+
+    <form id="workflowForm" onsubmit="handleWorkflowSubmit(event)">
+      <input type="hidden" id="workflowId" name="id">
+      <input type="hidden" id="workflowCategory" name="category">
+
+      <div class="workflow-form-group">
+        <label class="workflow-form-label">도구 이름 *</label>
+        <input
+          type="text"
+          class="workflow-form-input"
+          id="workflowName"
+          name="display_name"
+          placeholder="예: Instagram @my_brand"
+          required
+        />
+      </div>
+
+      <div class="workflow-form-group">
+        <label class="workflow-form-label">URL *</label>
+        <input
+          type="url"
+          class="workflow-form-input"
+          id="workflowUrl"
+          name="url"
+          placeholder="https://..."
+          required
+        />
+      </div>
+
+      <div class="workflow-form-group" id="usernameGroup" style="display: none;">
+        <label class="workflow-form-label">사용자명 (선택)</label>
+        <input
+          type="text"
+          class="workflow-form-input"
+          id="workflowUsername"
+          name="username"
+          placeholder="@my_brand"
+        />
+      </div>
+
+      <div class="workflow-form-group">
+        <label class="workflow-form-label">아이콘 선택</label>
+        <select class="workflow-form-select" id="workflowIcon" name="icon">
+          <!-- 동적으로 채워짐 -->
+        </select>
+      </div>
+
+      <div class="workflow-form-buttons">
+        <button type="button" class="workflow-form-btn workflow-form-btn-secondary" onclick="closeWorkflowModal()">
+          취소
+        </button>
+        <button type="submit" class="workflow-form-btn workflow-form-btn-primary">
+          저장
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

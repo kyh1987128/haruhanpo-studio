@@ -1999,6 +1999,9 @@ export const htmlTemplate = `
     <!-- 온보딩 시스템 로드 -->
     <script src="/static/onboarding-integration.js"></script>
     
+    <!-- 워크플로우 허브 로드 -->
+    <script src="/static/workflow-hub.js"></script>
+    
     <script>
       // ========================================
       // 사이드바 토글 함수 (NEW v7.9)
