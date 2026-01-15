@@ -2204,37 +2204,37 @@ function removeContentImage(contentIndex, imageIndex) {
   showToast('🗑️ 이미지 삭제 완료', 'success');
 }
 
-// 🔒 AI 추천 횟수 제한 (일일 3회)
-let aiRecommendCount = parseInt(localStorage.getItem('ai_recommend_count') || '0');
-let aiRecommendResetDate = localStorage.getItem('ai_recommend_reset_date') || '';
-
-function checkAIRecommendLimit() {
+// 🔒 AI 추천 횟수 제한 (계정별 + 콘텐츠별 독립)
+function getAIRecommendKey(contentIndex) {
+  const userId = window.currentUser?.id || 'guest';
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-  
-  // 날짜가 바뀌면 카운터 초기화
-  if (aiRecommendResetDate !== today) {
-    aiRecommendCount = 0;
-    aiRecommendResetDate = today;
-    localStorage.setItem('ai_recommend_count', '0');
-    localStorage.setItem('ai_recommend_reset_date', today);
-  }
-  
-  return aiRecommendCount < 3;
+  return `ai_recommend_${userId}_content_${contentIndex}_${today}`;
 }
 
-function incrementAIRecommendCount() {
-  aiRecommendCount++;
-  localStorage.setItem('ai_recommend_count', aiRecommendCount.toString());
+function checkAIRecommendLimit(contentIndex) {
+  const key = getAIRecommendKey(contentIndex);
+  const count = parseInt(localStorage.getItem(key) || '0');
+  return count < 3;
+}
+
+function incrementAIRecommendCount(contentIndex) {
+  const key = getAIRecommendKey(contentIndex);
+  const currentCount = parseInt(localStorage.getItem(key) || '0');
+  const newCount = currentCount + 1;
+  localStorage.setItem(key, newCount.toString());
   
-  if (aiRecommendCount >= 3) {
-    console.log('⚠️ AI 추천 일일 한도 도달 (3/3)');
-    // 모든 AI 추천 버튼 비활성화
-    document.querySelectorAll('[onclick*="suggestKeywordsForContent"]').forEach(btn => {
+  if (newCount >= 3) {
+    console.log(`⚠️ AI 추천 일일 한도 도달 (콘텐츠 #${contentIndex + 1}: ${newCount}/3)`);
+    // 해당 콘텐츠의 AI 추천 버튼만 비활성화
+    const btn = document.querySelector(`[onclick*="suggestKeywordsForContent(${contentIndex}"]`);
+    if (btn) {
       btn.disabled = true;
       btn.innerHTML = '<i class="fas fa-ban"></i> 오늘 한도 초과';
       btn.classList.add('opacity-50', 'cursor-not-allowed');
-    });
+    }
   }
+  
+  return newCount;
 }
 
 // 개별 콘텐츠 AI 키워드 추천
@@ -2242,9 +2242,9 @@ async function suggestKeywordsForContent(index, event) {
   event.preventDefault();
   event.stopPropagation();
   
-  // 🔒 일일 3회 제한 체크
-  if (!checkAIRecommendLimit()) {
-    showToast('❌ AI 추천은 하루 3회까지만 가능합니다', 'error');
+  // 🔒 콘텐츠별 일일 3회 제한 체크
+  if (!checkAIRecommendLimit(index)) {
+    showToast(`❌ 콘텐츠 #${index + 1}의 AI 추천은 하루 3회까지만 가능합니다`, 'error');
     return;
   }
   
@@ -2279,10 +2279,10 @@ async function suggestKeywordsForContent(index, event) {
       document.getElementById(`keyword_${index}`).value = keywordsStr;
       updateContentData(index, 'keywords', keywordsStr);
       
-      // 🔒 성공 시에만 카운트 증가
-      incrementAIRecommendCount();
+      // 🔒 성공 시에만 카운트 증가 (콘텐츠별)
+      const currentCount = incrementAIRecommendCount(index);
       
-      showToast(`✨ 키워드 추천 완료! (${aiRecommendCount}/3)`, 'success');
+      showToast(`✨ 키워드 추천 완료! (콘텐츠 #${index + 1}: ${currentCount}/3)`, 'success');
     } else {
       showToast('❌ ' + (result.error || '키워드 추천 실패'), 'error');
     }

@@ -163,67 +163,8 @@ export function injectBlogImageGuide(
   images: SmartImageResult[],
   userUploadedCount: number
 ): string {
-  if (!images || images.length === 0) {
-    return content;
-  }
-
-  // 문단 구분 (##로 시작하는 소제목 기준)
-  const sections = content.split(/(?=##\s)/g);
-  const totalSections = sections.length;
-  const imageCount = images.length;
-  const imageInterval = Math.max(1, Math.floor(totalSections / imageCount));
-
-  let result = '';
-  let imageIndex = 0;
-
-  sections.forEach((section, index) => {
-    // 섹션 추가
-    result += section;
-
-    // 이미지 가이드 삽입 (일정 간격마다)
-    if (
-      imageIndex < imageCount &&
-      (index + 1) % imageInterval === 0 &&
-      index < totalSections - 1
-    ) {
-      const img = images[imageIndex];
-      const sectionTitle = section.match(/##\s+(.+)/)?.[1] || `${index + 1}번째 섹션`;
-      const isUserUploaded = imageIndex < userUploadedCount;
-
-      result += '\n\n';
-      result += '┌─────────────────────────────────────┐\n';
-      result += `│ 📸 이미지 배치 가이드 #${imageIndex + 1}            │\n`;
-      result += '├─────────────────────────────────────┤\n';
-      result += `│ 배치 위치: "${sectionTitle}" 섹션 뒤  │\n`;
-      result += '│                                     │\n';
-
-      if (isUserUploaded) {
-        result += `│ 1순위: 업로드한 이미지 ${imageIndex + 1}            │\n`;
-        result += `│   • 설명: ${img.alt.substring(0, 20)}...         │\n`;
-        if (img.caption) {
-          result += `│   • 캡션: ${img.caption.substring(0, 20)}...       │\n`;
-        }
-      } else {
-        result += '│ 1순위: 무료 이미지 사용 권장        │\n';
-        result += `│   • 출처: ${img.source === 'unsplash' ? 'Unsplash' : img.source === 'pexels' ? 'Pexels' : 'Pixabay'}           │\n`;
-        result += `│   • 키워드: ${img.alt.substring(0, 18)}...       │\n`;
-      }
-
-      result += '│                                     │\n';
-      result += '│ 2순위: 무료 이미지 추천             │\n';
-      result += '│   • Unsplash: unsplash.com/search   │\n';
-      result += '│   • Pexels: pexels.com/search       │\n';
-      result += '│                                     │\n';
-      result += '│ 크기: 가로 100%, 세로 자동          │\n';
-      result += `│ Alt 텍스트: "${img.alt.substring(0, 15)}..."     │\n`;
-      result += '└─────────────────────────────────────┘\n';
-      result += '\n';
-
-      imageIndex++;
-    }
-  });
-
-  return result;
+  // ✅ 이미지 가이드 완전 제거 - 콘텐츠만 반환
+  return content;
 }
 
 /**
@@ -239,49 +180,8 @@ export function injectYoutubeThumbnailGuide(
   images: SmartImageResult[],
   userUploadedCount: number
 ): string {
-  if (!images || images.length === 0) {
-    return content;
-  }
-
-  const mainImage = images[0];
-  const isUserUploaded = userUploadedCount > 0;
-
-  let guide = '\n\n';
-  guide += '═══════════════════════════════════════════════\n';
-  guide += '🎬 유튜브 썸네일 이미지 가이드\n';
-  guide += '═══════════════════════════════════════════════\n\n';
-
-  guide += '┌─────────────────────────────────────┐\n';
-  guide += '│ 📺 썸네일 이미지 선택                │\n';
-  guide += '├─────────────────────────────────────┤\n';
-
-  if (isUserUploaded) {
-    guide += '│ 추천: 업로드한 이미지 1 (메인)      │\n';
-    guide += `│   • 설명: ${mainImage.alt.substring(0, 20)}...       │\n`;
-  } else {
-    guide += '│ 추천: 무료 이미지 사용              │\n';
-    guide += `│   • 출처: ${mainImage.source === 'unsplash' ? 'Unsplash' : mainImage.source === 'pexels' ? 'Pexels' : 'Pixabay'}              │\n`;
-  }
-
-  guide += '│                                     │\n';
-  guide += '│ 권장 크기: 1280x720 (16:9 비율)     │\n';
-  guide += '│ 최소 크기: 640x360                  │\n';
-  guide += '│ 최대 용량: 2MB                      │\n';
-  guide += '│                                     │\n';
-  guide += '│ 💡 썸네일 디자인 팁:                │\n';
-  guide += '│   • 제목 텍스트 오버레이 권장       │\n';
-  guide += '│   • 얼굴이 있으면 시선 집중 ↑       │\n';
-  guide += '│   • 밝고 선명한 이미지 선택         │\n';
-  guide += '│   • 텍스트는 큰 폰트 (70pt 이상)   │\n';
-  guide += '└─────────────────────────────────────┘\n\n';
-
-  guide += '📌 유튜브 스튜디오 업로드 방법:\n';
-  guide += '1. 유튜브 스튜디오 접속\n';
-  guide += '2. [동영상] → [업로드] 클릭\n';
-  guide += '3. 동영상 업로드 후 "썸네일" 섹션에서\n';
-  guide += '4. [맞춤 썸네일 업로드] 클릭하여 이미지 추가\n\n';
-
-  return content + guide;
+  // ✅ 이미지 가이드 완전 제거 - 콘텐츠만 반환
+  return content;
 }
 
 /**
@@ -298,22 +198,6 @@ export function injectBrunchImageGuide(
   images: SmartImageResult[],
   userUploadedCount: number
 ): string {
-  // 네이버 블로그와 동일한 가이드 사용
-  let result = injectBlogImageGuide(content, images, userUploadedCount);
-
-  // 브런치 전용 안내 추가
-  result += '\n\n';
-  result += '═══════════════════════════════════════════════\n';
-  result += '📝 브런치 이미지 업로드 방법\n';
-  result += '═══════════════════════════════════════════════\n\n';
-  result += '1. 브런치 에디터에서 콘텐츠 작성 모드 진입\n';
-  result += '2. 위 가이드 위치에서 [이미지 추가] 아이콘 클릭\n';
-  result += '3. 권장 이미지 업로드 (가로 1200px 이상 권장)\n';
-  result += '4. 이미지 설명(Alt)은 가이드의 텍스트 참고\n\n';
-  result += '💡 브런치 팁:\n';
-  result += '  • 이미지는 좌/중/우 정렬 가능\n';
-  result += '  • 캡션은 이미지 아래 자동 표시\n';
-  result += '  • 고품질 이미지 사용 권장 (독자 몰입도 ↑)\n\n';
-
-  return result;
+  // ✅ 이미지 가이드 완전 제거 - 콘텐츠만 반환
+  return content;
 }
