@@ -5466,7 +5466,9 @@ async function initSupabase() {
       script.onload = () => {
         console.log('✅ [Supabase] SDK 로드 완료');
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabaseClient = supabaseClient; // 🔥 전역 노출
         console.log('✅ Supabase 클라이언트 초기화 완료');
+        console.log('✅ window.supabaseClient 전역 노출 완료');
         checkSupabaseSession();
       };
       script.onerror = (error) => {
@@ -5476,7 +5478,9 @@ async function initSupabase() {
     } else {
       console.log('✅ [Supabase] SDK 이미 로드됨');
       supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      window.supabaseClient = supabaseClient; // 🔥 전역 노출
       console.log('✅ Supabase 클라이언트 초기화 완료');
+      console.log('✅ window.supabaseClient 전역 노출 완료');
       checkSupabaseSession();
     }
   } catch (error) {
