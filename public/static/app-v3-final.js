@@ -1263,6 +1263,19 @@ async function initializeApp() {
   if (typeof window.i18n !== 'undefined' && typeof window.i18n.init === 'function') {
     window.i18n.init();
   }
+  
+  // 온보딩 초기화 (사용자 로그인 후)
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.id) {
+      // 온보딩 시스템 초기화
+      if (typeof window.initOnboarding === 'function') {
+        await window.initOnboarding(user.id);
+      }
+    }
+  } catch (error) {
+    console.error('온보딩 초기화 실패:', error);
+  }
 }
 
 // ===================================
@@ -2756,8 +2769,18 @@ async function handleGenerate() {
         });
         
         showToast(`✅ 콘텐츠 생성 완료! (${creditsUsed}크레딧 사용, ${creditInfo})`, 'success');
+        
+        // 온보딩 시스템: 콘텐츠 생성 카운트 증가
+        if (currentUser?.id && typeof window.incrementContentCount === 'function') {
+          await window.incrementContentCount(currentUser.id);
+        }
       } else {
         showToast('✅ 콘텐츠 생성 완료!', 'success');
+        
+        // 온보딩 시스템: 콘텐츠 생성 카운트 증가
+        if (currentUser?.id && typeof window.incrementContentCount === 'function') {
+          await window.incrementContentCount(currentUser.id);
+        }
       }
     } else {
       hideLoadingOverlay();
@@ -3421,8 +3444,18 @@ async function forceGenerate() {
         });
         
         showToast(`✅ 콘텐츠 생성 완료! (${creditsUsed}크레딧 사용, ${creditInfo})`, 'success');
+        
+        // 온보딩 시스템: 콘텐츠 생성 카운트 증가
+        if (currentUser?.id && typeof window.incrementContentCount === 'function') {
+          await window.incrementContentCount(currentUser.id);
+        }
       } else {
         showToast('✅ 콘텐츠 생성 완료!', 'success');
+        
+        // 온보딩 시스템: 콘텐츠 생성 카운트 증가
+        if (currentUser?.id && typeof window.incrementContentCount === 'function') {
+          await window.incrementContentCount(currentUser.id);
+        }
       }
     } else {
       hideLoadingOverlay();

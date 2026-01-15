@@ -254,15 +254,27 @@ export const htmlTemplate = `
 
     </style>
 </head>
-<body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen">
+<body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen" data-page="postflow">
+    <!-- 통합 헤더 삽입 -->
+    <div id="header-container"></div>
+    <script>
+      // 통합 헤더 로드
+      fetch('/static/shared-header.html')
+        .then(res => res.text())
+        .then(html => {
+          document.getElementById('header-container').innerHTML = html;
+        })
+        .catch(err => console.error('헤더 로드 실패:', err));
+    </script>
+    
     <!-- 사이드바 오버레이 (모바일) -->
-    <!-- 네비게이션 바 (전체 너비) -->
-    <nav class="bg-white shadow-md mx-4 mt-4 rounded-2xl px-6 py-4">
+    <!-- 네비게이션 바 (전체 너비) - 기존 헤더는 유지하되 스타일 조정 -->
+    <nav class="bg-white shadow-md mx-4 mt-4 rounded-2xl px-6 py-4" style="margin-top: 5.5rem;">
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-2">
-                    <a href="/" onclick="sessionStorage.removeItem('landing_page_visited');" class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition cursor-pointer">
-                        마케팅허브 (Marketing Hub)
-                    </a>
+                    <span class="text-xl font-bold text-gray-800">
+                        📝 PostFlow - 콘텐츠 생성
+                    </span>
                     <span class="text-sm text-gray-500">v8.0</span>
                 </div>
                 
@@ -1983,6 +1995,9 @@ export const htmlTemplate = `
     <script src="/static/app-v3-final.js?v=24.0.0"></script>
     <script src="/static/keyword-analysis.js?v=24.0.0"></script>
     <script src="/static/keyword-extended.js?v=19.0.0"></script>
+    
+    <!-- 온보딩 시스템 로드 -->
+    <script src="/static/onboarding-integration.js"></script>
     
     <script>
       // ========================================
