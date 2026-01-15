@@ -2011,9 +2011,6 @@ export const htmlTemplate = `
     <!-- 통계 대시보드 로드 -->
     <script src="/static/stats-dashboard.js"></script>
     
-    <!-- 통계 대시보드 로드 -->
-    <script src="/static/stats-dashboard.js"></script>
-    
     <script>
       // ========================================
       // 사이드바 토글 함수 (NEW v7.9)

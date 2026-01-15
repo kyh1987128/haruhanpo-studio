@@ -4966,24 +4966,12 @@ async function openHistoryModal() {
   // ✅ 히스토리 모달 표시 (z-index: 9000)
   modal.classList.remove('hidden');
   modal.classList.add('flex');
-  modal.style.cssText = `
-    display: flex !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    background-color: rgba(0, 0, 0, 0.5) !important;
-    z-index: 9000 !important;
-    align-items: center !important;
-    justify-content: center !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-  `;
+  
+  // 🔥 CRITICAL: setAttribute로 강제 설정 (CSS !important 우선순위 문제 해결)
+  modal.setAttribute('style', 'display: flex !important; visibility: visible !important; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; background-color: rgba(0, 0, 0, 0.5) !important; z-index: 9999 !important; align-items: center !important; justify-content: center !important; opacity: 1 !important;');
   
   console.log('🔵 모달 강제 표시 완료 - display:', modal.style.display);
+  console.log('🔵 모달 visibility:', modal.style.visibility);
   console.log('🔵 모달 classList:', modal.classList.toString());
   
   // DB에서 히스토리 로드
