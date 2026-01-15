@@ -7,41 +7,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
-    <!-- 헤더 (통합 네비게이션) -->
-    <header class="bg-white shadow-sm sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-            <!-- 왼쪽: 로고 + 서비스 탭 -->
-            <div class="flex items-center gap-6">
-                <a href="/" class="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:opacity-80">
-                    🏠 마케팅허브 AI 스튜디오
-                </a>
-                
-                <!-- 서비스 탭 -->
-                <nav class="hidden md:flex gap-1">
-                    <a href="/static/app-v3-final.js" onclick="window.location.href='/'; return false;" 
-                       class="px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-700">
-                        📝 PostFlow
-                    </a>
-                    <a href="/static/trendfinder.html" 
-                       class="px-4 py-2 rounded-lg hover:bg-gray-100 text-gray-700">
-                        📊 TrendFinder
-                    </a>
-                    <a href="/static/storymaker.html" 
-                       class="px-4 py-2 rounded-lg bg-green-100 text-green-600 font-semibold">
-                        🎬 StoryMaker
-                    </a>
-                </nav>
-            </div>
-            
-            <!-- 오른쪽: 사용자 정보 -->
-            <div class="flex items-center gap-4">
-                <a href="/" class="text-sm text-gray-600 hover:text-purple-600">
-                    ← 메인으로
-                </a>
-            </div>
-        </div>
-    </header>
+<body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen" data-page="storymaker">
+    <!-- 통합 헤더 삽입 -->
+    <div id="header-container"></div>
+    <script>
+      // 통합 헤더 로드
+      fetch('/static/shared-header.html')
+        .then(res => res.text())
+        .then(html => {
+          document.getElementById('header-container').innerHTML = html;
+        })
+        .catch(err => console.error('헤더 로드 실패:', err));
+    </script>
 
     <!-- 메인 콘텐츠 -->
     <main class="max-w-4xl mx-auto px-4 py-20">
