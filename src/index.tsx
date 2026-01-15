@@ -4947,4 +4947,19 @@ app.put('/api/calendar-memo/:id', async (c) => {
   }
 });
 
+// ========================================
+// 🔥 /dashboard 라우트 추가 (긴급 수정)
+// ========================================
+app.get('/dashboard', (c) => {
+  // 메인 HTML 템플릿 반환 (index와 동일)
+  return c.html(htmlTemplate());
+});
+
+// ========================================
+// 🔥 /community 라우트 추가
+// ========================================
+app.get('/community', (c) => {
+  return c.html(htmlTemplate());
+});
+
 export default app;
