@@ -5,7 +5,12 @@
 async function getUserOnboardingState(userId) {
   try {
     // Supabase에서 사용자 정보 가져오기
-    const { data: user, error } = await supabase
+    if (!window.supabaseClient) {
+      console.error('supabaseClient가 초기화되지 않음');
+      return 'EXPERIENCED';
+    }
+    
+    const { data: user, error } = await window.supabaseClient
       .from('users')
       .select('onboarding_completed, content_generated_count, first_visit_date')
       .eq('id', userId)
@@ -83,10 +88,12 @@ function showLearningTip() {
 async function showContinueLastWork() {
   try {
     // 최근 생성 히스토리 가져오기
-    const userId = (await supabase.auth.getUser()).data.user?.id;
+    if (!window.supabaseClient) return;
+    
+    const userId = (await window.supabaseClient.auth.getUser()).data.user?.id;
     if (!userId) return;
 
-    const { data: lastWork, error } = await supabase
+    const { data: lastWork, error } = await window.supabaseClient
       .from('generated_contents')
       .select('brand_name, keywords, platforms')
       .eq('user_id', userId)
@@ -154,10 +161,12 @@ async function showContinueLastWork() {
 // 6. 온보딩 완료 상태 업데이트
 async function updateUserOnboardingStatus(completed) {
   try {
-    const userId = (await supabase.auth.getUser()).data.user?.id;
+    if (!window.supabaseClient) return;
+    
+    const userId = (await window.supabaseClient.auth.getUser()).data.user?.id;
     if (!userId) return;
 
-    await supabase
+    await window.supabaseClient
       .from('users')
       .update({ 
         onboarding_completed: completed,
@@ -208,7 +217,11 @@ function fillFormWithOnboardingData(data) {
 // 8. 콘텐츠 생성 시 카운트 증가
 async function incrementContentCount(userId) {
   try {
-    await supabase.rpc('increment_content_count', { user_id: userId });
+    if (!window.supabaseClient) {
+      console.error('supabaseClient가 초기화되지 않음');
+      return;
+    }
+    await window.supabaseClient.rpc('increment_content_count', { user_id: userId });
     console.log('콘텐츠 생성 카운트 증가');
   } catch (error) {
     console.error('콘텐츠 카운트 증가 실패:', error);

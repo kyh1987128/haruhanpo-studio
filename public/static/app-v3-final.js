@@ -5522,7 +5522,7 @@ async function checkSupabaseSession() {
           console.log('🔄 로그인 상태 감지 - PostFlow로 리디렉션');
           sessionStorage.setItem('landing_page_visited', 'true');
           // 서버 동기화는 리디렉션 후에 PostFlow에서 수행
-          window.location.href = '/postflow';
+          window.location.href = '/dashboard';
           return; // 리디렉션 중이므로 아래 코드 실행 방지
         }
       }

@@ -274,5 +274,35 @@
         }
       });
     }
+
+    // 🔥 Supabase 초기화 대기 후 사용자 정보 동기화
+    function waitForSupabaseAndSync() {
+      // Supabase와 currentUser가 준비될 때까지 대기
+      if (window.supabaseClient && window.currentUser) {
+        // 헤더 UI 업데이트
+        if (!window.currentUser.isGuest && window.currentUser.isLoggedIn) {
+          window.updateHeaderUser(window.currentUser.name || window.currentUser.email?.split('@')[0] || '회원');
+          window.updateHeaderCredits(window.currentUser.credits || 0);
+        } else {
+          window.updateHeaderUser('로그인');
+          document.getElementById('creditsCount').textContent = '-';
+        }
+      } else {
+        // 아직 준비 안 됨 - 100ms 후 재시도
+        setTimeout(waitForSupabaseAndSync, 100);
+      }
+    }
+
+    // userUpdated 이벤트 리스너
+    window.addEventListener('userUpdated', (e) => {
+      const user = e.detail;
+      if (user && !user.isGuest) {
+        window.updateHeaderUser(user.name || user.email?.split('@')[0] || '회원');
+        window.updateHeaderCredits(user.credits || 0);
+      }
+    });
+
+    // 초기화 시작
+    waitForSupabaseAndSync();
   })();
 </script>
