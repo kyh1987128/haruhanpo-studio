@@ -4962,4 +4962,19 @@ app.get('/community', (c) => {
   return c.html(htmlTemplate);
 });
 
+// ========================================
+// 🔥 Catch-all 라우트 (404 처리)
+// ========================================
+app.get('*', (c) => {
+  const path = c.req.path;
+  
+  // favicon은 404 반환
+  if (path === '/favicon.ico') {
+    return c.text('Not Found', 404);
+  }
+  
+  // 그 외 모든 경로는 메인 HTML 반환
+  return c.html(htmlTemplate);
+});
+
 export default app;
