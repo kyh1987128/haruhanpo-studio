@@ -355,15 +355,15 @@ async function confirmPaymentAndChargeCredits(
       .eq('id', payment.user_id);
   } else {
     // 크레딧 팩: 개수별 충전
-    if (payment.amount === 4500) {
+    if (payment.amount === 5000) {
       creditsToAdd = 10;
-      description = '크레딧 팩 10회 구매';
-    } else if (payment.amount === 8500) {
-      creditsToAdd = 20;
-      description = '크레딧 팩 20회 구매';
-    } else if (payment.amount === 18500) {
+      description = 'STARTER 크레딧 10개 구매';
+    } else if (payment.amount === 23750) {
       creditsToAdd = 50;
-      description = '크레딧 팩 50회 구매';
+      description = 'PRO 크레딧 50개 구매 (5% 할인)';
+    } else if (payment.amount === 45000) {
+      creditsToAdd = 100;
+      description = 'BUSINESS 크레딧 100개 구매 (10% 할인)';
     }
   }
   
