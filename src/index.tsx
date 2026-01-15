@@ -10,7 +10,7 @@ import { createSupabaseAdmin, createSupabaseClient, grantMilestoneCredit, update
 import { parseMultipleDocuments, combineDocumentTexts, truncateText } from './document-parser';
 import payments from './routes/payments';
 import images, { fetchSmartImages } from './routes/images';
-import { injectImagesIntoBlogContent, injectImagesIntoBrunchContent, convertHtmlToNaverText, addInstagramImageMetadata } from './image-injection';
+import { injectImagesIntoBlogContent, injectImagesIntoBrunchContent, convertHtmlToNaverText, addInstagramImageMetadata, injectBlogImageGuide, injectBrunchImageGuide, injectYoutubeThumbnailGuide } from './image-injection';
 import './styles.css'; // ✅ Tailwind CSS import
 
 type Bindings = {
@@ -1107,20 +1107,26 @@ app.post('/api/generate', async (c) => {
     // 결과를 객체로 변환 + 이미지 배치 적용
     const data: Record<string, string> = {};
     results.forEach(({ platform, content }) => {
-      // 네이버 블로그: HTML 이미지 배치
+      // 네이버 블로그: 이미지 배치 가이드 추가
       if (platform === 'blog' && smartImages.length > 0) {
-        console.log('  📝 네이버 블로그에 이미지 배치 중...');
-        const contentWithImages = injectImagesIntoBlogContent(content, smartImages);
-        data[platform] = convertHtmlToNaverText(contentWithImages); // 네이버 복사-붙여넣기 최적화
-        console.log(`  ✅ 네이버 블로그 이미지 ${smartImages.length}개 배치 완료`);
+        console.log('  📝 네이버 블로그에 이미지 배치 가이드 추가 중...');
+        const contentWithGuide = injectBlogImageGuide(content, smartImages, images.length);
+        data[platform] = contentWithGuide;
+        console.log(`  ✅ 네이버 블로그 이미지 가이드 ${smartImages.length}개 추가 완료`);
       }
-      // 브런치: 마크다운 이미지 배치
+      // 브런치: 이미지 배치 가이드 추가
       else if (platform === 'brunch' && smartImages.length > 0) {
-        console.log('  📖 브런치에 이미지 배치 중...');
-        data[platform] = injectImagesIntoBrunchContent(content, smartImages);
-        console.log(`  ✅ 브런치 이미지 ${smartImages.length}개 배치 완료`);
+        console.log('  📖 브런치에 이미지 배치 가이드 추가 중...');
+        data[platform] = injectBrunchImageGuide(content, smartImages, images.length);
+        console.log(`  ✅ 브런치 이미지 가이드 ${smartImages.length}개 추가 완료`);
       }
-      // 인스타그램: 이미지 메타데이터 추가
+      // 유튜브 롱폼: 썸네일 가이드 추가
+      else if (platform === 'youtube_long' && smartImages.length > 0) {
+        console.log('  🎬 유튜브 롱폼에 썸네일 가이드 추가 중...');
+        data[platform] = injectYoutubeThumbnailGuide(content, smartImages, images.length);
+        console.log(`  ✅ 유튜브 롱폼 썸네일 가이드 추가 완료`);
+      }
+      // 인스타그램: 이미지 메타데이터 추가 (기존 유지)
       else if ((platform === 'instagram' || platform === 'instagram_feed') && smartImages.length > 0) {
         console.log('  📸 인스타그램에 이미지 메타데이터 추가 중...');
         data[platform] = addInstagramImageMetadata(content, smartImages);
