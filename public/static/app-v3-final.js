@@ -2779,6 +2779,10 @@ async function handleGenerate() {
         if (typeof window.showSmartRecommendations === 'function' && formData.platforms) {
           window.showSmartRecommendations(formData.platforms);
         }
+        // 통계 시스템: 콘텐츠 생성 통계 업데이트
+        if (typeof window.updateContentGenerationStats === 'function' && formData.platforms) {
+          window.updateContentGenerationStats(formData.platforms);
+        }
       } else {
         showToast('✅ 콘텐츠 생성 완료!', 'success');
         
@@ -3463,6 +3467,10 @@ async function forceGenerate() {
         // 스마트 추천 시스템: 다음 도구 추천
         if (typeof window.showSmartRecommendations === 'function' && formData.platforms) {
           window.showSmartRecommendations(formData.platforms);
+        }
+        // 통계 시스템: 콘텐츠 생성 통계 업데이트
+        if (typeof window.updateContentGenerationStats === 'function' && formData.platforms) {
+          window.updateContentGenerationStats(formData.platforms);
         }
       } else {
         showToast('✅ 콘텐츠 생성 완료!', 'success');
@@ -8615,6 +8623,11 @@ async function confirmSaveProfile() {
       throw new Error(data.error || '프로필 저장 실패');
     }
     
+    // 워크플로우 연결 저장
+    if (typeof window.saveProfileWorkflows === 'function') {
+      await window.saveProfileWorkflows(profileName);
+    }
+    
     showToast('✅ 프로필이 저장되었습니다', 'success');
     closeProfileSaveModal();
     
@@ -8761,6 +8774,11 @@ async function applyProfile(profileId) {
     
     showToast('✅ 프로필이 적용되었습니다', 'success');
     closeProfileListModal();
+    
+    // 워크플로우도 함께 불러오기
+    if (typeof window.loadProfileWorkflows === 'function') {
+      await window.loadProfileWorkflows(profile.profile_name);
+    }
     
     // 스크롤을 프로필 입력 필드 영역으로 이동 (leftPanel의 상단)
     setTimeout(() => {

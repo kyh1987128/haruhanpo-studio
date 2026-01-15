@@ -2008,6 +2008,12 @@ export const htmlTemplate = `
     <!-- 자동 저장 및 이어서 작업하기 시스템 로드 -->
     <script src="/static/auto-save.js"></script>
     
+    <!-- 통계 대시보드 로드 -->
+    <script src="/static/stats-dashboard.js"></script>
+    
+    <!-- 통계 대시보드 로드 -->
+    <script src="/static/stats-dashboard.js"></script>
+    
     <script>
       // ========================================
       // 사이드바 토글 함수 (NEW v7.9)

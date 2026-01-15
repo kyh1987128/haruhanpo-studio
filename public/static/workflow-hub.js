@@ -427,6 +427,125 @@ window.switchWorkflowTab = switchWorkflowTab;
 window.openWorkflowModal = openWorkflowModal;
 window.closeWorkflowModal = closeWorkflowModal;
 window.handleWorkflowSubmit = handleWorkflowSubmit;
+
+// 프로필별 워크플로우 연결 기능
+/**
+ * 현재 프로필과 워크플로우 연결 정보 저장
+ */
+window.saveProfileWorkflows = async function(profileName) {
+  if (!window.supabaseClient || !window.currentUser?.id) {
+    console.warn('❌ 로그인 정보 없음');
+    return false;
+  }
+
+  try {
+    // 현재 활성화된 모든 워크플로우 ID 수집
+    const activeWorkflowIds = [];
+    
+    for (const category in workflowData) {
+      const workflows = workflowData[category] || [];
+      workflows.forEach(workflow => {
+        if (workflow.id) {
+          activeWorkflowIds.push(workflow.id);
+        }
+      });
+    }
+
+    console.log(`📝 프로필 "${profileName}"에 워크플로우 연결:`, activeWorkflowIds);
+
+    // 기존 연결 삭제
+    await window.supabaseClient
+      .from('profile_workflows')
+      .delete()
+      .eq('user_id', window.currentUser.id)
+      .eq('profile_name', profileName);
+
+    // 새로운 연결 추가
+    if (activeWorkflowIds.length > 0) {
+      const insertData = activeWorkflowIds.map(workflowId => ({
+        user_id: window.currentUser.id,
+        profile_name: profileName,
+        workflow_id: workflowId,
+        is_active: true
+      }));
+
+      const { error } = await window.supabaseClient
+        .from('profile_workflows')
+        .insert(insertData);
+
+      if (error) throw error;
+    }
+
+    console.log(`✅ 프로필 "${profileName}"에 ${activeWorkflowIds.length}개 워크플로우 연결 완료`);
+    return true;
+  } catch (error) {
+    console.error('❌ 프로필 워크플로우 연결 실패:', error);
+    return false;
+  }
+};
+
+/**
+ * 프로필에 연결된 워크플로우 불러오기
+ */
+window.loadProfileWorkflows = async function(profileName) {
+  if (!window.supabaseClient || !window.currentUser?.id) {
+    console.warn('❌ 로그인 정보 없음');
+    return;
+  }
+
+  try {
+    console.log(`📖 프로필 "${profileName}"의 워크플로우 불러오기...`);
+
+    // 프로필에 연결된 워크플로우 ID 조회
+    const { data: profileWorkflows, error: pwError } = await window.supabaseClient
+      .from('profile_workflows')
+      .select('workflow_id')
+      .eq('user_id', window.currentUser.id)
+      .eq('profile_name', profileName)
+      .eq('is_active', true);
+
+    if (pwError) throw pwError;
+
+    if (!profileWorkflows || profileWorkflows.length === 0) {
+      console.log('📭 연결된 워크플로우 없음');
+      return;
+    }
+
+    const workflowIds = profileWorkflows.map(pw => pw.workflow_id);
+    console.log(`📦 ${workflowIds.length}개 워크플로우 ID 발견:`, workflowIds);
+
+    // 워크플로우 상세 정보 조회
+    const { data: workflows, error: wError } = await window.supabaseClient
+      .from('user_workflows')
+      .select('*')
+      .in('id', workflowIds);
+
+    if (wError) throw wError;
+
+    // 카테고리별로 분류
+    workflowData = {
+      sns: [],
+      image_tool: [],
+      video_tool: [],
+      other_tool: []
+    };
+
+    workflows.forEach(workflow => {
+      const category = workflow.category;
+      if (workflowData[category]) {
+        workflowData[category].push(workflow);
+      }
+    });
+
+    // UI 업데이트
+    renderWorkflowLists();
+    
+    console.log(`✅ 프로필 "${profileName}"의 워크플로우 ${workflows.length}개 로드 완료`);
+    showToast(`✅ ${workflows.length}개 워크플로우 로드 완료`, 'success');
+  } catch (error) {
+    console.error('❌ 프로필 워크플로우 로드 실패:', error);
+  }
+};
 window.openWorkflowUrl = openWorkflowUrl;
 window.toggleFavorite = toggleFavorite;
 window.deleteWorkflow = deleteWorkflow;
