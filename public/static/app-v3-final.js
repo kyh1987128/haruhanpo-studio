@@ -6046,6 +6046,12 @@ function updateAuthUI() {
     // 📅 Phase 3: 캘린더 섹션 표시
     showScheduledContentArea();
     
+    // 🔥 Phase 4&5: 왼쪽 패널 회원 전용 기능 표시
+    const leftPanelMemberFeatures = document.getElementById('leftPanelMemberFeatures');
+    if (leftPanelMemberFeatures) {
+      leftPanelMemberFeatures.classList.remove('hidden');
+    }
+    
     // 히어로 섹션 숨기기
     if (heroSection) {
       heroSection.classList.add('hidden');
