@@ -37,3 +37,4 @@ wrangler.toml
 .idea/
 *.swp
 *.swo
+API_KEYS.md

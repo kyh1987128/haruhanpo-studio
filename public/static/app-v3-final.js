@@ -5440,8 +5440,8 @@ window.suggestKeywordsForContent = suggestKeywordsForContent;
 // ===================================
 
 // Supabase 클라이언트 초기화
-const SUPABASE_URL = 'https://pznnqxncvjobqlycsvqg.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6bm5xeG5jdmpvYnFseWNzdnFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ3NTAxNDQsImV4cCI6MjA1MDMyNjE0NH0.sDHVxS2p9M6s4TGwFb_S9cUKpvvpWjrTlS4XeN-m9BY';
+const SUPABASE_URL = 'https://gmjbsndricdogtqsovnb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtamJzbmRyaWNkb2d0cXNvdm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyNzE1ODksImV4cCI6MjA4Mjg0NzU4OX0.naZnsBPYd84pdLoLAh-mEz_qerl5UakYs2FfVumnEJw';
 
 // Supabase 클라이언트 (CDN에서 로드)
 let supabaseClient = null;
