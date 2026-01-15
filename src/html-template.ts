@@ -341,35 +341,6 @@ export const htmlTemplate = `
              좌측 패널 (회원 기능 + 키워드 분석 + 입력 필드)
              ======================================== -->
         <aside class="left-panel">
-            <!-- 회원 전용 기능 (로그인 시 표시) -->
-            <div id="leftPanelMemberFeatures" class="hidden mb-6">
-                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <i class="fas fa-star text-yellow-500"></i>
-                    빠른 기능
-                </h3>
-                <div class="space-y-2">
-                    <button id="saveProfileBtn" class="w-full px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium flex items-center justify-center gap-2">
-                        <i class="fas fa-save"></i>
-                        <span>새 프로필 저장</span>
-                    </button>
-                    <button id="loadProfileBtn" class="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium flex items-center justify-center gap-2">
-                        <i class="fas fa-folder-open"></i>
-                        <span>프로필 관리</span>
-                    </button>
-                    <button id="historyBtn" class="w-full px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm font-medium flex items-center justify-center gap-2">
-                        <i class="fas fa-history"></i>
-                        <span>히스토리</span>
-                    </button>
-                    <button id="templateBtn" class="w-full px-4 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm font-medium flex items-center justify-center gap-2">
-                        <i class="fas fa-file-alt"></i>
-                        <span>템플릿</span>
-                    </button>
-                </div>
-            </div>
-            
-            <!-- 구분선 -->
-            <div class="border-t border-gray-200 my-6"></div>
-            
             <!-- 하이브리드 AI 전략 선택 -->
             <div class="mb-6">
                 <h3 class="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -574,6 +545,35 @@ export const htmlTemplate = `
                             <button onclick="setKeywordSample('반려동물 용품, 강아지 간식')" class="sample-btn">🐕 펫케어</button>
                         </div>
                     </div>
+                </div>
+            </div>
+            
+            <!-- 구분선 -->
+            <div class="border-t border-gray-200 my-6"></div>
+            
+            <!-- 회원 전용 기능 (키워드 분석 아래로 이동) -->
+            <div id="leftPanelMemberFeatures" class="hidden mb-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-star text-yellow-500"></i>
+                    빠른 기능
+                </h3>
+                <div class="space-y-2">
+                    <button id="saveProfileBtn" class="w-full px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium flex items-center justify-center gap-2">
+                        <i class="fas fa-save"></i>
+                        <span>새 프로필 저장</span>
+                    </button>
+                    <button id="loadProfileBtn" class="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium flex items-center justify-center gap-2">
+                        <i class="fas fa-folder-open"></i>
+                        <span>프로필 관리</span>
+                    </button>
+                    <button id="historyBtn" class="w-full px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm font-medium flex items-center justify-center gap-2">
+                        <i class="fas fa-history"></i>
+                        <span>히스토리</span>
+                    </button>
+                    <button id="templateBtn" class="w-full px-4 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm font-medium flex items-center justify-center gap-2">
+                        <i class="fas fa-file-alt"></i>
+                        <span>템플릿</span>
+                    </button>
                 </div>
             </div>
             
