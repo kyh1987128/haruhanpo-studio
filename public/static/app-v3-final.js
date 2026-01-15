@@ -5440,8 +5440,8 @@ window.suggestKeywordsForContent = suggestKeywordsForContent;
 // ===================================
 
 // Supabase 클라이언트 초기화
-const SUPABASE_URL = 'https://gmjbsndricdogtqsovnb.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtamJzbmRyaWNkb2d0cXNvdm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyNzE1ODksImV4cCI6MjA4Mjg0NzU4OX0.naZnsBPYd84pdLoLAh-mEz_qerl5UakYs2FfVumnEJw';
+const SUPABASE_URL = 'https://pznnqxncvjobqlycsvqg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6bm5xeG5jdmpvYnFseWNzdnFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ3NTAxNDQsImV4cCI6MjA1MDMyNjE0NH0.sDHVxS2p9M6s4TGwFb_S9cUKpvvpWjrTlS4XeN-m9BY';
 
 // Supabase 클라이언트 (CDN에서 로드)
 let supabaseClient = null;
@@ -5667,8 +5667,18 @@ async function syncUserToBackend(session, isNewUser = false) {
       console.error('❌ /api/auth/sync 실패:', {
         status: response.status,
         statusText: response.statusText,
-        error: errorData
+        error: errorData,
+        url: '/api/auth/sync'
       });
+      
+      // 🔥 사용자 친화적 오류 메시지 표시
+      if (response.status === 500) {
+        showToast('⚠️ 서비스 초기화 중입니다. 잠시 후 다시 시도해주세요.', 'warning', 5000);
+      } else if (response.status === 401) {
+        showToast('⚠️ 로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning', 5000);
+      } else {
+        showToast(`⚠️ 로그인 오류 (${response.status})`, 'error', 5000);
+      }
       
       // 🔥 API 실패 시에도 최소한의 정보 저장 (히스토리 접근 가능하도록)
       window.currentUser.id = session.user.id;
@@ -5681,6 +5691,11 @@ async function syncUserToBackend(session, isNewUser = false) {
     }
   } catch (error) {
     console.error('❌ 사용자 동기화 에러:', error);
+    console.error('🔍 에러 상세:', {
+      message: error.message,
+      stack: error.stack?.substring(0, 200)
+    });
+    showToast('⚠️ 네트워크 오류가 발생했습니다. 페이지를 새로고침해주세요.', 'error', 5000);
   }
 }
 

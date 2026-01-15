@@ -1848,6 +1848,27 @@ app.post('/api/auth/sync', async (c) => {
   try {
     console.log('🔄 /api/auth/sync 요청 받음');
     
+    // 🔥 환경 변수 확인 로그 추가
+    console.log('🔐 환경 변수 상태:', {
+      hasUrl: !!c.env.SUPABASE_URL,
+      hasServiceKey: !!c.env.SUPABASE_SERVICE_KEY,
+      urlPreview: c.env.SUPABASE_URL?.substring(0, 40) + '...',
+      envKeys: Object.keys(c.env || {})
+    });
+    
+    if (!c.env.SUPABASE_URL || !c.env.SUPABASE_SERVICE_KEY) {
+      const errorMsg = 'Supabase 환경 변수가 설정되지 않았습니다';
+      console.error('❌', errorMsg, {
+        SUPABASE_URL: c.env.SUPABASE_URL,
+        SUPABASE_SERVICE_KEY: c.env.SUPABASE_SERVICE_KEY ? '[SET]' : '[MISSING]'
+      });
+      return c.json({ 
+        success: false,
+        error: errorMsg,
+        hint: '환경 변수를 확인하세요'
+      }, 500);
+    }
+    
     const body = await c.req.json();
     const { user_id, email, name } = body;
     
@@ -1855,7 +1876,7 @@ app.post('/api/auth/sync', async (c) => {
     
     if (!user_id || !email) {
       console.error('❌ user_id 또는 email 누락:', { user_id, email });
-      return c.json({ error: 'user_id와 email은 필수입니다' }, 400);
+      return c.json({ success: false, error: 'user_id와 email은 필수입니다' }, 400);
     }
     
     const supabase = createSupabaseAdmin(
@@ -2058,15 +2079,21 @@ app.post('/api/auth/sync', async (c) => {
     });
   } catch (error: any) {
     console.error('❌ 사용자 동기화 실패:', error);
-    console.error('에러 상세:', {
+    console.error('🔍 에러 상세:', {
       message: error.message,
       code: error.code,
-      stack: error.stack
+      hint: error.hint,
+      details: error.details,
+      stack: error.stack?.substring(0, 300)
     });
+    
     return c.json(
       { 
+        success: false,
         error: '사용자 동기화 중 오류가 발생했습니다', 
-        details: error.message
+        details: error.message,
+        hint: '환경 변수 또는 DB 연결을 확인하세요',
+        code: error.code
       },
       500
     );
