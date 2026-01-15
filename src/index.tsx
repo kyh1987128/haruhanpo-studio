@@ -2078,19 +2078,22 @@ app.post('/api/auth/sync', async (c) => {
       message: existingUser ? '로그인 성공' : '회원가입 완료'
     });
   } catch (error: any) {
-    console.error('❌ 사용자 동기화 실패:', error);
-    console.error('🔍 에러 상세:', {
-      message: error.message,
-      code: error.code,
-      hint: error.hint,
-      details: error.details,
-      stack: error.stack?.substring(0, 300)
-    });
+    console.error('❌❌❌ /api/auth/sync 치명적 오류 발생! ❌❌❌');
+    console.error('🔍 에러 타입:', error.constructor.name);
+    console.error('🔍 에러 메시지:', error.message);
+    console.error('🔍 에러 코드:', error.code);
+    console.error('🔍 에러 힌트:', error.hint);
+    console.error('🔍 에러 상세:', error.details);
+    console.error('🔍 전체 에러 객체:', JSON.stringify(error, null, 2));
+    console.error('🔍 스택 트레이스:', error.stack);
     
     return c.json(
       { 
         success: false,
-        error: '사용자 동기화 중 오류가 발생했습니다', 
+        error: error.message || '사용자 동기화 중 오류가 발생했습니다',
+        errorType: error.constructor.name,
+        errorCode: error.code,
+        errorHint: error.hint, 
         details: error.message,
         hint: '환경 변수 또는 DB 연결을 확인하세요',
         code: error.code

@@ -5664,16 +5664,31 @@ async function syncUserToBackend(session, isNewUser = false) {
       }
     } else {
       const errorData = await response.json().catch(() => ({ error: '응답 파싱 실패' }));
-      console.error('❌ /api/auth/sync 실패:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorData,
-        url: '/api/auth/sync'
-      });
+      console.error('❌❌❌ /api/auth/sync 실패! ❌❌❌');
+      console.error('🔍 HTTP 상태:', response.status, response.statusText);
+      console.error('🔍 서버 응답:', JSON.stringify(errorData, null, 2));
+      console.error('🔍 요청 URL:', '/api/auth/sync');
+      console.error('🔍 에러 타입:', errorData.errorType);
+      console.error('🔍 에러 코드:', errorData.errorCode);
+      console.error('🔍 에러 힌트:', errorData.errorHint);
+      
+      // 🔥 사용자에게 상세 오류 표시
+      let errorMessage = '로그인 중 오류가 발생했습니다.';
+      if (errorData.error) {
+        errorMessage += `\n\n${errorData.error}`;
+      }
+      if (errorData.errorCode) {
+        errorMessage += `\n\n오류 코드: ${errorData.errorCode}`;
+      }
+      if (errorData.errorHint) {
+        errorMessage += `\n\n힌트: ${errorData.errorHint}`;
+      }
+      
+      alert(errorMessage);
       
       // 🔥 사용자 친화적 오류 메시지 표시
       if (response.status === 500) {
-        showToast('⚠️ 서비스 초기화 중입니다. 잠시 후 다시 시도해주세요.', 'warning', 5000);
+        showToast('⚠️ 서버 오류가 발생했습니다. 개발자 도구(F12) 콘솔을 확인해주세요.', 'error', 10000);
       } else if (response.status === 401) {
         showToast('⚠️ 로그인이 만료되었습니다. 다시 로그인해주세요.', 'warning', 5000);
       } else {
