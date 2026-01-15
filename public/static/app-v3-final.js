@@ -5644,7 +5644,7 @@ function showWelcomeMessage(type) {
   const messages = {
     signup: {
       title: '🎉 회원가입 완료!',
-      message: `환영합니다, ${displayName}님!<br><br>🎁 무료 회원 혜택<br>• 매월 10크레딧 자동 지급<br>• 1크레딧 = 1회 생성<br><br>💎 크레딧 충전 옵션<br>• STARTER: ₩5,000 (10크레딧, ₩500/크레딧)<br>• PRO: ₩20,000 (50크레딧, ₩400/크레딧, 20% 할인) 🔥<br>• BUSINESS: ₩35,000 (100크레딧, ₩350/크레딧, 30% 할인)`,,
+      message: `환영합니다, ${displayName}님!<br><br>🎁 무료 회원 혜택<br>• 매월 10크레딧 자동 지급<br>• 1크레딧 = 1회 생성<br><br>💎 크레딧 충전 옵션<br>• STARTER: ₩5,000 (10크레딧, ₩500/크레딧)<br>• PRO: ₩20,000 (50크레딧, ₩400/크레딧, 20% 할인) 🔥<br>• BUSINESS: ₩35,000 (100크레딧, ₩350/크레딧, 30% 할인)`,
       duration: 6000
     },
     login: {
