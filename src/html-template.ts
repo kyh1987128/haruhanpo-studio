@@ -2002,6 +2002,12 @@ export const htmlTemplate = `
     <!-- 워크플로우 허브 로드 -->
     <script src="/static/workflow-hub.js"></script>
     
+    <!-- 스마트 추천 시스템 로드 -->
+    <script src="/static/smart-recommendations.js"></script>
+    
+    <!-- 자동 저장 및 이어서 작업하기 시스템 로드 -->
+    <script src="/static/auto-save.js"></script>
+    
     <script>
       // ========================================
       // 사이드바 토글 함수 (NEW v7.9)

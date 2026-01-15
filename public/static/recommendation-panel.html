@@ -1,0 +1,331 @@
+<!-- 스마트 추천 패널 UI -->
+<style>
+  .recommendation-panel {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    padding: 1.5rem;
+    max-width: 400px;
+    width: calc(100% - 4rem);
+    z-index: 9998;
+    transform: translateY(120%);
+    transition: transform 0.3s ease-out;
+  }
+
+  .recommendation-panel.show {
+    transform: translateY(0);
+  }
+
+  .recommendation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e5e7eb;
+  }
+
+  .recommendation-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .recommendation-close {
+    font-size: 1.5rem;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .recommendation-close:hover {
+    color: #1f2937;
+  }
+
+  .recommendation-subtitle {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 1rem;
+  }
+
+  .recommendation-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .recommendation-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .recommendation-section-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .recommendation-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .recommendation-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: white;
+  }
+
+  .recommendation-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  .recommendation-item-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .recommendation-icon {
+    font-size: 1.25rem;
+  }
+
+  .recommendation-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .recommendation-badge {
+    background: rgba(255, 255, 255, 0.3);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .recommendation-badge.user {
+    background: #10b981;
+  }
+
+  .recommendation-badge.free {
+    background: #3b82f6;
+  }
+
+  .recommendation-arrow {
+    font-size: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .recommendation-panel {
+      bottom: 1rem;
+      right: 1rem;
+      max-width: calc(100% - 2rem);
+      width: calc(100% - 2rem);
+    }
+  }
+</style>
+
+<div class="recommendation-panel" id="recommendationPanel">
+  <div class="recommendation-header">
+    <div class="recommendation-title">
+      <i class="fas fa-magic"></i>
+      <span>다음 단계 추천</span>
+    </div>
+    <i class="fas fa-times recommendation-close" onclick="closeRecommendationPanel()"></i>
+  </div>
+
+  <div class="recommendation-subtitle" id="recommendationSubtitle">
+    콘텐츠 생성이 완료되었습니다! 다음 도구로 이어서 작업하세요.
+  </div>
+
+  <!-- SNS 채널 추천 -->
+  <div class="recommendation-section" id="snsSection" style="display: none;">
+    <div class="recommendation-section-title">
+      <i class="fas fa-share-alt"></i>
+      <span>SNS 채널로 발행</span>
+    </div>
+    <div class="recommendation-items" id="snsItems"></div>
+  </div>
+
+  <!-- 영상 도구 추천 -->
+  <div class="recommendation-section" id="videoSection" style="display: none;">
+    <div class="recommendation-section-title">
+      <i class="fas fa-video"></i>
+      <span>영상 제작 도구</span>
+    </div>
+    <div class="recommendation-items" id="videoItems"></div>
+  </div>
+
+  <!-- 이미지 도구 추천 -->
+  <div class="recommendation-section" id="imageSection" style="display: none;">
+    <div class="recommendation-section-title">
+      <i class="fas fa-image"></i>
+      <span>이미지 제작 도구</span>
+    </div>
+    <div class="recommendation-items" id="imageItems"></div>
+  </div>
+
+  <!-- 기타 도구 추천 -->
+  <div class="recommendation-section" id="otherSection" style="display: none;">
+    <div class="recommendation-section-title">
+      <i class="fas fa-robot"></i>
+      <span>AI 도구</span>
+    </div>
+    <div class="recommendation-items" id="otherItems"></div>
+  </div>
+</div>
+
+<script>
+  // 추천 패널 열기
+  async function showRecommendationPanel(platforms) {
+    if (!platforms || platforms.length === 0) return;
+    
+    // 첫 번째 플랫폼 기준으로 추천 생성
+    const platform = platforms[0];
+    
+    console.log('추천 시스템 시작:', platform);
+    
+    // 워크플로우 데이터 로드 (전역 변수에서)
+    const userWorkflows = window.workflowData || {
+      sns: [],
+      image_tool: [],
+      video_tool: [],
+      other_tool: []
+    };
+    
+    // 추천 생성
+    const recommendations = await window.generateRecommendations(platform, userWorkflows);
+    
+    console.log('생성된 추천:', recommendations);
+    
+    // UI 렌더링
+    renderRecommendations(recommendations);
+    
+    // 패널 표시
+    const panel = document.getElementById('recommendationPanel');
+    setTimeout(() => {
+      panel.classList.add('show');
+    }, 500);
+    
+    // 10초 후 자동 닫기
+    setTimeout(() => {
+      closeRecommendationPanel();
+    }, 15000);
+  }
+
+  // 추천 렌더링
+  function renderRecommendations(recommendations) {
+    // SNS 채널
+    if (recommendations.sns && recommendations.sns.length > 0) {
+      document.getElementById('snsSection').style.display = 'block';
+      document.getElementById('snsItems').innerHTML = recommendations.sns
+        .map(item => createRecommendationItemHTML(item, 'user'))
+        .join('');
+    }
+
+    // 영상 도구
+    if (recommendations.videoTools && recommendations.videoTools.length > 0) {
+      document.getElementById('videoSection').style.display = 'block';
+      document.getElementById('videoItems').innerHTML = recommendations.videoTools
+        .map(item => createRecommendationItemHTML(item, item.user_id ? 'user' : 'default'))
+        .join('');
+    }
+
+    // 이미지 도구
+    if (recommendations.imageTools && recommendations.imageTools.length > 0) {
+      document.getElementById('imageSection').style.display = 'block';
+      document.getElementById('imageItems').innerHTML = recommendations.imageTools
+        .map(item => createRecommendationItemHTML(item, item.user_id ? 'user' : 'default'))
+        .join('');
+    }
+
+    // 기타 도구
+    if (recommendations.otherTools && recommendations.otherTools.length > 0) {
+      document.getElementById('otherSection').style.display = 'block';
+      document.getElementById('otherItems').innerHTML = recommendations.otherTools
+        .map(item => createRecommendationItemHTML(item, item.user_id ? 'user' : 'default'))
+        .join('');
+    }
+  }
+
+  // 추천 아이템 HTML 생성
+  function createRecommendationItemHTML(item, type) {
+    const badgeClass = type === 'user' ? 'user' : 'free';
+    const badgeText = type === 'user' ? '내 도구' : (item.is_free ? '무료' : '유료');
+    
+    return `
+      <div class="recommendation-item" onclick="openRecommendedTool('${item.url}', '${item.id || ''}', '${type}')">
+        <div class="recommendation-item-content">
+          <div class="recommendation-icon">
+            <i class="${item.icon || 'fas fa-link'}"></i>
+          </div>
+          <div class="recommendation-name">${item.display_name || item.name}</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="recommendation-badge ${badgeClass}">${badgeText}</span>
+          <i class="fas fa-arrow-right recommendation-arrow"></i>
+        </div>
+      </div>
+    `;
+  }
+
+  // 추천 도구 열기
+  async function openRecommendedTool(url, toolId, type) {
+    // 새 탭으로 열기
+    window.open(url, '_blank');
+    
+    // 사용 기록 저장
+    if (type === 'user' && toolId && window.supabaseClient) {
+      try {
+        await window.supabaseClient
+          .from('user_workflows')
+          .update({
+            usage_count: window.supabaseClient.raw('usage_count + 1'),
+            last_used_at: new Date().toISOString()
+          })
+          .eq('id', toolId);
+      } catch (error) {
+        console.error('사용 기록 저장 실패:', error);
+      }
+    }
+    
+    // 패널 닫기
+    closeRecommendationPanel();
+  }
+
+  // 추천 패널 닫기
+  function closeRecommendationPanel() {
+    const panel = document.getElementById('recommendationPanel');
+    panel.classList.remove('show');
+    
+    // 초기화
+    setTimeout(() => {
+      document.getElementById('snsSection').style.display = 'none';
+      document.getElementById('videoSection').style.display = 'none';
+      document.getElementById('imageSection').style.display = 'none';
+      document.getElementById('otherSection').style.display = 'none';
+      document.getElementById('snsItems').innerHTML = '';
+      document.getElementById('videoItems').innerHTML = '';
+      document.getElementById('imageItems').innerHTML = '';
+      document.getElementById('otherItems').innerHTML = '';
+    }, 300);
+  }
+
+  // 전역 함수 노출
+  window.showRecommendationPanel = showRecommendationPanel;
+  window.closeRecommendationPanel = closeRecommendationPanel;

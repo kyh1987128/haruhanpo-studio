@@ -2774,12 +2774,22 @@ async function handleGenerate() {
         if (currentUser?.id && typeof window.incrementContentCount === 'function') {
           await window.incrementContentCount(currentUser.id);
         }
+        
+        // 스마트 추천 시스템: 다음 도구 추천
+        if (typeof window.showSmartRecommendations === 'function' && formData.platforms) {
+          window.showSmartRecommendations(formData.platforms);
+        }
       } else {
         showToast('✅ 콘텐츠 생성 완료!', 'success');
         
         // 온보딩 시스템: 콘텐츠 생성 카운트 증가
         if (currentUser?.id && typeof window.incrementContentCount === 'function') {
           await window.incrementContentCount(currentUser.id);
+        }
+        
+        // 스마트 추천 시스템: 다음 도구 추천
+        if (typeof window.showSmartRecommendations === 'function' && formData.platforms) {
+          window.showSmartRecommendations(formData.platforms);
         }
       }
     } else {
@@ -3449,12 +3459,22 @@ async function forceGenerate() {
         if (currentUser?.id && typeof window.incrementContentCount === 'function') {
           await window.incrementContentCount(currentUser.id);
         }
+        
+        // 스마트 추천 시스템: 다음 도구 추천
+        if (typeof window.showSmartRecommendations === 'function' && formData.platforms) {
+          window.showSmartRecommendations(formData.platforms);
+        }
       } else {
         showToast('✅ 콘텐츠 생성 완료!', 'success');
         
         // 온보딩 시스템: 콘텐츠 생성 카운트 증가
         if (currentUser?.id && typeof window.incrementContentCount === 'function') {
           await window.incrementContentCount(currentUser.id);
+        }
+        
+        // 스마트 추천 시스템: 다음 도구 추천
+        if (typeof window.showSmartRecommendations === 'function' && formData.platforms) {
+          window.showSmartRecommendations(formData.platforms);
         }
       }
     } else {
