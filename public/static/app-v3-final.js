@@ -2524,9 +2524,9 @@ async function handleGenerate() {
         `• 필요: ${creditsNeeded}크레딧\n` +
         `• 보유: ${totalCredits}크레딧 (무료 ${freeCredits} + 유료 ${paidCredits})\n\n` +
         `💳 충전 옵션:\n` +
-        `• STARTER (10크레딧): ₩2,000\n` +
-        `• PRO (50크레딧): ₩9,000 (10% 할인) 🔥\n` +
-        `• BUSINESS (100크레딧): ₩17,000 (15% 할인)\n\n` +
+        `• STARTER (10크레딧): ₩5,000 (₩500/크레딧)\n` +
+        `• PRO (50크레딧): ₩20,000 (₩400/크레딧, 20% 할인) 🔥\n` +
+        `• BUSINESS (100크레딧): ₩35,000 (₩350/크레딧, 30% 할인)\n\n` +
         `충전 페이지로 이동하시겠습니까?`
       );
       
@@ -5644,7 +5644,7 @@ function showWelcomeMessage(type) {
   const messages = {
     signup: {
       title: '🎉 회원가입 완료!',
-      message: `환영합니다, ${displayName}님!<br><br>🎁 무료 회원 혜택<br>• 매월 10크레딧 자동 지급<br>• 1크레딧 = 1회 생성<br><br>💎 크레딧 충전 옵션<br>• STARTER: ₩2,000 (10크레딧)<br>• PRO: ₩9,000 (50크레딧, 10% 할인) 🔥<br>• BUSINESS: ₩17,000 (100크레딧, 15% 할인)`,
+      message: `환영합니다, ${displayName}님!<br><br>🎁 무료 회원 혜택<br>• 매월 10크레딧 자동 지급<br>• 1크레딧 = 1회 생성<br><br>💎 크레딧 충전 옵션<br>• STARTER: ₩5,000 (10크레딧, ₩500/크레딧)<br>• PRO: ₩20,000 (50크레딧, ₩400/크레딧, 20% 할인) 🔥<br>• BUSINESS: ₩35,000 (100크레딧, ₩350/크레딧, 30% 할인)`,,
       duration: 6000
     },
     login: {
