@@ -34,7 +34,14 @@ async function updateContentStats(platform, creditsUsed) {
         p_generation_time: 0
       });
     
-    if (error) throw error;
+    if (error) {
+      // DB 함수가 아직 생성되지 않은 경우 무시
+      if (error.code === '42883' || error.message?.includes('function') || error.message?.includes('does not exist')) {
+        console.warn('⚠️ 통계 함수 미생성 (정상): DB 스키마 실행 필요');
+        return;
+      }
+      throw error;
+    }
     
     console.log('✅ 통계 업데이트 완료:', { platform, creditsUsed });
     
@@ -43,7 +50,7 @@ async function updateContentStats(platform, creditsUsed) {
       window.refreshStats();
     }
   } catch (error) {
-    console.error('통계 업데이트 실패:', error);
+    console.warn('⚠️ 통계 업데이트 실패 (무시됨):', error.message);
   }
 }
 
@@ -58,11 +65,18 @@ async function updateWorkflowStats(workflowId) {
         p_workflow_id: workflowId
       });
     
-    if (error) throw error;
+    if (error) {
+      // DB 함수가 아직 생성되지 않은 경우 무시
+      if (error.code === '42883' || error.message?.includes('function') || error.message?.includes('does not exist')) {
+        console.warn('⚠️ 워크플로우 통계 함수 미생성 (정상): DB 스키마 실행 필요');
+        return;
+      }
+      throw error;
+    }
     
     console.log('✅ 워크플로우 통계 업데이트 완료:', workflowId);
   } catch (error) {
-    console.error('워크플로우 통계 업데이트 실패:', error);
+    console.warn('⚠️ 워크플로우 통계 업데이트 실패 (무시됨):', error.message);
   }
 }
 
