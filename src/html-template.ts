@@ -1971,7 +1971,7 @@ export const htmlTemplate = `
     </div><!-- layout-container -->
     
     <!-- JavaScript -->
-    <script src="/static/i18n.js?v=23.0.0"></script>
+    <script src="/static/i18n.js?v=24.0.0"></script>
     
     <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
@@ -1980,8 +1980,8 @@ export const htmlTemplate = `
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ko.js"></script>
     
-    <script src="/static/app-v3-final.js?v=23.0.0"></script>
-    <script src="/static/keyword-analysis.js?v=23.0.0"></script>
+    <script src="/static/app-v3-final.js?v=24.0.0"></script>
+    <script src="/static/keyword-analysis.js?v=24.0.0"></script>
     <script src="/static/keyword-extended.js?v=19.0.0"></script>
     
     <script>

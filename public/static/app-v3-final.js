@@ -2204,10 +2204,49 @@ function removeContentImage(contentIndex, imageIndex) {
   showToast('🗑️ 이미지 삭제 완료', 'success');
 }
 
+// 🔒 AI 추천 횟수 제한 (일일 3회)
+let aiRecommendCount = parseInt(localStorage.getItem('ai_recommend_count') || '0');
+let aiRecommendResetDate = localStorage.getItem('ai_recommend_reset_date') || '';
+
+function checkAIRecommendLimit() {
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  
+  // 날짜가 바뀌면 카운터 초기화
+  if (aiRecommendResetDate !== today) {
+    aiRecommendCount = 0;
+    aiRecommendResetDate = today;
+    localStorage.setItem('ai_recommend_count', '0');
+    localStorage.setItem('ai_recommend_reset_date', today);
+  }
+  
+  return aiRecommendCount < 3;
+}
+
+function incrementAIRecommendCount() {
+  aiRecommendCount++;
+  localStorage.setItem('ai_recommend_count', aiRecommendCount.toString());
+  
+  if (aiRecommendCount >= 3) {
+    console.log('⚠️ AI 추천 일일 한도 도달 (3/3)');
+    // 모든 AI 추천 버튼 비활성화
+    document.querySelectorAll('[onclick*="suggestKeywordsForContent"]').forEach(btn => {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-ban"></i> 오늘 한도 초과';
+      btn.classList.add('opacity-50', 'cursor-not-allowed');
+    });
+  }
+}
+
 // 개별 콘텐츠 AI 키워드 추천
 async function suggestKeywordsForContent(index, event) {
   event.preventDefault();
   event.stopPropagation();
+  
+  // 🔒 일일 3회 제한 체크
+  if (!checkAIRecommendLimit()) {
+    showToast('❌ AI 추천은 하루 3회까지만 가능합니다', 'error');
+    return;
+  }
   
   if (!contentBlocks[index] || !contentBlocks[index].images || contentBlocks[index].images.length === 0) {
     showToast('❌ 먼저 이미지를 업로드해주세요', 'error');
@@ -2239,7 +2278,11 @@ async function suggestKeywordsForContent(index, event) {
       const keywordsStr = result.keywords.join(', ');
       document.getElementById(`keyword_${index}`).value = keywordsStr;
       updateContentData(index, 'keywords', keywordsStr);
-      showToast('✨ 키워드 추천 완료!', 'success');
+      
+      // 🔒 성공 시에만 카운트 증가
+      incrementAIRecommendCount();
+      
+      showToast(`✨ 키워드 추천 완료! (${aiRecommendCount}/3)`, 'success');
     } else {
       showToast('❌ ' + (result.error || '키워드 추천 실패'), 'error');
     }

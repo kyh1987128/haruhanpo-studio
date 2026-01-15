@@ -244,30 +244,27 @@ export async function fetchSmartImages(params: {
     }
   }
   
-  // 3️⃣ 여전히 부족하면 AI 이미지 생성
-  if (images.length < requiredCount && openaiKey) {
+  // 3️⃣ 여전히 부족하면 플레이스홀더 사용 (DALL-E 3 비용 방지)
+  if (images.length < requiredCount) {
     const needed = requiredCount - images.length;
-    console.log(`🎨 AI 이미지 생성 시작: ${needed}개 필요`);
+    console.log(`⚠️ 이미지 부족: ${needed}개 부족 (플레이스홀더 사용)`);
+    console.log(`💡 무료 API 키 상태: Unsplash=${!!unsplashKey}, Pexels=${!!pexelsKey}, Pixabay=${!!pixabayKey}`);
     
     for (let i = 0; i < needed; i++) {
-      try {
-        const aiImageUrl = await generateAIImage(
-          `${keywords[0]} 관련 이미지 ${i+1}`,
-          openaiKey
-        );
-        images.push({
-          url: aiImageUrl,
-          source: 'ai_generated',
-          alt: `${keywords[0]} - AI 생성 이미지`,
-          caption: 'AI로 생성된 이미지'
-        });
-      } catch (error) {
-        console.error(`❌ AI 이미지 생성 실패 (${i+1}):`, error);
-      }
+      images.push({
+        url: `https://via.placeholder.com/1024x1024.png?text=${encodeURIComponent(keywords[0] || '이미지')}`,
+        source: 'ai_generated',
+        alt: `${keywords[0]} 플레이스홀더 이미지`,
+        caption: '이미지 준비 중'
+      });
     }
     
-    console.log(`✅ AI 생성 이미지: ${needed}개 추가 시도`);
+    console.log(`✅ 플레이스홀더 이미지: ${needed}개 추가 (비용 0원)`);
   }
+  
+  // ⚠️ DALL-E 3 비용 폴백 비활성화됨
+  // 이유: 예기치 않은 비용 발생 방지 ($0.04/image)
+  // 필요 시 관리자가 수동으로 AI 이미지 생성 기능 활성화 가능
   
   return images.slice(0, requiredCount);
 }
