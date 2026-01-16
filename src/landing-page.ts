@@ -37,15 +37,15 @@ export const landingPageTemplate = `
                         <!-- 드롭다운 -->
                         <div class="absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                             <a href="#postflow" class="block px-4 py-3 hover:bg-purple-50 rounded-t-lg">
-                                <div class="font-semibold text-purple-600">📝 PostFlow</div>
+                                <div class="font-semibold text-purple-600">📝 하루 한포스트</div>
                                 <div class="text-xs text-gray-500">멀티 플랫폼 콘텐츠 생성</div>
                             </a>
                             <a href="#trendfinder" class="block px-4 py-3 hover:bg-blue-50">
-                                <div class="font-semibold text-blue-600">📊 TrendFinder</div>
+                                <div class="font-semibold text-blue-600">📊 유튜브 파인더</div>
                                 <div class="text-xs text-gray-500">유튜브 AI 분석기</div>
                             </a>
                             <a href="#storymaker" class="block px-4 py-3 hover:bg-green-50 rounded-b-lg">
-                                <div class="font-semibold text-green-600">🎬 StoryMaker</div>
+                                <div class="font-semibold text-green-600">🎬 스토리 메이커</div>
                                 <div class="text-xs text-gray-500">AI 영상 스토리보드</div>
                             </a>
                         </div>
@@ -192,10 +192,10 @@ export const landingPageTemplate = `
                                     </div>
                                     <p class="text-xs text-gray-600 font-medium">링크드인</p>
                                 </div>
-                                <!-- 브런치 -->
+                                <!-- 브런치 (네이버 서비스) -->
                                 <div class="bg-white rounded-lg p-3 shadow text-center transform hover:scale-110 transition">
-                                    <div class="text-2xl mb-1" style="color: #00C73C;">
-                                        <i class="fas fa-pen-fancy"></i>
+                                    <div class="text-2xl mb-1" style="color: #03C75A;">
+                                        <i class="fas fa-book-open"></i>
                                     </div>
                                     <p class="text-xs text-gray-600 font-medium">브런치</p>
                                 </div>
@@ -311,7 +311,7 @@ export const landingPageTemplate = `
                                 <p class="text-xs font-medium text-gray-700">링크드인</p>
                             </div>
                             <div class="bg-gradient-to-br from-green-50 to-teal-100 rounded-lg p-3 text-center transform hover:scale-110 transition">
-                                <i class="fas fa-pen-fancy text-2xl mb-1" style="color: #00C73C;"></i>
+                                <i class="fas fa-book-open text-2xl mb-1" style="color: #03C75A;"></i>
                                 <p class="text-xs font-medium text-gray-700">브런치</p>
                             </div>
                             <div class="bg-gradient-to-br from-gray-50 to-gray-200 rounded-lg p-3 text-center transform hover:scale-110 transition">
@@ -354,7 +354,7 @@ export const landingPageTemplate = `
                         <div class="inline-block bg-purple-100 text-purple-600 px-4 py-2 rounded-full font-semibold mb-4">
                             📝 Service 1
                         </div>
-                        <h3 class="text-3xl font-bold text-gray-900 mb-4">PostFlow</h3>
+                        <h3 class="text-3xl font-bold text-gray-900 mb-4">하루 한포스트</h3>
                         <p class="text-xl text-gray-600 mb-6">멀티 플랫폼 콘텐츠 생성</p>
                         <p class="text-gray-700 mb-6 leading-relaxed">
                             이미지 하나만 업로드하면 30초 만에 9개 플랫폼 맞춤 콘텐츠를 자동으로 생성합니다.
@@ -401,7 +401,7 @@ export const landingPageTemplate = `
                         <div class="inline-block bg-blue-100 text-blue-600 px-4 py-2 rounded-full font-semibold mb-4">
                             📊 Service 2
                         </div>
-                        <h3 class="text-3xl font-bold text-gray-900 mb-4">TrendFinder</h3>
+                        <h3 class="text-3xl font-bold text-gray-900 mb-4">유튜브 파인더</h3>
                         <p class="text-xl text-gray-600 mb-6">유튜브 AI 분석기</p>
                         <p class="text-gray-700 mb-6 leading-relaxed">
                             경쟁 채널을 실시간으로 추적하고, AI가 바이럴 패턴을 예측합니다.
@@ -540,11 +540,11 @@ export const landingPageTemplate = `
                         <div class="inline-block bg-green-100 text-green-600 px-4 py-2 rounded-full font-semibold mb-4">
                             🎬 Service 3
                         </div>
-                        <h3 class="text-3xl font-bold text-gray-900 mb-4">StoryMaker</h3>
+                        <h3 class="text-3xl font-bold text-gray-900 mb-4">스토리 메이커</h3>
                         <p class="text-xl text-gray-600 mb-6">AI 영상 스토리보드 제작</p>
                         <p class="text-gray-700 mb-6 leading-relaxed">
                             영상 기획부터 콘티까지 AI가 자동으로 생성합니다.
-                            TrendFinder의 인사이트를 활용해 바이럴 영상을 쉽게 제작하세요.
+                            유튜브 파인더의 인사이트를 활용해 바이럴 영상을 쉽게 제작하세요.
                         </p>
                         <ul class="space-y-3 mb-8">
                             <li class="flex items-start gap-3 transform group-hover:translate-x-2 transition-transform duration-300">
@@ -628,13 +628,13 @@ export const landingPageTemplate = `
                     <!-- PostFlow -->
                     <div>
                         <h4 class="font-bold text-purple-600 mb-4 flex items-center gap-2">
-                            <i class="fas fa-edit"></i> PostFlow
+                            <i class="fas fa-edit"></i> 하루 한포스트
                         </h4>
                         <ul class="space-y-2 text-sm text-gray-700">
                             <li>• 1개 플랫폼 콘텐츠 생성 = <strong>1 크레딧</strong></li>
-                            <li>• 12개 플랫폼 전체 생성 = <strong>12 크레딧</strong></li>
+                            <li>• 9개 플랫폼 전체 생성 = <strong>9 크레딧</strong></li>
                             <li class="text-xs text-gray-500 pt-2">
-                                예시: 이미지 1장 → 블로그/인스타/유튜브 등 12개 콘텐츠 자동 생성
+                                예시: 이미지 1장 → 네이버 블로그/인스타/유튜브 등 9개 콘텐츠 자동 생성
                             </li>
                         </ul>
                     </div>
@@ -642,7 +642,7 @@ export const landingPageTemplate = `
                     <!-- TrendFinder -->
                     <div>
                         <h4 class="font-bold text-blue-600 mb-4 flex items-center gap-2">
-                            <i class="fas fa-chart-line"></i> TrendFinder
+                            <i class="fas fa-chart-line"></i> 유튜브 파인더
                         </h4>
                         <ul class="space-y-2 text-sm text-gray-700">
                             <li>• 영상 검색·필터링 = <strong>1 크레딧</strong></li>
@@ -656,7 +656,7 @@ export const landingPageTemplate = `
                     <!-- StoryMaker -->
                     <div>
                         <h4 class="font-bold text-green-600 mb-4 flex items-center gap-2">
-                            <i class="fas fa-film"></i> StoryMaker
+                            <i class="fas fa-film"></i> 스토리 메이커
                         </h4>
                         <ul class="space-y-2 text-sm text-gray-700">
                             <li>• 짧은 스토리보드 (30초) = <strong>5 크레딧</strong></li>
@@ -676,6 +676,74 @@ export const landingPageTemplate = `
                     신규 가입 시 <strong class="text-purple-600">30 크레딧</strong> 무료 제공 + 
                     매월 <strong class="text-blue-600">30 크레딧</strong> 자동 지급
                 </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ 섹션 -->
+    <section class="py-20 bg-white">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16" data-aos="fade-up">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">자주 묻는 질문</h2>
+                <p class="text-xl text-gray-600">궁금하신 점이 있으신가요?</p>
+            </div>
+
+            <!-- FAQ 아코디언 -->
+            <div class="space-y-4">
+                <!-- Q1 -->
+                <div class="bg-gray-50 rounded-2xl overflow-hidden" data-aos="fade-up" data-aos-delay="100">
+                    <button class="w-full px-8 py-6 text-left flex items-center justify-between hover:bg-gray-100 transition" onclick="toggleFaq('faq1')">
+                        <span class="font-bold text-lg text-gray-900">💳 신용카드 등록이 필요한가요?</span>
+                        <i class="fas fa-chevron-down transition-transform" id="faq1-icon"></i>
+                    </button>
+                    <div id="faq1" class="hidden px-8 pb-6 text-gray-700 leading-relaxed">
+                        <p>아니요! 신규 가입 시 30 크레딧을 무료로 드리며, 신용카드 등록 없이 바로 사용하실 수 있습니다. 크레딧이 부족할 때만 충전하시면 됩니다.</p>
+                    </div>
+                </div>
+
+                <!-- Q2 -->
+                <div class="bg-gray-50 rounded-2xl overflow-hidden" data-aos="fade-up" data-aos-delay="200">
+                    <button class="w-full px-8 py-6 text-left flex items-center justify-between hover:bg-gray-100 transition" onclick="toggleFaq('faq2')">
+                        <span class="font-bold text-lg text-gray-900">📊 생성된 콘텐츠의 품질은 어떤가요?</span>
+                        <i class="fas fa-chevron-down transition-transform" id="faq2-icon"></i>
+                    </button>
+                    <div id="faq2" class="hidden px-8 pb-6 text-gray-700 leading-relaxed">
+                        <p>GPT-4 기반 AI가 각 플랫폼의 특성에 맞게 콘텐츠를 최적화합니다. 톤앤매너, 키워드, 해시태그까지 자동으로 생성되며, 언제든 수정 가능합니다.</p>
+                    </div>
+                </div>
+
+                <!-- Q3 -->
+                <div class="bg-gray-50 rounded-2xl overflow-hidden" data-aos="fade-up" data-aos-delay="300">
+                    <button class="w-full px-8 py-6 text-left flex items-center justify-between hover:bg-gray-100 transition" onclick="toggleFaq('faq3')">
+                        <span class="font-bold text-lg text-gray-900">⚡ 정말 30초 만에 9개 콘텐츠가 생성되나요?</span>
+                        <i class="fas fa-chevron-down transition-transform" id="faq3-icon"></i>
+                    </button>
+                    <div id="faq3" class="hidden px-8 pb-6 text-gray-700 leading-relaxed">
+                        <p>네! 이미지 1장만 업로드하면 평균 30초 내에 9개 플랫폼 맞춤 콘텐츠가 자동 생성됩니다. 네트워크 상황에 따라 최대 1분 정도 소요될 수 있습니다.</p>
+                    </div>
+                </div>
+
+                <!-- Q4 -->
+                <div class="bg-gray-50 rounded-2xl overflow-hidden" data-aos="fade-up" data-aos-delay="400">
+                    <button class="w-full px-8 py-6 text-left flex items-center justify-between hover:bg-gray-100 transition" onclick="toggleFaq('faq4')">
+                        <span class="font-bold text-lg text-gray-900">🔄 환불 정책은 어떻게 되나요?</span>
+                        <i class="fas fa-chevron-down transition-transform" id="faq4-icon"></i>
+                    </button>
+                    <div id="faq4" class="hidden px-8 pb-6 text-gray-700 leading-relaxed">
+                        <p>충전한 크레딧은 사용하지 않은 경우 7일 이내 100% 환불 가능합니다. 일부 사용 후에는 사용한 크레딧을 제외한 금액을 환불해드립니다.</p>
+                    </div>
+                </div>
+
+                <!-- Q5 -->
+                <div class="bg-gray-50 rounded-2xl overflow-hidden" data-aos="fade-up" data-aos-delay="500">
+                    <button class="w-full px-8 py-6 text-left flex items-center justify-between hover:bg-gray-100 transition" onclick="toggleFaq('faq5')">
+                        <span class="font-bold text-lg text-gray-900">💼 기업용 플랜이 있나요?</span>
+                        <i class="fas fa-chevron-down transition-transform" id="faq5-icon"></i>
+                    </button>
+                    <div id="faq5" class="hidden px-8 pb-6 text-gray-700 leading-relaxed">
+                        <p>네! 기업용 플랜은 별도 문의를 통해 맞춤 상담이 가능합니다. 대량 크레딧 할인, 전담 매니저, API 연동 등을 제공합니다. (contentitda@naver.com)</p>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -707,7 +775,7 @@ export const landingPageTemplate = `
                     <ul class="space-y-2 text-gray-400 text-sm">
                         <li><a href="#postflow" class="hover:text-white">PostFlow</a></li>
                         <li><a href="#trendfinder" class="hover:text-white">TrendFinder</a></li>
-                        <li><a href="#storymaker" class="hover:text-white">StoryMaker</a></li>
+                        <li><a href="#storymaker" class="hover:text-white">스토리 메이커</a></li>
                     </ul>
                 </div>
                 <div>
@@ -854,6 +922,22 @@ export const landingPageTemplate = `
             once: true,
             offset: 100
         });
+    </script>
+
+    <!-- FAQ 토글 스크립트 -->
+    <script>
+        function toggleFaq(id) {
+            const content = document.getElementById(id);
+            const icon = document.getElementById(id + '-icon');
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                content.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
     </script>
 
     <!-- app-v3-final.js 로드 (인증 시스템) -->
