@@ -9,8 +9,295 @@ export const dashboardTemplate = `
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-50" data-page="dashboard">
-    <!-- 통합 헤더 컴포넌트 -->
-    <div id="header-container"></div>
+    <!-- 통합 헤더 컴포넌트 (인라인) -->
+    <style>
+      /* 통합 헤더 스타일 */
+      .unified-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 1rem 0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+      }
+
+      .header-container {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .logo-section {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .logo-link {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: white;
+        text-decoration: none;
+        font-size: 1.25rem;
+        font-weight: 700;
+        transition: opacity 0.2s;
+      }
+
+      .logo-link:hover {
+        opacity: 0.9;
+      }
+
+      .nav-menu {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+
+      .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        color: white;
+        text-decoration: none;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        position: relative;
+      }
+
+      .nav-link:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+
+      .nav-link.active {
+        background: rgba(255, 255, 255, 0.25);
+        font-weight: 600;
+      }
+
+      .badge-preparing {
+        position: absolute;
+        top: -0.25rem;
+        right: -0.25rem;
+        background: #fbbf24;
+        color: #1f2937;
+        font-size: 0.625rem;
+        font-weight: 700;
+        padding: 0.125rem 0.375rem;
+        border-radius: 0.25rem;
+        white-space: nowrap;
+      }
+
+      .user-section {
+        display: flex !important;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .credits-badge {
+        display: flex !important;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        color: white;
+        font-weight: 600;
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+
+      .user-menu {
+        position: relative;
+        display: block !important;
+        visibility: visible !important;
+      }
+
+      .user-button {
+        display: flex !important;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+
+      .user-button:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      .user-dropdown {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 0.5rem;
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        min-width: 180px;
+        display: none;
+        z-index: 1001;
+      }
+
+      .user-dropdown.active {
+        display: block;
+      }
+
+      .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        color: #374151;
+        text-decoration: none;
+        transition: background 0.2s;
+        cursor: pointer;
+      }
+
+      .dropdown-item:first-child {
+        border-radius: 0.5rem 0.5rem 0 0;
+      }
+
+      .dropdown-item:last-child {
+        border-radius: 0 0 0.5rem 0.5rem;
+      }
+
+      .dropdown-item:hover {
+        background: #f3f4f6;
+      }
+
+      .dropdown-divider {
+        height: 1px;
+        background: #e5e7eb;
+        margin: 0.25rem 0;
+      }
+
+      /* 모바일 메뉴 토글 */
+      .mobile-menu-button {
+        display: none;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+
+      /* 모바일 반응형 */
+      @media (max-width: 768px) {
+        .nav-menu {
+          display: none;
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          flex-direction: column;
+          padding: 1rem;
+          gap: 0.5rem;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-menu.active {
+          display: flex;
+        }
+
+        .mobile-menu-button {
+          display: block;
+        }
+
+        .credits-badge {
+          font-size: 0.875rem;
+          padding: 0.375rem 0.75rem;
+        }
+
+        .user-button {
+          padding: 0.375rem 0.75rem;
+          font-size: 0.875rem;
+        }
+      }
+    </style>
+
+    <header class="unified-header">
+      <div class="header-container">
+        <!-- 로고 섹션 -->
+        <div class="logo-section">
+          <a href="/" class="logo-link">
+            <i class="fas fa-rocket"></i>
+            <span>마케팅허브 AI</span>
+          </a>
+        </div>
+
+        <!-- 네비게이션 메뉴 -->
+        <nav class="nav-menu" id="navMenu">
+          <a href="/postflow" class="nav-link" data-page="postflow">
+            <i class="fas fa-magic"></i>
+            <span>하루한포스트</span>
+          </a>
+          <a href="/trendfinder" class="nav-link" data-page="trendfinder">
+            <i class="fas fa-chart-line"></i>
+            <span>유튜브 파인더</span>
+            <span class="badge-preparing">준비중</span>
+          </a>
+          <a href="/storymaker" class="nav-link" data-page="storymaker">
+            <i class="fas fa-film"></i>
+            <span>스토리 메이커</span>
+            <span class="badge-preparing">준비중</span>
+          </a>
+          <a href="/community" class="nav-link" data-page="community">
+            <i class="fas fa-users"></i>
+            <span>커뮤니티</span>
+            <span class="badge-preparing">준비중</span>
+          </a>
+        </nav>
+
+        <!-- 사용자 섹션 -->
+        <div class="user-section">
+          <!-- 크레딧 표시 -->
+          <div class="credits-badge" id="headerCredits">
+            <i class="fas fa-coins"></i>
+            <span id="creditsCount">-</span>
+          </div>
+
+          <!-- 사용자 메뉴 -->
+          <div class="user-menu">
+            <button class="user-button" id="userButton">
+              <i class="fas fa-user-circle"></i>
+              <span id="userName">로그인</span>
+            </button>
+            
+            <!-- 드롭다운 메뉴 -->
+            <div class="user-dropdown" id="userDropdown">
+              <a href="/settings" class="dropdown-item">
+                <i class="fas fa-cog"></i>
+                <span>설정</span>
+              </a>
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-item" onclick="if(window.handleLogout) window.handleLogout(); else alert('로그아웃 기능을 초기화하는 중입니다.');">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>로그아웃</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 모바일 메뉴 버튼 -->
+          <button class="mobile-menu-button" id="mobileMenuButton">
+            <i class="fas fa-bars"></i>
+          </button>
+        </div>
+      </div>
+    </header>
 
     <!-- 메인 콘텐츠 -->
     <main class="container mx-auto px-6 py-8">
@@ -239,22 +526,116 @@ export const dashboardTemplate = `
             }
         }
 
-        // 🔥 헤더 로드 (통합 헤더 컴포넌트)
-        async function loadHeader() {
-            try {
-                const response = await fetch('/static/shared-header.html');
-                const html = await response.text();
-                document.getElementById('header-container').innerHTML = html;
-                console.log('✅ [대시보드] 헤더 로드 완료');
-            } catch (error) {
-                console.error('❌ [대시보드] 헤더 로드 실패:', error);
+        // 🔥 헤더가 이미 인라인으로 삽입되어 있으므로 바로 대시보드 로드
+        // 헤더 초기화를 위해 약간의 지연 후 실행
+        setTimeout(() => {
+            // 현재 페이지 하이라이트
+            const currentPage = document.body.dataset.page || 'dashboard';
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                if (link.dataset.page === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+
+            // 모바일 메뉴 토글
+            const mobileMenuButton = document.getElementById('mobileMenuButton');
+            const navMenu = document.getElementById('navMenu');
+            
+            if (mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', () => {
+                    navMenu.classList.toggle('active');
+                });
             }
-        }
-        
-        // 헤더 먼저 로드, 그 다음 대시보드 데이터 로드
-        loadHeader().then(() => {
+
+            // 크레딧 표시
+            window.updateHeaderCredits = function(credits) {
+                const creditsCount = document.getElementById('creditsCount');
+                if (creditsCount) {
+                    creditsCount.textContent = \`\${credits}크레딧\`;
+                }
+            };
+
+            // 사용자 이름 표시
+            window.updateHeaderUser = function(userName) {
+                const userNameEl = document.getElementById('userName');
+                if (userNameEl) {
+                    userNameEl.textContent = userName;
+                }
+            };
+            
+            // 사용자 정보 전체 업데이트
+            window.updateHeaderUserInfo = function(user) {
+                if (!user) return;
+                
+                const userName = document.getElementById('userName');
+                const creditsCount = document.getElementById('creditsCount');
+                
+                if (userName && !user.isGuest && user.isLoggedIn) {
+                    userName.textContent = user.name || user.email?.split('@')[0] || '회원';
+                }
+                
+                if (creditsCount && !user.isGuest && user.isLoggedIn) {
+                    const totalCredits = (user.free_credits || 0) + (user.paid_credits || 0);
+                    creditsCount.textContent = \`\${totalCredits}크레딧\`;
+                }
+            };
+
+            // 로그인/로그아웃 버튼
+            const userButton = document.getElementById('userButton');
+            const userDropdown = document.getElementById('userDropdown');
+            
+            if (userButton) {
+                userButton.addEventListener('click', () => {
+                    const userName = document.getElementById('userName').textContent;
+                    if (userName === '로그인') {
+                        if (typeof window.openAuthModal === 'function') {
+                            window.openAuthModal('login');
+                        } else {
+                            window.location.href = '/';
+                        }
+                    } else {
+                        userDropdown.classList.toggle('active');
+                    }
+                });
+            }
+
+            // 드롭다운 외부 클릭 시 닫기
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.user-menu')) {
+                    if (userDropdown) {
+                        userDropdown.classList.remove('active');
+                    }
+                }
+            });
+
+            // Supabase 초기화 대기 후 사용자 정보 동기화
+            function waitForSupabaseAndSync() {
+                if (window.supabaseClient && window.currentUser) {
+                    if (!window.currentUser.isGuest && window.currentUser.isLoggedIn) {
+                        window.updateHeaderUser(window.currentUser.name || window.currentUser.email?.split('@')[0] || '회원');
+                        window.updateHeaderCredits(window.currentUser.credits || 0);
+                    } else {
+                        window.updateHeaderUser('로그인');
+                        document.getElementById('creditsCount').textContent = '-';
+                    }
+                } else {
+                    setTimeout(waitForSupabaseAndSync, 100);
+                }
+            }
+
+            // userUpdated 이벤트 리스너
+            window.addEventListener('userUpdated', (e) => {
+                const user = e.detail;
+                if (user && !user.isGuest) {
+                    window.updateHeaderUser(user.name || user.email?.split('@')[0] || '회원');
+                    window.updateHeaderCredits(user.credits || 0);
+                }
+            });
+
+            waitForSupabaseAndSync();
             loadDashboard();
-        });
+        }, 100);
     </script>
     
     <!-- 🔥 로고 클릭 핸들러를 위한 app-v3-final.js 로드 -->
