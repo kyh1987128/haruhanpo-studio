@@ -142,10 +142,14 @@ export const dashboardTemplate = `
                     // localStorage 업데이트
                     const updatedUser = {
                         ...user,
+                        name: data.user.name || user.name,
+                        email: data.user.email || user.email,
                         free_credits: data.user.free_credits || 0,
                         paid_credits: data.user.paid_credits || 0,
                         tier: data.user.tier || 'free',
-                        credits: (data.user.free_credits || 0) + (data.user.paid_credits || 0)
+                        credits: (data.user.free_credits || 0) + (data.user.paid_credits || 0),
+                        isLoggedIn: true,
+                        isGuest: false
                     };
                     localStorage.setItem('postflow_user', JSON.stringify(updatedUser));
                     window.currentUser = updatedUser;
@@ -156,11 +160,8 @@ export const dashboardTemplate = `
                     document.getElementById('totalCredits').textContent = (data.user.free_credits || 0) + (data.user.paid_credits || 0);
                     
                     // 헤더 업데이트
-                    if (typeof window.updateHeaderCredits === 'function') {
-                        window.updateHeaderCredits((data.user.free_credits || 0) + (data.user.paid_credits || 0));
-                    }
-                    if (typeof window.updateHeaderUser === 'function') {
-                        window.updateHeaderUser(data.user.name || data.user.email?.split('@')[0] || '회원');
+                    if (typeof window.updateHeaderUserInfo === 'function') {
+                        window.updateHeaderUserInfo(updatedUser);
                     }
                     
                     console.log('✅ [대시보드] 크레딧 정보 업데이트 완료:', updatedUser);
