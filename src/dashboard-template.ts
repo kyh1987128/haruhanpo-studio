@@ -45,10 +45,10 @@ export const dashboardTemplate = `
                     <i class="fas fa-pen-fancy mr-2"></i>하루한포스트
                 </a>
                 <a href="/trendfinder" class="text-gray-400 pb-2 cursor-not-allowed">
-                    <i class="fas fa-chart-bar mr-2"></i>TrendFinder (준비중)
+                    <i class="fas fa-chart-bar mr-2"></i>유튜브 파인더 (준비중)
                 </a>
                 <a href="/storymaker" class="text-gray-400 pb-2 cursor-not-allowed">
-                    <i class="fas fa-video mr-2"></i>StoryMaker (준비중)
+                    <i class="fas fa-video mr-2"></i>스토리 메이커 (준비중)
                 </a>
                 <a href="/community" class="text-gray-400 pb-2 cursor-not-allowed">
                     <i class="fas fa-users mr-2"></i>커뮤니티 (준비중)

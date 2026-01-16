@@ -268,86 +268,9 @@ export const htmlTemplate = `
     </script>
     
     <!-- 사이드바 오버레이 (모바일) -->
-    <!-- 네비게이션 바 (전체 너비) - 기존 헤더는 유지하되 스타일 조정 -->
-    <nav class="bg-white shadow-md mx-4 mt-4 rounded-2xl px-6 py-4" style="margin-top: 5.5rem;">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center space-x-2">
-                    <span class="text-xl font-bold text-gray-800">
-                        📝 하루한포스트 - 콘텐츠 생성
-                    </span>
-                    <span class="text-sm text-gray-500">v8.0</span>
-                </div>
-                
-                <div class="flex items-center space-x-4">
-                    <!-- 비회원 영역 (로그아웃 상태) -->
-                    <div id="guestArea" class="hidden">
-                        <div class="flex items-center space-x-3">
-                            <button id="loginBtn" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm font-medium">
-                                <i class="fas fa-sign-in-alt mr-2"></i>로그인
-                            </button>
-                            <button id="signupBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium">
-                                <i class="fas fa-user-plus mr-2"></i>회원가입
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- 사용자 정보 영역 (로그인 상태만 표시) -->
-                    <div id="userInfoArea" class="hidden">
-                        <div class="flex items-center space-x-3">
-                            <div class="text-right">
-                                <p class="text-sm font-semibold text-gray-700" id="userName">사용자</p>
-                                <p class="text-xs text-gray-500">
-                                    <span id="userTier" class="font-semibold">무료회원</span> | 
-                                    <span id="userCredits" class="text-purple-600 font-bold">0크레딧</span>
-                                    <button onclick="showCreditPurchaseModal()" class="ml-2 px-3 py-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs rounded-lg hover:shadow-lg transition">
-                                        <i class="fas fa-plus mr-1"></i>충전
-                                    </button>
-                                </p>
-                            </div>
-                            <button id="settingsBtn" class="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 transition" title="설정">
-                                <i class="fas fa-cog mr-1"></i>설정
-                            </button>
-                            <button id="logoutBtn" class="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 transition">
-                                <i class="fas fa-sign-out-alt mr-1"></i>로그아웃
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </nav>
-    
-    <!-- 헤더 아래 기능 버튼 영역 -->
-    <div class="bg-white shadow-sm mx-4 mt-2 rounded-xl px-4 py-3">
-        <div class="flex items-center justify-center gap-3 flex-wrap">
-            <button id="headerHistoryBtn" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm font-medium flex items-center gap-2">
-                <i class="fas fa-history"></i>
-                <span>히스토리</span>
-            </button>
-            <button id="headerTemplateBtn" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm font-medium flex items-center gap-2">
-                <i class="fas fa-file-alt"></i>
-                <span>템플릿</span>
-            </button>
-            <button id="headerSaveProfileBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium flex items-center gap-2">
-                <i class="fas fa-save"></i>
-                <span>프로필 저장</span>
-            </button>
-            <button id="headerLoadProfileBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium flex items-center gap-2">
-                <i class="fas fa-folder-open"></i>
-                <span>프로필 불러오기</span>
-            </button>
-            <button id="headerFavoritesBtn" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition text-sm font-medium flex items-center gap-2">
-                <i class="fas fa-star"></i>
-                <span>즐겨찾기</span>
-            </button>
-            <button id="headerSnsBtn" class="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition text-sm font-medium flex items-center gap-2">
-                <i class="fas fa-share-alt"></i>
-                <span>SNS 바로가기</span>
-            </button>
-        </div>
-    </div>
     
     <!-- 2열 레이아웃 컨테이너 (PC: 좌측 패널 35% + 메인 콘텐츠 65%) -->
-    <div class="mx-4 px-0 py-4 layout-container">
+    <div class="mx-4 px-0 py-4 layout-container" style="margin-top: 5.5rem;">
         
         <!-- ========================================
              좌측 패널 (회원 기능 + 키워드 분석 + 입력 필드)
