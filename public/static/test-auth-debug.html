@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Debug</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Supabase Auth 디버깅</h1>
+    <button onclick="checkSession()">세션 확인</button>
+    <button onclick="logout()">강제 로그아웃</button>
+    <button onclick="googleLogin()">구글 로그인</button>
+    <pre id="output"></pre>
+    
+    <script>
+        const { createClient } = supabase;
+        const supabaseClient = createClient(
+            'https://gmjbsndricdogtqsovnb.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtamJzbmRyaWNkb2d0cXNvdm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyNzE1ODksImV4cCI6MjA4Mjg0NzU4OX0.naZnsBPYd84pdLoLAh-mEz_qerl5UakYs2FfVumnEJw'
+        );
+        
+        async function checkSession() {
+            const { data, error } = await supabaseClient.auth.getSession();
+            document.getElementById('output').textContent = JSON.stringify({
+                session: data.session,
+                error
+            }, null, 2);
+        }
+        
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            
+            // 모든 localStorage 클리어
+            const keys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                keys.push(localStorage.key(i));
+            }
+            keys.forEach(k => localStorage.removeItem(k));
+            
+            document.getElementById('output').textContent = '로그아웃 완료! localStorage 클리어됨';
+            setTimeout(checkSession, 1000);
+        }
+        
+        async function googleLogin() {
+            const { data, error } = await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.origin + '/test-auth-debug.html'
+                }
+            });
+        }
+        
+        // 페이지 로드 시 자동 확인
+        window.addEventListener('load', checkSession);
+    </script>
+</body>
+</html>
