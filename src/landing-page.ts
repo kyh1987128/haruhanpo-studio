@@ -84,15 +84,15 @@ export const landingPageTemplate = `
                         <span class="block mb-2">30초 만에</span>
                         <span class="block relative inline-block">
                             <span class="bg-gradient-to-r from-yellow-300 via-orange-300 to-yellow-300 bg-clip-text text-transparent animate-pulse">
-                                12개 채널용 콘텐츠
+                                9개 플랫폼 콘텐츠
                             </span>
                         </span>
                         <span class="block mt-2">완전 정복</span>
                     </h1>
                     
                     <p class="text-xl md:text-2xl mb-8 opacity-90 leading-relaxed">
-                        이미지 1장 → AI 변환 → 12개 플랫폼 콘텐츠 자동 생성<br>
-                        <span class="text-yellow-300 font-semibold">블로그, 인스타, 유튜브, 트위터</span> 모두 한 번에!
+                        이미지 1장 → AI 변환 → 9개 플랫폼 콘텐츠 자동 생성<br>
+                        <span class="text-yellow-300 font-semibold">네이버 블로그, 인스타그램, 스레드, 트위터</span> 모두 한 번에!
                     </p>
                     
                     <!-- CTA 버튼 (개선) -->
@@ -149,43 +149,74 @@ export const landingPageTemplate = `
                                 <div class="text-center">
                                     <i class="fas fa-cloud-upload-alt text-5xl text-purple-600 mb-3"></i>
                                     <p class="text-gray-700 font-semibold">이미지를 업로드하세요</p>
-                                    <p class="text-xs text-gray-500 mt-1">30초 후 12개 콘텐츠 생성!</p>
+                                    <p class="text-xs text-gray-500 mt-1">30초 후 9개 콘텐츠 생성!</p>
                                 </div>
                             </div>
                             
-                            <!-- 플랫폼 아이콘 -->
-                            <div class="grid grid-cols-4 gap-3">
+                            <!-- 플랫폼 아이콘 (9개 플랫폼 - 실제 브랜드 로고) -->
+                            <div class="grid grid-cols-3 gap-3">
+                                <!-- 네이버 블로그 -->
                                 <div class="bg-white rounded-lg p-3 shadow text-center transform hover:scale-110 transition">
-                                    <div class="text-2xl mb-1">📝</div>
-                                    <p class="text-xs text-gray-600">블로그</p>
+                                    <div class="text-2xl mb-1" style="color: #03C75A;">
+                                        <i class="fas fa-blog"></i>
+                                    </div>
+                                    <p class="text-xs text-gray-600 font-medium">네이버블로그</p>
                                 </div>
+                                <!-- 인스타그램 -->
                                 <div class="bg-white rounded-lg p-3 shadow text-center transform hover:scale-110 transition">
-                                    <div class="text-2xl mb-1">📷</div>
-                                    <p class="text-xs text-gray-600">인스타</p>
+                                    <div class="text-2xl mb-1" style="color: #E4405F;">
+                                        <i class="fab fa-instagram"></i>
+                                    </div>
+                                    <p class="text-xs text-gray-600 font-medium">인스타그램</p>
                                 </div>
+                                <!-- 스레드 -->
                                 <div class="bg-white rounded-lg p-3 shadow text-center transform hover:scale-110 transition">
-                                    <div class="text-2xl mb-1">🐦</div>
-                                    <p class="text-xs text-gray-600">트위터</p>
+                                    <div class="text-2xl mb-1" style="color: #000000;">
+                                        <i class="fab fa-threads"></i>
+                                    </div>
+                                    <p class="text-xs text-gray-600 font-medium">스레드</p>
                                 </div>
+                                <!-- 트위터 -->
                                 <div class="bg-white rounded-lg p-3 shadow text-center transform hover:scale-110 transition">
-                                    <div class="text-2xl mb-1">▶️</div>
-                                    <p class="text-xs text-gray-600">유튜브</p>
+                                    <div class="text-2xl mb-1" style="color: #1DA1F2;">
+                                        <i class="fab fa-twitter"></i>
+                                    </div>
+                                    <p class="text-xs text-gray-600 font-medium">트위터</p>
                                 </div>
+                                <!-- 링크드인 -->
                                 <div class="bg-white rounded-lg p-3 shadow text-center transform hover:scale-110 transition">
-                                    <div class="text-2xl mb-1">💼</div>
-                                    <p class="text-xs text-gray-600">링크드인</p>
+                                    <div class="text-2xl mb-1" style="color: #0A66C2;">
+                                        <i class="fab fa-linkedin"></i>
+                                    </div>
+                                    <p class="text-xs text-gray-600 font-medium">링크드인</p>
                                 </div>
+                                <!-- 브런치 -->
                                 <div class="bg-white rounded-lg p-3 shadow text-center transform hover:scale-110 transition">
-                                    <div class="text-2xl mb-1">📘</div>
-                                    <p class="text-xs text-gray-600">페북</p>
+                                    <div class="text-2xl mb-1" style="color: #00C73C;">
+                                        <i class="fas fa-pen-fancy"></i>
+                                    </div>
+                                    <p class="text-xs text-gray-600 font-medium">브런치</p>
                                 </div>
+                                <!-- 틱톡 -->
                                 <div class="bg-white rounded-lg p-3 shadow text-center transform hover:scale-110 transition">
-                                    <div class="text-2xl mb-1">🧵</div>
-                                    <p class="text-xs text-gray-600">스레드</p>
+                                    <div class="text-2xl mb-1" style="color: #000000;">
+                                        <i class="fab fa-tiktok"></i>
+                                    </div>
+                                    <p class="text-xs text-gray-600 font-medium">틱톡</p>
                                 </div>
+                                <!-- 유튜브 -->
                                 <div class="bg-white rounded-lg p-3 shadow text-center transform hover:scale-110 transition">
-                                    <div class="text-2xl mb-1">💬</div>
-                                    <p class="text-xs text-gray-600">카톡</p>
+                                    <div class="text-2xl mb-1" style="color: #FF0000;">
+                                        <i class="fab fa-youtube"></i>
+                                    </div>
+                                    <p class="text-xs text-gray-600 font-medium">유튜브</p>
+                                </div>
+                                <!-- 카카오톡 -->
+                                <div class="bg-white rounded-lg p-3 shadow text-center transform hover:scale-110 transition">
+                                    <div class="text-2xl mb-1" style="color: #FEE500;">
+                                        <i class="fas fa-comment"></i>
+                                    </div>
+                                    <p class="text-xs text-gray-600 font-medium">카카오톡</p>
                                 </div>
                             </div>
                         </div>
@@ -221,13 +252,13 @@ export const landingPageTemplate = `
                         <h3 class="text-3xl font-bold text-gray-900 mb-4">PostFlow</h3>
                         <p class="text-xl text-gray-600 mb-6">멀티 플랫폼 콘텐츠 생성</p>
                         <p class="text-gray-700 mb-6 leading-relaxed">
-                            이미지 하나만 업로드하면 30초 만에 12개 플랫폼 맞춤 콘텐츠를 자동으로 생성합니다.
-                            블로그, 인스타그램, 유튜브, 트위터 등 모든 SNS에 최적화된 콘텐츠를 한 번에!
+                            이미지 하나만 업로드하면 30초 만에 9개 플랫폼 맞춤 콘텐츠를 자동으로 생성합니다.
+                            네이버 블로그, 인스타그램, 스레드, 트위터, 유튜브, 카카오톡 등 모든 SNS에 최적화된 콘텐츠를 한 번에!
                         </p>
                         <ul class="space-y-3 mb-8">
                             <li class="flex items-start gap-3 transform group-hover:translate-x-2 transition-transform duration-300">
                                 <i class="fas fa-check-circle text-purple-600 mt-1"></i>
-                                <span><strong>12개 플랫폼</strong> 동시 콘텐츠 생성</span>
+                                <span><strong>9개 플랫폼</strong> 동시 콘텐츠 생성</span>
                             </li>
                             <li class="flex items-start gap-3 transform group-hover:translate-x-2 transition-transform duration-300 delay-75">
                                 <i class="fas fa-check-circle text-purple-600 mt-1"></i>
@@ -244,7 +275,7 @@ export const landingPageTemplate = `
                             <i class="fas fa-image text-8xl text-purple-600 mb-4 transform group-hover:scale-110 transition-transform duration-300"></i>
                             <p class="text-gray-700 font-semibold">이미지 업로드</p>
                             <p class="text-gray-500 text-sm mt-2">→ 30초 후 →</p>
-                            <p class="text-purple-600 font-bold text-lg mt-2">12개 플랫폼 콘텐츠 완성!</p>
+                            <p class="text-purple-600 font-bold text-lg mt-2">9개 플랫폼 콘텐츠 완성!</p>
                         </div>
                     </div>
                 </div>
