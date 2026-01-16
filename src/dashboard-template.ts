@@ -8,54 +8,9 @@ export const dashboardTemplate = `
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-50">
-    <!-- 헤더 -->
-    <header class="bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg">
-        <div class="container mx-auto px-6 py-4">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center space-x-4">
-                    <a href="javascript:void(0)" onclick="handleLogoClick()" class="text-2xl font-bold hover:opacity-80 transition cursor-pointer">
-                        🏠 마케팅허브 AI
-                    </a>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <div class="text-right">
-                        <p class="text-sm font-semibold" id="headerUserName">사용자</p>
-                        <p class="text-xs">
-                            <span id="headerUserTier">무료</span> | 
-                            <span id="headerUserCredits" class="font-bold">0크레딧</span>
-                        </p>
-                    </div>
-                    <button onclick="if(window.handleLogout) window.handleLogout(); else alert('로그아웃 기능을 초기화하는 중입니다.');" class="px-4 py-2 bg-white text-purple-600 rounded-lg hover:bg-gray-100 transition text-sm font-medium">
-                        <i class="fas fa-sign-out-alt mr-2"></i>로그아웃
-                    </button>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- 네비게이션 -->
-    <nav class="bg-white shadow-md">
-        <div class="container mx-auto px-6 py-4">
-            <div class="flex space-x-6">
-                <a href="/dashboard" class="text-purple-600 border-b-2 border-purple-600 pb-2 font-medium">
-                    <i class="fas fa-chart-line mr-2"></i>대시보드
-                </a>
-                <a href="/postflow" class="text-gray-600 hover:text-purple-600 pb-2 transition">
-                    <i class="fas fa-pen-fancy mr-2"></i>하루한포스트
-                </a>
-                <a href="/trendfinder" class="text-gray-400 pb-2 cursor-not-allowed">
-                    <i class="fas fa-chart-bar mr-2"></i>유튜브 파인더 (준비중)
-                </a>
-                <a href="/storymaker" class="text-gray-400 pb-2 cursor-not-allowed">
-                    <i class="fas fa-video mr-2"></i>스토리 메이커 (준비중)
-                </a>
-                <a href="/community" class="text-gray-400 pb-2 cursor-not-allowed">
-                    <i class="fas fa-users mr-2"></i>커뮤니티 (준비중)
-                </a>
-            </div>
-        </div>
-    </nav>
+<body class="bg-gray-50" data-page="dashboard">
+    <!-- 통합 헤더 컴포넌트 -->
+    <div id="header-container"></div>
 
     <!-- 메인 콘텐츠 -->
     <main class="container mx-auto px-6 py-8">
@@ -160,15 +115,7 @@ export const dashboardTemplate = `
                 return;
             }
 
-            // 헤더 업데이트
-            document.getElementById('headerUserName').textContent = user.name || user.email || '사용자';
-            document.getElementById('headerUserTier').textContent = user.tier === 'paid' ? '유료' : '무료';
-            document.getElementById('headerUserCredits').textContent = \`\${(user.free_credits || 0) + (user.paid_credits || 0)}크레딧\`;
-
-            // 크레딧 카드 업데이트
-            document.getElementById('freeCredits').textContent = user.free_credits || 0;
-            document.getElementById('paidCredits').textContent = user.paid_credits || 0;
-            document.getElementById('totalCredits').textContent = (user.free_credits || 0) + (user.paid_credits || 0);
+            console.log('📊 [대시보드] 초기 사용자 정보:', user);
 
             try {
                 // 통계 API 호출
@@ -187,6 +134,37 @@ export const dashboardTemplate = `
                 }
                 
                 const data = result.data;
+
+                // 🔥 사용자 크레딧 정보 업데이트 (API에서 최신 정보 가져오기)
+                if (data.user) {
+                    console.log('✅ [대시보드] API에서 받은 사용자 정보:', data.user);
+                    
+                    // localStorage 업데이트
+                    const updatedUser = {
+                        ...user,
+                        free_credits: data.user.free_credits || 0,
+                        paid_credits: data.user.paid_credits || 0,
+                        tier: data.user.tier || 'free',
+                        credits: (data.user.free_credits || 0) + (data.user.paid_credits || 0)
+                    };
+                    localStorage.setItem('postflow_user', JSON.stringify(updatedUser));
+                    window.currentUser = updatedUser;
+                    
+                    // 크레딧 카드 업데이트
+                    document.getElementById('freeCredits').textContent = data.user.free_credits || 0;
+                    document.getElementById('paidCredits').textContent = data.user.paid_credits || 0;
+                    document.getElementById('totalCredits').textContent = (data.user.free_credits || 0) + (data.user.paid_credits || 0);
+                    
+                    // 헤더 업데이트
+                    if (typeof window.updateHeaderCredits === 'function') {
+                        window.updateHeaderCredits((data.user.free_credits || 0) + (data.user.paid_credits || 0));
+                    }
+                    if (typeof window.updateHeaderUser === 'function') {
+                        window.updateHeaderUser(data.user.name || data.user.email?.split('@')[0] || '회원');
+                    }
+                    
+                    console.log('✅ [대시보드] 크레딧 정보 업데이트 완료:', updatedUser);
+                }
 
                 // 총 생성 횟수 업데이트
                 document.getElementById('totalGenerations').textContent = data.stats.total_generations || 0;
@@ -260,7 +238,22 @@ export const dashboardTemplate = `
             }
         }
 
-        loadDashboard();
+        // 🔥 헤더 로드 (통합 헤더 컴포넌트)
+        async function loadHeader() {
+            try {
+                const response = await fetch('/static/shared-header.html');
+                const html = await response.text();
+                document.getElementById('header-container').innerHTML = html;
+                console.log('✅ [대시보드] 헤더 로드 완료');
+            } catch (error) {
+                console.error('❌ [대시보드] 헤더 로드 실패:', error);
+            }
+        }
+        
+        // 헤더 먼저 로드, 그 다음 대시보드 데이터 로드
+        loadHeader().then(() => {
+            loadDashboard();
+        });
     </script>
     
     <!-- 🔥 로고 클릭 핸들러를 위한 app-v3-final.js 로드 -->

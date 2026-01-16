@@ -313,6 +313,23 @@
         userNameEl.textContent = userName;
       }
     };
+    
+    // 사용자 정보 전체 업데이트 (크레딧, 이름, 티어)
+    window.updateHeaderUserInfo = function(user) {
+      if (!user) return;
+      
+      const userName = document.getElementById('userName');
+      const creditsCount = document.getElementById('creditsCount');
+      
+      if (userName) {
+        userName.textContent = user.name || user.email?.split('@')[0] || '회원';
+      }
+      
+      if (creditsCount) {
+        const totalCredits = (user.free_credits || 0) + (user.paid_credits || 0);
+        creditsCount.textContent = `${totalCredits}크레딧`;
+      }
+    };
 
     // 로그인/로그아웃 버튼
     const userButton = document.getElementById('userButton');
