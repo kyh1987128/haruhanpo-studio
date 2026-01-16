@@ -84,78 +84,11 @@ function showLearningTip() {
   showToast(randomTip, 'info', 5000);
 }
 
-// 5. 마지막 작업 이어서 하기
+// 5. 마지막 작업 이어서 하기 (비활성화)
 async function showContinueLastWork() {
-  try {
-    // 최근 생성 히스토리 가져오기
-    if (!window.supabaseClient) return;
-    
-    const userId = (await window.supabaseClient.auth.getUser()).data.user?.id;
-    if (!userId) return;
-
-    const { data: lastWork, error } = await window.supabaseClient
-      .from('generated_contents')
-      .select('brand_name, keywords, platforms')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (error || !lastWork) return;
-
-    // 토스트로 제안
-    const message = `마지막 작업: "${lastWork.brand_name}" - 이어서 하시겠어요?`;
-    
-    // 커스텀 토스트 (클릭 가능)
-    const toast = document.createElement('div');
-    toast.style.cssText = `
-      position: fixed;
-      top: 5rem;
-      right: 1.5rem;
-      background: white;
-      padding: 1rem 1.5rem;
-      border-radius: 0.75rem;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-      z-index: 9998;
-      max-width: 350px;
-      cursor: pointer;
-      transition: all 0.3s;
-    `;
-    toast.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 1rem;">
-        <div style="font-size: 1.5rem;">🔄</div>
-        <div>
-          <div style="font-weight: 600; margin-bottom: 0.25rem;">${message}</div>
-          <div style="font-size: 0.875rem; color: #6b7280;">클릭하여 설정 불러오기</div>
-        </div>
-      </div>
-    `;
-    
-    toast.addEventListener('click', () => {
-      // 폼에 데이터 자동 입력
-      if (document.getElementById('brandName')) {
-        document.getElementById('brandName').value = lastWork.brand_name || '';
-      }
-      if (document.getElementById('keywords')) {
-        document.getElementById('keywords').value = lastWork.keywords || '';
-      }
-      
-      // 토스트 닫기
-      toast.remove();
-      
-      showToast('✅ 설정을 불러왔습니다!', 'success');
-    });
-    
-    document.body.appendChild(toast);
-    
-    // 10초 후 자동 닫기
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      setTimeout(() => toast.remove(), 300);
-    }, 10000);
-  } catch (error) {
-    console.error('마지막 작업 불러오기 실패:', error);
-  }
+  // 환영 팝업 비활성화: 사용자가 대시보드 이동 시 팝업이 부담스럽다는 피드백 반영
+  // 필요 시 히스토리에서 직접 확인 가능
+  return;
 }
 
 // 6. 온보딩 완료 상태 업데이트
