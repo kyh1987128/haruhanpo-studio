@@ -377,6 +377,24 @@ export const landingPageTemplate = `
                         </ul>
                     </div>
                     <div class="bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl p-8 h-96 flex items-center justify-center relative overflow-hidden">
+                        <!-- 진행률 바 -->
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-purple-200 overflow-hidden">
+                            <div id="postflow-progress" class="h-full bg-purple-600 transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        
+                        <!-- 컨트롤 버튼 -->
+                        <div class="absolute top-4 right-4 flex gap-2 z-10">
+                            <button onclick="postflowPrev()" class="bg-white/80 hover:bg-white text-purple-600 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition">
+                                <i class="fas fa-chevron-left text-sm"></i>
+                            </button>
+                            <button onclick="postflowPlayPause()" id="postflow-play-btn" class="bg-white/80 hover:bg-white text-purple-600 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition">
+                                <i class="fas fa-pause text-sm"></i>
+                            </button>
+                            <button onclick="postflowNext()" class="bg-white/80 hover:bg-white text-purple-600 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition">
+                                <i class="fas fa-chevron-right text-sm"></i>
+                            </button>
+                        </div>
+                        
                         <!-- 애니메이션 컨테이너 -->
                         <div id="postflow-animation" class="w-full h-full flex flex-col items-center justify-center">
                             <!-- 단계 1: 이미지 업로드 (초기) -->
@@ -448,6 +466,21 @@ export const landingPageTemplate = `
             <div id="trendfinder" class="mb-20 group">
                 <div class="grid md:grid-cols-2 gap-12 items-center">
                     <div class="order-2 md:order-1 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl p-8 h-96 flex items-center justify-center relative overflow-hidden">
+                        <!-- 진행률 바 -->
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-blue-200 overflow-hidden">
+                            <div id="trendfinder-progress" class="h-full bg-blue-600 transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        
+                        <!-- 컨트롤 버튼 -->
+                        <div class="absolute top-4 right-4 flex gap-2 z-10">
+                            <button onclick="trendfinderPlayPause()" id="trendfinder-play-btn" class="bg-white/80 hover:bg-white text-blue-600 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition">
+                                <i class="fas fa-pause text-sm"></i>
+                            </button>
+                            <button onclick="trendfinderRestart()" class="bg-white/80 hover:bg-white text-blue-600 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition">
+                                <i class="fas fa-redo text-sm"></i>
+                            </button>
+                        </div>
+                        
                         <!-- 차트 애니메이션 -->
                         <div id="trendfinder-animation" class="w-full h-full flex flex-col items-center justify-center">
                             <div class="text-center mb-6">
@@ -552,6 +585,24 @@ export const landingPageTemplate = `
                         </ul>
                     </div>
                     <div class="bg-gradient-to-br from-green-100 to-teal-100 rounded-2xl p-8 h-96 flex items-center justify-center relative overflow-hidden">
+                        <!-- 진행률 바 -->
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-green-200 overflow-hidden">
+                            <div id="storymaker-progress" class="h-full bg-green-600 transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        
+                        <!-- 컨트롤 버튼 -->
+                        <div class="absolute top-4 right-4 flex gap-2 z-10">
+                            <button onclick="storymakerPrev()" class="bg-white/80 hover:bg-white text-green-600 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition">
+                                <i class="fas fa-chevron-left text-sm"></i>
+                            </button>
+                            <button onclick="storymakerPlayPause()" id="storymaker-play-btn" class="bg-white/80 hover:bg-white text-green-600 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition">
+                                <i class="fas fa-pause text-sm"></i>
+                            </button>
+                            <button onclick="storymakerNext()" class="bg-white/80 hover:bg-white text-green-600 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition">
+                                <i class="fas fa-chevron-right text-sm"></i>
+                            </button>
+                        </div>
+                        
                         <!-- 스토리보드 슬라이드 애니메이션 -->
                         <div id="storymaker-animation" class="w-full h-full">
                             <!-- 스토리보드 장면 카드들 -->
@@ -1132,47 +1183,168 @@ export const landingPageTemplate = `
     </style>
     
     <script>
+        // ===== 소리 효과 시스템 =====
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+        
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+        
+        function playBeep(frequency = 800, duration = 100, volume = 0.1) {
+            initAudio();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.frequency.value = frequency;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration / 1000);
+            
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + duration / 1000);
+        }
+        
+        function playPopSound() {
+            playBeep(1200, 80, 0.08); // 팝업 사운드
+        }
+        
+        function playWhooshSound() {
+            initAudio();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.3);
+            oscillator.type = 'sawtooth';
+            
+            gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 0.3);
+        }
+        
+        function playSuccessSound() {
+            playBeep(1000, 100, 0.08);
+            setTimeout(() => playBeep(1200, 100, 0.08), 100);
+            setTimeout(() => playBeep(1500, 150, 0.08), 200);
+        }
+        
         // ===== PostFlow 애니메이션 =====
         let postflowCurrentStep = 1;
+        let postflowInterval = null;
+        let postflowPaused = false;
+        let postflowProgressInterval = null;
         
-        function runPostFlowAnimation() {
+        function updatePostflowProgress(percent) {
+            const progressBar = document.getElementById('postflow-progress');
+            if (progressBar) progressBar.style.width = percent + '%';
+        }
+        
+        function postflowGoToStep(step) {
             const step1 = document.querySelector('.postflow-step-1');
             const step2 = document.querySelector('.postflow-step-2');
             const step3 = document.querySelector('.postflow-step-3');
             const cards = document.querySelectorAll('.postflow-card');
             
-            // Step 1 → Step 2
-            setTimeout(() => {
-                step1.classList.add('hidden');
-                step2.classList.remove('hidden');
-            }, 2000);
+            // 모든 단계 숨김
+            step1.classList.add('hidden');
+            step2.classList.add('hidden');
+            step3.classList.add('hidden');
             
-            // Step 2 → Step 3
-            setTimeout(() => {
-                step2.classList.add('hidden');
+            // 해당 단계 표시
+            if (step === 1) {
+                step1.classList.remove('hidden');
+                updatePostflowProgress(0);
+            } else if (step === 2) {
+                step2.classList.remove('hidden');
+                updatePostflowProgress(33);
+                playWhooshSound();
+            } else if (step === 3) {
                 step3.classList.remove('hidden');
+                updatePostflowProgress(66);
+                playSuccessSound();
                 
                 // 카드 순차 애니메이션
                 cards.forEach((card, index) => {
-                    setTimeout(() => {
-                        card.classList.add('active');
-                    }, index * 100);
-                });
-            }, 4000);
-            
-            // 리셋
-            setTimeout(() => {
-                step3.classList.add('hidden');
-                step1.classList.remove('hidden');
-                cards.forEach(card => {
                     card.classList.remove('active');
                     card.style.opacity = '0';
+                    setTimeout(() => {
+                        card.classList.add('active');
+                        playPopSound();
+                    }, index * 100);
                 });
-                runPostFlowAnimation(); // 무한 반복
+            }
+            
+            postflowCurrentStep = step;
+        }
+        
+        function postflowNext() {
+            const nextStep = postflowCurrentStep >= 3 ? 1 : postflowCurrentStep + 1;
+            postflowGoToStep(nextStep);
+        }
+        
+        function postflowPrev() {
+            const prevStep = postflowCurrentStep <= 1 ? 3 : postflowCurrentStep - 1;
+            postflowGoToStep(prevStep);
+        }
+        
+        function postflowPlayPause() {
+            postflowPaused = !postflowPaused;
+            const btn = document.getElementById('postflow-play-btn');
+            const icon = btn.querySelector('i');
+            
+            if (postflowPaused) {
+                icon.className = 'fas fa-play text-sm';
+                if (postflowInterval) clearInterval(postflowInterval);
+                if (postflowProgressInterval) clearInterval(postflowProgressInterval);
+            } else {
+                icon.className = 'fas fa-pause text-sm';
+                runPostFlowAnimation();
+            }
+        }
+        
+        function runPostFlowAnimation() {
+            if (postflowPaused) return;
+            
+            postflowGoToStep(1);
+            
+            setTimeout(() => {
+                if (!postflowPaused) postflowGoToStep(2);
+            }, 2000);
+            
+            setTimeout(() => {
+                if (!postflowPaused) postflowGoToStep(3);
+            }, 4000);
+            
+            postflowInterval = setTimeout(() => {
+                if (!postflowPaused) {
+                    updatePostflowProgress(100);
+                    setTimeout(() => runPostFlowAnimation(), 500);
+                }
             }, 8000);
         }
         
-        // ===== TrendFinder 숫자 카운팅 애니메이션 =====
+        // ===== TrendFinder 애니메이션 =====
+        let trendfinderPaused = false;
+        let trendfinderInterval = null;
+        let trendfinderProgressInterval = null;
+        
+        function updateTrendfinderProgress(percent) {
+            const progressBar = document.getElementById('trendfinder-progress');
+            if (progressBar) progressBar.style.width = percent + '%';
+        }
+        
         function animateCounter(element) {
             const target = parseInt(element.getAttribute('data-target'));
             const duration = 2000;
@@ -1184,6 +1356,7 @@ export const landingPageTemplate = `
                 if (current >= target) {
                     element.textContent = target;
                     clearInterval(timer);
+                    playBeep(1500, 50, 0.05);
                 } else {
                     element.textContent = Math.floor(current);
                 }
@@ -1191,41 +1364,141 @@ export const landingPageTemplate = `
         }
         
         function runTrendFinderAnimation() {
-            const counters = document.querySelectorAll('.counter');
-            counters.forEach(counter => animateCounter(counter));
+            if (trendfinderPaused) return;
             
-            // 무한 반복
+            updateTrendfinderProgress(0);
+            const counters = document.querySelectorAll('.counter');
+            counters.forEach(counter => counter.textContent = '0');
+            
+            // 차트 성장 사운드
+            setTimeout(() => playBeep(600, 100, 0.05), 200);
+            setTimeout(() => playBeep(700, 100, 0.05), 400);
+            setTimeout(() => playBeep(800, 100, 0.05), 600);
+            setTimeout(() => playBeep(900, 100, 0.05), 800);
+            setTimeout(() => playBeep(1000, 100, 0.05), 1000);
+            
+            // 진행률 바 애니메이션
+            let progress = 0;
+            trendfinderProgressInterval = setInterval(() => {
+                if (trendfinderPaused) return;
+                progress += 2;
+                updateTrendfinderProgress(progress);
+                if (progress >= 100) {
+                    clearInterval(trendfinderProgressInterval);
+                }
+            }, 100);
+            
             setTimeout(() => {
-                counters.forEach(counter => counter.textContent = '0');
-                runTrendFinderAnimation();
+                counters.forEach(counter => animateCounter(counter));
+            }, 500);
+            
+            trendfinderInterval = setTimeout(() => {
+                if (!trendfinderPaused) runTrendFinderAnimation();
             }, 5000);
+        }
+        
+        function trendfinderPlayPause() {
+            trendfinderPaused = !trendfinderPaused;
+            const btn = document.getElementById('trendfinder-play-btn');
+            const icon = btn.querySelector('i');
+            
+            if (trendfinderPaused) {
+                icon.className = 'fas fa-play text-sm';
+                if (trendfinderInterval) clearTimeout(trendfinderInterval);
+                if (trendfinderProgressInterval) clearInterval(trendfinderProgressInterval);
+            } else {
+                icon.className = 'fas fa-pause text-sm';
+                runTrendFinderAnimation();
+            }
+        }
+        
+        function trendfinderRestart() {
+            if (trendfinderInterval) clearTimeout(trendfinderInterval);
+            if (trendfinderProgressInterval) clearInterval(trendfinderProgressInterval);
+            trendfinderPaused = false;
+            const btn = document.getElementById('trendfinder-play-btn');
+            const icon = btn.querySelector('i');
+            icon.className = 'fas fa-pause text-sm';
+            runTrendFinderAnimation();
         }
         
         // ===== StoryMaker 슬라이드 쇼 =====
         let currentScene = 0;
         const scenes = 3;
+        let storymakerInterval = null;
+        let storymakerPaused = false;
+        let storymakerProgressInterval = null;
         
-        function runStoryMakerAnimation() {
+        function updateStorymakerProgress(percent) {
+            const progressBar = document.getElementById('storymaker-progress');
+            if (progressBar) progressBar.style.width = percent + '%';
+        }
+        
+        function storymakerGoToScene(sceneIndex) {
             const allScenes = document.querySelectorAll('.storyboard-scene');
             const dots = document.querySelectorAll('.storymaker-dot');
             
-            setInterval(() => {
-                // 현재 장면 퇴장
-                allScenes[currentScene].classList.remove('active');
-                allScenes[currentScene].classList.add('exit-left');
-                dots[currentScene].classList.remove('bg-green-600');
-                dots[currentScene].classList.add('bg-green-300');
-                
-                // 다음 장면으로 이동
-                currentScene = (currentScene + 1) % scenes;
-                
-                // 다음 장면 입장
-                setTimeout(() => {
-                    allScenes.forEach(scene => scene.classList.remove('exit-left'));
-                    allScenes[currentScene].classList.add('active');
-                    dots[currentScene].classList.remove('bg-green-300');
-                    dots[currentScene].classList.add('bg-green-600');
-                }, 100);
+            // 모든 장면 초기화
+            allScenes.forEach((scene, i) => {
+                scene.classList.remove('active', 'exit-left');
+                if (i !== sceneIndex) {
+                    scene.style.opacity = '0';
+                    scene.style.transform = 'translateX(100%)';
+                }
+            });
+            
+            // 현재 장면 활성화
+            allScenes[sceneIndex].classList.add('active');
+            allScenes[sceneIndex].style.opacity = '1';
+            allScenes[sceneIndex].style.transform = 'translateX(0)';
+            
+            // 점 업데이트
+            dots.forEach((dot, i) => {
+                if (i === sceneIndex) {
+                    dot.classList.remove('bg-green-300');
+                    dot.classList.add('bg-green-600');
+                } else {
+                    dot.classList.remove('bg-green-600');
+                    dot.classList.add('bg-green-300');
+                }
+            });
+            
+            currentScene = sceneIndex;
+            updateStorymakerProgress((sceneIndex + 1) * 33);
+            playWhooshSound();
+        }
+        
+        function storymakerNext() {
+            const nextScene = (currentScene + 1) % scenes;
+            storymakerGoToScene(nextScene);
+        }
+        
+        function storymakerPrev() {
+            const prevScene = (currentScene - 1 + scenes) % scenes;
+            storymakerGoToScene(prevScene);
+        }
+        
+        function storymakerPlayPause() {
+            storymakerPaused = !storymakerPaused;
+            const btn = document.getElementById('storymaker-play-btn');
+            const icon = btn.querySelector('i');
+            
+            if (storymakerPaused) {
+                icon.className = 'fas fa-play text-sm';
+                if (storymakerInterval) clearInterval(storymakerInterval);
+            } else {
+                icon.className = 'fas fa-pause text-sm';
+                runStoryMakerAnimation();
+            }
+        }
+        
+        function runStoryMakerAnimation() {
+            if (storymakerInterval) clearInterval(storymakerInterval);
+            
+            storymakerInterval = setInterval(() => {
+                if (!storymakerPaused) {
+                    storymakerNext();
+                }
             }, 3000);
         }
         
