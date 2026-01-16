@@ -4983,7 +4983,7 @@ app.get('/api/stats', async (c) => {
       .from('users')
       .select('id, email, name, free_credits, paid_credits, tier')
       .eq('id', user_id)
-      .single();
+      .maybeSingle();
     
     if (userError) {
       console.error('❌ [/api/stats] 사용자 정보 조회 실패:', {
