@@ -5,6 +5,7 @@ import OpenAI from 'openai';
 import { getBlogPrompt, getInstagramPrompt, getThreadsPrompt, getYouTubePrompt, getYoutubeLongformPrompt, getShortformPrompt, getMetadataPrompt, getInstagramFeedPrompt, getTwitterPrompt, getLinkedInPrompt, getKakaoTalkPrompt, getBrunchPrompt, getTikTokPrompt, getInstagramReelsPrompt } from './prompts';
 import { htmlTemplate } from './html-template';
 import { landingPageTemplate } from './landing-page';
+import { dashboardTemplate } from './dashboard-template';
 import { analyzeImageWithGemini, generateContentWithGemini, calculateGeminiCost, estimateTokens } from './gemini';
 import { createSupabaseAdmin, createSupabaseClient, grantMilestoneCredit, updateConsecutiveLogin, checkAndUseMonthlyQuota } from './lib/supabase';
 import { parseMultipleDocuments, combineDocumentTexts, truncateText } from './document-parser';
@@ -35,6 +36,73 @@ app.use('/payment*', serveStatic({ root: './public' }));
 app.post('/api/templates/save', async (c) => {
   // 실제로는 프론트엔드 LocalStorage에서 관리하므로 이 API는 참고용
   return c.json({ success: true, message: 'Template management is handled on client-side' });
+});
+
+// API 라우트: 대시보드 통계
+app.get('/api/stats', async (c) => {
+  try {
+    const user_id = c.req.query('user_id');
+    
+    if (!user_id) {
+      return c.json({ success: false, error: 'user_id is required' }, 400);
+    }
+
+    const supabaseUrl = c.env.SUPABASE_URL;
+    const supabaseServiceKey = c.env.SUPABASE_SERVICE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return c.json({ success: false, error: 'Supabase configuration missing' }, 500);
+    }
+
+    const supabase = createSupabaseAdmin(supabaseUrl, supabaseServiceKey);
+
+    // 1. 총 생성 횟수
+    const { count: totalGenerations, error: totalError } = await supabase
+      .from('generations')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user_id);
+
+    if (totalError) {
+      console.error('총 생성 횟수 조회 실패:', totalError);
+    }
+
+    // 2. 이번 달 생성 횟수 (2026-01-01부터)
+    const { count: monthlyGenerations, error: monthlyError } = await supabase
+      .from('generations')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user_id)
+      .gte('created_at', '2026-01-01T00:00:00Z');
+
+    if (monthlyError) {
+      console.error('이번 달 생성 횟수 조회 실패:', monthlyError);
+    }
+
+    // 3. 최근 5개 콘텐츠
+    const { data: recentGenerations, error: recentError } = await supabase
+      .from('generations')
+      .select('id, platform, brand, created_at, credits_used')
+      .eq('user_id', user_id)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (recentError) {
+      console.error('최근 콘텐츠 조회 실패:', recentError);
+    }
+
+    return c.json({
+      success: true,
+      totalGenerations: totalGenerations || 0,
+      monthlyGenerations: monthlyGenerations || 0,
+      recentGenerations: recentGenerations || []
+    });
+
+  } catch (error: any) {
+    console.error('대시보드 통계 API 오류:', error);
+    return c.json({ 
+      success: false, 
+      error: error.message || 'Internal server error' 
+    }, 500);
+  }
 });
 
 // API 라우트: 키워드 자동 추천
@@ -3101,14 +3169,6 @@ app.get('/', (c) => {
   return c.html(landingPageTemplate);
 });
 
-// PostFlow 앱 (로그인 필수)
-app.get('/postflow', (c) => {
-  // PostFlow 페이지는 항상 렌더링
-  // Supabase 세션 체크는 클라이언트에서 수행
-  // 비로그인 시 랜딩 페이지로 자연스럽게 유도 (강제 리디렉션 없음)
-  return c.html(htmlTemplate);
-});
-
 // ===================================
 // 크레딧 상품 목록 API
 // ===================================
@@ -4948,18 +5008,179 @@ app.put('/api/calendar-memo/:id', async (c) => {
 });
 
 // ========================================
+// 📊 대시보드 통계 API
+// ========================================
+app.get('/api/stats', async (c) => {
+  try {
+    const user_id = c.req.query('user_id');
+    
+    if (!user_id) {
+      return c.json({ 
+        success: false, 
+        error: 'user_id가 필요합니다' 
+      }, 400);
+    }
+    
+    console.log(`📊 대시보드 통계 조회: user_id=${user_id}`);
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // 1) 사용자 정보 조회
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id, email, name, free_credits, paid_credits, tier, subscription_status')
+      .eq('id', user_id)
+      .single();
+    
+    if (userError || !user) {
+      console.error('❌ 사용자 정보 조회 실패:', userError);
+      return c.json({ 
+        success: false, 
+        error: '사용자 정보를 찾을 수 없습니다' 
+      }, 404);
+    }
+    
+    // 2) 총 생성 횟수
+    const { count: totalCount, error: totalError } = await supabase
+      .from('generations')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user_id);
+    
+    if (totalError) {
+      console.error('❌ 총 생성 횟수 조회 실패:', totalError);
+    }
+    
+    // 3) 이번 달 생성 횟수
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    
+    const { count: monthlyCount, error: monthlyError } = await supabase
+      .from('generations')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user_id)
+      .gte('created_at', startOfMonth);
+    
+    if (monthlyError) {
+      console.error('❌ 이번 달 생성 횟수 조회 실패:', monthlyError);
+    }
+    
+    // 4) 최근 생성 콘텐츠 5개
+    const { data: recentContent, error: recentError } = await supabase
+      .from('generations')
+      .select('id, platforms, created_at, credits_used, brand, keywords')
+      .eq('user_id', user_id)
+      .order('created_at', { ascending: false })
+      .limit(5);
+    
+    if (recentError) {
+      console.error('❌ 최근 생성 콘텐츠 조회 실패:', recentError);
+    }
+    
+    // 5) 최근 크레딧 사용 내역 10개
+    const { data: creditHistory, error: creditError } = await supabase
+      .from('credit_transactions')
+      .select('id, created_at, credits_used, amount, description')
+      .eq('user_id', user_id)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    
+    if (creditError) {
+      console.error('❌ 크레딧 사용 내역 조회 실패:', creditError);
+    }
+    
+    // 응답 데이터 구성
+    const stats = {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        free_credits: user.free_credits || 0,
+        paid_credits: user.paid_credits || 0,
+        tier: user.tier || 'free',
+        subscription_status: user.subscription_status || 'active'
+      },
+      stats: {
+        total_generations: totalCount || 0,
+        monthly_generations: monthlyCount || 0,
+        postflow_count: totalCount || 0, // 현재는 PostFlow만 운영 중
+        trendfinder_count: 0, // 준비 중
+        storymaker_count: 0 // 준비 중
+      },
+      recent_content: recentContent || [],
+      credit_history: creditHistory || []
+    };
+    
+    console.log(`✅ 대시보드 통계 조회 완료:`, {
+      total: stats.stats.total_generations,
+      monthly: stats.stats.monthly_generations,
+      recent: stats.recent_content.length,
+      credit_history: stats.credit_history.length
+    });
+    
+    return c.json({
+      success: true,
+      data: stats
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 대시보드 통계 조회 오류:', error);
+    return c.json({ 
+      success: false, 
+      error: error.message 
+    }, 500);
+  }
+});
+
+// ========================================
 // 🔥 /dashboard 라우트 추가 (긴급 수정)
 // ========================================
+// ========================================
+// Import dashboard template
+// ========================================
+import { dashboardTemplate } from './dashboard-template';
+
+// ========================================
+// 🔥 /dashboard 라우트 (통합 대시보드)
+// ========================================
 app.get('/dashboard', (c) => {
-  // 메인 HTML 템플릿 반환 (index와 동일)
+  return c.html(dashboardTemplate);
+});
+
+// ========================================
+// 🔥 /postflow 라우트 (PostFlow 작업 공간)
+// ========================================
+app.get('/postflow', (c) => {
   return c.html(htmlTemplate);
 });
 
 // ========================================
-// 🔥 /community 라우트 추가
+// 🔥 /community 라우트 (준비중)
 // ========================================
 app.get('/community', (c) => {
-  return c.html(htmlTemplate);
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>커뮤니티 - 준비중</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="bg-gray-50 flex items-center justify-center min-h-screen">
+        <div class="text-center">
+            <h1 class="text-6xl font-bold text-gray-800 mb-4">🚧</h1>
+            <h2 class="text-3xl font-bold text-gray-700 mb-4">커뮤니티</h2>
+            <p class="text-xl text-gray-600 mb-8">준비중입니다</p>
+            <button onclick="location.href='/'" class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                홈으로 돌아가기
+            </button>
+        </div>
+    </body>
+    </html>
+  `);
 });
 
 // ========================================
@@ -4973,8 +5194,8 @@ app.get('*', (c) => {
     return c.text('Not Found', 404);
   }
   
-  // 그 외 모든 경로는 메인 HTML 반환
-  return c.html(htmlTemplate);
+  // 그 외 모든 경로는 랜딩 페이지 반환
+  return c.html(landingPageTemplate);
 });
 
 export default app;
