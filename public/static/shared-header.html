@@ -262,7 +262,7 @@
             <span>설정</span>
           </a>
           <div class="dropdown-divider"></div>
-          <div class="dropdown-item" onclick="handleLogout()">
+          <div class="dropdown-item" onclick="if(window.handleLogout) window.handleLogout(); else alert('로그아웃 기능을 초기화하는 중입니다.');">
             <i class="fas fa-sign-out-alt"></i>
             <span>로그아웃</span>
           </div>

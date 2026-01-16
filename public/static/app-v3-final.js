@@ -5541,6 +5541,22 @@ async function checkSupabaseSession() {
         // OAuth 콜백인지 확인 (URL에 access_token이 있으면)
         const isOAuthCallback = window.location.hash.includes('access_token');
         
+        // error 파라미터 확인 (OAuth 취소 또는 실패)
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasError = urlParams.get('error') || window.location.hash.includes('error=');
+        
+        if (hasError) {
+          console.log('❌ OAuth 오류 또는 취소 - 로그아웃 처리');
+          // 세션 클리어
+          if (supabaseClient) {
+            await supabaseClient.auth.signOut();
+          }
+          localStorage.removeItem('postflow_token');
+          localStorage.removeItem('postflow_user');
+          handleAuthError();
+          return; // 리디렉션 방지
+        }
+        
         if (isOAuthCallback) {
           console.log('🔄 OAuth 콜백 감지 - 대시보드로 리디렉션');
           window.location.href = '/dashboard';
@@ -6367,24 +6383,45 @@ async function handleLogin() {
 
 // 로그아웃
 async function handleLogout() {
+  console.log('🚪 로그아웃 시도...');
   if (confirm('로그아웃 하시겠습니까?')) {
     try {
+      // 1. Supabase 세션 종료
       if (supabaseClient) {
+        console.log('🔓 Supabase 로그아웃 시작...');
         const { error } = await supabaseClient.auth.signOut();
         if (error) {
           console.error('로그아웃 실패:', error);
+        } else {
+          console.log('✅ Supabase 로그아웃 성공');
         }
       }
       
+      // 2. 모든 로컬 저장소 클리어
+      console.log('🗑️ 로컬 저장소 클리어 중...');
       localStorage.removeItem('postflow_token');
       localStorage.removeItem('postflow_user');
-      sessionStorage.removeItem('landing_page_visited'); // 세션 스토리지도 초기화
+      sessionStorage.removeItem('landing_page_visited');
+      
+      // 3. Supabase 관련 저장소도 클리어
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.includes('supabase')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      console.log('✅ 로컬 저장소 클리어 완료:', keysToRemove);
+      
+      // 4. currentUser 초기화
       handleAuthError();
       showToast('로그아웃되었습니다', 'success');
       
-      // 랜딩 페이지로 리디렉션
+      // 5. 랜딩 페이지로 리디렉션 (캐시 방지)
+      console.log('🔄 랜딩 페이지로 리디렉션...');
       setTimeout(() => {
-        window.location.href = '/';
+        window.location.href = '/?t=' + Date.now();
       }, 500);
     } catch (error) {
       console.error('로그아웃 오류:', error);
