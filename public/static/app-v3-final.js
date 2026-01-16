@@ -5511,18 +5511,25 @@ async function checkSupabaseSession() {
     }
     
     if (session) {
+      // 🔥 CRITICAL FIX: Supabase 세션에서 받은 최신 사용자 정보로 강제 갱신
+      console.log('🔥 [세션 갱신] Supabase에서 받은 최신 사용자 정보:', {
+        user_id: session.user.id,
+        email: session.user.email,
+        name: session.user.user_metadata.full_name || session.user.email
+      });
+      
       // 신규 사용자 확인 (created_at과 last_sign_in_at이 거의 같으면 신규)
       const createdAt = new Date(session.user.created_at).getTime();
       const lastSignInAt = new Date(session.user.last_sign_in_at).getTime();
       const isNewUser = Math.abs(createdAt - lastSignInAt) < 5000; // 5초 이내면 신규
       
-      // 로그인 상태 (초기값은 0으로 설정, 서버 동기화 후 업데이트)
+      // 🔥 최신 세션 정보로 currentUser 강제 갱신 (localStorage의 오래된 값 무시!)
       window.currentUser = {
-        id: session.user.id,  // ✅ 추가: 사용자 ID
+        id: session.user.id,  // ✅ Supabase에서 받은 최신 ID
         isLoggedIn: true,
         isGuest: false,
         name: session.user.user_metadata.full_name || session.user.email,
-        email: session.user.email,
+        email: session.user.email,  // ✅ Supabase에서 받은 최신 이메일
         free_credits: 0, // ✅ 서버 동기화 후 업데이트
         paid_credits: 0, // ✅ 서버 동기화 후 업데이트
         credits: 0, // ✅ 서버 동기화 후 업데이트
@@ -5531,7 +5538,8 @@ async function checkSupabaseSession() {
       };
       currentUser = window.currentUser; // 로컬 참조 동기화
       
-      // ⚠️ 리디렉션 전에 localStorage에 최소 정보 저장
+      // 🔥 CRITICAL: localStorage에 최신 정보 강제 저장 (덮어쓰기)
+      console.log('💾 [localStorage 강제 갱신] 오래된 값 덮어쓰기:', window.currentUser);
       localStorage.setItem('postflow_user', JSON.stringify(window.currentUser));
       localStorage.setItem('postflow_token', session.access_token);
       
