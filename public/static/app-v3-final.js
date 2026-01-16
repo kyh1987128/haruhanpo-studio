@@ -5975,21 +5975,146 @@ function showRegistrationCompleteModal(userId) {
   }, 100);
 }
 
+// 📋 정책 모달 관련 함수
+function openPolicyModal(type) {
+  const modal = document.getElementById('policyModal');
+  const title = document.getElementById('policyModalTitle');
+  const content = document.getElementById('policyModalContent');
+  
+  const policies = {
+    refund: {
+      title: '환불 정책',
+      content: `
+        <h4 class="text-xl font-bold text-gray-800 mb-4">환불 정책</h4>
+        <div class="space-y-4 text-gray-600">
+          <p><strong>1. 환불 가능 조건</strong></p>
+          <ul class="list-disc pl-6 space-y-2">
+            <li>크레딧 구매 후 7일 이내, 사용하지 않은 크레딧에 한해 환불 가능</li>
+            <li>시스템 장애로 인한 서비스 이용 불가 시 전액 환불</li>
+            <li>서비스 품질 불만족 시 사용하지 않은 크레딧 부분 환불</li>
+          </ul>
+          <p><strong>2. 환불 불가 조건</strong></p>
+          <ul class="list-disc pl-6 space-y-2">
+            <li>이미 사용한 크레딧</li>
+            <li>프로모션이나 이벤트로 무료로 지급받은 크레딧</li>
+            <li>구매 후 7일 경과</li>
+          </ul>
+          <p><strong>3. 환불 절차</strong></p>
+          <p>고객센터(contentitda@naver.com)로 환불 요청 → 검토 후 3-5영업일 내 처리</p>
+        </div>
+      `
+    },
+    privacy: {
+      title: '개인정보처리방침',
+      content: `
+        <h4 class="text-xl font-bold text-gray-800 mb-4">개인정보처리방침</h4>
+        <div class="space-y-4 text-gray-600">
+          <p><strong>1. 수집하는 개인정보</strong></p>
+          <ul class="list-disc pl-6 space-y-2">
+            <li>필수: 이메일 주소, 이름</li>
+            <li>선택: 프로필 이미지, 전화번호</li>
+            <li>자동 수집: IP 주소, 쿠키, 서비스 이용 기록</li>
+          </ul>
+          <p><strong>2. 개인정보의 이용 목적</strong></p>
+          <ul class="list-disc pl-6 space-y-2">
+            <li>회원 가입 및 관리</li>
+            <li>서비스 제공 및 개선</li>
+            <li>고객 문의 응대</li>
+            <li>마케팅 및 광고 (동의 시)</li>
+          </ul>
+          <p><strong>3. 개인정보의 보유 및 이용 기간</strong></p>
+          <p>회원 탈퇴 시까지 보유하며, 탈퇴 즉시 파기합니다. 단, 관련 법령에 따라 일부 정보는 일정 기간 보관될 수 있습니다.</p>
+          <p><strong>4. 개인정보 보호책임자</strong></p>
+          <p>이메일: contentitda@naver.com</p>
+        </div>
+      `
+    },
+    terms: {
+      title: '이용약관',
+      content: `
+        <h4 class="text-xl font-bold text-gray-800 mb-4">이용약관</h4>
+        <div class="space-y-4 text-gray-600">
+          <p><strong>제1조 (목적)</strong></p>
+          <p>본 약관은 마케팅허브 AI 스튜디오(이하 "회사")가 제공하는 AI 콘텐츠 생성 서비스(이하 "서비스")의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.</p>
+          
+          <p><strong>제2조 (정의)</strong></p>
+          <ul class="list-disc pl-6 space-y-2">
+            <li>"서비스"란 회사가 제공하는 PostFlow, TrendFinder, StoryMaker 등 모든 AI 기반 콘텐츠 생성 도구를 말합니다.</li>
+            <li>"회원"이란 본 약관에 동의하고 회사와 서비스 이용계약을 체결한 자를 말합니다.</li>
+            <li>"크레딧"이란 서비스 이용을 위한 가상의 화폐 단위를 말합니다.</li>
+          </ul>
+          
+          <p><strong>제3조 (회원 가입)</strong></p>
+          <ul class="list-disc pl-6 space-y-2">
+            <li>회원 가입은 이메일 인증 또는 소셜 로그인(Google, Kakao)으로 가능합니다.</li>
+            <li>회원은 정확한 정보를 제공해야 하며, 허위 정보 제공 시 서비스 이용이 제한될 수 있습니다.</li>
+          </ul>
+          
+          <p><strong>제4조 (서비스 이용)</strong></p>
+          <ul class="list-disc pl-6 space-y-2">
+            <li>서비스는 크레딧 소비 방식으로 제공됩니다.</li>
+            <li>무료 회원은 가입 시 30개 무료 크레딧을 지급받으며, 매월 30개 크레딧이 자동 충전됩니다.</li>
+            <li>AI 생성 콘텐츠의 저작권은 회원에게 있으나, 불법적인 용도로 사용할 수 없습니다.</li>
+          </ul>
+          
+          <p><strong>제5조 (서비스 이용 제한)</strong></p>
+          <p>회사는 다음 각 호에 해당하는 경우 서비스 이용을 제한하거나 계약을 해지할 수 있습니다:</p>
+          <ul class="list-disc pl-6 space-y-2">
+            <li>타인의 정보를 도용한 경우</li>
+            <li>서비스를 불법적인 목적으로 이용한 경우</li>
+            <li>서비스 운영을 고의로 방해한 경우</li>
+          </ul>
+          
+          <p class="mt-6 text-sm text-gray-500">최종 업데이트: 2026년 1월</p>
+        </div>
+      `
+    }
+  };
+  
+  const policy = policies[type];
+  if (policy) {
+    title.textContent = policy.title;
+    content.innerHTML = policy.content;
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // 스크롤 방지
+  }
+}
+
+function closePolicyModal() {
+  const modal = document.getElementById('policyModal');
+  modal.classList.add('hidden');
+  document.body.style.overflow = ''; // 스크롤 복원
+}
+
 // 🏠 로고 클릭 핸들러 (로그인 상태면 /dashboard로, 비로그인이면 / 유지)
 function handleLogoClick() {
   const savedUser = localStorage.getItem('postflow_user');
   const savedToken = localStorage.getItem('postflow_token');
   
-  if (savedUser && savedToken) {
-    // 로그인 상태: /dashboard로 이동
-    console.log('🏠 [로고 클릭] 로그인 상태 - /dashboard로 이동');
-    sessionStorage.setItem('landing_page_visited', 'true');
-    window.location.href = '/dashboard';
+  // 로그인 상태 확인: localStorage와 window.currentUser 둘 다 체크
+  const isLoggedIn = savedUser && savedToken && 
+                     window.currentUser && 
+                     !window.currentUser.isGuest && 
+                     window.currentUser.isLoggedIn;
+  
+  if (isLoggedIn) {
+    // 로그인 상태: /dashboard로 이동 (이미 /dashboard면 스킵)
+    if (window.location.pathname !== '/dashboard') {
+      console.log('🏠 [로고 클릭] 로그인 상태 - /dashboard로 이동');
+      sessionStorage.setItem('landing_page_visited', 'true');
+      window.location.href = '/dashboard';
+    } else {
+      console.log('🏠 [로고 클릭] 이미 대시보드 페이지 - 새로고침 방지');
+    }
   } else {
     // 비로그인 상태: / (메인)로 이동
     console.log('🏠 [로고 클릭] 비로그인 상태 - 메인으로 이동');
     sessionStorage.removeItem('landing_page_visited');
-    window.location.href = '/';
+    
+    // 현재 경로가 이미 / 인 경우 새로고침 방지
+    if (window.location.pathname !== '/') {
+      window.location.href = '/';
+    }
   }
 }
 
@@ -9769,6 +9894,8 @@ async function handleDeleteAccount() {
 }
 
 // 전역 노출
+window.openPolicyModal = openPolicyModal;
+window.closePolicyModal = closePolicyModal;
 window.handleLogoClick = handleLogoClick;
 window.openAuthModal = openAuthModal;
 window.closeAuthModal = closeAuthModal;
