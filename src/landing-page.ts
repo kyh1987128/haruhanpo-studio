@@ -382,19 +382,6 @@ export const landingPageTemplate = `
                             <div id="postflow-progress" class="h-full bg-purple-600 transition-all duration-300" style="width: 0%"></div>
                         </div>
                         
-                        <!-- 컨트롤 버튼 -->
-                        <div class="absolute top-4 right-4 flex gap-2 z-10">
-                            <button onclick="postflowPrev()" class="bg-white/80 hover:bg-white text-purple-600 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition">
-                                <i class="fas fa-chevron-left text-sm"></i>
-                            </button>
-                            <button onclick="postflowPlayPause()" id="postflow-play-btn" class="bg-white/80 hover:bg-white text-purple-600 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition">
-                                <i class="fas fa-pause text-sm"></i>
-                            </button>
-                            <button onclick="postflowNext()" class="bg-white/80 hover:bg-white text-purple-600 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition">
-                                <i class="fas fa-chevron-right text-sm"></i>
-                            </button>
-                        </div>
-                        
                         <!-- 애니메이션 컨테이너 -->
                         <div id="postflow-animation" class="w-full h-full flex flex-col items-center justify-center">
                             <!-- 단계 1: 이미지 업로드 (초기) -->
@@ -469,16 +456,6 @@ export const landingPageTemplate = `
                         <!-- 진행률 바 -->
                         <div class="absolute top-0 left-0 right-0 h-1 bg-blue-200 overflow-hidden">
                             <div id="trendfinder-progress" class="h-full bg-blue-600 transition-all duration-300" style="width: 0%"></div>
-                        </div>
-                        
-                        <!-- 컨트롤 버튼 -->
-                        <div class="absolute top-4 right-4 flex gap-2 z-10">
-                            <button onclick="trendfinderPlayPause()" id="trendfinder-play-btn" class="bg-white/80 hover:bg-white text-blue-600 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition">
-                                <i class="fas fa-pause text-sm"></i>
-                            </button>
-                            <button onclick="trendfinderRestart()" class="bg-white/80 hover:bg-white text-blue-600 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition">
-                                <i class="fas fa-redo text-sm"></i>
-                            </button>
                         </div>
                         
                         <!-- 차트 애니메이션 -->
@@ -590,81 +567,127 @@ export const landingPageTemplate = `
                             <div id="storymaker-progress" class="h-full bg-green-600 transition-all duration-300" style="width: 0%"></div>
                         </div>
                         
-                        <!-- 컨트롤 버튼 -->
-                        <div class="absolute top-4 right-4 flex gap-2 z-10">
-                            <button onclick="storymakerPrev()" class="bg-white/80 hover:bg-white text-green-600 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition">
-                                <i class="fas fa-chevron-left text-sm"></i>
-                            </button>
-                            <button onclick="storymakerPlayPause()" id="storymaker-play-btn" class="bg-white/80 hover:bg-white text-green-600 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition">
-                                <i class="fas fa-pause text-sm"></i>
-                            </button>
-                            <button onclick="storymakerNext()" class="bg-white/80 hover:bg-white text-green-600 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition">
-                                <i class="fas fa-chevron-right text-sm"></i>
-                            </button>
-                        </div>
-                        
                         <!-- 스토리보드 슬라이드 애니메이션 -->
                         <div id="storymaker-animation" class="w-full h-full">
                             <!-- 스토리보드 장면 카드들 -->
                             <div class="storymaker-slides relative h-full">
-                                <!-- Scene 1 -->
+                                <!-- Scene 1: 기획 대본 텍스트 생성 -->
                                 <div class="storyboard-scene absolute inset-0 bg-white rounded-xl p-6 shadow-lg transition-all duration-500" style="opacity: 1; transform: translateX(0);">
                                     <div class="flex items-start gap-4 mb-3">
                                         <div class="bg-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">1</div>
                                         <div class="flex-1">
-                                            <h4 class="font-bold text-gray-900 mb-1">오프닝 신</h4>
-                                            <p class="text-sm text-gray-600">도입부 - 문제 제기</p>
+                                            <h4 class="font-bold text-gray-900 mb-1">기획 대본 생성</h4>
+                                            <p class="text-sm text-gray-600">AI가 시나리오 자동 작성</p>
                                         </div>
                                     </div>
                                     <div class="bg-green-50 rounded-lg p-4 mb-3">
-                                        <p class="text-xs text-gray-700 leading-relaxed">"콘텐츠 만들기 너무 힘들지 않나요?"</p>
+                                        <p class="text-xs text-gray-700 leading-relaxed mb-2"><strong>제목:</strong> "30초 만에 콘텐츠 제작 완성"</p>
+                                        <p class="text-xs text-gray-700 leading-relaxed mb-1"><strong>구성:</strong></p>
+                                        <p class="text-xs text-gray-600">• 오프닝: 문제 제기 (5초)</p>
+                                        <p class="text-xs text-gray-600">• 본론: 솔루션 제시 (15초)</p>
+                                        <p class="text-xs text-gray-600">• 클로징: CTA (10초)</p>
                                     </div>
                                     <div class="flex gap-2 text-xs text-gray-500">
-                                        <span class="flex items-center gap-1"><i class="fas fa-video"></i> 와이드샷</span>
-                                        <span class="flex items-center gap-1"><i class="fas fa-clock"></i> 5초</span>
+                                        <span class="flex items-center gap-1"><i class="fas fa-file-alt"></i> 대본 완성</span>
                                     </div>
                                 </div>
                                 
-                                <!-- Scene 2 -->
+                                <!-- Scene 2: 캐릭터/배경/소품 생성 -->
                                 <div class="storyboard-scene absolute inset-0 bg-white rounded-xl p-6 shadow-lg transition-all duration-500" style="opacity: 0; transform: translateX(100%);">
                                     <div class="flex items-start gap-4 mb-3">
                                         <div class="bg-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">2</div>
                                         <div class="flex-1">
-                                            <h4 class="font-bold text-gray-900 mb-1">솔루션 제시</h4>
-                                            <p class="text-sm text-gray-600">핵심 기능 소개</p>
+                                            <h4 class="font-bold text-gray-900 mb-1">요소 생성</h4>
+                                            <p class="text-sm text-gray-600">캐릭터·배경·소품 자동 생성</p>
                                         </div>
                                     </div>
                                     <div class="bg-green-50 rounded-lg p-4 mb-3">
-                                        <p class="text-xs text-gray-700 leading-relaxed">"AI가 30초 만에 9개 플랫폼 콘텐츠를 자동 생성합니다"</p>
+                                        <div class="grid grid-cols-3 gap-2 mb-2">
+                                            <div class="text-center">
+                                                <div class="bg-green-200 rounded-lg p-2 mb-1">
+                                                    <i class="fas fa-user text-green-700"></i>
+                                                </div>
+                                                <p class="text-xs text-gray-700">캐릭터 3명</p>
+                                            </div>
+                                            <div class="text-center">
+                                                <div class="bg-blue-200 rounded-lg p-2 mb-1">
+                                                    <i class="fas fa-image text-blue-700"></i>
+                                                </div>
+                                                <p class="text-xs text-gray-700">배경 5개</p>
+                                            </div>
+                                            <div class="text-center">
+                                                <div class="bg-yellow-200 rounded-lg p-2 mb-1">
+                                                    <i class="fas fa-box text-yellow-700"></i>
+                                                </div>
+                                                <p class="text-xs text-gray-700">소품 8개</p>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-gray-600 text-center">일관된 스타일 유지</p>
                                     </div>
                                     <div class="flex gap-2 text-xs text-gray-500">
-                                        <span class="flex items-center gap-1"><i class="fas fa-video"></i> 클로즈업</span>
-                                        <span class="flex items-center gap-1"><i class="fas fa-clock"></i> 8초</span>
+                                        <span class="flex items-center gap-1"><i class="fas fa-palette"></i> 통일성 100%</span>
                                     </div>
                                 </div>
                                 
-                                <!-- Scene 3 -->
+                                <!-- Scene 3: 스토리보드 구성 -->
                                 <div class="storyboard-scene absolute inset-0 bg-white rounded-xl p-6 shadow-lg transition-all duration-500" style="opacity: 0; transform: translateX(100%);">
                                     <div class="flex items-start gap-4 mb-3">
                                         <div class="bg-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">3</div>
                                         <div class="flex-1">
-                                            <h4 class="font-bold text-gray-900 mb-1">CTA 신</h4>
-                                            <p class="text-sm text-gray-600">행동 유도</p>
+                                            <h4 class="font-bold text-gray-900 mb-1">스토리보드 구성</h4>
+                                            <p class="text-sm text-gray-600">씬별 레이아웃 자동 배치</p>
                                         </div>
                                     </div>
                                     <div class="bg-green-50 rounded-lg p-4 mb-3">
-                                        <p class="text-xs text-gray-700 leading-relaxed">"지금 무료로 시작하세요!"</p>
+                                        <div class="space-y-2">
+                                            <div class="flex items-center gap-2 text-xs">
+                                                <div class="w-12 h-8 bg-gray-300 rounded flex items-center justify-center text-gray-600 font-bold">S1</div>
+                                                <span class="text-gray-700">캐릭터A + 배경1 + 소품3</span>
+                                            </div>
+                                            <div class="flex items-center gap-2 text-xs">
+                                                <div class="w-12 h-8 bg-gray-300 rounded flex items-center justify-center text-gray-600 font-bold">S2</div>
+                                                <span class="text-gray-700">캐릭터B + 배경2 + 소품5</span>
+                                            </div>
+                                            <div class="flex items-center gap-2 text-xs">
+                                                <div class="w-12 h-8 bg-gray-300 rounded flex items-center justify-center text-gray-600 font-bold">S3</div>
+                                                <span class="text-gray-700">캐릭터C + 배경3 + 소품7</span>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="flex gap-2 text-xs text-gray-500">
-                                        <span class="flex items-center gap-1"><i class="fas fa-video"></i> 미디엄샷</span>
-                                        <span class="flex items-center gap-1"><i class="fas fa-clock"></i> 7초</span>
+                                        <span class="flex items-center gap-1"><i class="fas fa-th-large"></i> 12개 씬 구성</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Scene 4: 씬별 이미지→영상 변환 -->
+                                <div class="storyboard-scene absolute inset-0 bg-white rounded-xl p-6 shadow-lg transition-all duration-500" style="opacity: 0; transform: translateX(100%);">
+                                    <div class="flex items-start gap-4 mb-3">
+                                        <div class="bg-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">4</div>
+                                        <div class="flex-1">
+                                            <h4 class="font-bold text-gray-900 mb-1">영상 변환</h4>
+                                            <p class="text-sm text-gray-600">씬별 이미지 → 영상 렌더링</p>
+                                        </div>
+                                    </div>
+                                    <div class="bg-green-50 rounded-lg p-4 mb-3">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="text-xs text-gray-700">렌더링 진행률</span>
+                                            <span class="text-xs font-bold text-green-600">12/12 완료</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+                                            <div class="bg-green-600 h-2 rounded-full" style="width: 100%"></div>
+                                        </div>
+                                        <p class="text-xs text-gray-600 text-center">✅ 30초 완성 영상 생성 완료!</p>
+                                    </div>
+                                    <div class="flex gap-2 text-xs text-gray-500">
+                                        <span class="flex items-center gap-1"><i class="fas fa-film"></i> MP4 1080p</span>
                                     </div>
                                 </div>
                             </div>
                             
-                            <!-- 슬라이드 인디케이터 -->
+                            <!-- 슬라이드 인디케이터 (4개로 변경) -->
                             <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
                                 <div class="storymaker-dot w-2 h-2 rounded-full bg-green-600"></div>
+                                <div class="storymaker-dot w-2 h-2 rounded-full bg-green-300"></div>
                                 <div class="storymaker-dot w-2 h-2 rounded-full bg-green-300"></div>
                                 <div class="storymaker-dot w-2 h-2 rounded-full bg-green-300"></div>
                             </div>
@@ -1243,7 +1266,6 @@ export const landingPageTemplate = `
         // ===== PostFlow 애니메이션 =====
         let postflowCurrentStep = 1;
         let postflowInterval = null;
-        let postflowPaused = false;
         let postflowProgressInterval = null;
         
         function updatePostflowProgress(percent) {
@@ -1289,54 +1311,19 @@ export const landingPageTemplate = `
             postflowCurrentStep = step;
         }
         
-        function postflowNext() {
-            const nextStep = postflowCurrentStep >= 3 ? 1 : postflowCurrentStep + 1;
-            postflowGoToStep(nextStep);
-        }
-        
-        function postflowPrev() {
-            const prevStep = postflowCurrentStep <= 1 ? 3 : postflowCurrentStep - 1;
-            postflowGoToStep(prevStep);
-        }
-        
-        function postflowPlayPause() {
-            postflowPaused = !postflowPaused;
-            const btn = document.getElementById('postflow-play-btn');
-            const icon = btn.querySelector('i');
-            
-            if (postflowPaused) {
-                icon.className = 'fas fa-play text-sm';
-                if (postflowInterval) clearInterval(postflowInterval);
-                if (postflowProgressInterval) clearInterval(postflowProgressInterval);
-            } else {
-                icon.className = 'fas fa-pause text-sm';
-                runPostFlowAnimation();
-            }
-        }
-        
         function runPostFlowAnimation() {
-            if (postflowPaused) return;
-            
             postflowGoToStep(1);
             
-            setTimeout(() => {
-                if (!postflowPaused) postflowGoToStep(2);
-            }, 2000);
-            
-            setTimeout(() => {
-                if (!postflowPaused) postflowGoToStep(3);
-            }, 4000);
+            setTimeout(() => postflowGoToStep(2), 2000);
+            setTimeout(() => postflowGoToStep(3), 4000);
             
             postflowInterval = setTimeout(() => {
-                if (!postflowPaused) {
-                    updatePostflowProgress(100);
-                    setTimeout(() => runPostFlowAnimation(), 500);
-                }
+                updatePostflowProgress(100);
+                setTimeout(() => runPostFlowAnimation(), 500);
             }, 8000);
         }
         
         // ===== TrendFinder 애니메이션 =====
-        let trendfinderPaused = false;
         let trendfinderInterval = null;
         let trendfinderProgressInterval = null;
         
@@ -1364,8 +1351,6 @@ export const landingPageTemplate = `
         }
         
         function runTrendFinderAnimation() {
-            if (trendfinderPaused) return;
-            
             updateTrendfinderProgress(0);
             const counters = document.querySelectorAll('.counter');
             counters.forEach(counter => counter.textContent = '0');
@@ -1380,7 +1365,6 @@ export const landingPageTemplate = `
             // 진행률 바 애니메이션
             let progress = 0;
             trendfinderProgressInterval = setInterval(() => {
-                if (trendfinderPaused) return;
                 progress += 2;
                 updateTrendfinderProgress(progress);
                 if (progress >= 100) {
@@ -1393,41 +1377,14 @@ export const landingPageTemplate = `
             }, 500);
             
             trendfinderInterval = setTimeout(() => {
-                if (!trendfinderPaused) runTrendFinderAnimation();
-            }, 5000);
-        }
-        
-        function trendfinderPlayPause() {
-            trendfinderPaused = !trendfinderPaused;
-            const btn = document.getElementById('trendfinder-play-btn');
-            const icon = btn.querySelector('i');
-            
-            if (trendfinderPaused) {
-                icon.className = 'fas fa-play text-sm';
-                if (trendfinderInterval) clearTimeout(trendfinderInterval);
-                if (trendfinderProgressInterval) clearInterval(trendfinderProgressInterval);
-            } else {
-                icon.className = 'fas fa-pause text-sm';
                 runTrendFinderAnimation();
-            }
-        }
-        
-        function trendfinderRestart() {
-            if (trendfinderInterval) clearTimeout(trendfinderInterval);
-            if (trendfinderProgressInterval) clearInterval(trendfinderProgressInterval);
-            trendfinderPaused = false;
-            const btn = document.getElementById('trendfinder-play-btn');
-            const icon = btn.querySelector('i');
-            icon.className = 'fas fa-pause text-sm';
-            runTrendFinderAnimation();
+            }, 5000);
         }
         
         // ===== StoryMaker 슬라이드 쇼 =====
         let currentScene = 0;
-        const scenes = 3;
+        const scenes = 4; // 4단계 프로세스
         let storymakerInterval = null;
-        let storymakerPaused = false;
-        let storymakerProgressInterval = null;
         
         function updateStorymakerProgress(percent) {
             const progressBar = document.getElementById('storymaker-progress');
@@ -1464,7 +1421,7 @@ export const landingPageTemplate = `
             });
             
             currentScene = sceneIndex;
-            updateStorymakerProgress((sceneIndex + 1) * 33);
+            updateStorymakerProgress((sceneIndex + 1) * 25); // 4단계이므로 25%씩
             playWhooshSound();
         }
         
@@ -1473,32 +1430,11 @@ export const landingPageTemplate = `
             storymakerGoToScene(nextScene);
         }
         
-        function storymakerPrev() {
-            const prevScene = (currentScene - 1 + scenes) % scenes;
-            storymakerGoToScene(prevScene);
-        }
-        
-        function storymakerPlayPause() {
-            storymakerPaused = !storymakerPaused;
-            const btn = document.getElementById('storymaker-play-btn');
-            const icon = btn.querySelector('i');
-            
-            if (storymakerPaused) {
-                icon.className = 'fas fa-play text-sm';
-                if (storymakerInterval) clearInterval(storymakerInterval);
-            } else {
-                icon.className = 'fas fa-pause text-sm';
-                runStoryMakerAnimation();
-            }
-        }
-        
         function runStoryMakerAnimation() {
             if (storymakerInterval) clearInterval(storymakerInterval);
             
             storymakerInterval = setInterval(() => {
-                if (!storymakerPaused) {
-                    storymakerNext();
-                }
+                storymakerNext();
             }, 3000);
         }
         
