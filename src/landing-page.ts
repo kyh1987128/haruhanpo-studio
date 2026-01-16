@@ -9,9 +9,11 @@ export const landingPageTemplate = `
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>마케팅허브 AI 스튜디오 - AI로 콘텐츠 제작을 10배 빠르게</title>
-    <meta name="description" content="30초 만에 12개 플랫폼 콘텐츠 자동 생성, 유튜브 AI 분석, 영상 스토리보드 제작까지. 1개 계정으로 3개 서비스 모두 이용하세요.">
+    <meta name="description" content="30초 만에 9개 플랫폼 콘텐츠 자동 생성, 유튜브 AI 분석, 영상 스토리보드 제작까지. 1개 계정으로 3개 서비스 모두 이용하세요.">
     <link href="/static/styles.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- AOS Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 </head>
 <body class="bg-gray-50">
     <!-- 헤더 -->
@@ -242,10 +244,113 @@ export const landingPageTemplate = `
                 <p class="text-xl text-gray-600">1개 계정으로 모든 서비스를 자유롭게 이용하세요</p>
             </div>
 
-            <!-- PostFlow (호버 효과 강화) -->
-            <div id="postflow" class="mb-20 group">
-                <div class="grid md:grid-cols-2 gap-12 items-center">
+            <!-- 9개 플랫폼 변환 흐름 시각화 -->
+            <div class="mb-20 bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 rounded-3xl p-12 shadow-lg" data-aos="fade-up">
+                <h3 class="text-3xl font-bold text-gray-900 text-center mb-12" data-aos="fade-down">
+                    <span class="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                        1개 이미지 → AI 변환 → 9개 플랫폼 콘텐츠
+                    </span>
+                </h3>
+                
+                <!-- 변환 흐름 -->
+                <div class="flex flex-col md:flex-row items-center justify-center gap-8">
+                    <!-- 입력 -->
+                    <div class="flex-shrink-0 bg-white rounded-2xl p-8 shadow-xl transform hover:scale-105 transition-all duration-300" data-aos="fade-right">
+                        <div class="text-center">
+                            <div class="w-24 h-24 mx-auto bg-purple-100 rounded-2xl flex items-center justify-center mb-4">
+                                <i class="fas fa-image text-5xl text-purple-600"></i>
+                            </div>
+                            <p class="font-bold text-gray-900 text-lg">이미지 1장</p>
+                            <p class="text-sm text-gray-500 mt-1">업로드만 하세요</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 화살표 -->
+                    <div class="hidden md:block">
+                        <i class="fas fa-arrow-right text-4xl text-purple-400 animate-pulse"></i>
+                    </div>
+                    
+                    <!-- AI 변환 -->
+                    <div class="flex-shrink-0 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl p-8 shadow-xl transform hover:scale-105 transition-all duration-300" data-aos="zoom-in" data-aos-delay="200">
+                        <div class="text-center text-white">
+                            <div class="w-24 h-24 mx-auto bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-4">
+                                <i class="fas fa-brain text-5xl"></i>
+                            </div>
+                            <p class="font-bold text-lg">AI 자동 변환</p>
+                            <p class="text-sm opacity-90 mt-1">30초 소요</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 화살표 -->
+                    <div class="hidden md:block">
+                        <i class="fas fa-arrow-right text-4xl text-blue-400 animate-pulse"></i>
+                    </div>
+                    
+                    <!-- 출력 (9개 플랫폼) -->
+                    <div class="flex-1 bg-white rounded-2xl p-8 shadow-xl" data-aos="fade-left" data-aos-delay="400">
+                        <p class="font-bold text-gray-900 text-lg text-center mb-6">9개 플랫폼 콘텐츠 완성!</p>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 text-center transform hover:scale-110 transition">
+                                <i class="fas fa-blog text-2xl mb-1" style="color: #03C75A;"></i>
+                                <p class="text-xs font-medium text-gray-700">네이버블로그</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-pink-50 to-pink-100 rounded-lg p-3 text-center transform hover:scale-110 transition">
+                                <i class="fab fa-instagram text-2xl mb-1" style="color: #E4405F;"></i>
+                                <p class="text-xs font-medium text-gray-700">인스타그램</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-3 text-center transform hover:scale-110 transition">
+                                <i class="fab fa-threads text-2xl mb-1" style="color: #000000;"></i>
+                                <p class="text-xs font-medium text-gray-700">스레드</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 text-center transform hover:scale-110 transition">
+                                <i class="fab fa-twitter text-2xl mb-1" style="color: #1DA1F2;"></i>
+                                <p class="text-xs font-medium text-gray-700">트위터</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg p-3 text-center transform hover:scale-110 transition">
+                                <i class="fab fa-linkedin text-2xl mb-1" style="color: #0A66C2;"></i>
+                                <p class="text-xs font-medium text-gray-700">링크드인</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-green-50 to-teal-100 rounded-lg p-3 text-center transform hover:scale-110 transition">
+                                <i class="fas fa-pen-fancy text-2xl mb-1" style="color: #00C73C;"></i>
+                                <p class="text-xs font-medium text-gray-700">브런치</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-gray-50 to-gray-200 rounded-lg p-3 text-center transform hover:scale-110 transition">
+                                <i class="fab fa-tiktok text-2xl mb-1" style="color: #000000;"></i>
+                                <p class="text-xs font-medium text-gray-700">틱톡</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-3 text-center transform hover:scale-110 transition">
+                                <i class="fab fa-youtube text-2xl mb-1" style="color: #FF0000;"></i>
+                                <p class="text-xs font-medium text-gray-700">유튜브</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-3 text-center transform hover:scale-110 transition">
+                                <i class="fas fa-comment text-2xl mb-1" style="color: #FEE500;"></i>
+                                <p class="text-xs font-medium text-gray-700">카카오톡</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 통계 -->
+                <div class="mt-12 grid grid-cols-3 gap-8 text-center">
                     <div>
+                        <div class="text-4xl font-bold text-purple-600 mb-2">30초</div>
+                        <p class="text-gray-600">초고속 변환</p>
+                    </div>
+                    <div>
+                        <div class="text-4xl font-bold text-blue-600 mb-2">9개</div>
+                        <p class="text-gray-600">플랫폼 동시 생성</p>
+                    </div>
+                    <div>
+                        <div class="text-4xl font-bold text-indigo-600 mb-2">100%</div>
+                        <p class="text-gray-600">맞춤 최적화</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PostFlow (호버 효과 강화) -->
+            <div id="postflow" class="mb-20 group" data-aos="fade-up">
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div data-aos="fade-right">
                         <div class="inline-block bg-purple-100 text-purple-600 px-4 py-2 rounded-full font-semibold mb-4">
                             📝 Service 1
                         </div>
@@ -316,6 +421,114 @@ export const landingPageTemplate = `
                                 <span><strong>썸네일 분석</strong> CTR 예측 모델</span>
                             </li>
                         </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Before/After 비교 섹션 -->
+            <div class="mb-20 bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-12 text-white overflow-hidden relative" data-aos="fade-up">
+                <!-- 배경 패턴 -->
+                <div class="absolute inset-0 opacity-5">
+                    <div class="absolute top-0 right-0 w-96 h-96 bg-white rounded-full filter blur-3xl"></div>
+                </div>
+                
+                <div class="relative z-10">
+                    <h3 class="text-4xl font-bold text-center mb-4">기존 방식 vs 마케팅허브 AI</h3>
+                    <p class="text-xl text-center text-gray-300 mb-12">시간을 10배 절약하세요</p>
+                    
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <!-- Before -->
+                        <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-8">
+                            <div class="text-center mb-6">
+                                <div class="inline-block bg-red-500 px-4 py-2 rounded-full font-bold mb-4">
+                                    ❌ 기존 방식
+                                </div>
+                            </div>
+                            <ul class="space-y-4">
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-times-circle text-red-400 mt-1 flex-shrink-0"></i>
+                                    <div>
+                                        <p class="font-semibold">플랫폼별 수동 작성</p>
+                                        <p class="text-sm text-gray-300">9개 플랫폼 → 9번 복붙 및 수정</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-times-circle text-red-400 mt-1 flex-shrink-0"></i>
+                                    <div>
+                                        <p class="font-semibold">시간 소요</p>
+                                        <p class="text-sm text-gray-300">최소 4~5시간 걸림</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-times-circle text-red-400 mt-1 flex-shrink-0"></i>
+                                    <div>
+                                        <p class="font-semibold">톤앤매너 일관성 부족</p>
+                                        <p class="text-sm text-gray-300">플랫폼마다 다른 느낌</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-times-circle text-red-400 mt-1 flex-shrink-0"></i>
+                                    <div>
+                                        <p class="font-semibold">키워드 최적화 어려움</p>
+                                        <p class="text-sm text-gray-300">SEO 최적화 수동 작업</p>
+                                    </div>
+                                </li>
+                            </ul>
+                            <div class="mt-8 text-center">
+                                <div class="text-5xl font-bold text-red-400">4~5시간</div>
+                                <p class="text-gray-300 mt-2">소요 시간</p>
+                            </div>
+                        </div>
+                        
+                        <!-- After -->
+                        <div class="bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl p-8 shadow-2xl transform hover:scale-105 transition-all duration-300">
+                            <div class="text-center mb-6">
+                                <div class="inline-block bg-yellow-400 text-gray-900 px-4 py-2 rounded-full font-bold mb-4">
+                                    ✅ 마케팅허브 AI
+                                </div>
+                            </div>
+                            <ul class="space-y-4">
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-check-circle text-yellow-300 mt-1 flex-shrink-0"></i>
+                                    <div>
+                                        <p class="font-semibold">자동 변환</p>
+                                        <p class="text-sm opacity-90">9개 플랫폼 동시 생성</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-check-circle text-yellow-300 mt-1 flex-shrink-0"></i>
+                                    <div>
+                                        <p class="font-semibold">초고속 처리</p>
+                                        <p class="text-sm opacity-90">단 30초만에 완성</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-check-circle text-yellow-300 mt-1 flex-shrink-0"></i>
+                                    <div>
+                                        <p class="font-semibold">브랜드 톤앤매너 자동 적용</p>
+                                        <p class="text-sm opacity-90">일관된 브랜드 이미지</p>
+                                    </div>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-check-circle text-yellow-300 mt-1 flex-shrink-0"></i>
+                                    <div>
+                                        <p class="font-semibold">AI 키워드 자동 최적화</p>
+                                        <p class="text-sm opacity-90">SEO 완벽 대응</p>
+                                    </div>
+                                </li>
+                            </ul>
+                            <div class="mt-8 text-center">
+                                <div class="text-5xl font-bold text-yellow-300">30초</div>
+                                <p class="opacity-90 mt-2">소요 시간</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 결과 -->
+                    <div class="mt-12 text-center">
+                        <div class="inline-block bg-yellow-400 text-gray-900 px-8 py-4 rounded-2xl font-bold text-2xl">
+                            ⚡ 10배 빠른 속도, 10배 더 정확한 결과
+                        </div>
                     </div>
                 </div>
             </div>
@@ -630,6 +843,18 @@ export const landingPageTemplate = `
 
     <!-- Toast 컨테이너 (알림 메시지용) -->
     <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 10000;"></div>
+
+    <!-- AOS Animation Library -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        // AOS 초기화
+        AOS.init({
+            duration: 800,
+            easing: 'ease-in-out',
+            once: true,
+            offset: 100
+        });
+    </script>
 
     <!-- app-v3-final.js 로드 (인증 시스템) -->
     <script src="/static/app-v3-final.js?v=24.0.0"></script>
