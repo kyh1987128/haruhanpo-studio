@@ -526,8 +526,41 @@ export const dashboardTemplate = `
             }
         }
 
-        // 🔥 헤더가 이미 인라인으로 삽입되어 있으므로 바로 대시보드 로드
-        // 헤더 초기화를 위해 약간의 지연 후 실행
+        // 🔥 헤더 함수들을 즉시 정의 (setTimeout 밖에서)
+        // 크레딧 표시
+        window.updateHeaderCredits = function(credits) {
+            const creditsCount = document.getElementById('creditsCount');
+            if (creditsCount) {
+                creditsCount.textContent = \`\${credits}크레딧\`;
+            }
+        };
+
+        // 사용자 이름 표시
+        window.updateHeaderUser = function(userName) {
+            const userNameEl = document.getElementById('userName');
+            if (userNameEl) {
+                userNameEl.textContent = userName;
+            }
+        };
+        
+        // 사용자 정보 전체 업데이트
+        window.updateHeaderUserInfo = function(user) {
+            if (!user) return;
+            
+            const userName = document.getElementById('userName');
+            const creditsCount = document.getElementById('creditsCount');
+            
+            if (userName && !user.isGuest && user.isLoggedIn) {
+                userName.textContent = user.name || user.email?.split('@')[0] || '회원';
+            }
+            
+            if (creditsCount && !user.isGuest && user.isLoggedIn) {
+                const totalCredits = (user.free_credits || 0) + (user.paid_credits || 0);
+                creditsCount.textContent = \`\${totalCredits}크레딧\`;
+            }
+        };
+
+        // 헤더 UI 초기화를 위해 약간의 지연 후 실행
         setTimeout(() => {
             // 현재 페이지 하이라이트
             const currentPage = document.body.dataset.page || 'dashboard';
@@ -547,39 +580,6 @@ export const dashboardTemplate = `
                     navMenu.classList.toggle('active');
                 });
             }
-
-            // 크레딧 표시
-            window.updateHeaderCredits = function(credits) {
-                const creditsCount = document.getElementById('creditsCount');
-                if (creditsCount) {
-                    creditsCount.textContent = \`\${credits}크레딧\`;
-                }
-            };
-
-            // 사용자 이름 표시
-            window.updateHeaderUser = function(userName) {
-                const userNameEl = document.getElementById('userName');
-                if (userNameEl) {
-                    userNameEl.textContent = userName;
-                }
-            };
-            
-            // 사용자 정보 전체 업데이트
-            window.updateHeaderUserInfo = function(user) {
-                if (!user) return;
-                
-                const userName = document.getElementById('userName');
-                const creditsCount = document.getElementById('creditsCount');
-                
-                if (userName && !user.isGuest && user.isLoggedIn) {
-                    userName.textContent = user.name || user.email?.split('@')[0] || '회원';
-                }
-                
-                if (creditsCount && !user.isGuest && user.isLoggedIn) {
-                    const totalCredits = (user.free_credits || 0) + (user.paid_credits || 0);
-                    creditsCount.textContent = \`\${totalCredits}크레딧\`;
-                }
-            };
 
             // 로그인/로그아웃 버튼
             const userButton = document.getElementById('userButton');
