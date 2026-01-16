@@ -84,32 +84,10 @@
   .user-section {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
   }
 
-  .user-info {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    color: white;
-    font-size: 0.875rem;
-  }
-
-  .user-name {
-    font-weight: 600;
-    margin-bottom: 0.125rem;
-  }
-
-  .user-credits {
-    font-size: 0.75rem;
-    opacity: 0.9;
-  }
-
-  .user-tier {
-    font-weight: 500;
-  }
-
-  .header-button {
+  .credits-badge {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -117,16 +95,7 @@
     padding: 0.5rem 1rem;
     border-radius: 0.5rem;
     color: white;
-    border: none;
-    cursor: pointer;
-    font-weight: 500;
-    font-size: 0.875rem;
-    transition: all 0.2s;
-    text-decoration: none;
-  }
-
-  .header-button:hover {
-    background: rgba(255, 255, 255, 0.3);
+    font-weight: 600;
   }
 
   .user-menu {
@@ -269,37 +238,41 @@
         <span>스토리 메이커</span>
         <span class="badge-preparing">준비중</span>
       </a>
+      <a href="/community" class="nav-link" data-page="community">
+        <i class="fas fa-users"></i>
+        <span>커뮤니티</span>
+        <span class="badge-preparing">준비중</span>
+      </a>
     </nav>
 
     <!-- 사용자 섹션 -->
     <div class="user-section">
-      <!-- 사용자 정보 -->
-      <div class="user-info" id="userInfo" style="display:none;">
-        <div class="user-name" id="headerUserName">사용자</div>
-        <div class="user-credits">
-          <span class="user-tier" id="headerUserTier">무료</span> | 
-          무료 <span id="headerFreeCredits">0</span> / 
-          유료 <span id="headerPaidCredits">0</span>
-        </div>
+      <!-- 크레딧 표시 -->
+      <div class="credits-badge" id="headerCredits">
+        <i class="fas fa-coins"></i>
+        <span id="creditsCount">-</span>
       </div>
 
-      <!-- 설정 버튼 -->
-      <a href="/settings" class="header-button" id="settingsButton" style="display:none;">
-        <i class="fas fa-cog"></i>
-        <span>설정</span>
-      </a>
-
-      <!-- 로그아웃 버튼 -->
-      <button class="header-button" id="logoutButton" style="display:none;" onclick="if(window.handleLogout) window.handleLogout(); else alert('로그아웃 기능을 초기화하는 중입니다.');">
-        <i class="fas fa-sign-out-alt"></i>
-        <span>로그아웃</span>
-      </button>
-
-      <!-- 로그인 버튼 -->
-      <button class="header-button" id="loginButton">
-        <i class="fas fa-sign-in-alt"></i>
-        <span>로그인</span>
-      </button>
+      <!-- 사용자 메뉴 -->
+      <div class="user-menu">
+        <button class="user-button" id="userButton">
+          <i class="fas fa-user-circle"></i>
+          <span id="userName">로그인</span>
+        </button>
+        
+        <!-- 드롭다운 메뉴 -->
+        <div class="user-dropdown" id="userDropdown">
+          <a href="/settings" class="dropdown-item">
+            <i class="fas fa-cog"></i>
+            <span>설정</span>
+          </a>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item" onclick="if(window.handleLogout) window.handleLogout(); else alert('로그아웃 기능을 초기화하는 중입니다.');">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>로그아웃</span>
+          </div>
+        </div>
+      </div>
 
       <!-- 모바일 메뉴 버튼 -->
       <button class="mobile-menu-button" id="mobileMenuButton">
@@ -330,85 +303,83 @@
       });
     }
 
-    // 헤더 UI 요소
-    const userInfo = document.getElementById('userInfo');
-    const settingsButton = document.getElementById('settingsButton');
-    const logoutButton = document.getElementById('logoutButton');
-    const loginButton = document.getElementById('loginButton');
-    const headerUserName = document.getElementById('headerUserName');
-    const headerUserTier = document.getElementById('headerUserTier');
-    const headerFreeCredits = document.getElementById('headerFreeCredits');
-    const headerPaidCredits = document.getElementById('headerPaidCredits');
+    // 크레딧 표시 (app-v3-final.js의 사용자 정보 로드 후 업데이트됨)
+    window.updateHeaderCredits = function(credits) {
+      const creditsCount = document.getElementById('creditsCount');
+      if (creditsCount) {
+        creditsCount.textContent = `${credits}크레딧`;
+      }
+    };
 
-    // 로그인 버튼 클릭
-    if (loginButton) {
-      loginButton.addEventListener('click', () => {
-        if (typeof window.openAuthModal === 'function') {
-          window.openAuthModal('login');
+    // 사용자 이름 표시
+    window.updateHeaderUser = function(userName) {
+      const userNameEl = document.getElementById('userName');
+      if (userNameEl) {
+        userNameEl.textContent = userName;
+      }
+    };
+    
+    // 사용자 정보 전체 업데이트 (크레딧, 이름, 티어)
+    window.updateHeaderUserInfo = function(user) {
+      if (!user) return;
+      
+      const userName = document.getElementById('userName');
+      const creditsCount = document.getElementById('creditsCount');
+      
+      if (userName && !user.isGuest && user.isLoggedIn) {
+        userName.textContent = user.name || user.email?.split('@')[0] || '회원';
+      }
+      
+      if (creditsCount && !user.isGuest && user.isLoggedIn) {
+        const totalCredits = (user.free_credits || 0) + (user.paid_credits || 0);
+        creditsCount.textContent = `${totalCredits}크레딧`;
+      }
+    };
+
+    // 로그인/로그아웃 버튼
+    const userButton = document.getElementById('userButton');
+    const userDropdown = document.getElementById('userDropdown');
+    
+    if (userButton) {
+      userButton.addEventListener('click', () => {
+        const userName = document.getElementById('userName').textContent;
+        if (userName === '로그인') {
+          // 로그인 모달 열기 (app-v3-final.js의 openAuthModal 호출)
+          if (typeof window.openAuthModal === 'function') {
+            window.openAuthModal('login');
+          } else {
+            window.location.href = '/';
+          }
         } else {
-          window.location.href = '/';
+          // 드롭다운 토글
+          userDropdown.classList.toggle('active');
         }
       });
     }
 
-    // 헤더 업데이트 함수
-    window.updateHeaderUserInfo = function(user) {
-      if (!user || user.isGuest || !user.isLoggedIn) {
-        // 비로그인 상태
-        if (userInfo) userInfo.style.display = 'none';
-        if (settingsButton) settingsButton.style.display = 'none';
-        if (logoutButton) logoutButton.style.display = 'none';
-        if (loginButton) loginButton.style.display = 'flex';
-        return;
+    // 드롭다운 외부 클릭 시 닫기
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.user-menu')) {
+        if (userDropdown) {
+          userDropdown.classList.remove('active');
+        }
       }
-
-      // 로그인 상태
-      if (userInfo) userInfo.style.display = 'flex';
-      if (settingsButton) settingsButton.style.display = 'flex';
-      if (logoutButton) logoutButton.style.display = 'flex';
-      if (loginButton) loginButton.style.display = 'none';
-
-      // 사용자 정보 업데이트
-      if (headerUserName) {
-        headerUserName.textContent = user.name || user.email?.split('@')[0] || '회원';
-      }
-      
-      const freeCredits = user.free_credits || 0;
-      const paidCredits = user.paid_credits || 0;
-      const tier = user.tier || 'free';
-      
-      if (headerUserTier) {
-        headerUserTier.textContent = tier === 'paid' ? '유료' : '무료';
-      }
-      if (headerFreeCredits) {
-        headerFreeCredits.textContent = freeCredits;
-      }
-      if (headerPaidCredits) {
-        headerPaidCredits.textContent = paidCredits;
-      }
-      
-      console.log('✅ [헤더] 사용자 정보 업데이트:', {
-        name: user.name,
-        tier,
-        free: freeCredits,
-        paid: paidCredits
-      });
-    };
-
-    // 레거시 함수 호환성 유지
-    window.updateHeaderCredits = function(credits) {
-      // 사용 안 함 (updateHeaderUserInfo 사용)
-    };
-
-    window.updateHeaderUser = function(userName) {
-      // 사용 안 함 (updateHeaderUserInfo 사용)
-    };
+    });
 
     // 🔥 Supabase 초기화 대기 후 사용자 정보 동기화
     function waitForSupabaseAndSync() {
+      // Supabase와 currentUser가 준비될 때까지 대기
       if (window.supabaseClient && window.currentUser) {
-        window.updateHeaderUserInfo(window.currentUser);
+        // 헤더 UI 업데이트
+        if (!window.currentUser.isGuest && window.currentUser.isLoggedIn) {
+          window.updateHeaderUser(window.currentUser.name || window.currentUser.email?.split('@')[0] || '회원');
+          window.updateHeaderCredits(window.currentUser.credits || 0);
+        } else {
+          window.updateHeaderUser('로그인');
+          document.getElementById('creditsCount').textContent = '-';
+        }
       } else {
+        // 아직 준비 안 됨 - 100ms 후 재시도
         setTimeout(waitForSupabaseAndSync, 100);
       }
     }
@@ -416,7 +387,10 @@
     // userUpdated 이벤트 리스너
     window.addEventListener('userUpdated', (e) => {
       const user = e.detail;
-      window.updateHeaderUserInfo(user);
+      if (user && !user.isGuest) {
+        window.updateHeaderUser(user.name || user.email?.split('@')[0] || '회원');
+        window.updateHeaderCredits(user.credits || 0);
+      }
     });
 
     // 초기화 시작
