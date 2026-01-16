@@ -5975,6 +5975,24 @@ function showRegistrationCompleteModal(userId) {
   }, 100);
 }
 
+// 🏠 로고 클릭 핸들러 (로그인 상태면 /dashboard로, 비로그인이면 / 유지)
+function handleLogoClick() {
+  const savedUser = localStorage.getItem('postflow_user');
+  const savedToken = localStorage.getItem('postflow_token');
+  
+  if (savedUser && savedToken) {
+    // 로그인 상태: /dashboard로 이동
+    console.log('🏠 [로고 클릭] 로그인 상태 - /dashboard로 이동');
+    sessionStorage.setItem('landing_page_visited', 'true');
+    window.location.href = '/dashboard';
+  } else {
+    // 비로그인 상태: / (메인)로 이동
+    console.log('🏠 [로고 클릭] 비로그인 상태 - 메인으로 이동');
+    sessionStorage.removeItem('landing_page_visited');
+    window.location.href = '/';
+  }
+}
+
 // UI 초기화
 function initializeAuth() {
   console.log('🚀 [초기화] initializeAuth 시작');
@@ -9751,6 +9769,7 @@ async function handleDeleteAccount() {
 }
 
 // 전역 노출
+window.handleLogoClick = handleLogoClick;
 window.openAuthModal = openAuthModal;
 window.closeAuthModal = closeAuthModal;
 window.toggleAuthMode = toggleAuthMode;

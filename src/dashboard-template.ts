@@ -14,7 +14,7 @@ export const dashboardTemplate = `
         <div class="container mx-auto px-6 py-4">
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-4">
-                    <a href="/" class="text-2xl font-bold hover:opacity-80 transition">
+                    <a href="javascript:void(0)" onclick="handleLogoClick()" class="text-2xl font-bold hover:opacity-80 transition cursor-pointer">
                         🏠 마케팅허브 AI
                     </a>
                 </div>
@@ -262,6 +262,9 @@ export const dashboardTemplate = `
 
         loadDashboard();
     </script>
+    
+    <!-- 🔥 로고 클릭 핸들러를 위한 app-v3-final.js 로드 -->
+    <script src="/static/app-v3-final.js"></script>
 </body>
 </html>
 `;
