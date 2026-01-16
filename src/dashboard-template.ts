@@ -204,10 +204,10 @@ export const dashboardTemplate = `
       <div class="header-container">
         <!-- 로고 섹션 -->
         <div class="logo-section">
-          <a href="#" class="logo-link" id="logoLink" onclick="return handleLogoClick(event);">
+          <span class="logo-link" style="cursor: default;">
             <i class="fas fa-rocket"></i>
             <span>마케팅허브 AI</span>
-          </a>
+          </span>
         </div>
 
         <!-- 네비게이션 메뉴 -->
@@ -216,17 +216,17 @@ export const dashboardTemplate = `
             <i class="fas fa-magic"></i>
             <span>하루한포스트</span>
           </a>
-          <a href="#" class="nav-link" data-page="trendfinder" onclick="event.preventDefault(); alert('준비중입니다');">
+          <a href="/static/trendfinder.html" class="nav-link" data-page="trendfinder">
             <i class="fas fa-chart-line"></i>
             <span>유튜브 파인더</span>
             <span class="badge-preparing">준비중</span>
           </a>
-          <a href="#" class="nav-link" data-page="storymaker" onclick="event.preventDefault(); alert('준비중입니다');">
+          <a href="/static/storymaker.html" class="nav-link" data-page="storymaker">
             <i class="fas fa-film"></i>
             <span>스토리 메이커</span>
             <span class="badge-preparing">준비중</span>
           </a>
-          <a href="#" class="nav-link" data-page="community" onclick="event.preventDefault(); alert('준비중입니다');">
+          <a href="/static/community.html" class="nav-link" data-page="community">
             <i class="fas fa-users"></i>
             <span>커뮤니티</span>
             <span class="badge-preparing">준비중</span>
@@ -504,21 +504,6 @@ export const dashboardTemplate = `
         }
 
         // 🔥 헤더 함수들을 즉시 정의 (setTimeout 밖에서)
-        // 로고 클릭 핸들러
-        window.handleLogoClick = function(event) {
-            // 로그인 상태 확인
-            if (window.currentUser && !window.currentUser.isGuest && window.currentUser.isLoggedIn) {
-                // 로그인한 상태: 아무 동작 안 함
-                event.preventDefault();
-                return false;
-            } else {
-                // 로그인 안 한 상태: 홈으로 이동
-                event.preventDefault();
-                window.location.href = '/';
-                return false;
-            }
-        };
-
         // 사용자 정보 전체 업데이트
         window.updateHeaderUserInfo = function(user) {
             if (!user) {
