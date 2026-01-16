@@ -425,6 +425,45 @@ export const landingPageTemplate = `
                 </div>
             </div>
 
+            <!-- StoryMaker (호버 효과 강화) -->
+            <div id="storymaker" class="mb-20 group">
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <div class="inline-block bg-green-100 text-green-600 px-4 py-2 rounded-full font-semibold mb-4">
+                            🎬 Service 3
+                        </div>
+                        <h3 class="text-3xl font-bold text-gray-900 mb-4">스토리 메이커</h3>
+                        <p class="text-xl text-gray-600 mb-6">AI 영상 스토리보드 제작</p>
+                        <p class="text-gray-700 mb-6 leading-relaxed">
+                            영상 기획부터 콘티까지 AI가 자동으로 생성합니다.
+                            유튜브 파인더의 인사이트를 활용해 바이럴 영상을 쉽게 제작하세요.
+                        </p>
+                        <ul class="space-y-3 mb-8">
+                            <li class="flex items-start gap-3 transform group-hover:translate-x-2 transition-transform duration-300">
+                                <i class="fas fa-check-circle text-green-600 mt-1"></i>
+                                <span><strong>자동 시나리오</strong> 생성</span>
+                            </li>
+                            <li class="flex items-start gap-3 transform group-hover:translate-x-2 transition-transform duration-300 delay-75">
+                                <i class="fas fa-check-circle text-green-600 mt-1"></i>
+                                <span><strong>장면별 콘티</strong> 및 카메라 앵글 제안</span>
+                            </li>
+                            <li class="flex items-start gap-3 transform group-hover:translate-x-2 transition-transform duration-300 delay-150">
+                                <i class="fas fa-check-circle text-green-600 mt-1"></i>
+                                <span><strong>프리뷰 영상</strong> 자동 생성 (곧 출시)</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-gradient-to-br from-green-100 to-teal-100 rounded-2xl p-8 h-96 flex items-center justify-center transform group-hover:scale-105 group-hover:shadow-2xl transition-all duration-500 cursor-pointer">
+                        <div class="text-center">
+                            <i class="fas fa-film text-8xl text-green-600 mb-4 transform group-hover:scale-110 transition-transform duration-300"></i>
+                            <p class="text-gray-700 font-semibold">영상 아이디어</p>
+                            <p class="text-gray-500 text-sm mt-2">→ AI 분석 →</p>
+                            <p class="text-green-600 font-bold text-lg mt-2">완성된 스토리보드!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Before/After 비교 섹션 -->
             <div class="mb-20 bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-12 text-white overflow-hidden relative" data-aos="fade-up">
                 <!-- 배경 패턴 -->
@@ -528,45 +567,6 @@ export const landingPageTemplate = `
                     <div class="mt-12 text-center">
                         <div class="inline-block bg-yellow-400 text-gray-900 px-8 py-4 rounded-2xl font-bold text-2xl">
                             ⚡ 10배 빠른 속도, 10배 더 정확한 결과
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- StoryMaker (호버 효과 강화) -->
-            <div id="storymaker" class="mb-20 group">
-                <div class="grid md:grid-cols-2 gap-12 items-center">
-                    <div>
-                        <div class="inline-block bg-green-100 text-green-600 px-4 py-2 rounded-full font-semibold mb-4">
-                            🎬 Service 3
-                        </div>
-                        <h3 class="text-3xl font-bold text-gray-900 mb-4">스토리 메이커</h3>
-                        <p class="text-xl text-gray-600 mb-6">AI 영상 스토리보드 제작</p>
-                        <p class="text-gray-700 mb-6 leading-relaxed">
-                            영상 기획부터 콘티까지 AI가 자동으로 생성합니다.
-                            유튜브 파인더의 인사이트를 활용해 바이럴 영상을 쉽게 제작하세요.
-                        </p>
-                        <ul class="space-y-3 mb-8">
-                            <li class="flex items-start gap-3 transform group-hover:translate-x-2 transition-transform duration-300">
-                                <i class="fas fa-check-circle text-green-600 mt-1"></i>
-                                <span><strong>자동 시나리오</strong> 생성</span>
-                            </li>
-                            <li class="flex items-start gap-3 transform group-hover:translate-x-2 transition-transform duration-300 delay-75">
-                                <i class="fas fa-check-circle text-green-600 mt-1"></i>
-                                <span><strong>장면별 콘티</strong> 및 카메라 앵글 제안</span>
-                            </li>
-                            <li class="flex items-start gap-3 transform group-hover:translate-x-2 transition-transform duration-300 delay-150">
-                                <i class="fas fa-check-circle text-green-600 mt-1"></i>
-                                <span><strong>프리뷰 영상</strong> 자동 생성 (곧 출시)</span>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="bg-gradient-to-br from-green-100 to-teal-100 rounded-2xl p-8 h-96 flex items-center justify-center transform group-hover:scale-105 group-hover:shadow-2xl transition-all duration-500 cursor-pointer">
-                        <div class="text-center">
-                            <i class="fas fa-film text-8xl text-green-600 mb-4 transform group-hover:scale-110 transition-transform duration-300"></i>
-                            <p class="text-gray-700 font-semibold">영상 아이디어</p>
-                            <p class="text-gray-500 text-sm mt-2">→ AI 분석 →</p>
-                            <p class="text-green-600 font-bold text-lg mt-2">완성된 스토리보드!</p>
                         </div>
                     </div>
                 </div>
