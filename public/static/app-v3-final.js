@@ -1264,7 +1264,9 @@ async function initializeApp() {
     window.i18n.init();
   }
   
-  // 온보딩 초기화 (사용자 로그인 후)
+  // 온보딩 초기화 (사용자 로그인 후) - 비활성화
+  // 사용자 피드백: 팝업이 부담스럽다는 의견으로 비활성화
+  /*
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (user?.id) {
@@ -1276,6 +1278,7 @@ async function initializeApp() {
   } catch (error) {
     console.error('온보딩 초기화 실패:', error);
   }
+  */
 }
 
 // ===================================
