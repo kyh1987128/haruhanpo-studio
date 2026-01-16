@@ -42,7 +42,7 @@ export const dashboardTemplate = `
                     <i class="fas fa-chart-line mr-2"></i>대시보드
                 </a>
                 <a href="/postflow" class="text-gray-600 hover:text-purple-600 pb-2 transition">
-                    <i class="fas fa-pen-fancy mr-2"></i>PostFlow
+                    <i class="fas fa-pen-fancy mr-2"></i>하루한포스트
                 </a>
                 <a href="/trendfinder" class="text-gray-400 pb-2 cursor-not-allowed">
                     <i class="fas fa-chart-bar mr-2"></i>TrendFinder (준비중)
@@ -123,7 +123,7 @@ export const dashboardTemplate = `
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="border-l-4 border-purple-500 pl-4">
-                    <p class="text-sm text-gray-600">PostFlow</p>
+                    <p class="text-sm text-gray-600">하루한포스트</p>
                     <p class="text-3xl font-bold text-purple-600" id="postflowCount">0</p>
                 </div>
                 <div class="border-l-4 border-blue-300 pl-4 opacity-50">
@@ -238,9 +238,9 @@ export const dashboardTemplate = `
                         <div class="text-center py-12">
                             <i class="fas fa-inbox text-gray-300 text-5xl mb-4"></i>
                             <p class="text-gray-500 text-lg">아직 생성한 콘텐츠가 없습니다</p>
-                            <p class="text-gray-400 text-sm mt-2">PostFlow에서 첫 콘텐츠를 만들어보세요!</p>
+                            <p class="text-gray-400 text-sm mt-2">하루한포스트에서 첫 콘텐츠를 만들어보세요!</p>
                             <button onclick="location.href='/postflow'" class="mt-4 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
-                                <i class="fas fa-plus mr-2"></i>PostFlow 시작하기
+                                <i class="fas fa-plus mr-2"></i>하루한포스트 시작하기
                             </button>
                         </div>
                     \`;

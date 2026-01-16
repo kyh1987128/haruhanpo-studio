@@ -273,7 +273,7 @@ export const htmlTemplate = `
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-2">
                     <span class="text-xl font-bold text-gray-800">
-                        📝 PostFlow - 콘텐츠 생성
+                        📝 하루한포스트 - 콘텐츠 생성
                     </span>
                     <span class="text-sm text-gray-500">v8.0</span>
                 </div>

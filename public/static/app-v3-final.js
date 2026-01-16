@@ -5535,29 +5535,22 @@ async function checkSupabaseSession() {
       localStorage.setItem('postflow_user', JSON.stringify(window.currentUser));
       localStorage.setItem('postflow_token', session.access_token);
       
-      // ✅ 랜딩 페이지에서 로그인되어 있으면 PostFlow로 자동 리디렉션
+      // ✅ 랜딩 페이지에서 로그인되어 있으면 대시보드로 자동 리디렉션
       // ⚠️ OAuth 콜백 후 (URL에 access_token이 있으면) 무조건 리디렉션
       if (window.location.pathname === '/') {
         // OAuth 콜백인지 확인 (URL에 access_token이 있으면)
         const isOAuthCallback = window.location.hash.includes('access_token');
         
         if (isOAuthCallback) {
-          console.log('🔄 OAuth 콜백 감지 - PostFlow로 리디렉션');
-          sessionStorage.setItem('landing_page_visited', 'true');
+          console.log('🔄 OAuth 콜백 감지 - 대시보드로 리디렉션');
           window.location.href = '/dashboard';
           return; // 리디렉션 중이므로 아래 코드 실행 방지
         }
         
-        // 이미 리디렉션 체크를 한 경우 스킵
-        if (sessionStorage.getItem('landing_page_visited')) {
-          console.log('⏭️ 사용자가 랜딩 페이지를 직접 선택 - 리디렉션 스킵');
-        } else {
-          console.log('🔄 로그인 상태 감지 - PostFlow로 리디렉션');
-          sessionStorage.setItem('landing_page_visited', 'true');
-          // 서버 동기화는 리디렉션 후에 PostFlow에서 수행
-          window.location.href = '/dashboard';
-          return; // 리디렉션 중이므로 아래 코드 실행 방지
-        }
+        // ⚠️ 중요: 로그인 상태면 항상 대시보드로 리디렉션 (랜딩 페이지 직접 방문 방지)
+        console.log('🔄 로그인 상태 감지 - 대시보드로 리디렉션');
+        window.location.href = '/dashboard';
+        return; // 리디렉션 중이므로 아래 코드 실행 방지
       }
       
       // ✅ UI는 일단 기본 상태로 업데이트
