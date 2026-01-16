@@ -120,6 +120,52 @@
     background: rgba(255, 255, 255, 0.3);
   }
 
+  .user-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    min-width: 180px;
+    display: none;
+    z-index: 1001;
+  }
+
+  .user-dropdown.active {
+    display: block;
+  }
+
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: #374151;
+    text-decoration: none;
+    transition: background 0.2s;
+    cursor: pointer;
+  }
+
+  .dropdown-item:first-child {
+    border-radius: 0.5rem 0.5rem 0 0;
+  }
+
+  .dropdown-item:last-child {
+    border-radius: 0 0 0.5rem 0.5rem;
+  }
+
+  .dropdown-item:hover {
+    background: #f3f4f6;
+  }
+
+  .dropdown-divider {
+    height: 1px;
+    background: #e5e7eb;
+    margin: 0.25rem 0;
+  }
+
   /* 모바일 메뉴 토글 */
   .mobile-menu-button {
     display: none;
@@ -180,16 +226,16 @@
     <nav class="nav-menu" id="navMenu">
       <a href="/dashboard" class="nav-link" data-page="postflow">
         <i class="fas fa-magic"></i>
-        <span>PostFlow</span>
+        <span>하루한포스트</span>
       </a>
       <a href="/static/trendfinder.html" class="nav-link" data-page="trendfinder">
         <i class="fas fa-chart-line"></i>
-        <span>TrendFinder</span>
+        <span>유튜브 파인더</span>
         <span class="badge-preparing">준비중</span>
       </a>
       <a href="/static/storymaker.html" class="nav-link" data-page="storymaker">
         <i class="fas fa-film"></i>
-        <span>StoryMaker</span>
+        <span>스토리 메이커</span>
         <span class="badge-preparing">준비중</span>
       </a>
     </nav>
@@ -208,6 +254,19 @@
           <i class="fas fa-user-circle"></i>
           <span id="userName">로그인</span>
         </button>
+        
+        <!-- 드롭다운 메뉴 -->
+        <div class="user-dropdown" id="userDropdown">
+          <a href="/settings" class="dropdown-item">
+            <i class="fas fa-cog"></i>
+            <span>설정</span>
+          </a>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item" onclick="handleLogout()">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>로그아웃</span>
+          </div>
+        </div>
       </div>
 
       <!-- 모바일 메뉴 버튼 -->
@@ -257,6 +316,8 @@
 
     // 로그인/로그아웃 버튼
     const userButton = document.getElementById('userButton');
+    const userDropdown = document.getElementById('userDropdown');
+    
     if (userButton) {
       userButton.addEventListener('click', () => {
         const userName = document.getElementById('userName').textContent;
@@ -268,12 +329,20 @@
             window.location.href = '/';
           }
         } else {
-          // 사용자 메뉴 토글 (프로필, 설정, 로그아웃)
-          // TODO: 드롭다운 메뉴 구현
-          console.log('사용자 메뉴 열기');
+          // 드롭다운 토글
+          userDropdown.classList.toggle('active');
         }
       });
     }
+
+    // 드롭다운 외부 클릭 시 닫기
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.user-menu')) {
+        if (userDropdown) {
+          userDropdown.classList.remove('active');
+        }
+      }
+    });
 
     // 🔥 Supabase 초기화 대기 후 사용자 정보 동기화
     function waitForSupabaseAndSync() {
