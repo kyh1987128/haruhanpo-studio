@@ -95,32 +95,41 @@ export const dashboardTemplate = `
       .user-section {
         display: flex !important;
         align-items: center;
-        gap: 1rem;
-      }
-
-      .credits-badge {
-        display: flex !important;
-        align-items: center;
-        gap: 0.5rem;
-        background: rgba(255, 255, 255, 0.2);
-        padding: 0.5rem 1rem;
-        border-radius: 0.5rem;
+        gap: 0.75rem;
         color: white;
-        font-weight: 600;
-        visibility: visible !important;
-        opacity: 1 !important;
+        font-size: 0.875rem;
       }
 
-      .user-menu {
-        position: relative;
-        display: block !important;
-        visibility: visible !important;
-      }
-
-      .user-button {
-        display: flex !important;
+      .user-info-text {
+        display: flex;
         align-items: center;
         gap: 0.5rem;
+        padding: 0.5rem 0;
+      }
+
+      .user-info-text span {
+        white-space: nowrap;
+      }
+
+      .user-name {
+        font-weight: 600;
+      }
+
+      .user-tier {
+        color: #fbbf24;
+        font-weight: 500;
+      }
+
+      .user-credits {
+        font-size: 0.8125rem;
+      }
+
+      .divider {
+        color: rgba(255, 255, 255, 0.5);
+        margin: 0 0.25rem;
+      }
+
+      .header-btn {
         background: rgba(255, 255, 255, 0.2);
         padding: 0.5rem 1rem;
         border-radius: 0.5rem;
@@ -129,58 +138,20 @@ export const dashboardTemplate = `
         cursor: pointer;
         font-weight: 500;
         transition: all 0.2s;
-        visibility: visible !important;
-        opacity: 1 !important;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        font-size: 0.875rem;
       }
 
-      .user-button:hover {
+      .header-btn:hover {
         background: rgba(255, 255, 255, 0.3);
       }
 
-      .user-dropdown {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        margin-top: 0.5rem;
-        background: white;
-        border-radius: 0.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        min-width: 180px;
-        display: none;
-        z-index: 1001;
-      }
-
-      .user-dropdown.active {
-        display: block;
-      }
-
-      .dropdown-item {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.75rem 1rem;
-        color: #374151;
-        text-decoration: none;
-        transition: background 0.2s;
-        cursor: pointer;
-      }
-
-      .dropdown-item:first-child {
-        border-radius: 0.5rem 0.5rem 0 0;
-      }
-
-      .dropdown-item:last-child {
-        border-radius: 0 0 0.5rem 0.5rem;
-      }
-
-      .dropdown-item:hover {
-        background: #f3f4f6;
-      }
-
-      .dropdown-divider {
-        height: 1px;
-        background: #e5e7eb;
-        margin: 0.25rem 0;
+      .login-btn {
+        background: rgba(255, 255, 255, 0.25);
+        padding: 0.5rem 1.25rem;
       }
 
       /* 모바일 메뉴 토글 */
@@ -233,7 +204,7 @@ export const dashboardTemplate = `
       <div class="header-container">
         <!-- 로고 섹션 -->
         <div class="logo-section">
-          <a href="/" class="logo-link">
+          <a href="#" class="logo-link" id="logoLink" onclick="return handleLogoClick(event);">
             <i class="fas fa-rocket"></i>
             <span>마케팅허브 AI</span>
           </a>
@@ -245,17 +216,17 @@ export const dashboardTemplate = `
             <i class="fas fa-magic"></i>
             <span>하루한포스트</span>
           </a>
-          <a href="/trendfinder" class="nav-link" data-page="trendfinder">
+          <a href="#" class="nav-link" data-page="trendfinder" onclick="event.preventDefault(); alert('준비중입니다');">
             <i class="fas fa-chart-line"></i>
             <span>유튜브 파인더</span>
             <span class="badge-preparing">준비중</span>
           </a>
-          <a href="/storymaker" class="nav-link" data-page="storymaker">
+          <a href="#" class="nav-link" data-page="storymaker" onclick="event.preventDefault(); alert('준비중입니다');">
             <i class="fas fa-film"></i>
             <span>스토리 메이커</span>
             <span class="badge-preparing">준비중</span>
           </a>
-          <a href="/community" class="nav-link" data-page="community">
+          <a href="#" class="nav-link" data-page="community" onclick="event.preventDefault(); alert('준비중입니다');">
             <i class="fas fa-users"></i>
             <span>커뮤니티</span>
             <span class="badge-preparing">준비중</span>
@@ -263,33 +234,39 @@ export const dashboardTemplate = `
         </nav>
 
         <!-- 사용자 섹션 -->
-        <div class="user-section">
-          <!-- 크레딧 표시 -->
-          <div class="credits-badge" id="headerCredits">
-            <i class="fas fa-coins"></i>
-            <span id="creditsCount">-</span>
-          </div>
+        <div class="user-section" id="userSection">
+          <!-- 로그인 전: 로그인 버튼만 표시 -->
+          <button class="header-btn login-btn" id="loginButton" onclick="if(window.openAuthModal) window.openAuthModal('login'); else location.href='/';" style="display: none;">
+            <i class="fas fa-sign-in-alt"></i>
+            <span>로그인</span>
+          </button>
 
-          <!-- 사용자 메뉴 -->
-          <div class="user-menu">
-            <button class="user-button" id="userButton">
-              <i class="fas fa-user-circle"></i>
-              <span id="userName">로그인</span>
-            </button>
-            
-            <!-- 드롭다운 메뉴 -->
-            <div class="user-dropdown" id="userDropdown">
-              <a href="/settings" class="dropdown-item">
-                <i class="fas fa-cog"></i>
-                <span>설정</span>
-              </a>
-              <div class="dropdown-divider"></div>
-              <div class="dropdown-item" onclick="if(window.handleLogout) window.handleLogout(); else alert('로그아웃 기능을 초기화하는 중입니다.');">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>로그아웃</span>
-              </div>
-            </div>
+          <!-- 로그인 후: 사용자 정보 표시 -->
+          <div class="user-info-text" id="userInfoText" style="display: none;">
+            <span class="user-name" id="userNameDisplay">-</span>
+            <span class="divider">|</span>
+            <span class="user-tier" id="userTierDisplay">-</span>
+            <span class="divider">|</span>
+            <span class="user-credits" id="userCreditsDisplay">무료 0 / 유료 0</span>
           </div>
+          
+          <!-- 로그인 후: 대시보드 버튼 (로그인한 사용자만) -->
+          <a href="/dashboard" class="header-btn" id="dashboardButton" style="display: none;">
+            <i class="fas fa-chart-line"></i>
+            <span>대시보드</span>
+          </a>
+
+          <!-- 로그인 후: 설정 버튼 -->
+          <a href="/settings" class="header-btn" id="settingsButton" style="display: none;">
+            <i class="fas fa-cog"></i>
+            <span>설정</span>
+          </a>
+
+          <!-- 로그인 후: 로그아웃 버튼 -->
+          <button class="header-btn" id="logoutButton" onclick="if(window.handleLogout) window.handleLogout(); else alert('로그아웃 기능을 초기화하는 중입니다.');" style="display: none;">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>로그아웃</span>
+          </button>
 
           <!-- 모바일 메뉴 버튼 -->
           <button class="mobile-menu-button" id="mobileMenuButton">
@@ -527,37 +504,70 @@ export const dashboardTemplate = `
         }
 
         // 🔥 헤더 함수들을 즉시 정의 (setTimeout 밖에서)
-        // 크레딧 표시
-        window.updateHeaderCredits = function(credits) {
-            const creditsCount = document.getElementById('creditsCount');
-            if (creditsCount) {
-                creditsCount.textContent = \`\${credits}크레딧\`;
+        // 로고 클릭 핸들러
+        window.handleLogoClick = function(event) {
+            // 로그인 상태 확인
+            if (window.currentUser && !window.currentUser.isGuest && window.currentUser.isLoggedIn) {
+                // 로그인한 상태: 아무 동작 안 함
+                event.preventDefault();
+                return false;
+            } else {
+                // 로그인 안 한 상태: 홈으로 이동
+                event.preventDefault();
+                window.location.href = '/';
+                return false;
             }
         };
 
-        // 사용자 이름 표시
-        window.updateHeaderUser = function(userName) {
-            const userNameEl = document.getElementById('userName');
-            if (userNameEl) {
-                userNameEl.textContent = userName;
-            }
-        };
-        
         // 사용자 정보 전체 업데이트
         window.updateHeaderUserInfo = function(user) {
-            if (!user) return;
-            
-            const userName = document.getElementById('userName');
-            const creditsCount = document.getElementById('creditsCount');
-            
-            if (userName && !user.isGuest && user.isLoggedIn) {
-                userName.textContent = user.name || user.email?.split('@')[0] || '회원';
+            if (!user) {
+                // 로그인 안 한 상태
+                document.getElementById('loginButton').style.display = 'flex';
+                document.getElementById('userInfoText').style.display = 'none';
+                document.getElementById('dashboardButton').style.display = 'none';
+                document.getElementById('settingsButton').style.display = 'none';
+                document.getElementById('logoutButton').style.display = 'none';
+                return;
             }
             
-            if (creditsCount && !user.isGuest && user.isLoggedIn) {
-                const totalCredits = (user.free_credits || 0) + (user.paid_credits || 0);
-                creditsCount.textContent = \`\${totalCredits}크레딧\`;
+            if (user.isGuest || !user.isLoggedIn) {
+                // 게스트 상태
+                document.getElementById('loginButton').style.display = 'flex';
+                document.getElementById('userInfoText').style.display = 'none';
+                document.getElementById('dashboardButton').style.display = 'none';
+                document.getElementById('settingsButton').style.display = 'none';
+                document.getElementById('logoutButton').style.display = 'none';
+                return;
             }
+
+            // 로그인한 상태
+            document.getElementById('loginButton').style.display = 'none';
+            document.getElementById('userInfoText').style.display = 'flex';
+            document.getElementById('dashboardButton').style.display = 'flex';
+            document.getElementById('settingsButton').style.display = 'flex';
+            document.getElementById('logoutButton').style.display = 'flex';
+
+            // 사용자 정보 업데이트
+            const userName = user.name || user.email?.split('@')[0] || '회원';
+            const tier = user.tier === 'paid' ? '유료' : '무료';
+            const freeCredits = user.free_credits || 0;
+            const paidCredits = user.paid_credits || 0;
+
+            document.getElementById('userNameDisplay').textContent = userName;
+            document.getElementById('userTierDisplay').textContent = tier;
+            document.getElementById('userCreditsDisplay').textContent = \`무료 \${freeCredits} / 유료 \${paidCredits}\`;
+        };
+
+        // 크레딧만 업데이트 (하위 호환성)
+        window.updateHeaderCredits = function(credits) {
+            // 크레딧 카드 업데이트용
+            console.log('Header credits updated:', credits);
+        };
+
+        // 사용자 이름만 업데이트 (하위 호환성)
+        window.updateHeaderUser = function(userName) {
+            console.log('Header user updated:', userName);
         };
 
         // 헤더 UI 초기화를 위해 약간의 지연 후 실행
@@ -581,44 +591,11 @@ export const dashboardTemplate = `
                 });
             }
 
-            // 로그인/로그아웃 버튼
-            const userButton = document.getElementById('userButton');
-            const userDropdown = document.getElementById('userDropdown');
-            
-            if (userButton) {
-                userButton.addEventListener('click', () => {
-                    const userName = document.getElementById('userName').textContent;
-                    if (userName === '로그인') {
-                        if (typeof window.openAuthModal === 'function') {
-                            window.openAuthModal('login');
-                        } else {
-                            window.location.href = '/';
-                        }
-                    } else {
-                        userDropdown.classList.toggle('active');
-                    }
-                });
-            }
-
-            // 드롭다운 외부 클릭 시 닫기
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('.user-menu')) {
-                    if (userDropdown) {
-                        userDropdown.classList.remove('active');
-                    }
-                }
-            });
-
             // Supabase 초기화 대기 후 사용자 정보 동기화
             function waitForSupabaseAndSync() {
                 if (window.supabaseClient && window.currentUser) {
-                    if (!window.currentUser.isGuest && window.currentUser.isLoggedIn) {
-                        window.updateHeaderUser(window.currentUser.name || window.currentUser.email?.split('@')[0] || '회원');
-                        window.updateHeaderCredits(window.currentUser.credits || 0);
-                    } else {
-                        window.updateHeaderUser('로그인');
-                        document.getElementById('creditsCount').textContent = '-';
-                    }
+                    // 헤더 사용자 정보 업데이트
+                    window.updateHeaderUserInfo(window.currentUser);
                 } else {
                     setTimeout(waitForSupabaseAndSync, 100);
                 }
@@ -627,10 +604,7 @@ export const dashboardTemplate = `
             // userUpdated 이벤트 리스너
             window.addEventListener('userUpdated', (e) => {
                 const user = e.detail;
-                if (user && !user.isGuest) {
-                    window.updateHeaderUser(user.name || user.email?.split('@')[0] || '회원');
-                    window.updateHeaderCredits(user.credits || 0);
-                }
+                window.updateHeaderUserInfo(user);
             });
 
             waitForSupabaseAndSync();
