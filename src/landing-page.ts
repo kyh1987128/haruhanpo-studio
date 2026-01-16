@@ -376,12 +376,69 @@ export const landingPageTemplate = `
                             </li>
                         </ul>
                     </div>
-                    <div class="bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl p-8 h-96 flex items-center justify-center transform group-hover:scale-105 group-hover:shadow-2xl transition-all duration-500 cursor-pointer">
-                        <div class="text-center">
-                            <i class="fas fa-image text-8xl text-purple-600 mb-4 transform group-hover:scale-110 transition-transform duration-300"></i>
-                            <p class="text-gray-700 font-semibold">이미지 업로드</p>
-                            <p class="text-gray-500 text-sm mt-2">→ 30초 후 →</p>
-                            <p class="text-purple-600 font-bold text-lg mt-2">9개 플랫폼 콘텐츠 완성!</p>
+                    <div class="bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl p-8 h-96 flex items-center justify-center relative overflow-hidden">
+                        <!-- 애니메이션 컨테이너 -->
+                        <div id="postflow-animation" class="w-full h-full flex flex-col items-center justify-center">
+                            <!-- 단계 1: 이미지 업로드 (초기) -->
+                            <div class="postflow-step-1 text-center">
+                                <div class="w-32 h-32 mx-auto bg-white rounded-2xl flex items-center justify-center mb-4 shadow-lg animate-pulse">
+                                    <i class="fas fa-cloud-upload-alt text-6xl text-purple-600"></i>
+                                </div>
+                                <p class="text-gray-700 font-bold text-lg">이미지 업로드</p>
+                                <p class="text-gray-500 text-sm mt-2">클릭하여 시작</p>
+                            </div>
+                            
+                            <!-- 단계 2: AI 처리 중 (숨김) -->
+                            <div class="postflow-step-2 hidden text-center">
+                                <div class="relative">
+                                    <div class="w-20 h-20 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto mb-4"></div>
+                                </div>
+                                <p class="text-purple-600 font-bold text-lg">AI 변환 중...</p>
+                                <p class="text-gray-500 text-sm mt-2">30초 소요</p>
+                            </div>
+                            
+                            <!-- 단계 3: 9개 플랫폼 생성 (숨김) -->
+                            <div class="postflow-step-3 hidden w-full">
+                                <p class="text-center text-purple-600 font-bold text-lg mb-4">9개 콘텐츠 완성! 🎉</p>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div class="postflow-card bg-white rounded-lg p-2 text-center shadow-md opacity-0" style="animation-delay: 0.1s">
+                                        <i class="fas fa-blog text-xl" style="color: #03C75A;"></i>
+                                        <p class="text-xs mt-1">블로그</p>
+                                    </div>
+                                    <div class="postflow-card bg-white rounded-lg p-2 text-center shadow-md opacity-0" style="animation-delay: 0.2s">
+                                        <i class="fab fa-instagram text-xl" style="color: #E4405F;"></i>
+                                        <p class="text-xs mt-1">인스타</p>
+                                    </div>
+                                    <div class="postflow-card bg-white rounded-lg p-2 text-center shadow-md opacity-0" style="animation-delay: 0.3s">
+                                        <i class="fab fa-threads text-xl" style="color: #000000;"></i>
+                                        <p class="text-xs mt-1">스레드</p>
+                                    </div>
+                                    <div class="postflow-card bg-white rounded-lg p-2 text-center shadow-md opacity-0" style="animation-delay: 0.4s">
+                                        <i class="fab fa-twitter text-xl" style="color: #1DA1F2;"></i>
+                                        <p class="text-xs mt-1">트위터</p>
+                                    </div>
+                                    <div class="postflow-card bg-white rounded-lg p-2 text-center shadow-md opacity-0" style="animation-delay: 0.5s">
+                                        <i class="fab fa-linkedin text-xl" style="color: #0A66C2;"></i>
+                                        <p class="text-xs mt-1">링크드인</p>
+                                    </div>
+                                    <div class="postflow-card bg-white rounded-lg p-2 text-center shadow-md opacity-0" style="animation-delay: 0.6s">
+                                        <i class="fas fa-book-open text-xl" style="color: #03C75A;"></i>
+                                        <p class="text-xs mt-1">브런치</p>
+                                    </div>
+                                    <div class="postflow-card bg-white rounded-lg p-2 text-center shadow-md opacity-0" style="animation-delay: 0.7s">
+                                        <i class="fab fa-tiktok text-xl" style="color: #000000;"></i>
+                                        <p class="text-xs mt-1">틱톡</p>
+                                    </div>
+                                    <div class="postflow-card bg-white rounded-lg p-2 text-center shadow-md opacity-0" style="animation-delay: 0.8s">
+                                        <i class="fab fa-youtube text-xl" style="color: #FF0000;"></i>
+                                        <p class="text-xs mt-1">유튜브</p>
+                                    </div>
+                                    <div class="postflow-card bg-white rounded-lg p-2 text-center shadow-md opacity-0" style="animation-delay: 0.9s">
+                                        <i class="fas fa-comment text-xl" style="color: #FEE500;"></i>
+                                        <p class="text-xs mt-1">카톡</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -390,12 +447,52 @@ export const landingPageTemplate = `
             <!-- TrendFinder (호버 효과 강화) -->
             <div id="trendfinder" class="mb-20 group">
                 <div class="grid md:grid-cols-2 gap-12 items-center">
-                    <div class="order-2 md:order-1 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl p-8 h-96 flex items-center justify-center transform group-hover:scale-105 group-hover:shadow-2xl transition-all duration-500 cursor-pointer">
-                        <div class="text-center">
-                            <i class="fas fa-chart-line text-8xl text-blue-600 mb-4 transform group-hover:scale-110 transition-transform duration-300"></i>
-                            <p class="text-gray-700 font-semibold">경쟁 채널 추적</p>
-                            <p class="text-gray-500 text-sm mt-2">+</p>
-                            <p class="text-blue-600 font-bold text-lg mt-2">바이럴 패턴 예측</p>
+                    <div class="order-2 md:order-1 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl p-8 h-96 flex items-center justify-center relative overflow-hidden">
+                        <!-- 차트 애니메이션 -->
+                        <div id="trendfinder-animation" class="w-full h-full flex flex-col items-center justify-center">
+                            <div class="text-center mb-6">
+                                <p class="text-blue-600 font-bold text-xl mb-2">실시간 분석 중...</p>
+                            </div>
+                            
+                            <!-- 바 차트 애니메이션 -->
+                            <div class="flex items-end justify-center gap-3 h-40">
+                                <div class="flex flex-col items-center">
+                                    <div class="trendfinder-bar w-12 bg-blue-600 rounded-t-lg" style="height: 0; animation: growBar 2s ease-out 0.2s forwards;"></div>
+                                    <p class="text-xs mt-2 text-gray-600">월</p>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <div class="trendfinder-bar w-12 bg-blue-500 rounded-t-lg" style="height: 0; animation: growBar 2s ease-out 0.4s forwards;"></div>
+                                    <p class="text-xs mt-2 text-gray-600">화</p>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <div class="trendfinder-bar w-12 bg-blue-600 rounded-t-lg" style="height: 0; animation: growBar 2s ease-out 0.6s forwards;"></div>
+                                    <p class="text-xs mt-2 text-gray-600">수</p>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <div class="trendfinder-bar w-12 bg-blue-500 rounded-t-lg" style="height: 0; animation: growBar 2s ease-out 0.8s forwards;"></div>
+                                    <p class="text-xs mt-2 text-gray-600">목</p>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <div class="trendfinder-bar w-12 bg-blue-700 rounded-t-lg shadow-lg" style="height: 0; animation: growBar 2s ease-out 1s forwards;"></div>
+                                    <p class="text-xs mt-2 text-gray-600 font-bold">금 🔥</p>
+                                </div>
+                            </div>
+                            
+                            <!-- 카운팅 숫자 -->
+                            <div class="mt-6 grid grid-cols-3 gap-4 text-center">
+                                <div>
+                                    <div class="text-2xl font-bold text-blue-600 counter" data-target="247">0</div>
+                                    <p class="text-xs text-gray-600">조회수(K)</p>
+                                </div>
+                                <div>
+                                    <div class="text-2xl font-bold text-blue-600 counter" data-target="85">0</div>
+                                    <p class="text-xs text-gray-600">구독자 증가</p>
+                                </div>
+                                <div>
+                                    <div class="text-2xl font-bold text-blue-600 counter" data-target="12">0</div>
+                                    <p class="text-xs text-gray-600">바이럴 영상</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="order-1 md:order-2">
@@ -454,12 +551,72 @@ export const landingPageTemplate = `
                             </li>
                         </ul>
                     </div>
-                    <div class="bg-gradient-to-br from-green-100 to-teal-100 rounded-2xl p-8 h-96 flex items-center justify-center transform group-hover:scale-105 group-hover:shadow-2xl transition-all duration-500 cursor-pointer">
-                        <div class="text-center">
-                            <i class="fas fa-film text-8xl text-green-600 mb-4 transform group-hover:scale-110 transition-transform duration-300"></i>
-                            <p class="text-gray-700 font-semibold">영상 아이디어</p>
-                            <p class="text-gray-500 text-sm mt-2">→ AI 분석 →</p>
-                            <p class="text-green-600 font-bold text-lg mt-2">완성된 스토리보드!</p>
+                    <div class="bg-gradient-to-br from-green-100 to-teal-100 rounded-2xl p-8 h-96 flex items-center justify-center relative overflow-hidden">
+                        <!-- 스토리보드 슬라이드 애니메이션 -->
+                        <div id="storymaker-animation" class="w-full h-full">
+                            <!-- 스토리보드 장면 카드들 -->
+                            <div class="storymaker-slides relative h-full">
+                                <!-- Scene 1 -->
+                                <div class="storyboard-scene absolute inset-0 bg-white rounded-xl p-6 shadow-lg transition-all duration-500" style="opacity: 1; transform: translateX(0);">
+                                    <div class="flex items-start gap-4 mb-3">
+                                        <div class="bg-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">1</div>
+                                        <div class="flex-1">
+                                            <h4 class="font-bold text-gray-900 mb-1">오프닝 신</h4>
+                                            <p class="text-sm text-gray-600">도입부 - 문제 제기</p>
+                                        </div>
+                                    </div>
+                                    <div class="bg-green-50 rounded-lg p-4 mb-3">
+                                        <p class="text-xs text-gray-700 leading-relaxed">"콘텐츠 만들기 너무 힘들지 않나요?"</p>
+                                    </div>
+                                    <div class="flex gap-2 text-xs text-gray-500">
+                                        <span class="flex items-center gap-1"><i class="fas fa-video"></i> 와이드샷</span>
+                                        <span class="flex items-center gap-1"><i class="fas fa-clock"></i> 5초</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Scene 2 -->
+                                <div class="storyboard-scene absolute inset-0 bg-white rounded-xl p-6 shadow-lg transition-all duration-500" style="opacity: 0; transform: translateX(100%);">
+                                    <div class="flex items-start gap-4 mb-3">
+                                        <div class="bg-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">2</div>
+                                        <div class="flex-1">
+                                            <h4 class="font-bold text-gray-900 mb-1">솔루션 제시</h4>
+                                            <p class="text-sm text-gray-600">핵심 기능 소개</p>
+                                        </div>
+                                    </div>
+                                    <div class="bg-green-50 rounded-lg p-4 mb-3">
+                                        <p class="text-xs text-gray-700 leading-relaxed">"AI가 30초 만에 9개 플랫폼 콘텐츠를 자동 생성합니다"</p>
+                                    </div>
+                                    <div class="flex gap-2 text-xs text-gray-500">
+                                        <span class="flex items-center gap-1"><i class="fas fa-video"></i> 클로즈업</span>
+                                        <span class="flex items-center gap-1"><i class="fas fa-clock"></i> 8초</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Scene 3 -->
+                                <div class="storyboard-scene absolute inset-0 bg-white rounded-xl p-6 shadow-lg transition-all duration-500" style="opacity: 0; transform: translateX(100%);">
+                                    <div class="flex items-start gap-4 mb-3">
+                                        <div class="bg-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">3</div>
+                                        <div class="flex-1">
+                                            <h4 class="font-bold text-gray-900 mb-1">CTA 신</h4>
+                                            <p class="text-sm text-gray-600">행동 유도</p>
+                                        </div>
+                                    </div>
+                                    <div class="bg-green-50 rounded-lg p-4 mb-3">
+                                        <p class="text-xs text-gray-700 leading-relaxed">"지금 무료로 시작하세요!"</p>
+                                    </div>
+                                    <div class="flex gap-2 text-xs text-gray-500">
+                                        <span class="flex items-center gap-1"><i class="fas fa-video"></i> 미디엄샷</span>
+                                        <span class="flex items-center gap-1"><i class="fas fa-clock"></i> 7초</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 슬라이드 인디케이터 -->
+                            <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+                                <div class="storymaker-dot w-2 h-2 rounded-full bg-green-600"></div>
+                                <div class="storymaker-dot w-2 h-2 rounded-full bg-green-300"></div>
+                                <div class="storymaker-dot w-2 h-2 rounded-full bg-green-300"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -939,6 +1096,147 @@ export const landingPageTemplate = `
                 icon.style.transform = 'rotate(0deg)';
             }
         }
+    </script>
+
+    <!-- 서비스 애니메이션 스크립트 -->
+    <style>
+        /* PostFlow 애니메이션 */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px) scale(0.9); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .postflow-card.active {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+        
+        /* TrendFinder 차트 애니메이션 */
+        @keyframes growBar {
+            from { height: 0; }
+            to { height: var(--bar-height); }
+        }
+        .trendfinder-bar:nth-child(1) { --bar-height: 80px; }
+        .trendfinder-bar:nth-child(2) { --bar-height: 110px; }
+        .trendfinder-bar:nth-child(3) { --bar-height: 95px; }
+        .trendfinder-bar:nth-child(4) { --bar-height: 130px; }
+        .trendfinder-bar:nth-child(5) { --bar-height: 150px; }
+        
+        /* StoryMaker 슬라이드 */
+        .storyboard-scene.active {
+            opacity: 1 !important;
+            transform: translateX(0) !important;
+        }
+        .storyboard-scene.exit-left {
+            opacity: 0 !important;
+            transform: translateX(-100%) !important;
+        }
+    </style>
+    
+    <script>
+        // ===== PostFlow 애니메이션 =====
+        let postflowCurrentStep = 1;
+        
+        function runPostFlowAnimation() {
+            const step1 = document.querySelector('.postflow-step-1');
+            const step2 = document.querySelector('.postflow-step-2');
+            const step3 = document.querySelector('.postflow-step-3');
+            const cards = document.querySelectorAll('.postflow-card');
+            
+            // Step 1 → Step 2
+            setTimeout(() => {
+                step1.classList.add('hidden');
+                step2.classList.remove('hidden');
+            }, 2000);
+            
+            // Step 2 → Step 3
+            setTimeout(() => {
+                step2.classList.add('hidden');
+                step3.classList.remove('hidden');
+                
+                // 카드 순차 애니메이션
+                cards.forEach((card, index) => {
+                    setTimeout(() => {
+                        card.classList.add('active');
+                    }, index * 100);
+                });
+            }, 4000);
+            
+            // 리셋
+            setTimeout(() => {
+                step3.classList.add('hidden');
+                step1.classList.remove('hidden');
+                cards.forEach(card => {
+                    card.classList.remove('active');
+                    card.style.opacity = '0';
+                });
+                runPostFlowAnimation(); // 무한 반복
+            }, 8000);
+        }
+        
+        // ===== TrendFinder 숫자 카운팅 애니메이션 =====
+        function animateCounter(element) {
+            const target = parseInt(element.getAttribute('data-target'));
+            const duration = 2000;
+            const step = target / (duration / 16);
+            let current = 0;
+            
+            const timer = setInterval(() => {
+                current += step;
+                if (current >= target) {
+                    element.textContent = target;
+                    clearInterval(timer);
+                } else {
+                    element.textContent = Math.floor(current);
+                }
+            }, 16);
+        }
+        
+        function runTrendFinderAnimation() {
+            const counters = document.querySelectorAll('.counter');
+            counters.forEach(counter => animateCounter(counter));
+            
+            // 무한 반복
+            setTimeout(() => {
+                counters.forEach(counter => counter.textContent = '0');
+                runTrendFinderAnimation();
+            }, 5000);
+        }
+        
+        // ===== StoryMaker 슬라이드 쇼 =====
+        let currentScene = 0;
+        const scenes = 3;
+        
+        function runStoryMakerAnimation() {
+            const allScenes = document.querySelectorAll('.storyboard-scene');
+            const dots = document.querySelectorAll('.storymaker-dot');
+            
+            setInterval(() => {
+                // 현재 장면 퇴장
+                allScenes[currentScene].classList.remove('active');
+                allScenes[currentScene].classList.add('exit-left');
+                dots[currentScene].classList.remove('bg-green-600');
+                dots[currentScene].classList.add('bg-green-300');
+                
+                // 다음 장면으로 이동
+                currentScene = (currentScene + 1) % scenes;
+                
+                // 다음 장면 입장
+                setTimeout(() => {
+                    allScenes.forEach(scene => scene.classList.remove('exit-left'));
+                    allScenes[currentScene].classList.add('active');
+                    dots[currentScene].classList.remove('bg-green-300');
+                    dots[currentScene].classList.add('bg-green-600');
+                }, 100);
+            }, 3000);
+        }
+        
+        // 페이지 로드 시 애니메이션 시작
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                runPostFlowAnimation();
+                runTrendFinderAnimation();
+                runStoryMakerAnimation();
+            }, 500);
+        });
     </script>
 
     <!-- app-v3-final.js 로드 (인증 시스템) -->
