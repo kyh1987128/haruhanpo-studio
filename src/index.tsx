@@ -5015,13 +5015,28 @@ app.get('/api/stats', async (c) => {
     const user_id = c.req.query('user_id');
     
     if (!user_id) {
+      console.error('❌ [/api/stats] user_id 누락');
       return c.json({ 
         success: false, 
         error: 'user_id가 필요합니다' 
       }, 400);
     }
     
-    console.log(`📊 대시보드 통계 조회: user_id=${user_id}`);
+    console.log(`📊 [/api/stats] 대시보드 통계 조회 시작: user_id=${user_id}`);
+    
+    // 환경 변수 확인
+    if (!c.env.SUPABASE_URL || !c.env.SUPABASE_SERVICE_KEY) {
+      console.error('❌ [/api/stats] Supabase 환경 변수 누락:', {
+        SUPABASE_URL: !!c.env.SUPABASE_URL,
+        SUPABASE_SERVICE_KEY: !!c.env.SUPABASE_SERVICE_KEY
+      });
+      return c.json({ 
+        success: false, 
+        error: 'Supabase 환경 변수가 설정되지 않았습니다' 
+      }, 500);
+    }
+    
+    console.log(`🔗 [/api/stats] Supabase 연결 시도:`, c.env.SUPABASE_URL);
     
     const supabase = createSupabaseAdmin(
       c.env.SUPABASE_URL,
@@ -5029,33 +5044,57 @@ app.get('/api/stats', async (c) => {
     );
     
     // 1) 사용자 정보 조회
+    console.log(`👤 [/api/stats] 사용자 정보 조회 중...`);
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('id, email, name, free_credits, paid_credits, tier, subscription_status')
       .eq('id', user_id)
       .single();
     
-    if (userError || !user) {
-      console.error('❌ 사용자 정보 조회 실패:', userError);
+    if (userError) {
+      console.error('❌ [/api/stats] 사용자 정보 조회 실패:', {
+        message: userError.message,
+        code: userError.code,
+        details: userError.details,
+        hint: userError.hint
+      });
       return c.json({ 
         success: false, 
-        error: '사용자 정보를 찾을 수 없습니다' 
+        error: `사용자 정보 조회 실패: ${userError.message}` 
       }, 404);
     }
     
+    if (!user) {
+      console.error('❌ [/api/stats] 사용자를 찾을 수 없음:', user_id);
+      return c.json({ 
+        success: false, 
+        error: '사용자를 찾을 수 없습니다' 
+      }, 404);
+    }
+    
+    console.log(`✅ [/api/stats] 사용자 조회 완료:`, {
+      id: user.id,
+      email: user.email,
+      name: user.name
+    });
+    
     // 2) 총 생성 횟수
+    console.log(`📝 [/api/stats] 총 생성 횟수 조회 중...`);
     const { count: totalCount, error: totalError } = await supabase
       .from('generations')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user_id);
     
     if (totalError) {
-      console.error('❌ 총 생성 횟수 조회 실패:', totalError);
+      console.error('❌ [/api/stats] 총 생성 횟수 조회 실패:', totalError);
+    } else {
+      console.log(`✅ [/api/stats] 총 생성 횟수: ${totalCount}`);
     }
     
     // 3) 이번 달 생성 횟수
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    console.log(`📅 [/api/stats] 이번 달 생성 횟수 조회 중... (시작일: ${startOfMonth})`);
     
     const { count: monthlyCount, error: monthlyError } = await supabase
       .from('generations')
@@ -5064,10 +5103,13 @@ app.get('/api/stats', async (c) => {
       .gte('created_at', startOfMonth);
     
     if (monthlyError) {
-      console.error('❌ 이번 달 생성 횟수 조회 실패:', monthlyError);
+      console.error('❌ [/api/stats] 이번 달 생성 횟수 조회 실패:', monthlyError);
+    } else {
+      console.log(`✅ [/api/stats] 이번 달 생성 횟수: ${monthlyCount}`);
     }
     
     // 4) 최근 생성 콘텐츠 5개
+    console.log(`🕒 [/api/stats] 최근 생성 콘텐츠 조회 중...`);
     const { data: recentContent, error: recentError } = await supabase
       .from('generations')
       .select('id, platforms, created_at, credits_used, brand, keywords')
@@ -5076,10 +5118,13 @@ app.get('/api/stats', async (c) => {
       .limit(5);
     
     if (recentError) {
-      console.error('❌ 최근 생성 콘텐츠 조회 실패:', recentError);
+      console.error('❌ [/api/stats] 최근 생성 콘텐츠 조회 실패:', recentError);
+    } else {
+      console.log(`✅ [/api/stats] 최근 콘텐츠: ${recentContent?.length || 0}개`);
     }
     
     // 5) 최근 크레딧 사용 내역 10개
+    console.log(`💰 [/api/stats] 크레딧 사용 내역 조회 중...`);
     const { data: creditHistory, error: creditError } = await supabase
       .from('credit_transactions')
       .select('id, created_at, credits_used, amount, description')
@@ -5088,7 +5133,9 @@ app.get('/api/stats', async (c) => {
       .limit(10);
     
     if (creditError) {
-      console.error('❌ 크레딧 사용 내역 조회 실패:', creditError);
+      console.error('❌ [/api/stats] 크레딧 사용 내역 조회 실패:', creditError);
+    } else {
+      console.log(`✅ [/api/stats] 크레딧 내역: ${creditHistory?.length || 0}개`);
     }
     
     // 응답 데이터 구성
@@ -5113,7 +5160,8 @@ app.get('/api/stats', async (c) => {
       credit_history: creditHistory || []
     };
     
-    console.log(`✅ 대시보드 통계 조회 완료:`, {
+    console.log(`✅ [/api/stats] 대시보드 통계 조회 완료:`, {
+      user_id: user_id,
       total: stats.stats.total_generations,
       monthly: stats.stats.monthly_generations,
       recent: stats.recent_content.length,
@@ -5126,10 +5174,13 @@ app.get('/api/stats', async (c) => {
     });
     
   } catch (error: any) {
-    console.error('❌ 대시보드 통계 조회 오류:', error);
+    console.error('❌ [/api/stats] 대시보드 통계 조회 오류:', {
+      message: error.message,
+      stack: error.stack
+    });
     return c.json({ 
       success: false, 
-      error: error.message 
+      error: `서버 오류: ${error.message}` 
     }, 500);
   }
 });

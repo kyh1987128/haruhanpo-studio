@@ -6002,6 +6002,14 @@ function initializeAuth() {
     window.currentUser.isGuest = false;
     window.currentUser.isLoggedIn = true;
     
+    // 🔥 메인 페이지에서 로그인된 상태면 자동으로 /dashboard로 이동
+    if (window.location.pathname === '/' && !sessionStorage.getItem('landing_page_visited')) {
+      console.log('🔄 [메인 페이지] 로그인 상태 감지 - /dashboard로 자동 이동');
+      sessionStorage.setItem('landing_page_visited', 'true');
+      window.location.href = '/dashboard';
+      return;
+    }
+    
     updateAuthUI();
   } else {
     // 비회원 상태로 시작
