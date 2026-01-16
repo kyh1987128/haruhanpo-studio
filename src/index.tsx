@@ -4981,7 +4981,7 @@ app.get('/api/stats', async (c) => {
     console.log(`👤 [/api/stats] 사용자 정보 조회 중...`);
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('id, email, name, free_credits, paid_credits, tier, subscription_status')
+      .select('id, email, name, free_credits, paid_credits, tier')
       .eq('id', user_id)
       .single();
     
@@ -5080,8 +5080,7 @@ app.get('/api/stats', async (c) => {
         name: user.name,
         free_credits: user.free_credits || 0,
         paid_credits: user.paid_credits || 0,
-        tier: user.tier || 'free',
-        subscription_status: user.subscription_status || 'active'
+        tier: user.tier || 'free'
       },
       stats: {
         total_generations: totalCount || 0,
