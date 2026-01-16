@@ -26,7 +26,7 @@ export const dashboardTemplate = `
                             <span id="headerUserCredits" class="font-bold">0크레딧</span>
                         </p>
                     </div>
-                    <button onclick="location.href='/'" class="px-4 py-2 bg-white text-purple-600 rounded-lg hover:bg-gray-100 transition text-sm font-medium">
+                    <button onclick="if(window.handleLogout) window.handleLogout(); else alert('로그아웃 기능을 초기화하는 중입니다.');" class="px-4 py-2 bg-white text-purple-600 rounded-lg hover:bg-gray-100 transition text-sm font-medium">
                         <i class="fas fa-sign-out-alt mr-2"></i>로그아웃
                     </button>
                 </div>
