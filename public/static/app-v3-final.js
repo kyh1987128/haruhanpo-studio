@@ -5657,8 +5657,9 @@ async function syncUserToBackend(session, isNewUser = false) {
         showRegistrationCompleteModal(session.user.id);
       } else {
         console.log('✅ 회원가입 이미 완료 - 모달 표시 안 함');
-        // 신규 사용자 / 기존 사용자 환영 메시지
-        // ⚠️ 랜딩 페이지에서는 환영 메시지 표시 안 함 (리디렉션 중)
+        // 신규 사용자 / 기존 사용자 환영 메시지 - 비활성화
+        // 사용자 피드백: 대시보드 이동 시 팝업이 부담스럽다는 의견으로 비활성화
+        /*
         if (window.location.pathname !== '/') {
           if (isNewUser) {
             showWelcomeMessage('signup');
@@ -5666,6 +5667,7 @@ async function syncUserToBackend(session, isNewUser = false) {
             showWelcomeMessage('login');
           }
         }
+        */
       }
     } else {
       const errorData = await response.json().catch(() => ({ error: '응답 파싱 실패' }));
@@ -5720,7 +5722,11 @@ async function syncUserToBackend(session, isNewUser = false) {
 }
 
 // 환영 메시지 표시 (하이브리드 플랜)
+// ⚠️ 사용자 피드백: 대시보드 이동 시 팝업이 부담스럽다는 의견으로 완전 비활성화
 function showWelcomeMessage(type) {
+  console.log('⚠️ showWelcomeMessage 호출됨 - 하지만 비활성화되어 실행 안 함');
+  return; // ⛔ 즉시 종료
+  
   const user = window.currentUser; // ✅ 전역 객체 참조
   
   // ✅ 안전한 이름 가져오기
