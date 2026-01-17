@@ -2,11 +2,11 @@
 import type { SmartImageResult } from './routes/images';
 
 /**
- * 네이버 블로그 콘텐츠에 이미지를 자동으로 배치합니다.
+ * 네이버 블로그 콘텐츠에 이미지 배치 가이드를 추가합니다.
  * 
  * @param content - AI가 생성한 순수 텍스트 콘텐츠
  * @param images - 사용할 이미지 배열 (user_upload, unsplash, ai_generated)
- * @returns HTML 형식의 완성된 콘텐츠 (이미지 포함)
+ * @returns 이미지 배치 가이드가 포함된 콘텐츠
  */
 export function injectImagesIntoBlogContent(
   content: string,
@@ -31,21 +31,24 @@ export function injectImagesIntoBlogContent(
     // 섹션 추가
     result += section;
     
-    // 이미지 삽입 (일정 간격마다 + 마지막 섹션은 제외)
+    // 이미지 배치 가이드 삽입 (일정 간격마다 + 마지막 섹션은 제외)
     if (
       imageIndex < imageCount && 
       (index + 1) % imageInterval === 0 &&
       index < totalSections - 1
     ) {
       const img = images[imageIndex];
-      result += `\n\n<figure style="text-align: center; margin: 30px 0;">\n`;
-      result += `  <img src="${img.url}" alt="${img.alt}" style="max-width: 100%; height: auto; border-radius: 8px;">\n`;
-      if (img.caption) {
-        result += `  <figcaption style="font-size: 14px; color: #666; margin-top: 10px;">\n`;
-        result += `    ${img.caption}\n`;
-        result += `  </figcaption>\n`;
-      }
-      result += `</figure>\n\n`;
+      const imageNumber = imageIndex + 1;
+      
+      result += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      result += `📸 이미지 ${imageNumber} 배치 위치\n`;
+      result += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      result += `👉 파일명: ${img.alt || `이미지${imageNumber}`}\n`;
+      result += `👉 설명: ${img.caption || img.alt || '이미지 설명'}\n`;
+      result += `👉 출처: ${img.source === 'user_upload' ? '사용자 업로드' : img.source === 'unsplash' ? 'Unsplash' : img.source === 'pexels' ? 'Pexels' : img.source === 'pixabay' ? 'Pixabay' : 'AI 생성'}\n`;
+      result += `\n💡 여기에 위 이미지를 삽입하세요\n`;
+      result += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+      
       imageIndex++;
     }
   });
@@ -54,11 +57,11 @@ export function injectImagesIntoBlogContent(
 }
 
 /**
- * 브런치 마크다운 콘텐츠에 이미지를 자동으로 배치합니다.
+ * 브런치 마크다운 콘텐츠에 이미지 배치 가이드를 추가합니다.
  * 
  * @param content - AI가 생성한 순수 텍스트 콘텐츠
  * @param images - 사용할 이미지 배열
- * @returns 마크다운 형식의 완성된 콘텐츠 (이미지 포함)
+ * @returns 이미지 배치 가이드가 포함된 콘텐츠
  */
 export function injectImagesIntoBrunchContent(
   content: string,
@@ -83,17 +86,27 @@ export function injectImagesIntoBrunchContent(
     // 섹션 추가
     result += section;
     
-    // 이미지 삽입 (마크다운 형식)
+    // 이미지 배치 가이드 삽입 (마크다운 형식)
     if (
       imageIndex < imageCount && 
       (index + 1) % imageInterval === 0 &&
       index < totalSections - 1
     ) {
       const img = images[imageIndex];
-      result += `\n\n![${img.alt}](${img.url})\n`;
-      if (img.caption) {
-        result += `*${img.caption}*\n\n`;
-      }
+      const imageNumber = imageIndex + 1;
+      
+      result += `\n\n---\n`;
+      result += `📸 **이미지 ${imageNumber} 배치 위치**\n\n`;
+      result += `- **파일명**: ${img.alt || `이미지${imageNumber}`}\n`;
+      result += `- **설명**: ${img.caption || img.alt || '이미지 설명'}\n`;
+      result += `- **출처**: ${img.source === 'user_upload' ? '사용자 업로드' : img.source === 'unsplash' ? 'Unsplash' : img.source === 'pexels' ? 'Pexels' : img.source === 'pixabay' ? 'Pixabay' : 'AI 생성'}\n`;
+      result += `\n💡 **마크다운 삽입 예시**:\n`;
+      result += `\`\`\`\n`;
+      result += `![${img.alt || '이미지'}](이미지_URL_입력)\n`;
+      result += `*${img.caption || '이미지 설명'}*\n`;
+      result += `\`\`\`\n`;
+      result += `---\n\n`;
+      
       imageIndex++;
     }
   });
