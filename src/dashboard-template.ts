@@ -181,30 +181,66 @@ export const dashboardTemplate = `
                     document.getElementById('postflowCount').textContent = data.stats.postflow_count || 0;
                 }
 
-                // 최근 콘텐츠 렌더링
+                // 최근 콘텐츠 렌더링 (히스토리 UI 재사용)
                 if (data.recent_content && data.recent_content.length > 0) {
                     const recentContent = document.getElementById('recentContent');
+                    
+                    // 플랫폼 아이콘 매핑 (히스토리와 동일)
+                    const platformNames = {
+                        blog: '<i class="fas fa-blog text-blue-600 mr-1"></i>네이버 블로그',
+                        instagram: '<i class="fab fa-instagram text-pink-600 mr-1"></i>인스타그램',
+                        instagram_feed: '<i class="fab fa-instagram text-pink-600 mr-1"></i>인스타그램 피드',
+                        instagram_reels: '<i class="fab fa-instagram text-purple-600 mr-1"></i>인스타 릴스',
+                        threads: '<i class="fas fa-at text-gray-800 mr-1"></i>스레드',
+                        twitter: '<i class="fab fa-twitter text-blue-400 mr-1"></i>트위터(X)',
+                        linkedin: '<i class="fab fa-linkedin text-blue-700 mr-1"></i>LinkedIn',
+                        kakaotalk: '<i class="fas fa-comment-dots text-yellow-500 mr-1"></i>카카오톡',
+                        brunch: '<i class="fas fa-book-open text-orange-600 mr-1"></i>브런치',
+                        tiktok: '<i class="fab fa-tiktok text-black mr-1"></i>틱톡',
+                        youtube: '<i class="fab fa-youtube text-red-600 mr-1"></i>유튜브',
+                        youtube_shorts: '<i class="fab fa-youtube text-red-500 mr-1"></i>유튜브 쇼츠',
+                        youtube_longform: '<i class="fab fa-youtube text-red-600 mr-1"></i>유튜브 롱폼',
+                        metadata_generation: '<i class="fas fa-tags text-blue-600 mr-1"></i>메타데이터 생성',
+                        shortform_multi: '<i class="fas fa-film text-purple-600 mr-1"></i>쇼폼 통합'
+                    };
+                    
                     recentContent.innerHTML = data.recent_content.map(content => {
-                        const platformsText = typeof content.platforms === 'string' 
-                            ? content.platforms 
-                            : (content.platforms || []).join(', ');
+                        // 플랫폼 배열 처리
+                        const platforms = typeof content.platforms === 'string' 
+                            ? content.platforms.split(',').map(p => p.trim())
+                            : (Array.isArray(content.platforms) ? content.platforms : []);
                         
-                        const keywords = content.keywords || [];
-                        const keywordsText = keywords.length > 3 
+                        // 키워드 처리
+                        const keywords = Array.isArray(content.keywords) 
+                            ? content.keywords 
+                            : (typeof content.keywords === 'string' ? content.keywords.split(',').map(k => k.trim()) : []);
+                        
+                        const keywordsDisplay = keywords.length > 3 
                             ? keywords.slice(0, 3).join(', ') + '...' 
                             : keywords.join(', ');
-
+                        
+                        // 제목 처리
+                        const titleDisplay = content.title || content.brand || '제목 없음';
+                        
                         return \`
-                            <div class="border-l-4 border-purple-500 pl-4 py-2">
-                                <div class="flex items-center justify-between">
-                                    <h4 class="font-semibold text-gray-800">\${content.title || '제목 없음'}</h4>
-                                    <span class="text-sm text-gray-500">\${new Date(content.created_at).toLocaleDateString()}</span>
+                            <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition cursor-pointer">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div class="flex-1">
+                                        <h4 class="font-bold text-gray-800 text-base">\${titleDisplay}</h4>
+                                        <div class="flex flex-wrap gap-1 mt-2">
+                                            \${platforms.map(p => \`<span class="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded inline-flex items-center">\${platformNames[p] || p}</span>\`).join('')}
+                                        </div>
+                                        \${keywordsDisplay ? \`<p class="text-sm text-gray-600 mt-2"><i class="fas fa-tags mr-1"></i>\${keywordsDisplay}</p>\` : ''}
+                                    </div>
+                                    <span class="text-xs text-gray-500 whitespace-nowrap ml-4">
+                                        <i class="fas fa-clock mr-1"></i>\${new Date(content.created_at).toLocaleDateString('ko-KR')}
+                                    </span>
                                 </div>
-                                <p class="text-sm text-gray-600 mt-1">플랫폼: \${platformsText}</p>
-                                <p class="text-sm text-gray-600">키워드: \${keywordsText}</p>
                             </div>
                         \`;
                     }).join('');
+                } else {
+                    document.getElementById('recentContent').innerHTML = '<p class="text-gray-500 text-center py-8">생성된 콘텐츠가 없습니다.</p>';
                 }
 
             } catch (error) {

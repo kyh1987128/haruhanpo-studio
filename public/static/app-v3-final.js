@@ -2298,6 +2298,15 @@ async function suggestKeywordsForContent(index, event) {
       // 🔒 성공 시에만 카운트 증가 (콘텐츠별)
       const currentCount = incrementAIRecommendCount(index);
       
+      // ✨ 크레딧 실시간 갱신
+      if (result.credits) {
+        updateCreditsUI(result.credits);
+        // 헤더 크레딧도 업데이트
+        if (window.updateHeaderCredits) {
+          window.updateHeaderCredits(result.credits);
+        }
+      }
+      
       showToast(`✨ 키워드 추천 완료! (콘텐츠 #${index + 1}: ${currentCount}/3)`, 'success');
     } else {
       showToast('❌ ' + (result.error || '키워드 추천 실패'), 'error');
