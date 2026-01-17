@@ -2888,6 +2888,98 @@ app.post('/api/profile/ai-tools', async (c) => {
 
 // ==================== 히스토리 API ====================
 
+// ========================================
+// 🎯 대시보드 통계 API
+// ========================================
+app.get('/api/dashboard/stats', async (c) => {
+  try {
+    const user_id = c.req.query('user_id');
+    
+    if (!user_id) {
+      console.error('❌ [대시보드] user_id 누락');
+      return c.json({ error: 'user_id는 필수입니다' }, 400);
+    }
+    
+    console.log('📊 [대시보드] 통계 조회:', user_id);
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // 사용자 정보 조회
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user_id)
+      .single();
+    
+    if (userError) {
+      console.error('❌ [대시보드] 사용자 조회 실패:', userError);
+      return c.json({ success: false, error: userError.message }, 500);
+    }
+    
+    // 전체 생성 횟수 조회
+    const { count: totalCount, error: totalError } = await supabase
+      .from('generations')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user_id);
+    
+    if (totalError) {
+      console.error('❌ [대시보드] 전체 생성 횟수 조회 실패:', totalError);
+    }
+    
+    // 이번 달 생성 횟수 조회
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    
+    const { count: monthlyCount, error: monthlyError } = await supabase
+      .from('generations')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user_id)
+      .gte('created_at', startOfMonth.toISOString());
+    
+    if (monthlyError) {
+      console.error('❌ [대시보드] 월별 생성 횟수 조회 실패:', monthlyError);
+    }
+    
+    // 최근 콘텐츠 조회
+    const { data: recentContent, error: recentError } = await supabase
+      .from('generations')
+      .select('*')
+      .eq('user_id', user_id)
+      .order('created_at', { ascending: false })
+      .limit(5);
+    
+    if (recentError) {
+      console.error('❌ [대시보드] 최근 콘텐츠 조회 실패:', recentError);
+    }
+    
+    console.log('✅ [대시보드] 통계 조회 완료');
+    
+    return c.json({
+      success: true,
+      user: {
+        name: userData.name,
+        email: userData.email,
+        free_credits: userData.free_credits || 0,
+        paid_credits: userData.paid_credits || 0,
+        tier: (userData.paid_credits || 0) > 0 ? 'paid' : 'free'
+      },
+      stats: {
+        total_generations: totalCount || 0,
+        monthly_generations: monthlyCount || 0,
+        postflow_count: totalCount || 0
+      },
+      recent_content: recentContent || []
+    });
+  } catch (error: any) {
+    console.error('❌ [대시보드] 통계 조회 예외:', error);
+    return c.json({ error: '대시보드 통계 조회 중 오류가 발생했습니다', details: error.message }, 500);
+  }
+});
+
 // 히스토리 조회 API (보안 강화)
 app.get('/api/history', async (c) => {
   try {
