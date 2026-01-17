@@ -133,7 +133,7 @@ export const dashboardTemplate = `
                     throw new Error('사용자 ID를 찾을 수 없습니다.');
                 }
                 
-                const response = await fetch(`/api/dashboard/stats?user_id=${userId}`);
+                const response = await fetch('/api/dashboard/stats?user_id=' + userId);
                 
                 if (!response.ok) {
                     throw new Error('대시보드 데이터를 가져올 수 없습니다.');
