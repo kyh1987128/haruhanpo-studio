@@ -1112,14 +1112,14 @@ app.post('/api/generate', async (c) => {
       // 네이버 블로그: 이미지 배치 가이드 추가
       if (platform === 'blog' && smartImages.length > 0) {
         console.log('  📝 네이버 블로그에 이미지 배치 가이드 추가 중...');
-        const contentWithGuide = injectBlogImageGuide(content, smartImages, images.length);
+        const contentWithGuide = injectImagesIntoBlogContent(content, smartImages);
         data[platform] = contentWithGuide;
         console.log(`  ✅ 네이버 블로그 이미지 가이드 ${smartImages.length}개 추가 완료`);
       }
       // 브런치: 이미지 배치 가이드 추가
       else if (platform === 'brunch' && smartImages.length > 0) {
         console.log('  📖 브런치에 이미지 배치 가이드 추가 중...');
-        data[platform] = injectBrunchImageGuide(content, smartImages, images.length);
+        data[platform] = injectImagesIntoBrunchContent(content, smartImages);
         console.log(`  ✅ 브런치 이미지 가이드 ${smartImages.length}개 추가 완료`);
       }
       // 유튜브 롱폼: 썸네일 가이드 추가
