@@ -1101,7 +1101,8 @@ app.post('/api/generate', async (c) => {
       unsplashKey: c.env.UNSPLASH_ACCESS_KEY,
       pexelsKey: c.env.PEXELS_API_KEY,
       pixabayKey: c.env.PIXABAY_API_KEY,
-      openaiKey: c.env.OPENAI_API_KEY
+      openaiKey: c.env.OPENAI_API_KEY,
+      geminiKey: c.env.GEMINI_API_KEY
     });
     
     console.log(`✅ 이미지 ${smartImages.length}개 준비 완료 (사용자: ${images.length}개 + 무료 API: ${smartImages.length - images.length}개)`);

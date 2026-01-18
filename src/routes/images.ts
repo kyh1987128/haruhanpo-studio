@@ -2,6 +2,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import OpenAI from 'openai';
+import { analyzeImageWithGemini } from '../gemini';
 
 type Bindings = {
   OPENAI_API_KEY: string;
@@ -167,20 +168,37 @@ export async function fetchSmartImages(params: {
   unsplashKey?: string,
   pexelsKey?: string,
   pixabayKey?: string,
-  openaiKey?: string
+  openaiKey?: string,
+  geminiKey?: string
 }): Promise<SmartImageResult[]> {
-  const { userImages, keywords, requiredCount, unsplashKey, pexelsKey, pixabayKey, openaiKey } = params;
+  const { userImages, keywords, requiredCount, unsplashKey, pexelsKey, pixabayKey, openaiKey, geminiKey } = params;
   const images: SmartImageResult[] = [];
   
-  // 1️⃣ 사용자 업로드 이미지 우선 사용
-  userImages.forEach((url, i) => {
+  // 1️⃣ 사용자 업로드 이미지 우선 사용 (Gemini AI 분석)
+  for (let i = 0; i < userImages.length; i++) {
+    const url = userImages[i];
+    let caption = `업로드 이미지 ${i+1}`;
+    
+    // Gemini로 이미지 분석
+    if (geminiKey) {
+      try {
+        console.log(`🔍 이미지 ${i+1} 분석 중...`);
+        const analysis = await analyzeImageWithGemini(geminiKey, url);
+        caption = analysis;
+        console.log(`✅ 이미지 ${i+1} 분석 완료`);
+      } catch (error) {
+        console.error(`❌ 이미지 ${i+1} 분석 실패:`, error);
+        caption = `이미지 ${i+1}`;
+      }
+    }
+    
     images.push({ 
       url, 
       source: 'user_upload', 
-      alt: `사용자 업로드 이미지 ${i+1}`,
-      caption: `업로드 이미지 ${i+1}`
+      alt: `이미지 ${i+1}`,
+      caption: caption
     });
-  });
+  }
   
   console.log(`✅ 사용자 이미지: ${images.length}개 추가`);
   
