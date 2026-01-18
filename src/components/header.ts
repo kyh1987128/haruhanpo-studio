@@ -305,6 +305,19 @@ export const headerScript = `
 
     window.updateHeaderCredits = function(credits) {
         console.log('💰 [헤더] 크레딧 업데이트:', credits);
+        
+        // ✅ 실제 UI 업데이트
+        const freeCreditsEl = document.getElementById('headerFreeCredits');
+        const paidCreditsEl = document.getElementById('headerPaidCredits');
+        
+        if (freeCreditsEl) freeCreditsEl.textContent = credits.free_credits || '0';
+        if (paidCreditsEl) paidCreditsEl.textContent = credits.paid_credits || '0';
+        
+        // ✅ window.currentUser도 업데이트
+        if (window.currentUser) {
+            window.currentUser.free_credits = credits.free_credits || 0;
+            window.currentUser.paid_credits = credits.paid_credits || 0;
+        }
     };
 
     window.updateHeaderUser = function(userName) {
@@ -356,6 +369,20 @@ export const headerScript = `
         const user = e.detail;
         window.updateHeaderUserInfo(user);
     });
+    
+    // ✅ BroadcastChannel로 크레딧 실시간 동기화
+    try {
+        const creditSyncChannel = new BroadcastChannel('marketing_hub_credits');
+        creditSyncChannel.onmessage = (event) => {
+            console.log('📡 [헤더] 크레딧 동기화 메시지 수신:', event.data);
+            if (event.data && typeof event.data === 'object') {
+                window.updateHeaderCredits(event.data);
+            }
+        };
+        console.log('✅ [헤더] BroadcastChannel 구독 시작');
+    } catch (error) {
+        console.error('❌ [헤더] BroadcastChannel 오류:', error);
+    }
 
     // 초기화 시작
     console.log('🚀 [헤더] waitForSupabaseAndSync 시작');

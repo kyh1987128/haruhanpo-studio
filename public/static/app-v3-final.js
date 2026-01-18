@@ -1682,7 +1682,7 @@ function updateCostEstimate() {
         ${totalCredits < creditsNeeded ? `
           <div style="background: rgba(239, 68, 68, 0.3); border: 1px solid rgba(239, 68, 68, 0.5); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
             <p style="margin: 0; font-size: 0.95rem;">
-              ⚠️ 크레딧이 부족합니다 (필요: ${creditsNeeded}개). <a href="/payment" style="color: white; text-decoration: underline; font-weight: 600;">충전하기</a>
+              ⚠️ 크레딧이 부족합니다 (보유: ${totalCredits}개, 필요: ${creditsNeeded}개). <a href="/payment" style="color: white; text-decoration: underline; font-weight: 600;">충전하기</a>
             </p>
           </div>
         ` : ''}
@@ -1715,7 +1715,7 @@ function updateCostEstimate() {
         ${totalCredits < creditsNeeded ? `
           <div style="background: rgba(239, 68, 68, 0.3); border: 1px solid rgba(239, 68, 68, 0.5); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
             <p style="margin: 0; font-size: 0.95rem;">
-              ⚠️ 크레딧이 부족합니다 (필요: ${creditsNeeded}개). <a href="/payment" style="color: white; text-decoration: underline; font-weight: 600;">충전하기</a>
+              ⚠️ 크레딧이 부족합니다 (보유: ${totalCredits}개, 필요: ${creditsNeeded}개). <a href="/payment" style="color: white; text-decoration: underline; font-weight: 600;">충전하기</a>
             </p>
           </div>
         ` : ''}
