@@ -164,6 +164,17 @@ function showContinueWorkToast() {
   const draft = loadDraft();
   if (!draft) return;
   
+  // ✅ 실제 작업 내용이 있는지 확인 (brand, keywords, images 중 하나라도 있어야 함)
+  const hasContent = (draft.brand && draft.brand.trim()) || 
+                     (draft.keywords && draft.keywords.trim()) || 
+                     (draft.images && draft.images.length > 0);
+  
+  if (!hasContent) {
+    // 빈 임시저장 데이터 삭제
+    localStorage.removeItem(TEMP_SAVE_KEY);
+    return;
+  }
+  
   // 커스텀 토스트
   const toast = document.createElement('div');
   toast.style.cssText = `

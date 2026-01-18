@@ -1631,7 +1631,9 @@ function updateCostEstimate() {
     source: window.userCreditsInfo ? 'window.userCreditsInfo' : 'currentUser',
     free: freeCredits,
     paid: paidCredits,
-    total: totalCredits
+    total: totalCredits,
+    needed: creditsNeeded,
+    sufficient: totalCredits >= creditsNeeded  // ✅ 충분한지 여부 추가
   });
   
   let costInfoHTML = '';

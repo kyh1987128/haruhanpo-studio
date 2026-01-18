@@ -1099,7 +1099,7 @@ app.post('/api/generate', async (c) => {
     console.log('🖼️ 이미지 자동 배치 시작...');
     console.log(`📸 사용자 업로드 이미지: ${images.length}개`);
     
-    // 🔥 이미지가 없어도 무료 API로 자동 다운로드 (항상 3개 이미지 제공)
+    // 🔥 사용자 업로드 이미지 우선 사용 (최대 10장)
     const smartImages = await fetchSmartImages({
       userImages: images.map((img: any) => ({
         base64: img.base64,
@@ -1107,7 +1107,7 @@ app.post('/api/generate', async (c) => {
         size: img.size || 0
       })),
       keywords: keywords.split(',').map(k => k.trim()),
-      requiredCount: 3, // 🔥 항상 3개 이미지 요청 (사용자 이미지 + 무료 API)
+      requiredCount: Math.max(images.length, 3), // ✅ 사용자 이미지 개수 또는 최소 3개
       unsplashKey: c.env.UNSPLASH_ACCESS_KEY,
       pexelsKey: c.env.PEXELS_API_KEY,
       pixabayKey: c.env.PIXABAY_API_KEY,
