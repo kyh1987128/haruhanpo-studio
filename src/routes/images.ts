@@ -32,6 +32,8 @@ export interface SmartImageResult {
   alt: string;
   caption?: string;
   author?: string;
+  filename?: string;
+  size?: number;
 }
 
 // Unsplash API 연동
@@ -174,31 +176,17 @@ export async function fetchSmartImages(params: {
   const { userImages, keywords, requiredCount, unsplashKey, pexelsKey, pixabayKey, openaiKey, geminiKey } = params;
   const images: SmartImageResult[] = [];
   
-  // 1️⃣ 사용자 업로드 이미지 우선 사용 (Gemini AI 분석)
-  for (let i = 0; i < userImages.length; i++) {
-    const url = userImages[i];
-    let caption = `업로드 이미지 ${i+1}`;
-    
-    // Gemini로 이미지 분석
-    if (geminiKey) {
-      try {
-        console.log(`🔍 이미지 ${i+1} 분석 중...`);
-        const analysis = await analyzeImageWithGemini(geminiKey, url);
-        caption = analysis;
-        console.log(`✅ 이미지 ${i+1} 분석 완료`);
-      } catch (error) {
-        console.error(`❌ 이미지 ${i+1} 분석 실패:`, error);
-        caption = `이미지 ${i+1}`;
-      }
-    }
-    
+  // 1️⃣ 사용자 업로드 이미지 우선 사용
+  userImages.forEach((img, i) => {
     images.push({ 
-      url, 
+      url: img.url || img.base64,
       source: 'user_upload', 
-      alt: `이미지 ${i+1}`,
-      caption: caption
+      alt: img.filename || img.name || `이미지 ${i+1}`,
+      caption: img.filename || img.name || `이미지 ${i+1}`,
+      filename: img.filename || img.name,
+      size: img.size
     });
-  }
+  });
   
   console.log(`✅ 사용자 이미지: ${images.length}개 추가`);
   
