@@ -767,8 +767,8 @@ app.post('/api/generate', async (c) => {
           }, 500);
         }
         
-        initialFreeCredits = freeCredits;
-        initialPaidCredits = paidCredits;
+        initialFreeCredits = newFreeCredits;
+        initialPaidCredits = newPaidCredits;
         
         console.log(`✅ 크레딧 차감 완료: 무료 ${freeUsed}, 유료 ${paidUsed}, 남은 크레딧 ${newFreeCredits + newPaidCredits}`);
         
