@@ -63,10 +63,14 @@ app.post('/api/suggest-keywords', async (c) => {
     const openai = new OpenAI({ apiKey });
 
     // 이미지 분석 후 키워드 추출
-    const imageContent = images.map((img: any, idx: number) => ({
-      type: 'image_url' as const,
-      image_url: { url: img.base64 || img }  // ✅ base64 또는 문자열 지원
-    }));
+    const imageContent = images.map((img: any, idx: number) => {
+      // 안전하게 base64 문자열 추출
+      const imageUrl = typeof img === 'string' ? img : (img.base64 || String(img));
+      return {
+        type: 'image_url' as const,
+        image_url: { url: imageUrl }
+      };
+    });
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -167,7 +171,8 @@ app.post('/api/generate/batch', async (c) => {
       const imageAnalyses = await Promise.all(
         images.map(async (img: any, index: number) => {
           try {
-            const imageBase64 = img.base64 || img;  // ✅ base64 또는 문자열 지원
+            // 안전하게 base64 문자열 추출
+            const imageBase64 = typeof img === 'string' ? img : (img.base64 || String(img));
             const analysis = await openai.chat.completions.create({
               model: 'gpt-4o',
               messages: [
