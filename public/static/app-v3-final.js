@@ -10237,45 +10237,65 @@ function renderSnsList() {
 
 // 새 SNS 링크 추가
 function addNewSnsLink() {
-  const name = prompt('SNS 플랫폼 이름을 입력하세요:');
-  if (!name) return;
-  
-  const url = prompt('SNS 플랫폼 URL을 입력하세요:\n(예: https://blog.naver.com)');
-  if (!url) return;
-  
-  const links = loadSnsLinks();
-  links.push({
-    name: name.trim(),
-    url: url.trim(),
-    icon: 'fas fa-link',
-    color: '#6366f1'
-  });
-  
-  saveSnsLinks(links);
-  renderSnsList();
-  showToast('✅ SNS 링크가 추가되었습니다', 'success');
+  editingIndex = null; // 새로 추가
+  document.getElementById('editSnsName').value = '';
+  document.getElementById('editSnsUrl').value = '';
+  document.getElementById('editSnsModal').style.display = 'flex';
 }
 
 // SNS 링크 수정
+let editingSnsIndex = null;
+
 function editSnsLink(index) {
+  editingSnsIndex = index;
   const links = loadSnsLinks();
   const link = links[index];
   
-  const newName = prompt('SNS 플랫폼 이름을 입력하세요:', link.name);
-  if (newName === null) return;
+  document.getElementById('editSnsName').value = link.name;
+  document.getElementById('editSnsUrl').value = link.url;
+  document.getElementById('editSnsModal').style.display = 'flex';
+}
+
+// SNS 수정 저장
+function saveEditSns() {
+  const name = document.getElementById('editSnsName').value.trim();
+  const url = document.getElementById('editSnsUrl').value.trim();
   
-  const newUrl = prompt('SNS 플랫폼 URL을 입력하세요:', link.url);
-  if (newUrl === null) return;
+  if (!name || !url) {
+    showToast('⚠️ 모든 항목을 입력해주세요', 'warning');
+    return;
+  }
   
-  links[index] = {
-    ...link,
-    name: newName.trim(),
-    url: newUrl.trim()
-  };
+  const links = loadSnsLinks();
+  
+  if (editingSnsIndex === null) {
+    // 새로 추가
+    links.push({
+      name: name,
+      url: url,
+      icon: 'fas fa-link',
+      color: '#6366f1'
+    });
+    showToast('✅ SNS 링크가 추가되었습니다', 'success');
+  } else {
+    // 기존 수정
+    links[editingSnsIndex] = {
+      ...links[editingSnsIndex],
+      name: name,
+      url: url
+    };
+    showToast('✅ SNS 링크가 수정되었습니다', 'success');
+  }
   
   saveSnsLinks(links);
   renderSnsList();
-  showToast('✅ SNS 링크가 수정되었습니다', 'success');
+  cancelEditSns();
+}
+
+// SNS 수정 취소
+function cancelEditSns() {
+  document.getElementById('editSnsModal').style.display = 'none';
+  editingSnsIndex = null;
 }
 
 // SNS 링크 삭제
@@ -10416,53 +10436,70 @@ function renderAiToolsList() {
 
 // 새 AI 도구 추가
 function addNewAiTool() {
-  const name = prompt('AI 도구 이름을 입력하세요:');
-  if (!name) return;
-  
-  const url = prompt('AI 도구 URL을 입력하세요:\n(예: https://www.midjourney.com)');
-  if (!url) return;
-  
-  const category = prompt('카테고리를 입력하세요:\n(예: 이미지 생성, 영상 편집, 디자인, 음성 생성, 음악 생성, 프레젠테이션)');
-  if (!category) return;
-  
-  const tools = loadAiTools();
-  tools.push({
-    name: name.trim(),
-    url: url.trim(),
-    category: category.trim(),
-    icon: 'fas fa-robot',
-    color: '#6366f1'
-  });
-  
-  saveAiTools(tools);
-  renderAiToolsList();
-  showToast('✅ AI 도구가 추가되었습니다', 'success');
+  editingAiToolIndex = null; // 새로 추가
+  document.getElementById('editAiToolName').value = '';
+  document.getElementById('editAiToolUrl').value = '';
+  document.getElementById('editAiToolCategory').value = '이미지 생성';
+  document.getElementById('editAiToolModal').style.display = 'flex';
 }
 
 // AI 도구 수정
+let editingAiToolIndex = null;
+
 function editAiTool(index) {
+  editingAiToolIndex = index;
   const tools = loadAiTools();
   const tool = tools[index];
   
-  const newName = prompt('AI 도구 이름을 입력하세요:', tool.name);
-  if (newName === null) return;
+  document.getElementById('editAiToolName').value = tool.name;
+  document.getElementById('editAiToolUrl').value = tool.url;
+  document.getElementById('editAiToolCategory').value = tool.category;
+  document.getElementById('editAiToolModal').style.display = 'flex';
+}
+
+// AI 도구 수정 저장
+function saveEditAiTool() {
+  const name = document.getElementById('editAiToolName').value.trim();
+  const url = document.getElementById('editAiToolUrl').value.trim();
+  const category = document.getElementById('editAiToolCategory').value;
   
-  const newUrl = prompt('AI 도구 URL을 입력하세요:', tool.url);
-  if (newUrl === null) return;
+  if (!name || !url) {
+    showToast('⚠️ 이름과 URL을 입력해주세요', 'warning');
+    return;
+  }
   
-  const newCategory = prompt('카테고리를 입력하세요:', tool.category);
-  if (newCategory === null) return;
+  const tools = loadAiTools();
   
-  tools[index] = {
-    ...tool,
-    name: newName.trim(),
-    url: newUrl.trim(),
-    category: newCategory.trim()
-  };
+  if (editingAiToolIndex === null) {
+    // 새로 추가
+    tools.push({
+      name: name,
+      url: url,
+      category: category,
+      icon: 'fas fa-robot',
+      color: '#6366f1'
+    });
+    showToast('✅ AI 도구가 추가되었습니다', 'success');
+  } else {
+    // 기존 수정
+    tools[editingAiToolIndex] = {
+      ...tools[editingAiToolIndex],
+      name: name,
+      url: url,
+      category: category
+    };
+    showToast('✅ AI 도구가 수정되었습니다', 'success');
+  }
   
   saveAiTools(tools);
   renderAiToolsList();
-  showToast('✅ AI 도구가 수정되었습니다', 'success');
+  cancelEditAiTool();
+}
+
+// AI 도구 수정 취소
+function cancelEditAiTool() {
+  document.getElementById('editAiToolModal').style.display = 'none';
+  editingAiToolIndex = null;
 }
 
 // AI 도구 삭제
@@ -10482,10 +10519,14 @@ window.openSnsLinksModal = openSnsLinksModal;
 window.closeSnsLinksModal = closeSnsLinksModal;
 window.addNewSnsLink = addNewSnsLink;
 window.editSnsLink = editSnsLink;
+window.saveEditSns = saveEditSns;
+window.cancelEditSns = cancelEditSns;
 window.deleteSnsLink = deleteSnsLink;
 
 window.openAiWorkflowModal = openAiWorkflowModal;
 window.closeAiWorkflowModal = closeAiWorkflowModal;
 window.addNewAiTool = addNewAiTool;
 window.editAiTool = editAiTool;
+window.saveEditAiTool = saveEditAiTool;
+window.cancelEditAiTool = cancelEditAiTool;
 window.deleteAiTool = deleteAiTool;

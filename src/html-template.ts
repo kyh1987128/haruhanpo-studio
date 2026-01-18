@@ -1825,6 +1825,100 @@ export const htmlTemplate = `
       </div>
     </div>
 
+    <!-- SNS 링크 수정 모달 -->
+    <div id="editSnsModal" style="display: none; position: fixed; z-index: 1100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
+      <div style="background-color: #fefefe; padding: 30px; border-radius: 16px; width: 90%; max-width: 500px; margin: 50px auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #ec4899; padding-bottom: 15px;">
+          <h2 style="font-size: 1.5rem; font-weight: 700; color: #1f2937;">
+            <i class="fas fa-edit"></i> SNS 링크 수정
+          </h2>
+          <button onclick="cancelEditSns()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 8px;">
+            <i class="fas fa-tag"></i> 플랫폼 이름
+          </label>
+          <input id="editSnsName" type="text" placeholder="예: 네이버 블로그" 
+                 style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 8px;">
+            <i class="fas fa-link"></i> URL
+          </label>
+          <input id="editSnsUrl" type="url" placeholder="https://blog.naver.com" 
+                 style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        </div>
+        
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button onclick="cancelEditSns()" style="padding: 12px 24px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            취소
+          </button>
+          <button onclick="saveEditSns()" style="padding: 12px 24px; background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            <i class="fas fa-save"></i> 저장
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI 도구 수정 모달 -->
+    <div id="editAiToolModal" style="display: none; position: fixed; z-index: 1100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
+      <div style="background-color: #fefefe; padding: 30px; border-radius: 16px; width: 90%; max-width: 500px; margin: 50px auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #6366f1; padding-bottom: 15px;">
+          <h2 style="font-size: 1.5rem; font-weight: 700; color: #1f2937;">
+            <i class="fas fa-edit"></i> AI 도구 수정
+          </h2>
+          <button onclick="cancelEditAiTool()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 8px;">
+            <i class="fas fa-tag"></i> 도구 이름
+          </label>
+          <input id="editAiToolName" type="text" placeholder="예: Midjourney" 
+                 style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 8px;">
+            <i class="fas fa-link"></i> URL
+          </label>
+          <input id="editAiToolUrl" type="url" placeholder="https://www.midjourney.com" 
+                 style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 8px;">
+            <i class="fas fa-folder"></i> 카테고리
+          </label>
+          <select id="editAiToolCategory" 
+                  style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; background: white; box-sizing: border-box;">
+            <option value="이미지 생성">이미지 생성</option>
+            <option value="영상 편집">영상 편집</option>
+            <option value="디자인">디자인</option>
+            <option value="음성 생성">음성 생성</option>
+            <option value="음악 생성">음악 생성</option>
+            <option value="프레젠테이션">프레젠테이션</option>
+            <option value="기타">기타</option>
+          </select>
+        </div>
+        
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button onclick="cancelEditAiTool()" style="padding: 12px 24px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            취소
+          </button>
+          <button onclick="saveEditAiTool()" style="padding: 12px 24px; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            <i class="fas fa-save"></i> 저장
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- 서비스 이용약관 모달 -->
     <div id="termsOfServiceModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
       <div class="modal-content" style="background-color: #fefefe; padding: 30px; border-radius: 16px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; margin: 50px auto;">
@@ -1986,17 +2080,11 @@ export const htmlTemplate = `
     <!-- 온보딩 시스템 로드 -->
     <script src="/static/onboarding-integration.js"></script>
     
-    <!-- 워크플로우 허브 로드 -->
-    <script src="/static/workflow-hub.js"></script>
-    
     <!-- 스마트 추천 시스템 로드 -->
     <script src="/static/smart-recommendations.js"></script>
     
     <!-- 자동 저장 및 이어서 작업하기 시스템 로드 -->
     <script src="/static/auto-save.js"></script>
-    
-    <!-- 통계 대시보드 로드 -->
-    <script src="/static/stats-dashboard.js"></script>
     
     <script>
       // ========================================
