@@ -164,7 +164,7 @@ async function generateAIImage(prompt: string, apiKey: string): Promise<string> 
 
 // 이미지 소스 통합 함수
 export async function fetchSmartImages(params: {
-  userImages: string[],
+  userImages: Array<{ base64: string, filename?: string, size?: number }>,
   keywords: string[],
   requiredCount: number,
   unsplashKey?: string,
@@ -179,11 +179,11 @@ export async function fetchSmartImages(params: {
   // 1️⃣ 사용자 업로드 이미지 우선 사용
   userImages.forEach((img, i) => {
     images.push({ 
-      url: img.url || img.base64,
+      url: img.base64,
       source: 'user_upload', 
-      alt: img.filename || img.name || `이미지 ${i+1}`,
-      caption: img.filename || img.name || `이미지 ${i+1}`,
-      filename: img.filename || img.name,
+      alt: img.filename || `이미지 ${i+1}`,
+      caption: img.filename || `이미지 ${i+1}`,
+      filename: img.filename,
       size: img.size
     });
   });

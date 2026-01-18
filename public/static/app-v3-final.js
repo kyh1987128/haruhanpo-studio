@@ -2282,7 +2282,11 @@ async function suggestKeywordsForContent(index, event) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        images: contentBlocks[index].images.slice(0, 3).map(img => img.base64),
+        images: contentBlocks[index].images.slice(0, 3).map(img => ({
+          base64: img.base64,
+          filename: img.name || `이미지${contentBlocks[index].images.indexOf(img) + 1}`,
+          size: img.size || 0
+        })),
         brand: brand,
         industry: industry
       })
@@ -2417,7 +2421,11 @@ async function suggestKeywords(event) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        images: selectedImages.slice(0, 3).map(img => img.base64), // 최대 3장
+        images: selectedImages.slice(0, 3).map(img => ({
+          base64: img.base64,
+          filename: img.name || `이미지${selectedImages.indexOf(img) + 1}`,
+          size: img.size || 0
+        })), // 최대 3장
         brand: brand || '',
         industry: industry
       })
@@ -2629,7 +2637,11 @@ async function handleGenerate() {
     targetAge: document.getElementById('targetAge')?.value || '20대',
     industry: document.getElementById('industry')?.value || '라이프스타일',
     contentStrategy: document.querySelector('input[name="contentStrategy"]:checked')?.value || 'auto', // 🔥 NEW v6.1
-    images: content.images.map((img) => img.base64),
+    images: content.images.map((img) => ({
+      base64: img.base64,
+      filename: img.name || `이미지${content.images.indexOf(img) + 1}`,
+      size: img.size || 0
+    })),
     platforms,
     aiModel: 'gpt-4o',
     customPrompt: getSelectedTemplateContent(), // ✅ 추가: 사용자 템플릿
@@ -2878,7 +2890,11 @@ async function handleNewBatchGenerate(contentCount, platforms) {
       tone,
       targetAge,
       industry,
-      images: content.images.map((img) => img.base64),
+      images: content.images.map((img) => ({
+        base64: img.base64,
+        filename: img.name || `이미지${content.images.indexOf(img) + 1}`,
+        size: img.size || 0
+      })),
       platforms,
       aiModel: 'gpt-4o',
     };
@@ -2998,7 +3014,11 @@ async function handleBatchGenerate(contentCount, imagesPerContent, platforms) {
       tone,
       targetAge,
       industry,
-      images: batchImages.map((img) => img.base64),
+      images: batchImages.map((img) => ({
+        base64: img.base64,
+        filename: img.name || `이미지${batchImages.indexOf(img) + 1}`,
+        size: img.size || 0
+      })),
       platforms,
       aiModel: 'gpt-4o',
     };
@@ -8320,7 +8340,11 @@ async function generateSingleContent(contentIndex) {
     tone,
     targetAge,
     industry,
-    images: content.images.map((img) => img.base64),
+    images: content.images.map((img) => ({
+      base64: img.base64,
+      filename: img.name || `이미지${content.images.indexOf(img) + 1}`,
+      size: img.size || 0
+    })),
     platforms,
     aiModel: 'gpt-4o',
     customPrompt: getSelectedTemplateContent(),

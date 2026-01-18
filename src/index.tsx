@@ -377,7 +377,7 @@ app.post('/api/generate', async (c) => {
       tone = '친근한', // 🎯 스마트 기본값: 친근한 톤
       targetAge = '20-30대', // 🎯 스마트 기본값: 20-30대 (가장 일반적)
       industry = '', // 🎯 스마트 기본값: 키워드에서 자동 추출 예정
-      images, // base64 이미지 배열
+      images, // { base64, filename, size }[] 형태의 이미지 배열
       platforms, // ['blog', 'instagram', 'threads', 'youtube']
       aiModel = 'gpt-4o', // AI 모델 선택 (기본값: gpt-4o)
       apiKey, // 클라이언트에서 전달받은 API 키
@@ -1095,7 +1095,11 @@ app.post('/api/generate', async (c) => {
     
     // 🔥 이미지가 없어도 무료 API로 자동 다운로드 (항상 3개 이미지 제공)
     const smartImages = await fetchSmartImages({
-      userImages: images,
+      userImages: images.map((img: any) => ({
+        base64: img.base64,
+        filename: img.filename || `이미지${images.indexOf(img) + 1}`,
+        size: img.size || 0
+      })),
       keywords: keywords.split(',').map(k => k.trim()),
       requiredCount: 3, // 🔥 항상 3개 이미지 요청 (사용자 이미지 + 무료 API)
       unsplashKey: c.env.UNSPLASH_ACCESS_KEY,
