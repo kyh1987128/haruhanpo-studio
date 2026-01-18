@@ -63,9 +63,9 @@ app.post('/api/suggest-keywords', async (c) => {
     const openai = new OpenAI({ apiKey });
 
     // 이미지 분석 후 키워드 추출
-    const imageContent = images.map((img: string, idx: number) => ({
+    const imageContent = images.map((img: any, idx: number) => ({
       type: 'image_url' as const,
-      image_url: { url: img }
+      image_url: { url: img.base64 || img }  // ✅ base64 또는 문자열 지원
     }));
 
     const response = await openai.chat.completions.create({
@@ -165,8 +165,9 @@ app.post('/api/generate/batch', async (c) => {
     let combinedImageDescription = '';
     if (images && images.length > 0) {
       const imageAnalyses = await Promise.all(
-        images.map(async (imageBase64: string, index: number) => {
+        images.map(async (img: any, index: number) => {
           try {
+            const imageBase64 = img.base64 || img;  // ✅ base64 또는 문자열 지원
             const analysis = await openai.chat.completions.create({
               model: 'gpt-4o',
               messages: [
