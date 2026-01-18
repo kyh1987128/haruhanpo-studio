@@ -484,22 +484,30 @@ export const htmlTemplate = `
                     <i class="fas fa-star text-yellow-500"></i>
                     빠른 기능
                 </h3>
-                <div class="space-y-2">
-                    <button id="saveProfileBtn" class="w-full px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium flex items-center justify-center gap-2">
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="saveProfileBtn" class="px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium flex items-center justify-center gap-2">
                         <i class="fas fa-save"></i>
                         <span>새 프로필 저장</span>
                     </button>
-                    <button id="loadProfileBtn" class="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium flex items-center justify-center gap-2">
+                    <button id="loadProfileBtn" class="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium flex items-center justify-center gap-2">
                         <i class="fas fa-folder-open"></i>
                         <span>프로필 관리</span>
                     </button>
-                    <button id="historyBtn" class="w-full px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm font-medium flex items-center justify-center gap-2">
+                    <button id="historyBtn" class="px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm font-medium flex items-center justify-center gap-2">
                         <i class="fas fa-history"></i>
                         <span>히스토리</span>
                     </button>
-                    <button id="templateBtn" class="w-full px-4 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm font-medium flex items-center justify-center gap-2">
+                    <button id="templateBtn" class="px-4 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm font-medium flex items-center justify-center gap-2">
                         <i class="fas fa-file-alt"></i>
                         <span>템플릿</span>
+                    </button>
+                    <button id="snsLinksBtn" class="px-4 py-2.5 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition text-sm font-medium flex items-center justify-center gap-2">
+                        <i class="fas fa-share-alt"></i>
+                        <span>SNS 바로가기</span>
+                    </button>
+                    <button id="aiWorkflowBtn" class="px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm font-medium flex items-center justify-center gap-2">
+                        <i class="fas fa-robot"></i>
+                        <span>AI 워크플로우</span>
                     </button>
                 </div>
             </div>
@@ -1762,6 +1770,58 @@ export const htmlTemplate = `
             <i class="fas fa-check"></i> 확인
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- SNS 바로가기 모달 -->
+    <div id="snsLinksModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
+      <div style="background-color: #fefefe; padding: 30px; border-radius: 16px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; margin: 50px auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #ec4899; padding-bottom: 15px;">
+          <h2 style="font-size: 1.5rem; font-weight: 700; color: #1f2937;">
+            <i class="fas fa-share-alt"></i> SNS 바로가기
+          </h2>
+          <button onclick="closeSnsLinksModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <p style="margin-bottom: 20px; color: #6b7280;">
+          자주 사용하는 SNS 플랫폼 링크를 저장하고 빠르게 이동하세요.
+        </p>
+        
+        <div id="snsLinksList" style="margin-bottom: 20px;">
+          <!-- SNS 링크 목록이 여기에 동적으로 추가됩니다 -->
+        </div>
+        
+        <button onclick="addNewSnsLink()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+          <i class="fas fa-plus"></i> 새 SNS 링크 추가
+        </button>
+      </div>
+    </div>
+
+    <!-- AI 워크플로우 모달 -->
+    <div id="aiWorkflowModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
+      <div style="background-color: #fefefe; padding: 30px; border-radius: 16px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; margin: 50px auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #6366f1; padding-bottom: 15px;">
+          <h2 style="font-size: 1.5rem; font-weight: 700; color: #1f2937;">
+            <i class="fas fa-robot"></i> AI 워크플로우
+          </h2>
+          <button onclick="closeAiWorkflowModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <p style="margin-bottom: 20px; color: #6b7280;">
+          다음 작업에 필요한 AI 도구를 저장하고 빠르게 접근하세요.
+        </p>
+        
+        <div id="aiWorkflowList" style="margin-bottom: 20px;">
+          <!-- AI 도구 목록이 여기에 동적으로 추가됩니다 -->
+        </div>
+        
+        <button onclick="addNewAiTool()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+          <i class="fas fa-plus"></i> 새 AI 도구 추가
+        </button>
       </div>
     </div>
 

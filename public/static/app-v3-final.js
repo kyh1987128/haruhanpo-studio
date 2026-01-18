@@ -6584,6 +6584,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
+  // SNS 바로가기 버튼
+  const snsLinksBtn = document.getElementById('snsLinksBtn');
+  if (snsLinksBtn) {
+    snsLinksBtn.addEventListener('click', () => {
+      openSnsLinksModal();
+    });
+    console.log('✅ SNS 바로가기 버튼 이벤트 리스너 등록 완료');
+  } else {
+    console.error('❌ snsLinksBtn 요소를 찾을 수 없습니다!');
+  }
+  
+  // AI 워크플로우 버튼
+  const aiWorkflowBtn = document.getElementById('aiWorkflowBtn');
+  if (aiWorkflowBtn) {
+    aiWorkflowBtn.addEventListener('click', () => {
+      openAiWorkflowModal();
+    });
+    console.log('✅ AI 워크플로우 버튼 이벤트 리스너 등록 완료');
+  } else {
+    console.error('❌ aiWorkflowBtn 요소를 찾을 수 없습니다!');
+  }
+  
   // 🔍 디버깅: 함수와 데이터 검증 (개발자 콘솔에서 확인 가능)
   setTimeout(() => {
     console.log('🔍 === 히스토리/캘린더 검증 ===');
@@ -10118,3 +10140,352 @@ window.addEventListener('storage', (event) => {
 window.updateCreditsUI = updateCreditsUI;
 window.broadcastCreditUpdate = broadcastCreditUpdate;
 
+// ========================================
+// SNS 바로가기 기능 (NEW v8.0)
+// ========================================
+
+// LocalStorage 키
+const SNS_LINKS_KEY = 'postflow_sns_links';
+
+// 기본 8개 플랫폼
+const DEFAULT_SNS_PLATFORMS = [
+  { name: '네이버 블로그', url: 'https://blog.naver.com', icon: 'fas fa-blog', color: '#03C75A' },
+  { name: '인스타그램', url: 'https://www.instagram.com', icon: 'fab fa-instagram', color: '#E4405F' },
+  { name: '스레드', url: 'https://www.threads.net', icon: 'fab fa-threads', color: '#000000' },
+  { name: '트위터', url: 'https://twitter.com', icon: 'fab fa-twitter', color: '#1DA1F2' },
+  { name: '링크드인', url: 'https://www.linkedin.com', icon: 'fab fa-linkedin', color: '#0A66C2' },
+  { name: '브런치', url: 'https://brunch.co.kr', icon: 'fas fa-coffee', color: '#00C896' },
+  { name: '틱톡', url: 'https://www.tiktok.com', icon: 'fab fa-tiktok', color: '#000000' },
+  { name: '유튜브', url: 'https://studio.youtube.com', icon: 'fab fa-youtube', color: '#FF0000' }
+];
+
+// SNS 링크 불러오기
+function loadSnsLinks() {
+  const saved = localStorage.getItem(SNS_LINKS_KEY);
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch (error) {
+      console.error('❌ SNS 링크 파싱 오류:', error);
+      return DEFAULT_SNS_PLATFORMS;
+    }
+  }
+  return DEFAULT_SNS_PLATFORMS;
+}
+
+// SNS 링크 저장
+function saveSnsLinks(links) {
+  localStorage.setItem(SNS_LINKS_KEY, JSON.stringify(links));
+}
+
+// SNS 바로가기 모달 열기
+function openSnsLinksModal() {
+  const modal = document.getElementById('snsLinksModal');
+  if (!modal) {
+    console.error('❌ SNS 바로가기 모달을 찾을 수 없습니다');
+    return;
+  }
+  
+  modal.style.display = 'flex';
+  renderSnsList();
+}
+
+// SNS 바로가기 모달 닫기
+function closeSnsLinksModal() {
+  const modal = document.getElementById('snsLinksModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+// SNS 목록 렌더링
+function renderSnsList() {
+  const container = document.getElementById('snsLinksList');
+  if (!container) return;
+  
+  const links = loadSnsLinks();
+  
+  if (links.length === 0) {
+    container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 20px;">저장된 SNS 링크가 없습니다.</p>';
+    return;
+  }
+  
+  container.innerHTML = links.map((link, index) => `
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 15px; background: #f9fafb; border-radius: 8px; margin-bottom: 10px;">
+      <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+        <i class="${link.icon}" style="font-size: 24px; color: ${link.color}; width: 32px; text-align: center;"></i>
+        <div style="flex: 1;">
+          <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">${link.name}</div>
+          <a href="${link.url}" target="_blank" style="color: #6b7280; font-size: 0.875rem; text-decoration: none;" 
+             onmouseover="this.style.textDecoration='underline'" 
+             onmouseout="this.style.textDecoration='none'">
+            ${link.url}
+          </a>
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button onclick="editSnsLink(${index})" style="padding: 8px 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem;">
+          <i class="fas fa-edit"></i> 수정
+        </button>
+        <button onclick="deleteSnsLink(${index})" style="padding: 8px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem;">
+          <i class="fas fa-trash"></i> 삭제
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// 새 SNS 링크 추가
+function addNewSnsLink() {
+  const name = prompt('SNS 플랫폼 이름을 입력하세요:');
+  if (!name) return;
+  
+  const url = prompt('SNS 플랫폼 URL을 입력하세요:\n(예: https://blog.naver.com)');
+  if (!url) return;
+  
+  const links = loadSnsLinks();
+  links.push({
+    name: name.trim(),
+    url: url.trim(),
+    icon: 'fas fa-link',
+    color: '#6366f1'
+  });
+  
+  saveSnsLinks(links);
+  renderSnsList();
+  showToast('✅ SNS 링크가 추가되었습니다', 'success');
+}
+
+// SNS 링크 수정
+function editSnsLink(index) {
+  const links = loadSnsLinks();
+  const link = links[index];
+  
+  const newName = prompt('SNS 플랫폼 이름을 입력하세요:', link.name);
+  if (newName === null) return;
+  
+  const newUrl = prompt('SNS 플랫폼 URL을 입력하세요:', link.url);
+  if (newUrl === null) return;
+  
+  links[index] = {
+    ...link,
+    name: newName.trim(),
+    url: newUrl.trim()
+  };
+  
+  saveSnsLinks(links);
+  renderSnsList();
+  showToast('✅ SNS 링크가 수정되었습니다', 'success');
+}
+
+// SNS 링크 삭제
+function deleteSnsLink(index) {
+  if (!confirm('이 SNS 링크를 삭제하시겠습니까?')) return;
+  
+  const links = loadSnsLinks();
+  links.splice(index, 1);
+  
+  saveSnsLinks(links);
+  renderSnsList();
+  showToast('✅ SNS 링크가 삭제되었습니다', 'success');
+}
+
+// ========================================
+// AI 워크플로우 기능 (NEW v8.0)
+// ========================================
+
+// LocalStorage 키
+const AI_WORKFLOW_KEY = 'postflow_ai_workflow';
+
+// 기본 AI 도구 목록 (카테고리별)
+const DEFAULT_AI_TOOLS = [
+  // 이미지 생성
+  { name: 'Midjourney', url: 'https://www.midjourney.com', category: '이미지 생성', icon: 'fas fa-palette', color: '#7B68EE' },
+  { name: 'DALL·E', url: 'https://labs.openai.com', category: '이미지 생성', icon: 'fas fa-image', color: '#10A37F' },
+  
+  // 영상 편집
+  { name: 'CapCut', url: 'https://www.capcut.com', category: '영상 편집', icon: 'fas fa-video', color: '#000000' },
+  { name: 'Runway', url: 'https://runwayml.com', category: '영상 편집', icon: 'fas fa-film', color: '#4A90E2' },
+  
+  // 디자인
+  { name: 'Canva', url: 'https://www.canva.com', category: '디자인', icon: 'fas fa-paint-brush', color: '#00C4CC' },
+  { name: 'Figma', url: 'https://www.figma.com', category: '디자인', icon: 'fas fa-pencil-ruler', color: '#F24E1E' },
+  
+  // 음성 생성
+  { name: 'ElevenLabs', url: 'https://elevenlabs.io', category: '음성 생성', icon: 'fas fa-microphone', color: '#6366F1' },
+  
+  // 음악 생성
+  { name: 'Suno', url: 'https://suno.ai', category: '음악 생성', icon: 'fas fa-music', color: '#FF6B6B' },
+  
+  // 프레젠테이션
+  { name: 'Gamma', url: 'https://gamma.app', category: '프레젠테이션', icon: 'fas fa-presentation', color: '#8B5CF6' },
+  { name: 'Tome', url: 'https://tome.app', category: '프레젠테이션', icon: 'fas fa-book-open', color: '#10B981' }
+];
+
+// AI 도구 불러오기
+function loadAiTools() {
+  const saved = localStorage.getItem(AI_WORKFLOW_KEY);
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch (error) {
+      console.error('❌ AI 도구 파싱 오류:', error);
+      return DEFAULT_AI_TOOLS;
+    }
+  }
+  return DEFAULT_AI_TOOLS;
+}
+
+// AI 도구 저장
+function saveAiTools(tools) {
+  localStorage.setItem(AI_WORKFLOW_KEY, JSON.stringify(tools));
+}
+
+// AI 워크플로우 모달 열기
+function openAiWorkflowModal() {
+  const modal = document.getElementById('aiWorkflowModal');
+  if (!modal) {
+    console.error('❌ AI 워크플로우 모달을 찾을 수 없습니다');
+    return;
+  }
+  
+  modal.style.display = 'flex';
+  renderAiToolsList();
+}
+
+// AI 워크플로우 모달 닫기
+function closeAiWorkflowModal() {
+  const modal = document.getElementById('aiWorkflowModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+// AI 도구 목록 렌더링 (카테고리별)
+function renderAiToolsList() {
+  const container = document.getElementById('aiWorkflowList');
+  if (!container) return;
+  
+  const tools = loadAiTools();
+  
+  if (tools.length === 0) {
+    container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 20px;">저장된 AI 도구가 없습니다.</p>';
+    return;
+  }
+  
+  // 카테고리별 그룹화
+  const categories = {};
+  tools.forEach((tool, index) => {
+    if (!categories[tool.category]) {
+      categories[tool.category] = [];
+    }
+    categories[tool.category].push({ ...tool, index });
+  });
+  
+  container.innerHTML = Object.keys(categories).map(category => `
+    <div style="margin-bottom: 20px;">
+      <h3 style="font-weight: 600; color: #1f2937; margin-bottom: 12px; font-size: 1rem;">
+        ${category}
+      </h3>
+      ${categories[category].map(tool => `
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f9fafb; border-radius: 8px; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+            <i class="${tool.icon}" style="font-size: 20px; color: ${tool.color}; width: 28px; text-align: center;"></i>
+            <div style="flex: 1;">
+              <div style="font-weight: 600; color: #1f2937; margin-bottom: 2px;">${tool.name}</div>
+              <a href="${tool.url}" target="_blank" style="color: #6b7280; font-size: 0.75rem; text-decoration: none;" 
+                 onmouseover="this.style.textDecoration='underline'" 
+                 onmouseout="this.style.textDecoration='none'">
+                ${tool.url}
+              </a>
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button onclick="editAiTool(${tool.index})" style="padding: 6px 10px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.75rem;">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button onclick="deleteAiTool(${tool.index})" style="padding: 6px 10px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.75rem;">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+// 새 AI 도구 추가
+function addNewAiTool() {
+  const name = prompt('AI 도구 이름을 입력하세요:');
+  if (!name) return;
+  
+  const url = prompt('AI 도구 URL을 입력하세요:\n(예: https://www.midjourney.com)');
+  if (!url) return;
+  
+  const category = prompt('카테고리를 입력하세요:\n(예: 이미지 생성, 영상 편집, 디자인, 음성 생성, 음악 생성, 프레젠테이션)');
+  if (!category) return;
+  
+  const tools = loadAiTools();
+  tools.push({
+    name: name.trim(),
+    url: url.trim(),
+    category: category.trim(),
+    icon: 'fas fa-robot',
+    color: '#6366f1'
+  });
+  
+  saveAiTools(tools);
+  renderAiToolsList();
+  showToast('✅ AI 도구가 추가되었습니다', 'success');
+}
+
+// AI 도구 수정
+function editAiTool(index) {
+  const tools = loadAiTools();
+  const tool = tools[index];
+  
+  const newName = prompt('AI 도구 이름을 입력하세요:', tool.name);
+  if (newName === null) return;
+  
+  const newUrl = prompt('AI 도구 URL을 입력하세요:', tool.url);
+  if (newUrl === null) return;
+  
+  const newCategory = prompt('카테고리를 입력하세요:', tool.category);
+  if (newCategory === null) return;
+  
+  tools[index] = {
+    ...tool,
+    name: newName.trim(),
+    url: newUrl.trim(),
+    category: newCategory.trim()
+  };
+  
+  saveAiTools(tools);
+  renderAiToolsList();
+  showToast('✅ AI 도구가 수정되었습니다', 'success');
+}
+
+// AI 도구 삭제
+function deleteAiTool(index) {
+  if (!confirm('이 AI 도구를 삭제하시겠습니까?')) return;
+  
+  const tools = loadAiTools();
+  tools.splice(index, 1);
+  
+  saveAiTools(tools);
+  renderAiToolsList();
+  showToast('✅ AI 도구가 삭제되었습니다', 'success');
+}
+
+// 전역 노출
+window.openSnsLinksModal = openSnsLinksModal;
+window.closeSnsLinksModal = closeSnsLinksModal;
+window.addNewSnsLink = addNewSnsLink;
+window.editSnsLink = editSnsLink;
+window.deleteSnsLink = deleteSnsLink;
+
+window.openAiWorkflowModal = openAiWorkflowModal;
+window.closeAiWorkflowModal = closeAiWorkflowModal;
+window.addNewAiTool = addNewAiTool;
+window.editAiTool = editAiTool;
+window.deleteAiTool = deleteAiTool;
