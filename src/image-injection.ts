@@ -31,11 +31,10 @@ export function injectImagesIntoBlogContent(
     // 섹션 추가
     result += section;
     
-    // 이미지 배치 가이드 삽입 (일정 간격마다 + 마지막 섹션은 제외)
+    // 이미지 배치 가이드 삽입 (일정 간격마다)
     if (
       imageIndex < imageCount && 
-      (index + 1) % imageInterval === 0 &&
-      index < totalSections - 1
+      (index + 1) % imageInterval === 0
     ) {
       const img = images[imageIndex];
       const imageNumber = imageIndex + 1;
@@ -89,8 +88,7 @@ export function injectImagesIntoBrunchContent(
     // 이미지 배치 가이드 삽입 (마크다운 형식)
     if (
       imageIndex < imageCount && 
-      (index + 1) % imageInterval === 0 &&
-      index < totalSections - 1
+      (index + 1) % imageInterval === 0
     ) {
       const img = images[imageIndex];
       const imageNumber = imageIndex + 1;
