@@ -11244,3 +11244,483 @@ window.addEventListener('profileChanged', async (event) => {
   // 워크플로우 자동 재로드는 switchProfile 함수 내에서 이미 처리됨
   // 추가 UI 업데이트가 필요하면 여기에 추가
 });
+
+// ========================================
+// 🔧 설정 페이지 기능 (NEW v9.0)
+// ========================================
+
+// 설정 모달 표시
+function showSettingsModal() {
+  const user = window.currentUser;
+  
+  if (!user || !user.isLoggedIn || user.isGuest) {
+    showToast('로그인이 필요합니다', 'warning');
+    return;
+  }
+  
+  // 기존 모달 제거
+  const existingModal = document.getElementById('settingsModal');
+  if (existingModal) {
+    existingModal.remove();
+  }
+  
+  // 가입일 포맷
+  const joinDate = user.created_at ? new Date(user.created_at).toLocaleDateString('ko-KR') : '정보 없음';
+  
+  // 회원 등급 한글 변환
+  const tierLabels = {
+    'guest': '비회원',
+    'free': '무료',
+    'paid': '유료'
+  };
+  const tierLabel = tierLabels[user.tier] || '무료';
+  
+  // 크레딧 정보
+  const freeCredits = user.free_credits || 0;
+  const paidCredits = user.paid_credits || 0;
+  const totalCredits = freeCredits + paidCredits;
+  
+  const modalHTML = `
+    <div id="settingsModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px;">
+      <div style="background: white; border-radius: 16px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        
+        <!-- 헤더 -->
+        <div style="padding: 24px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 16px 16px 0 0;">
+          <h2 style="font-size: 1.5rem; font-weight: 700; margin: 0;">
+            <i class="fas fa-cog"></i> 설정
+          </h2>
+          <button onclick="closeSettingsModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <!-- 본문 -->
+        <div style="padding: 24px;">
+          
+          <!-- 📋 기본 정보 섹션 -->
+          <div style="margin-bottom: 32px;">
+            <h3 style="font-size: 1.125rem; font-weight: 600; color: #1f2937; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+              <i class="fas fa-user-circle" style="color: #667eea;"></i>
+              기본 정보
+            </h3>
+            
+            <!-- 이메일 (읽기 전용) -->
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #6b7280; margin-bottom: 4px;">이메일</label>
+              <div style="padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; color: #6b7280;">
+                <i class="fas fa-envelope" style="margin-right: 8px;"></i>
+                ${user.email || '정보 없음'}
+              </div>
+            </div>
+            
+            <!-- 이름 -->
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #6b7280; margin-bottom: 4px;">이름</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="settingsUserName" value="${user.name || user.email?.split('@')[0] || ''}" 
+                  style="flex: 1; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.875rem;" 
+                  placeholder="이름을 입력하세요">
+                <button onclick="updateUserName()" style="padding: 12px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; white-space: nowrap;">
+                  <i class="fas fa-save"></i> 저장
+                </button>
+              </div>
+            </div>
+            
+            <!-- 회원 등급 (읽기 전용) -->
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #6b7280; margin-bottom: 4px;">회원 등급</label>
+              <div style="padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; color: #6b7280;">
+                <i class="fas fa-crown" style="margin-right: 8px; color: #f59e0b;"></i>
+                ${tierLabel}
+              </div>
+            </div>
+            
+            <!-- 가입일 (읽기 전용) -->
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #6b7280; margin-bottom: 4px;">가입일</label>
+              <div style="padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; color: #6b7280;">
+                <i class="fas fa-calendar-alt" style="margin-right: 8px;"></i>
+                ${joinDate}
+              </div>
+            </div>
+            
+            <!-- 크레딧 잔액 (읽기 전용) -->
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #6b7280; margin-bottom: 4px;">현재 크레딧 잔액</label>
+              <div style="padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; color: white; font-weight: 600;">
+                <i class="fas fa-coins" style="margin-right: 8px;"></i>
+                무료 ${freeCredits} · 유료 ${paidCredits} (총 ${totalCredits})
+              </div>
+            </div>
+          </div>
+          
+          <!-- 🔔 알림 설정 섹션 -->
+          <div style="margin-bottom: 32px;">
+            <h3 style="font-size: 1.125rem; font-weight: 600; color: #1f2937; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+              <i class="fas fa-bell" style="color: #667eea;"></i>
+              알림 설정
+            </h3>
+            
+            <!-- 마케팅 알림 -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 8px; margin-bottom: 12px;">
+              <div>
+                <div style="font-weight: 500; color: #1f2937; margin-bottom: 4px;">마케팅 정보 수신</div>
+                <div style="font-size: 0.875rem; color: #6b7280;">이벤트, 프로모션 알림 받기</div>
+              </div>
+              <label style="position: relative; display: inline-block; width: 48px; height: 24px;">
+                <input type="checkbox" id="marketingNotification" ${user.marketing_agreed ? 'checked' : ''} 
+                  onchange="updateNotificationSettings()" 
+                  style="opacity: 0; width: 0; height: 0;">
+                <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px;"></span>
+                <span style="position: absolute; content: ''; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%;"></span>
+              </label>
+            </div>
+          </div>
+          
+          <!-- 🔒 비밀번호 변경 섹션 -->
+          <div style="margin-bottom: 32px;">
+            <h3 style="font-size: 1.125rem; font-weight: 600; color: #1f2937; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+              <i class="fas fa-lock" style="color: #667eea;"></i>
+              비밀번호 변경
+            </h3>
+            
+            <div id="passwordChangeSection">
+              <!-- 현재 비밀번호 -->
+              <div style="margin-bottom: 12px;">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #6b7280; margin-bottom: 4px;">현재 비밀번호</label>
+                <input type="password" id="currentPassword" 
+                  style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.875rem;" 
+                  placeholder="현재 비밀번호를 입력하세요">
+              </div>
+              
+              <!-- 새 비밀번호 -->
+              <div style="margin-bottom: 12px;">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #6b7280; margin-bottom: 4px;">새 비밀번호</label>
+                <input type="password" id="newPassword" 
+                  style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.875rem;" 
+                  placeholder="새 비밀번호 (최소 6자)">
+              </div>
+              
+              <!-- 새 비밀번호 확인 -->
+              <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #6b7280; margin-bottom: 4px;">새 비밀번호 확인</label>
+                <input type="password" id="confirmPassword" 
+                  style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.875rem;" 
+                  placeholder="새 비밀번호 다시 입력">
+              </div>
+              
+              <button onclick="changePassword()" style="width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
+                <i class="fas fa-key"></i> 비밀번호 변경
+              </button>
+            </div>
+          </div>
+          
+          <!-- ⚠️ 위험 영역 -->
+          <div style="border-top: 1px solid #e5e7eb; padding-top: 24px;">
+            <h3 style="font-size: 1.125rem; font-weight: 600; color: #dc2626; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+              <i class="fas fa-exclamation-triangle"></i>
+              위험 영역
+            </h3>
+            
+            <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+              <div style="font-weight: 500; color: #991b1b; margin-bottom: 8px;">회원 탈퇴 시 주의사항</div>
+              <ul style="font-size: 0.875rem; color: #7f1d1d; margin-left: 20px;">
+                <li>모든 데이터가 영구 삭제됩니다</li>
+                <li>남은 크레딧은 환불되지 않습니다</li>
+                <li>생성한 콘텐츠는 복구할 수 없습니다</li>
+              </ul>
+            </div>
+            
+            <button onclick="confirmAccountDeletion()" style="width: 100%; padding: 12px; background: #dc2626; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
+              <i class="fas fa-user-slash"></i> 회원 탈퇴
+            </button>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  
+  // 토글 스위치 CSS 동적 추가
+  const style = document.createElement('style');
+  style.textContent = `
+    input:checked + span {
+      background-color: #667eea !important;
+    }
+    input:checked + span + span {
+      transform: translateX(24px) !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+// 설정 모달 닫기
+function closeSettingsModal() {
+  const modal = document.getElementById('settingsModal');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+// 이름 변경
+async function updateUserName() {
+  const newName = document.getElementById('settingsUserName').value.trim();
+  
+  if (!newName) {
+    showToast('이름을 입력해주세요', 'warning');
+    return;
+  }
+  
+  if (!window.currentUser || !window.currentUser.id) {
+    showToast('로그인 정보를 찾을 수 없습니다', 'error');
+    return;
+  }
+  
+  try {
+    const session = await supabaseClient.auth.getSession();
+    if (!session?.data?.session) {
+      showToast('세션이 만료되었습니다. 다시 로그인해주세요', 'error');
+      return;
+    }
+    
+    const token = session.data.session.access_token;
+    
+    console.log('📡 이름 변경 요청:', { userId: window.currentUser.id, newName });
+    
+    const response = await fetch('/api/users/update-profile', {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        user_id: window.currentUser.id,
+        name: newName
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // 전역 사용자 정보 업데이트
+      window.currentUser.name = newName;
+      
+      // localStorage 업데이트
+      const savedUser = localStorage.getItem('postflow_user');
+      if (savedUser) {
+        const userObj = JSON.parse(savedUser);
+        userObj.name = newName;
+        localStorage.setItem('postflow_user', JSON.stringify(userObj));
+      }
+      
+      // UI 업데이트
+      updateAuthUI();
+      
+      showToast('✅ 이름이 변경되었습니다', 'success');
+      console.log('✅ 이름 변경 완료:', newName);
+    } else {
+      throw new Error(data.error || '이름 변경 실패');
+    }
+    
+  } catch (error) {
+    console.error('❌ 이름 변경 실패:', error);
+    showToast(`❌ ${error.message}`, 'error');
+  }
+}
+
+// 알림 설정 변경
+async function updateNotificationSettings() {
+  const marketingAgreed = document.getElementById('marketingNotification').checked;
+  
+  if (!window.currentUser || !window.currentUser.id) {
+    showToast('로그인 정보를 찾을 수 없습니다', 'error');
+    return;
+  }
+  
+  try {
+    const session = await supabaseClient.auth.getSession();
+    if (!session?.data?.session) {
+      showToast('세션이 만료되었습니다. 다시 로그인해주세요', 'error');
+      return;
+    }
+    
+    const token = session.data.session.access_token;
+    
+    console.log('📡 알림 설정 변경 요청:', { userId: window.currentUser.id, marketingAgreed });
+    
+    const response = await fetch('/api/users/update-profile', {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        user_id: window.currentUser.id,
+        marketing_agreed: marketingAgreed
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      window.currentUser.marketing_agreed = marketingAgreed;
+      
+      showToast('✅ 알림 설정이 변경되었습니다', 'success');
+      console.log('✅ 알림 설정 변경 완료:', marketingAgreed);
+    } else {
+      throw new Error(data.error || '알림 설정 변경 실패');
+    }
+    
+  } catch (error) {
+    console.error('❌ 알림 설정 변경 실패:', error);
+    showToast(`❌ ${error.message}`, 'error');
+  }
+}
+
+// 비밀번호 변경
+async function changePassword() {
+  const currentPassword = document.getElementById('currentPassword').value;
+  const newPassword = document.getElementById('newPassword').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+  
+  // 유효성 검사
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    showToast('모든 필드를 입력해주세요', 'warning');
+    return;
+  }
+  
+  if (newPassword.length < 6) {
+    showToast('새 비밀번호는 최소 6자 이상이어야 합니다', 'warning');
+    return;
+  }
+  
+  if (newPassword !== confirmPassword) {
+    showToast('새 비밀번호가 일치하지 않습니다', 'warning');
+    return;
+  }
+  
+  try {
+    console.log('📡 비밀번호 변경 요청');
+    
+    // Supabase 비밀번호 변경
+    const { data, error } = await supabaseClient.auth.updateUser({
+      password: newPassword
+    });
+    
+    if (error) {
+      throw error;
+    }
+    
+    // 입력 필드 초기화
+    document.getElementById('currentPassword').value = '';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmPassword').value = '';
+    
+    showToast('✅ 비밀번호가 변경되었습니다', 'success');
+    console.log('✅ 비밀번호 변경 완료');
+    
+  } catch (error) {
+    console.error('❌ 비밀번호 변경 실패:', error);
+    showToast(`❌ ${error.message}`, 'error');
+  }
+}
+
+// 회원 탈퇴 확인
+function confirmAccountDeletion() {
+  const confirmMessage = `
+정말로 회원 탈퇴하시겠습니까?
+
+⚠️ 주의사항:
+• 모든 데이터가 영구 삭제됩니다
+• 남은 크레딧은 환불되지 않습니다
+• 생성한 콘텐츠는 복구할 수 없습니다
+
+탈퇴를 진행하려면 "탈퇴"를 입력해주세요.
+  `;
+  
+  const userInput = prompt(confirmMessage);
+  
+  if (userInput === '탈퇴') {
+    deleteAccount();
+  } else if (userInput !== null) {
+    showToast('탈퇴가 취소되었습니다', 'info');
+  }
+}
+
+// 회원 탈퇴 실행
+async function deleteAccount() {
+  if (!window.currentUser || !window.currentUser.id) {
+    showToast('로그인 정보를 찾을 수 없습니다', 'error');
+    return;
+  }
+  
+  try {
+    const session = await supabaseClient.auth.getSession();
+    if (!session?.data?.session) {
+      showToast('세션이 만료되었습니다. 다시 로그인해주세요', 'error');
+      return;
+    }
+    
+    const token = session.data.session.access_token;
+    
+    console.log('📡 회원 탈퇴 요청:', { userId: window.currentUser.id });
+    
+    const response = await fetch('/api/users/delete-account', {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        user_id: window.currentUser.id
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      showToast('✅ 회원 탈퇴가 완료되었습니다', 'success');
+      
+      // Supabase 로그아웃
+      await supabaseClient.auth.signOut();
+      
+      // 로컬 데이터 삭제
+      localStorage.removeItem('postflow_user');
+      localStorage.removeItem('postflow_selected_profile_id');
+      
+      // 전역 변수 초기화
+      window.currentUser = { isLoggedIn: false, isGuest: true };
+      window.cachedProfiles = null;
+      
+      // 설정 모달 닫기
+      closeSettingsModal();
+      
+      // UI 업데이트
+      updateAuthUI();
+      
+      // 3초 후 페이지 새로고침
+      setTimeout(() => {
+        window.location.reload();
+      }, 3000);
+      
+      console.log('✅ 회원 탈퇴 완료');
+    } else {
+      throw new Error(data.error || '회원 탈퇴 실패');
+    }
+    
+  } catch (error) {
+    console.error('❌ 회원 탈퇴 실패:', error);
+    showToast(`❌ ${error.message}`, 'error');
+  }
+}
+
+// 전역 노출
+window.showSettingsModal = showSettingsModal;
+window.closeSettingsModal = closeSettingsModal;
+window.updateUserName = updateUserName;
+window.updateNotificationSettings = updateNotificationSettings;
+window.changePassword = changePassword;
+window.confirmAccountDeletion = confirmAccountDeletion;
+window.deleteAccount = deleteAccount;

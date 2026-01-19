@@ -5826,4 +5826,150 @@ app.get('*', (c) => {
   return c.html(landingPageTemplate);
 });
 
+// ========================================
+// 👤 사용자 프로필 관리 API
+// ========================================
+
+// PUT /api/users/update-profile - 사용자 프로필 업데이트
+app.put('/api/users/update-profile', async (c) => {
+  try {
+    console.log('📝 /api/users/update-profile 요청');
+    
+    // JWT 토큰 검증
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json({ success: false, error: '인증 토큰이 필요합니다' }, 401);
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    const supabase = createSupabaseClient(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_ANON_KEY,
+      token
+    );
+    
+    // 토큰으로 사용자 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.error('❌ 인증 실패:', authError);
+      return c.json({ success: false, error: '인증에 실패했습니다' }, 401);
+    }
+    
+    const body = await c.req.json();
+    const { user_id, name, marketing_agreed } = body;
+    
+    if (!user_id) {
+      return c.json({ success: false, error: 'user_id는 필수입니다' }, 400);
+    }
+    
+    // 본인 확인
+    if (user.id !== user_id) {
+      return c.json({ success: false, error: '본인의 정보만 수정할 수 있습니다' }, 403);
+    }
+    
+    // 업데이트할 필드 구성
+    const updateFields: any = {};
+    if (name !== undefined) updateFields.name = name;
+    if (marketing_agreed !== undefined) updateFields.marketing_agreed = marketing_agreed;
+    
+    if (Object.keys(updateFields).length === 0) {
+      return c.json({ success: false, error: '업데이트할 필드가 없습니다' }, 400);
+    }
+    
+    console.log('📡 사용자 프로필 업데이트:', { user_id, updateFields });
+    
+    // Supabase users 테이블 업데이트
+    const { data: updatedUser, error: updateError } = await supabase
+      .from('users')
+      .update(updateFields)
+      .eq('id', user_id)
+      .select('id, email, name, tier, free_credits, paid_credits, marketing_agreed')
+      .single();
+    
+    if (updateError) {
+      console.error('❌ 프로필 업데이트 실패:', updateError);
+      return c.json({ success: false, error: updateError.message }, 500);
+    }
+    
+    console.log('✅ 프로필 업데이트 완료:', updatedUser);
+    
+    return c.json({
+      success: true,
+      user: updatedUser
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 프로필 업데이트 예외:', error);
+    return c.json({ success: false, error: '프로필 업데이트 중 오류가 발생했습니다', details: error.message }, 500);
+  }
+});
+
+// DELETE /api/users/delete-account - 회원 탈퇴
+app.delete('/api/users/delete-account', async (c) => {
+  try {
+    console.log('🗑️ /api/users/delete-account 요청');
+    
+    // JWT 토큰 검증
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json({ success: false, error: '인증 토큰이 필요합니다' }, 401);
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    const supabase = createSupabaseClient(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_ANON_KEY,
+      token
+    );
+    
+    // 토큰으로 사용자 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.error('❌ 인증 실패:', authError);
+      return c.json({ success: false, error: '인증에 실패했습니다' }, 401);
+    }
+    
+    const body = await c.req.json();
+    const { user_id } = body;
+    
+    if (!user_id) {
+      return c.json({ success: false, error: 'user_id는 필수입니다' }, 400);
+    }
+    
+    // 본인 확인
+    if (user.id !== user_id) {
+      return c.json({ success: false, error: '본인의 계정만 삭제할 수 있습니다' }, 403);
+    }
+    
+    console.log('📡 회원 탈퇴 처리:', { user_id });
+    
+    // Supabase Admin 클라이언트로 사용자 삭제
+    const supabaseAdmin = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // auth.users에서 사용자 삭제 (CASCADE로 관련 데이터 자동 삭제)
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user_id);
+    
+    if (deleteError) {
+      console.error('❌ 회원 탈퇴 실패:', deleteError);
+      return c.json({ success: false, error: deleteError.message }, 500);
+    }
+    
+    console.log('✅ 회원 탈퇴 완료:', user_id);
+    
+    return c.json({
+      success: true,
+      message: '회원 탈퇴가 완료되었습니다'
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 회원 탈퇴 예외:', error);
+    return c.json({ success: false, error: '회원 탈퇴 중 오류가 발생했습니다', details: error.message }, 500);
+  }
+});
+
 export default app;
