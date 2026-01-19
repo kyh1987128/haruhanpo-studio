@@ -10747,11 +10747,8 @@ async function deleteSnsLink(index) {
 }
 
 // ========================================
-// AI 워크플로우 기능 (NEW v8.0)
+// AI 워크플로우 기능 (NEW v9.0 - API 기반)
 // ========================================
-
-// LocalStorage 키
-const AI_WORKFLOW_KEY = 'postflow_ai_workflow';
 
 // 기본 AI 도구 목록 (카테고리별)
 const DEFAULT_AI_TOOLS = [
@@ -10778,27 +10775,75 @@ const DEFAULT_AI_TOOLS = [
   { name: 'Tome', url: 'https://tome.app', category: '프레젠테이션', icon: 'fas fa-book-open', color: '#10B981' }
 ];
 
-// AI 도구 불러오기
-function loadAiTools() {
-  const saved = localStorage.getItem(AI_WORKFLOW_KEY);
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch (error) {
-      console.error('❌ AI 도구 파싱 오류:', error);
+// AI 도구 불러오기 (API 기반)
+async function loadAiTools() {
+  try {
+    const profileId = getCurrentProfileId();
+    if (!profileId) {
+      console.log('📦 로그인 전이므로 기본 AI 도구 사용');
+      cachedAiTools = DEFAULT_AI_TOOLS;
       return DEFAULT_AI_TOOLS;
     }
+    
+    // Supabase 세션 토큰 가져오기
+    const session = await supabaseClient.auth.getSession();
+    if (!session?.data?.session) {
+      console.log('📦 세션 없음 - 기본 AI 도구 사용');
+      cachedAiTools = DEFAULT_AI_TOOLS;
+      return DEFAULT_AI_TOOLS;
+    }
+    
+    const token = session.data.session.access_token;
+    
+    console.log('📡 AI 워크플로우 로드 중...', { profileId });
+    
+    const response = await fetch(`/api/profiles/${profileId}/workflows?category=ai_tool`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      console.error('❌ AI 워크플로우 로드 실패:', response.status);
+      cachedAiTools = DEFAULT_AI_TOOLS;
+      return DEFAULT_AI_TOOLS;
+    }
+    
+    const data = await response.json();
+    
+    if (data.success && data.workflows && data.workflows.length > 0) {
+      cachedAiTools = data.workflows.map(w => ({
+        id: w.id,
+        name: w.name,
+        url: w.url,
+        category: w.description || '기타', // description을 category로 사용
+        icon: w.icon || 'fas fa-robot',
+        color: '#6366f1'
+      }));
+      console.log(`✅ AI 워크플로우 ${cachedAiTools.length}개 로드 완료`);
+      return cachedAiTools;
+    }
+    
+    // 워크플로우가 없으면 기본값 사용
+    console.log('📦 저장된 AI 워크플로우 없음 - 기본값 사용');
+    cachedAiTools = DEFAULT_AI_TOOLS;
+    return DEFAULT_AI_TOOLS;
+    
+  } catch (error) {
+    console.error('❌ AI 워크플로우 로드 예외:', error);
+    cachedAiTools = DEFAULT_AI_TOOLS;
+    return DEFAULT_AI_TOOLS;
   }
-  return DEFAULT_AI_TOOLS;
 }
 
-// AI 도구 저장
+// AI 도구 저장 (API 기반) - 더 이상 사용 안 함
 function saveAiTools(tools) {
-  localStorage.setItem(AI_WORKFLOW_KEY, JSON.stringify(tools));
+  // API 기반으로 전환되어 개별 CRUD 함수 사용
+  console.warn('⚠️ saveAiTools()는 더 이상 사용되지 않습니다. createAiTool(), updateAiTool(), deleteAiTool()을 사용하세요');
 }
 
 // AI 워크플로우 모달 열기
-function openAiWorkflowModal() {
+async function openAiWorkflowModal() {
   const modal = document.getElementById('aiWorkflowModal');
   if (!modal) {
     console.error('❌ AI 워크플로우 모달을 찾을 수 없습니다');
@@ -10806,7 +10851,7 @@ function openAiWorkflowModal() {
   }
   
   modal.style.display = 'flex';
-  renderAiToolsList();
+  await renderAiToolsList();
 }
 
 // AI 워크플로우 모달 닫기
@@ -10818,11 +10863,14 @@ function closeAiWorkflowModal() {
 }
 
 // AI 도구 목록 렌더링 (카테고리별)
-function renderAiToolsList() {
+async function renderAiToolsList() {
   const container = document.getElementById('aiWorkflowList');
   if (!container) return;
   
-  const tools = loadAiTools();
+  // 로딩 표시
+  container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> 로드 중...</p>';
+  
+  const tools = await loadAiTools();
   
   if (tools.length === 0) {
     container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 20px;">저장된 AI 도구가 없습니다.</p>';
@@ -10884,8 +10932,7 @@ let editingAiToolIndex = null;
 
 function editAiTool(index) {
   editingAiToolIndex = index;
-  const tools = loadAiTools();
-  const tool = tools[index];
+  const tool = cachedAiTools[index];
   
   document.getElementById('editAiToolName').value = tool.name;
   document.getElementById('editAiToolUrl').value = tool.url;
@@ -10893,8 +10940,8 @@ function editAiTool(index) {
   document.getElementById('editAiToolModal').style.display = 'flex';
 }
 
-// AI 도구 수정 저장
-function saveEditAiTool() {
+// AI 도구 수정 저장 (API 기반)
+async function saveEditAiTool() {
   const name = document.getElementById('editAiToolName').value.trim();
   const url = document.getElementById('editAiToolUrl').value.trim();
   const category = document.getElementById('editAiToolCategory').value;
@@ -10904,32 +10951,86 @@ function saveEditAiTool() {
     return;
   }
   
-  const tools = loadAiTools();
-  
-  if (editingAiToolIndex === null) {
-    // 새로 추가
-    tools.push({
-      name: name,
-      url: url,
-      category: category,
-      icon: 'fas fa-robot',
-      color: '#6366f1'
-    });
-    showToast('✅ AI 도구가 추가되었습니다', 'success');
-  } else {
-    // 기존 수정
-    tools[editingAiToolIndex] = {
-      ...tools[editingAiToolIndex],
-      name: name,
-      url: url,
-      category: category
-    };
-    showToast('✅ AI 도구가 수정되었습니다', 'success');
+  const profileId = getCurrentProfileId();
+  if (!profileId) {
+    showToast('❌ 로그인이 필요합니다', 'error');
+    return;
   }
   
-  saveAiTools(tools);
-  renderAiToolsList();
-  cancelEditAiTool();
+  try {
+    const session = await supabaseClient.auth.getSession();
+    if (!session?.data?.session) {
+      showToast('❌ 세션이 만료되었습니다. 다시 로그인해주세요', 'error');
+      return;
+    }
+    
+    const token = session.data.session.access_token;
+    
+    if (editingAiToolIndex === null) {
+      // 새로 추가
+      console.log('📡 AI 워크플로우 생성 중...', { name, url, category });
+      
+      const response = await fetch('/api/workflows', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          profile_id: profileId,
+          category: 'ai_tool',
+          name: name,
+          url: url,
+          icon: 'fas fa-robot',
+          description: category,  // category를 description에 저장
+          is_favorite: false
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'AI 워크플로우 생성 실패');
+      }
+      
+      showToast('✅ AI 도구가 추가되었습니다', 'success');
+      
+    } else {
+      // 기존 수정
+      const workflowId = cachedAiTools[editingAiToolIndex].id;
+      console.log('📡 AI 워크플로우 수정 중...', { workflowId, name, url, category });
+      
+      const response = await fetch(`/api/workflows/${workflowId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: name,
+          url: url,
+          description: category  // category를 description에 저장
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'AI 워크플로우 수정 실패');
+      }
+      
+      showToast('✅ AI 도구가 수정되었습니다', 'success');
+    }
+    
+    // 목록 새로고침
+    cachedAiTools = null; // 캐시 무효화
+    await renderAiToolsList();
+    cancelEditAiTool();
+    
+  } catch (error) {
+    console.error('❌ AI 워크플로우 저장 실패:', error);
+    showToast(`❌ ${error.message}`, 'error');
+  }
 }
 
 // AI 도구 수정 취소
@@ -10938,16 +11039,52 @@ function cancelEditAiTool() {
   editingAiToolIndex = null;
 }
 
-// AI 도구 삭제
-function deleteAiTool(index) {
+// AI 도구 삭제 (API 기반)
+async function deleteAiTool(index) {
   if (!confirm('이 AI 도구를 삭제하시겠습니까?')) return;
   
-  const tools = loadAiTools();
-  tools.splice(index, 1);
+  const profileId = getCurrentProfileId();
+  if (!profileId) {
+    showToast('❌ 로그인이 필요합니다', 'error');
+    return;
+  }
   
-  saveAiTools(tools);
-  renderAiToolsList();
-  showToast('✅ AI 도구가 삭제되었습니다', 'success');
+  try {
+    const workflowId = cachedAiTools[index].id;
+    
+    const session = await supabaseClient.auth.getSession();
+    if (!session?.data?.session) {
+      showToast('❌ 세션이 만료되었습니다. 다시 로그인해주세요', 'error');
+      return;
+    }
+    
+    const token = session.data.session.access_token;
+    
+    console.log('📡 AI 워크플로우 삭제 중...', { workflowId });
+    
+    const response = await fetch(`/api/workflows/${workflowId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'AI 워크플로우 삭제 실패');
+    }
+    
+    showToast('✅ AI 도구가 삭제되었습니다', 'success');
+    
+    // 목록 새로고침
+    cachedAiTools = null; // 캐시 무효화
+    await renderAiToolsList();
+    
+  } catch (error) {
+    console.error('❌ AI 워크플로우 삭제 실패:', error);
+    showToast(`❌ ${error.message}`, 'error');
+  }
 }
 
 // 전역 노출
