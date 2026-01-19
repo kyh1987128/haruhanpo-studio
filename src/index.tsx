@@ -2279,6 +2279,505 @@ app.post('/api/auth/complete-registration', async (c) => {
   }
 });
 
+// ===================================
+// 워크플로우 API (SNS 바로가기 + AI 워크플로우)
+// ===================================
+
+// 1️⃣ 프로필별 워크플로우 조회
+app.get('/api/profiles/:profileId/workflows', async (c) => {
+  try {
+    const profileId = c.req.param('profileId');
+    const category = c.req.query('category'); // 'sns' 또는 'ai_tool'
+    
+    // 입력값 검증
+    if (!profileId) {
+      return c.json({ 
+        success: false, 
+        error: 'profileId는 필수입니다' 
+      }, 400);
+    }
+    
+    // Authorization 헤더에서 토큰 추출
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json({ 
+        success: false, 
+        error: '인증이 필요합니다' 
+      }, 401);
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Supabase Admin 클라이언트 생성
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // 토큰으로 사용자 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return c.json({ 
+        success: false, 
+        error: '유효하지 않은 토큰입니다' 
+      }, 401);
+    }
+    
+    // 프로필 소유권 확인
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, user_id, profile_name')
+      .eq('id', profileId)
+      .eq('user_id', user.id)
+      .single();
+    
+    if (profileError || !profile) {
+      return c.json({ 
+        success: false, 
+        error: '프로필을 찾을 수 없거나 접근 권한이 없습니다' 
+      }, 404);
+    }
+    
+    // 워크플로우 조회 쿼리 작성
+    let query = supabase
+      .from('profile_workflows')
+      .select(`
+        id,
+        is_enabled,
+        created_at,
+        workflow:user_workflows (
+          id,
+          category,
+          name,
+          url,
+          icon,
+          description,
+          is_favorite,
+          sort_order,
+          created_at,
+          updated_at
+        )
+      `)
+      .eq('profile_id', profileId)
+      .eq('user_id', user.id);
+    
+    // category 파라미터가 있으면 필터링
+    if (category) {
+      // user_workflows.category 필터링은 직접 불가능하므로, 데이터 받은 후 필터링
+      const { data: allWorkflows, error: workflowError } = await query;
+      
+      if (workflowError) {
+        console.error('❌ 워크플로우 조회 실패:', workflowError);
+        throw workflowError;
+      }
+      
+      // category로 필터링
+      const filteredWorkflows = allWorkflows
+        ?.filter((pw: any) => pw.workflow?.category === category)
+        .map((pw: any) => ({
+          id: pw.workflow.id,
+          category: pw.workflow.category,
+          name: pw.workflow.name,
+          url: pw.workflow.url,
+          icon: pw.workflow.icon,
+          description: pw.workflow.description,
+          is_favorite: pw.workflow.is_favorite,
+          is_enabled: pw.is_enabled,
+          sort_order: pw.workflow.sort_order,
+          created_at: pw.workflow.created_at,
+          updated_at: pw.workflow.updated_at
+        }))
+        .sort((a: any, b: any) => a.sort_order - b.sort_order);
+      
+      console.log(`✅ 워크플로우 조회 완료: ${profile.profile_name} (${category}) - ${filteredWorkflows?.length || 0}개`);
+      
+      return c.json({
+        success: true,
+        profile: {
+          id: profile.id,
+          name: profile.profile_name
+        },
+        workflows: filteredWorkflows || [],
+        total: filteredWorkflows?.length || 0
+      });
+    }
+    
+    // category 파라미터가 없으면 전체 조회
+    const { data: allWorkflows, error: workflowError } = await query;
+    
+    if (workflowError) {
+      console.error('❌ 워크플로우 조회 실패:', workflowError);
+      throw workflowError;
+    }
+    
+    const workflows = allWorkflows
+      ?.map((pw: any) => ({
+        id: pw.workflow.id,
+        category: pw.workflow.category,
+        name: pw.workflow.name,
+        url: pw.workflow.url,
+        icon: pw.workflow.icon,
+        description: pw.workflow.description,
+        is_favorite: pw.workflow.is_favorite,
+        is_enabled: pw.is_enabled,
+        sort_order: pw.workflow.sort_order,
+        created_at: pw.workflow.created_at,
+        updated_at: pw.workflow.updated_at
+      }))
+      .sort((a: any, b: any) => a.sort_order - b.sort_order);
+    
+    console.log(`✅ 워크플로우 전체 조회 완료: ${profile.profile_name} - ${workflows?.length || 0}개`);
+    
+    return c.json({
+      success: true,
+      profile: {
+        id: profile.id,
+        name: profile.profile_name
+      },
+      workflows: workflows || [],
+      total: workflows?.length || 0
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 워크플로우 조회 예외:', error);
+    return c.json({ 
+      success: false, 
+      error: error.message || '워크플로우 조회 중 오류가 발생했습니다'
+    }, 500);
+  }
+});
+
+// 2️⃣ 워크플로우 생성
+app.post('/api/workflows', async (c) => {
+  try {
+    const { 
+      profile_id, 
+      category, 
+      name, 
+      url, 
+      icon, 
+      description, 
+      is_favorite 
+    } = await c.req.json();
+    
+    // 입력값 검증
+    if (!profile_id || !category || !name) {
+      return c.json({ 
+        success: false, 
+        error: '필수 정보(profile_id, category, name)를 모두 입력해주세요' 
+      }, 400);
+    }
+    
+    // category 검증
+    const validCategories = ['sns', 'ai_tool', 'analytics', 'productivity', 'other'];
+    if (!validCategories.includes(category)) {
+      return c.json({ 
+        success: false, 
+        error: `유효하지 않은 category입니다. (${validCategories.join(', ')})` 
+      }, 400);
+    }
+    
+    // Authorization 헤더에서 토큰 추출
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json({ 
+        success: false, 
+        error: '인증이 필요합니다' 
+      }, 401);
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // 토큰으로 사용자 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return c.json({ 
+        success: false, 
+        error: '유효하지 않은 토큰입니다' 
+      }, 401);
+    }
+    
+    // 프로필 소유권 확인
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, user_id, profile_name')
+      .eq('id', profile_id)
+      .eq('user_id', user.id)
+      .single();
+    
+    if (profileError || !profile) {
+      return c.json({ 
+        success: false, 
+        error: '프로필을 찾을 수 없거나 접근 권한이 없습니다' 
+      }, 404);
+    }
+    
+    // 1단계: user_workflows 테이블에 워크플로우 생성
+    const { data: newWorkflow, error: workflowError } = await supabase
+      .from('user_workflows')
+      .insert({
+        user_id: user.id,
+        category: category,
+        name: name,
+        url: url || null,
+        icon: icon || null,
+        description: description || null,
+        is_favorite: is_favorite || false,
+        sort_order: 0
+      })
+      .select()
+      .single();
+    
+    if (workflowError) {
+      console.error('❌ 워크플로우 생성 실패:', workflowError);
+      throw workflowError;
+    }
+    
+    // 2단계: profile_workflows 테이블에 매핑 생성
+    const { data: profileWorkflow, error: mappingError } = await supabase
+      .from('profile_workflows')
+      .insert({
+        user_id: user.id,
+        profile_id: profile_id,
+        profile_name: profile.profile_name,
+        workflow_id: newWorkflow.id,
+        is_enabled: true
+      })
+      .select()
+      .single();
+    
+    if (mappingError) {
+      console.error('❌ 프로필 워크플로우 매핑 실패:', mappingError);
+      // 롤백: user_workflows에서 방금 생성한 워크플로우 삭제
+      await supabase
+        .from('user_workflows')
+        .delete()
+        .eq('id', newWorkflow.id);
+      throw mappingError;
+    }
+    
+    console.log(`✅ 워크플로우 생성 완료: ${name} (${category}) - ${profile.profile_name}`);
+    
+    return c.json({
+      success: true,
+      message: '워크플로우가 생성되었습니다',
+      workflow: {
+        id: newWorkflow.id,
+        category: newWorkflow.category,
+        name: newWorkflow.name,
+        url: newWorkflow.url,
+        icon: newWorkflow.icon,
+        description: newWorkflow.description,
+        is_favorite: newWorkflow.is_favorite,
+        is_enabled: profileWorkflow.is_enabled,
+        sort_order: newWorkflow.sort_order,
+        created_at: newWorkflow.created_at,
+        updated_at: newWorkflow.updated_at
+      }
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 워크플로우 생성 예외:', error);
+    return c.json({ 
+      success: false, 
+      error: error.message || '워크플로우 생성 중 오류가 발생했습니다'
+    }, 500);
+  }
+});
+
+// 3️⃣ 워크플로우 수정
+app.put('/api/workflows/:workflowId', async (c) => {
+  try {
+    const workflowId = c.req.param('workflowId');
+    const { name, url, icon, description, is_favorite, sort_order } = await c.req.json();
+    
+    if (!workflowId) {
+      return c.json({ 
+        success: false, 
+        error: 'workflowId는 필수입니다' 
+      }, 400);
+    }
+    
+    // Authorization 헤더에서 토큰 추출
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json({ 
+        success: false, 
+        error: '인증이 필요합니다' 
+      }, 401);
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // 토큰으로 사용자 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return c.json({ 
+        success: false, 
+        error: '유효하지 않은 토큰입니다' 
+      }, 401);
+    }
+    
+    // 워크플로우 소유권 확인
+    const { data: workflow, error: checkError } = await supabase
+      .from('user_workflows')
+      .select('id, user_id, name')
+      .eq('id', workflowId)
+      .eq('user_id', user.id)
+      .single();
+    
+    if (checkError || !workflow) {
+      return c.json({ 
+        success: false, 
+        error: '워크플로우를 찾을 수 없거나 접근 권한이 없습니다' 
+      }, 404);
+    }
+    
+    // 수정할 데이터 준비
+    const updateData: any = {
+      updated_at: new Date().toISOString()
+    };
+    
+    if (name !== undefined) updateData.name = name;
+    if (url !== undefined) updateData.url = url;
+    if (icon !== undefined) updateData.icon = icon;
+    if (description !== undefined) updateData.description = description;
+    if (is_favorite !== undefined) updateData.is_favorite = is_favorite;
+    if (sort_order !== undefined) updateData.sort_order = sort_order;
+    
+    // 워크플로우 수정
+    const { data: updatedWorkflow, error: updateError } = await supabase
+      .from('user_workflows')
+      .update(updateData)
+      .eq('id', workflowId)
+      .eq('user_id', user.id)
+      .select()
+      .single();
+    
+    if (updateError) {
+      console.error('❌ 워크플로우 수정 실패:', updateError);
+      throw updateError;
+    }
+    
+    console.log(`✅ 워크플로우 수정 완료: ${updatedWorkflow.name}`);
+    
+    return c.json({
+      success: true,
+      message: '워크플로우가 수정되었습니다',
+      workflow: updatedWorkflow
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 워크플로우 수정 예외:', error);
+    return c.json({ 
+      success: false, 
+      error: error.message || '워크플로우 수정 중 오류가 발생했습니다'
+    }, 500);
+  }
+});
+
+// 4️⃣ 워크플로우 삭제
+app.delete('/api/workflows/:workflowId', async (c) => {
+  try {
+    const workflowId = c.req.param('workflowId');
+    
+    if (!workflowId) {
+      return c.json({ 
+        success: false, 
+        error: 'workflowId는 필수입니다' 
+      }, 400);
+    }
+    
+    // Authorization 헤더에서 토큰 추출
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json({ 
+        success: false, 
+        error: '인증이 필요합니다' 
+      }, 401);
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // 토큰으로 사용자 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return c.json({ 
+        success: false, 
+        error: '유효하지 않은 토큰입니다' 
+      }, 401);
+    }
+    
+    // 워크플로우 소유권 확인
+    const { data: workflow, error: checkError } = await supabase
+      .from('user_workflows')
+      .select('id, user_id, name')
+      .eq('id', workflowId)
+      .eq('user_id', user.id)
+      .single();
+    
+    if (checkError || !workflow) {
+      return c.json({ 
+        success: false, 
+        error: '워크플로우를 찾을 수 없거나 접근 권한이 없습니다' 
+      }, 404);
+    }
+    
+    // 1단계: profile_workflows에서 매핑 삭제
+    const { error: mappingDeleteError } = await supabase
+      .from('profile_workflows')
+      .delete()
+      .eq('workflow_id', workflowId)
+      .eq('user_id', user.id);
+    
+    if (mappingDeleteError) {
+      console.error('❌ 프로필 워크플로우 매핑 삭제 실패:', mappingDeleteError);
+      throw mappingDeleteError;
+    }
+    
+    // 2단계: user_workflows에서 워크플로우 삭제
+    const { error: deleteError } = await supabase
+      .from('user_workflows')
+      .delete()
+      .eq('id', workflowId)
+      .eq('user_id', user.id);
+    
+    if (deleteError) {
+      console.error('❌ 워크플로우 삭제 실패:', deleteError);
+      throw deleteError;
+    }
+    
+    console.log(`✅ 워크플로우 삭제 완료: ${workflow.name}`);
+    
+    return c.json({
+      success: true,
+      message: '워크플로우가 삭제되었습니다'
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 워크플로우 삭제 예외:', error);
+    return c.json({ 
+      success: false, 
+      error: error.message || '워크플로우 삭제 중 오류가 발생했습니다'
+    }, 500);
+  }
+});
+
 // 보상 지급 엔드포인트
 app.post('/api/rewards/claim', async (c) => {
   try {
