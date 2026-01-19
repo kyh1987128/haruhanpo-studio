@@ -2910,6 +2910,50 @@ async function handleNewBatchGenerate(contentCount, platforms) {
       
       const result = await response.json();
       
+      // ✅ 크레딧 동기화 (배치 생성에도 추가)
+      if (result.usage) {
+        console.log('🔍 [배치] 백엔드 응답 usage:', result.usage);
+        
+        const usage = result.usage;
+        
+        // 1️⃣ 무료 크레딧 업데이트
+        if (usage.free_credits !== undefined || usage.free_remaining !== undefined) {
+          currentUser.free_credits = usage.free_credits ?? usage.free_remaining ?? 0;
+        }
+        
+        // 2️⃣ 유료 크레딧 업데이트
+        if (usage.paid_credits !== undefined || usage.paid_remaining !== undefined) {
+          currentUser.paid_credits = usage.paid_credits ?? usage.paid_remaining ?? 0;
+        }
+        
+        // 3️⃣ 총 크레딧 계산
+        if (usage.credits_remaining !== undefined) {
+          currentUser.credits = usage.credits_remaining;
+        } else {
+          currentUser.credits = (currentUser.free_credits || 0) + (currentUser.paid_credits || 0);
+        }
+        
+        // 4️⃣ window.userCreditsInfo 동기화
+        window.userCreditsInfo = {
+          free_credits: currentUser.free_credits,
+          paid_credits: currentUser.paid_credits,
+          total_credits: currentUser.credits
+        };
+        
+        // 5️⃣ 로컬스토리지 업데이트
+        localStorage.setItem('postflow_user', JSON.stringify(currentUser));
+        
+        // 6️⃣ UI 업데이트
+        updateAuthUI();
+        updateCostEstimate();
+        
+        console.log('✅ [배치] 크레딧 동기화 완료:', {
+          free: currentUser.free_credits,
+          paid: currentUser.paid_credits,
+          total: currentUser.credits
+        });
+      }
+      
       if (result.success) {
         allResults.push({
           contentIndex: i,

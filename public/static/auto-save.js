@@ -278,10 +278,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.currentUser && !window.currentUser.isGuest) {
     startAutoSave();
     
-    // 임시 저장 확인
-    setTimeout(() => {
-      showContinueWorkToast();
-    }, 2000);
+    // ❌ 임시 저장 팝업 제거 (사용자 요청)
+    // setTimeout(() => {
+    //   showContinueWorkToast();
+    // }, 2000);
   }
   
   // 페이지 나갈 때 세션 저장
@@ -296,10 +296,10 @@ window.addEventListener('userUpdated', (e) => {
   if (user && !user.isGuest) {
     startAutoSave();
     
-    // 임시 저장 확인
-    setTimeout(() => {
-      showContinueWorkToast();
-    }, 2000);
+    // ❌ 임시 저장 팝업 제거 (사용자 요청)
+    // setTimeout(() => {
+    //   showContinueWorkToast();
+    // }, 2000);
   } else {
     stopAutoSave();
   }
