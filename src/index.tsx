@@ -2546,7 +2546,7 @@ app.get('/api/workflows', async (c) => {
 app.post('/api/workflows', async (c) => {
   try {
     const { 
-      profile_id, 
+      user_id,  // profile_id 대신 user_id 사용
       category, 
       name, 
       url, 
@@ -2556,10 +2556,10 @@ app.post('/api/workflows', async (c) => {
     } = await c.req.json();
     
     // 입력값 검증
-    if (!profile_id || !category || !name) {
+    if (!user_id || !category || !name) {
       return c.json({ 
         success: false, 
-        error: '필수 정보(profile_id, category, name)를 모두 입력해주세요' 
+        error: '필수 정보(user_id, category, name)를 모두 입력해주세요' 
       }, 400);
     }
     
@@ -2597,26 +2597,21 @@ app.post('/api/workflows', async (c) => {
       }, 401);
     }
     
-    // 프로필 소유권 확인
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, user_id, profile_name')
-      .eq('id', profile_id)
-      .eq('user_id', user.id)
-      .single();
-    
-    if (profileError || !profile) {
+    // 본인 데이터만 생성 가능
+    if (user.id !== user_id) {
       return c.json({ 
         success: false, 
-        error: '프로필을 찾을 수 없거나 접근 권한이 없습니다' 
-      }, 404);
+        error: '본인의 데이터만 생성할 수 있습니다' 
+      }, 403);
     }
     
-    // 1단계: user_workflows 테이블에 워크플로우 생성
+    console.log('📝 워크플로우 생성:', { user_id, category, name });
+    
+    // user_workflows 테이블에 워크플로우 생성 (profile_workflows 매핑 제거)
     const { data: newWorkflow, error: workflowError } = await supabase
       .from('user_workflows')
       .insert({
-        user_id: user.id,
+        user_id: user_id,
         category: category,
         name: name,
         url: url || null,
@@ -2633,30 +2628,7 @@ app.post('/api/workflows', async (c) => {
       throw workflowError;
     }
     
-    // 2단계: profile_workflows 테이블에 매핑 생성
-    const { data: profileWorkflow, error: mappingError } = await supabase
-      .from('profile_workflows')
-      .insert({
-        user_id: user.id,
-        profile_id: profile_id,
-        profile_name: profile.profile_name,
-        workflow_id: newWorkflow.id,
-        is_enabled: true
-      })
-      .select()
-      .single();
-    
-    if (mappingError) {
-      console.error('❌ 프로필 워크플로우 매핑 실패:', mappingError);
-      // 롤백: user_workflows에서 방금 생성한 워크플로우 삭제
-      await supabase
-        .from('user_workflows')
-        .delete()
-        .eq('id', newWorkflow.id);
-      throw mappingError;
-    }
-    
-    console.log(`✅ 워크플로우 생성 완료: ${name} (${category}) - ${profile.profile_name}`);
+    console.log(`✅ 워크플로우 생성 완료: ${name} (${category})`);
     
     return c.json({
       success: true,
@@ -2669,7 +2641,6 @@ app.post('/api/workflows', async (c) => {
         icon: newWorkflow.icon,
         description: newWorkflow.description,
         is_favorite: newWorkflow.is_favorite,
-        is_enabled: profileWorkflow.is_enabled,
         sort_order: newWorkflow.sort_order,
         created_at: newWorkflow.created_at,
         updated_at: newWorkflow.updated_at
