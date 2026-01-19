@@ -10423,13 +10423,14 @@ window.updateCreditsUI = updateCreditsUI;
 window.broadcastCreditUpdate = broadcastCreditUpdate;
 
 // ========================================
-// SNS 바로가기 기능 (NEW v8.0)
+// SNS 바로가기 & AI 워크플로우 기능 (NEW v9.0 - API 기반)
 // ========================================
 
-// LocalStorage 키
-const SNS_LINKS_KEY = 'postflow_sns_links';
+// 현재 로드된 워크플로우 캐시
+let cachedSnsLinks = null;
+let cachedAiTools = null;
 
-// 기본 8개 플랫폼
+// 기본 8개 SNS 플랫폼
 const DEFAULT_SNS_PLATFORMS = [
   { name: '네이버 블로그', url: 'https://blog.naver.com', icon: 'fas fa-blog', color: '#03C75A' },
   { name: '인스타그램', url: 'https://www.instagram.com', icon: 'fab fa-instagram', color: '#E4405F' },
@@ -10441,27 +10442,88 @@ const DEFAULT_SNS_PLATFORMS = [
   { name: '유튜브', url: 'https://studio.youtube.com', icon: 'fab fa-youtube', color: '#FF0000' }
 ];
 
-// SNS 링크 불러오기
-function loadSnsLinks() {
-  const saved = localStorage.getItem(SNS_LINKS_KEY);
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch (error) {
-      console.error('❌ SNS 링크 파싱 오류:', error);
-      return DEFAULT_SNS_PLATFORMS;
-    }
+// 현재 프로필 ID 가져오기
+function getCurrentProfileId() {
+  // TODO: 실제 프로필 전환 기능이 구현되면 현재 선택된 프로필 ID를 반환
+  // 임시로 window.currentUser에서 첫 번째 프로필을 사용
+  if (!window.currentUser || !window.currentUser.id) {
+    console.warn('⚠️ 로그인된 사용자가 없습니다');
+    return null;
   }
-  return DEFAULT_SNS_PLATFORMS;
+  
+  // TODO: profiles 테이블에서 사용자의 첫 번째 프로필 조회
+  // 임시로 사용자 ID를 프로필 ID로 사용 (실제로는 별도 API 호출 필요)
+  return window.currentUser.id;
 }
 
-// SNS 링크 저장
+// SNS 링크 불러오기 (API 기반)
+async function loadSnsLinks() {
+  try {
+    const profileId = getCurrentProfileId();
+    if (!profileId) {
+      console.log('📦 로그인 전이므로 기본 SNS 플랫폼 사용');
+      cachedSnsLinks = DEFAULT_SNS_PLATFORMS;
+      return DEFAULT_SNS_PLATFORMS;
+    }
+    
+    // Supabase 세션 토큰 가져오기
+    const session = await supabaseClient.auth.getSession();
+    if (!session?.data?.session) {
+      console.log('📦 세션 없음 - 기본 SNS 플랫폼 사용');
+      cachedSnsLinks = DEFAULT_SNS_PLATFORMS;
+      return DEFAULT_SNS_PLATFORMS;
+    }
+    
+    const token = session.data.session.access_token;
+    
+    console.log('📡 SNS 링크 로드 중...', { profileId });
+    
+    const response = await fetch(`/api/profiles/${profileId}/workflows?category=sns`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      console.error('❌ SNS 링크 로드 실패:', response.status);
+      cachedSnsLinks = DEFAULT_SNS_PLATFORMS;
+      return DEFAULT_SNS_PLATFORMS;
+    }
+    
+    const data = await response.json();
+    
+    if (data.success && data.workflows && data.workflows.length > 0) {
+      cachedSnsLinks = data.workflows.map(w => ({
+        id: w.id,
+        name: w.name,
+        url: w.url,
+        icon: w.icon || 'fas fa-link',
+        color: '#6366f1'
+      }));
+      console.log(`✅ SNS 링크 ${cachedSnsLinks.length}개 로드 완료`);
+      return cachedSnsLinks;
+    }
+    
+    // 워크플로우가 없으면 기본값 사용
+    console.log('📦 저장된 SNS 링크 없음 - 기본값 사용');
+    cachedSnsLinks = DEFAULT_SNS_PLATFORMS;
+    return DEFAULT_SNS_PLATFORMS;
+    
+  } catch (error) {
+    console.error('❌ SNS 링크 로드 예외:', error);
+    cachedSnsLinks = DEFAULT_SNS_PLATFORMS;
+    return DEFAULT_SNS_PLATFORMS;
+  }
+}
+
+// SNS 링크 저장 (API 기반) - 더 이상 사용 안 함
 function saveSnsLinks(links) {
-  localStorage.setItem(SNS_LINKS_KEY, JSON.stringify(links));
+  // API 기반으로 전환되어 개별 CRUD 함수 사용
+  console.warn('⚠️ saveSnsLinks()는 더 이상 사용되지 않습니다. createSnsLink(), updateSnsLink(), deleteSnsLink()를 사용하세요');
 }
 
 // SNS 바로가기 모달 열기
-function openSnsLinksModal() {
+async function openSnsLinksModal() {
   const modal = document.getElementById('snsLinksModal');
   if (!modal) {
     console.error('❌ SNS 바로가기 모달을 찾을 수 없습니다');
@@ -10469,7 +10531,7 @@ function openSnsLinksModal() {
   }
   
   modal.style.display = 'flex';
-  renderSnsList();
+  await renderSnsList();
 }
 
 // SNS 바로가기 모달 닫기
@@ -10481,11 +10543,14 @@ function closeSnsLinksModal() {
 }
 
 // SNS 목록 렌더링
-function renderSnsList() {
+async function renderSnsList() {
   const container = document.getElementById('snsLinksList');
   if (!container) return;
   
-  const links = loadSnsLinks();
+  // 로딩 표시
+  container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> 로드 중...</p>';
+  
+  const links = await loadSnsLinks();
   
   if (links.length === 0) {
     container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 20px;">저장된 SNS 링크가 없습니다.</p>';
@@ -10519,7 +10584,7 @@ function renderSnsList() {
 
 // 새 SNS 링크 추가
 function addNewSnsLink() {
-  editingIndex = null; // 새로 추가
+  editingSnsIndex = null; // 새로 추가
   document.getElementById('editSnsName').value = '';
   document.getElementById('editSnsUrl').value = '';
   document.getElementById('editSnsModal').style.display = 'flex';
@@ -10530,16 +10595,15 @@ let editingSnsIndex = null;
 
 function editSnsLink(index) {
   editingSnsIndex = index;
-  const links = loadSnsLinks();
-  const link = links[index];
+  const link = cachedSnsLinks[index];
   
   document.getElementById('editSnsName').value = link.name;
   document.getElementById('editSnsUrl').value = link.url;
   document.getElementById('editSnsModal').style.display = 'flex';
 }
 
-// SNS 수정 저장
-function saveEditSns() {
+// SNS 수정 저장 (API 기반)
+async function saveEditSns() {
   const name = document.getElementById('editSnsName').value.trim();
   const url = document.getElementById('editSnsUrl').value.trim();
   
@@ -10548,30 +10612,84 @@ function saveEditSns() {
     return;
   }
   
-  const links = loadSnsLinks();
-  
-  if (editingSnsIndex === null) {
-    // 새로 추가
-    links.push({
-      name: name,
-      url: url,
-      icon: 'fas fa-link',
-      color: '#6366f1'
-    });
-    showToast('✅ SNS 링크가 추가되었습니다', 'success');
-  } else {
-    // 기존 수정
-    links[editingSnsIndex] = {
-      ...links[editingSnsIndex],
-      name: name,
-      url: url
-    };
-    showToast('✅ SNS 링크가 수정되었습니다', 'success');
+  const profileId = getCurrentProfileId();
+  if (!profileId) {
+    showToast('❌ 로그인이 필요합니다', 'error');
+    return;
   }
   
-  saveSnsLinks(links);
-  renderSnsList();
-  cancelEditSns();
+  try {
+    const session = await supabaseClient.auth.getSession();
+    if (!session?.data?.session) {
+      showToast('❌ 세션이 만료되었습니다. 다시 로그인해주세요', 'error');
+      return;
+    }
+    
+    const token = session.data.session.access_token;
+    
+    if (editingSnsIndex === null) {
+      // 새로 추가
+      console.log('📡 SNS 링크 생성 중...', { name, url });
+      
+      const response = await fetch('/api/workflows', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          profile_id: profileId,
+          category: 'sns',
+          name: name,
+          url: url,
+          icon: 'fas fa-link',
+          is_favorite: false
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'SNS 링크 생성 실패');
+      }
+      
+      showToast('✅ SNS 링크가 추가되었습니다', 'success');
+      
+    } else {
+      // 기존 수정
+      const workflowId = cachedSnsLinks[editingSnsIndex].id;
+      console.log('📡 SNS 링크 수정 중...', { workflowId, name, url });
+      
+      const response = await fetch(`/api/workflows/${workflowId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: name,
+          url: url
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'SNS 링크 수정 실패');
+      }
+      
+      showToast('✅ SNS 링크가 수정되었습니다', 'success');
+    }
+    
+    // 목록 새로고침
+    cachedSnsLinks = null; // 캐시 무효화
+    await renderSnsList();
+    cancelEditSns();
+    
+  } catch (error) {
+    console.error('❌ SNS 링크 저장 실패:', error);
+    showToast(`❌ ${error.message}`, 'error');
+  }
 }
 
 // SNS 수정 취소
@@ -10580,16 +10698,52 @@ function cancelEditSns() {
   editingSnsIndex = null;
 }
 
-// SNS 링크 삭제
-function deleteSnsLink(index) {
+// SNS 링크 삭제 (API 기반)
+async function deleteSnsLink(index) {
   if (!confirm('이 SNS 링크를 삭제하시겠습니까?')) return;
   
-  const links = loadSnsLinks();
-  links.splice(index, 1);
+  const profileId = getCurrentProfileId();
+  if (!profileId) {
+    showToast('❌ 로그인이 필요합니다', 'error');
+    return;
+  }
   
-  saveSnsLinks(links);
-  renderSnsList();
-  showToast('✅ SNS 링크가 삭제되었습니다', 'success');
+  try {
+    const workflowId = cachedSnsLinks[index].id;
+    
+    const session = await supabaseClient.auth.getSession();
+    if (!session?.data?.session) {
+      showToast('❌ 세션이 만료되었습니다. 다시 로그인해주세요', 'error');
+      return;
+    }
+    
+    const token = session.data.session.access_token;
+    
+    console.log('📡 SNS 링크 삭제 중...', { workflowId });
+    
+    const response = await fetch(`/api/workflows/${workflowId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'SNS 링크 삭제 실패');
+    }
+    
+    showToast('✅ SNS 링크가 삭제되었습니다', 'success');
+    
+    // 목록 새로고침
+    cachedSnsLinks = null; // 캐시 무효화
+    await renderSnsList();
+    
+  } catch (error) {
+    console.error('❌ SNS 링크 삭제 실패:', error);
+    showToast(`❌ ${error.message}`, 'error');
+  }
 }
 
 // ========================================
