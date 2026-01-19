@@ -8449,23 +8449,7 @@ async function generateSingleContent(contentIndex) {
         window.currentUser.paid_credits = paid_credits;
       }
       
-      // 상단 크레딧 UI 업데이트 (updateAuthUI()와 동일한 포맷)
-      const userCreditsElement = document.getElementById('userCredits');
-      if (userCreditsElement) {
-        const totalCredits = free_credits + paid_credits;
-        let creditText = `${totalCredits}크레딧`;
-        if (free_credits > 0 && paid_credits > 0) {
-          creditText = `${totalCredits}크레딧 (무료 ${free_credits} + 유료 ${paid_credits})`;
-        } else if (free_credits > 0) {
-          creditText = `${totalCredits}크레딧 (무료)`;
-        } else if (paid_credits > 0) {
-          creditText = `${totalCredits}크레딧 (유료)`;
-        } else {
-          creditText = '0크레딧';
-        }
-        userCreditsElement.textContent = creditText;
-      }
-      
+
       // 키워드 분석 화면 크레딧 표시 업데이트 (정확한 ID 사용)
       const freeKeywordCreditsElement = document.getElementById('freeKeywordCredits');
       const paidKeywordCreditsElement = document.getElementById('paidKeywordCredits');
@@ -8480,9 +8464,9 @@ async function generateSingleContent(contentIndex) {
         console.log(`✅ 유료 크레딧 업데이트: ${paid_credits}`);
       }
       
-      // 추가: 다른 형식의 크레딧 표시도 업데이트
-      const keywordCreditsElements = document.querySelectorAll('[id^="keywordCredits"], .keyword-credits-display');
-      keywordCreditsElements.forEach(element => {
+      // 통합: 모든 크레딧 표시 업데이트 (헤더 + 키워드 분석)
+      const allCreditsElements = document.querySelectorAll('[id^="keywordCredits"], .keyword-credits-display, #userCredits');
+      allCreditsElements.forEach(element => {
         if (element.textContent.includes('무료') && element.textContent.includes('유료')) {
           element.textContent = `무료 ${free_credits} · 유료 ${paid_credits}`;
         }
