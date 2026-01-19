@@ -242,7 +242,7 @@ export const headerHTML = `
       </a>
 
       <!-- 로그인 후: 설정 버튼 -->
-      <button class="header-btn" id="settingsButton" onclick="alert('설정 기능은 준비 중입니다');" style="display: none;">
+      <button class="header-btn" id="settingsButton" onclick="if(window.showSettingsModal) window.showSettingsModal(); else alert('설정 페이지를 로드하는 중입니다.');" style="display: none;">
         <i class="fas fa-cog"></i>
         <span>설정</span>
       </button>
