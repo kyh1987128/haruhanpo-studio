@@ -232,7 +232,7 @@ export const headerHTML = `
         <span class="divider">|</span>
         <span class="user-tier" id="userTierDisplay">-</span>
         <span class="divider">|</span>
-        <span class="user-credits" id="userCreditsDisplay">무료 0 / 유료 0</span>
+        <span class="user-credits" id="userCreditsDisplay">무료 0 · 유료 0</span>
       </div>
       
       <!-- 로그인 후: 대시보드 버튼 (로그인한 사용자만) -->
@@ -298,7 +298,7 @@ export const headerScript = `
 
         document.getElementById('userNameDisplay').textContent = userName;
         document.getElementById('userTierDisplay').textContent = tier;
-        document.getElementById('userCreditsDisplay').textContent = \`무료 \${freeCredits} / 유료 \${paidCredits}\`;
+        document.getElementById('userCreditsDisplay').textContent = \`무료 \${freeCredits} · 유료 \${paidCredits}\`;
         
         console.log('✅ [헤더] 사용자 정보 업데이트 완료:', {userName, tier, freeCredits, paidCredits});
     };
