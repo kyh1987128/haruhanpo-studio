@@ -2324,6 +2324,7 @@ app.get('/api/profiles/:profileId/workflows', async (c) => {
     }
     
     // 프로필 소유권 확인
+    console.log('🔍 프로필 조회 시도:', { profileId, userId: user.id });
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('id, user_id, profile_name')
@@ -2331,10 +2332,18 @@ app.get('/api/profiles/:profileId/workflows', async (c) => {
       .eq('user_id', user.id)
       .single();
     
+    console.log('🔍 프로필 조회 결과:', { profile, profileError });
+    
     if (profileError || !profile) {
+      console.error('❌ 프로필을 찾을 수 없음:', { profileId, userId: user.id, profileError });
       return c.json({ 
         success: false, 
-        error: '프로필을 찾을 수 없거나 접근 권한이 없습니다' 
+        error: '프로필을 찾을 수 없거나 접근 권한이 없습니다',
+        debug: {
+          profileId,
+          userId: user.id,
+          error: profileError?.message || '프로필 없음'
+        }
       }, 404);
     }
     
