@@ -15,7 +15,10 @@ export interface Database {
           id: string;
           email: string;
           name: string | null;
+          gender: string | null;
+          birth_date: string | null;
           avatar_url: string | null;
+          phone: string | null;
           credits: number;
           subscription_status: string;
           subscription_plan: string;
@@ -25,6 +28,16 @@ export interface Database {
           last_login_date: string | null;
           monthly_free_usage_count: number;
           monthly_usage_reset_date: string | null;
+          terms_agreed: boolean;
+          privacy_agreed: boolean;
+          collection_agreed: boolean;
+          personal_info_agreed: boolean;
+          age_14_confirmed: boolean;
+          marketing_agreed: boolean;
+          custom_info_agreed: boolean;
+          registration_completed: boolean;
+          registration_completed_at: string | null;
+          terms_agreed_at: string | null;
           created_at: string;
           updated_at: string;
         };

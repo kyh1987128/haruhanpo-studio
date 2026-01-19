@@ -5892,10 +5892,12 @@ function showRegistrationCompleteModal(userId) {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
       background: rgba(0,0,0,0.8); z-index: 10000; 
       display: flex; align-items: center; justify-content: center;
+      overflow-y: auto;
     ">
       <div style="
         background: white; border-radius: 20px; padding: 2rem; 
-        max-width: 480px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        max-width: 520px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        margin: 2rem auto; max-height: 90vh; overflow-y: auto;
       ">
         <div style="text-align: center; margin-bottom: 2rem;">
           <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
@@ -5903,15 +5905,66 @@ function showRegistrationCompleteModal(userId) {
             환영합니다!
           </h2>
           <p style="color: #6b7280; font-size: 1rem;">
-            서비스 이용을 위해 연락처를 입력해주세요
+            서비스 이용을 위해 정보를 입력해주세요
           </p>
         </div>
         
         <form id="registrationCompleteForm">
-          <!-- 연락처 입력 -->
+          <!-- 이름 -->
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">
+              이름 <span style="color: #ef4444;">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="userName" 
+              placeholder="홍길동" 
+              required
+              style="
+                width: 100%; padding: 0.875rem; border: 2px solid #e5e7eb; 
+                border-radius: 10px; font-size: 1rem; outline: none;
+              "
+            />
+          </div>
+          
+          <!-- 성별 -->
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">
+              성별 <span style="color: #ef4444;">*</span>
+            </label>
+            <div style="display: flex; gap: 1rem;">
+              <label style="flex: 1; display: flex; align-items: center; padding: 0.875rem; border: 2px solid #e5e7eb; border-radius: 10px; cursor: pointer; transition: border-color 0.2s;">
+                <input type="radio" name="gender" value="male" required style="margin-right: 0.5rem;">
+                남성
+              </label>
+              <label style="flex: 1; display: flex; align-items: center; padding: 0.875rem; border: 2px solid #e5e7eb; border-radius: 10px; cursor: pointer; transition: border-color 0.2s;">
+                <input type="radio" name="gender" value="female" required style="margin-right: 0.5rem;">
+                여성
+              </label>
+            </div>
+          </div>
+          
+          <!-- 생년월일 -->
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">
+              생년월일 <span style="color: #ef4444;">*</span>
+            </label>
+            <input 
+              type="date" 
+              id="userBirthDate" 
+              required
+              max="${new Date().toISOString().split('T')[0]}"
+              style="
+                width: 100%; padding: 0.875rem; border: 2px solid #e5e7eb; 
+                border-radius: 10px; font-size: 1rem; outline: none;
+              "
+            />
+          </div>
+          
+          <!-- 연락처 -->
           <div style="margin-bottom: 1.5rem;">
             <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">
-              연락처 <span style="color: #ef4444;">*</span>
+              휴대전화번호 <span style="color: #ef4444;">*</span>
             </label>
             <input 
               type="tel" 
@@ -5929,35 +5982,138 @@ function showRegistrationCompleteModal(userId) {
           </div>
           
           <!-- 약관 동의 -->
-          <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-radius: 12px;">
+          <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-radius: 12px; border: 2px solid #e5e7eb;">
+            <!-- 전체동의 -->
+            <label style="
+              display: flex; align-items: center; padding-bottom: 1rem; margin-bottom: 1rem; 
+              border-bottom: 2px solid #e5e7eb; cursor: pointer; font-size: 1.05rem;
+            ">
+              <input 
+                type="checkbox" 
+                id="agreeAll" 
+                style="width: 20px; height: 20px; margin-right: 0.75rem; cursor: pointer;"
+              >
+              <span style="font-weight: bold; color: #1f2937;">
+                전체동의
+              </span>
+            </label>
+            
+            <!-- 이용약관 동의 -->
+            <label style="
+              display: flex; align-items: flex-start; margin-bottom: 0.75rem; 
+              cursor: pointer; font-size: 0.95rem;
+            ">
+              <input 
+                type="checkbox" 
+                class="agreement-checkbox required-checkbox"
+                id="agreeTerms" 
+                required 
+                style="width: 18px; height: 18px; margin-right: 0.75rem; margin-top: 0.15rem; cursor: pointer;"
+              >
+              <span style="color: #374151; line-height: 1.6;">
+                <strong style="color: #ef4444;">[필수]</strong> 이용약관에 동의합니다
+                <a href="#" onclick="showTermsOfService(); return false;" style="color: #667eea; text-decoration: underline; margin-left: 0.5rem;">보기</a>
+              </span>
+            </label>
+            
+            <!-- 개인정보처리방침 동의 -->
+            <label style="
+              display: flex; align-items: flex-start; margin-bottom: 0.75rem; 
+              cursor: pointer; font-size: 0.95rem;
+            ">
+              <input 
+                type="checkbox" 
+                class="agreement-checkbox required-checkbox"
+                id="agreePrivacy" 
+                required 
+                style="width: 18px; height: 18px; margin-right: 0.75rem; margin-top: 0.15rem; cursor: pointer;"
+              >
+              <span style="color: #374151; line-height: 1.6;">
+                <strong style="color: #ef4444;">[필수]</strong> 개인정보처리방침에 동의합니다
+                <a href="#" onclick="showPrivacyPolicy(); return false;" style="color: #667eea; text-decoration: underline; margin-left: 0.5rem;">보기</a>
+              </span>
+            </label>
+            
+            <!-- 개인정보 수집/이용 동의 -->
+            <label style="
+              display: flex; align-items: flex-start; margin-bottom: 0.75rem; 
+              cursor: pointer; font-size: 0.95rem;
+            ">
+              <input 
+                type="checkbox" 
+                class="agreement-checkbox required-checkbox"
+                id="agreeCollection" 
+                required 
+                style="width: 18px; height: 18px; margin-right: 0.75rem; margin-top: 0.15rem; cursor: pointer;"
+              >
+              <span style="color: #374151; line-height: 1.6;">
+                <strong style="color: #ef4444;">[필수]</strong> 개인정보 수집 및 이용에 동의합니다
+              </span>
+            </label>
+            
+            <!-- 성별/생년월일 정보 수집 동의 -->
+            <label style="
+              display: flex; align-items: flex-start; margin-bottom: 0.75rem; 
+              cursor: pointer; font-size: 0.95rem;
+            ">
+              <input 
+                type="checkbox" 
+                class="agreement-checkbox required-checkbox"
+                id="agreePersonalInfo" 
+                required 
+                style="width: 18px; height: 18px; margin-right: 0.75rem; margin-top: 0.15rem; cursor: pointer;"
+              >
+              <span style="color: #374151; line-height: 1.6;">
+                <strong style="color: #ef4444;">[필수]</strong> 성별 및 생년월일 정보 수집 및 이용에 동의합니다
+              </span>
+            </label>
+            
+            <!-- 이벤트/마케팅 수신 동의 -->
+            <label style="
+              display: flex; align-items: flex-start; margin-bottom: 0.75rem; 
+              cursor: pointer; font-size: 0.95rem;
+            ">
+              <input 
+                type="checkbox" 
+                class="agreement-checkbox optional-checkbox"
+                id="agreeMarketing" 
+                style="width: 18px; height: 18px; margin-right: 0.75rem; margin-top: 0.15rem; cursor: pointer;"
+              >
+              <span style="color: #6b7280; line-height: 1.6;">
+                <strong style="color: #3b82f6;">[선택]</strong> 이벤트/마케팅 정보 이메일 수신에 동의합니다
+              </span>
+            </label>
+            
+            <!-- 생년월일 맞춤 정보 수신 동의 -->
             <label style="
               display: flex; align-items: flex-start; margin-bottom: 1rem; 
               cursor: pointer; font-size: 0.95rem;
             ">
               <input 
                 type="checkbox" 
-                id="agreePrivacy" 
-                required 
-                style="width: 18px; height: 18px; margin-right: 0.75rem; margin-top: 0.1rem; cursor: pointer;"
+                class="agreement-checkbox optional-checkbox"
+                id="agreeCustomInfo" 
+                style="width: 18px; height: 18px; margin-right: 0.75rem; margin-top: 0.15rem; cursor: pointer;"
               >
-              <span style="color: #374151; line-height: 1.5;">
-                <strong>[필수]</strong> 개인정보 처리방침에 동의합니다<br>
-                <small style="color: #6b7280;">연락처는 고객지원 및 환불 처리 목적으로만 사용됩니다</small>
+              <span style="color: #6b7280; line-height: 1.6;">
+                <strong style="color: #3b82f6;">[선택]</strong> 생년월일 정보를 활용한 맞춤 정보 수신에 동의합니다
               </span>
             </label>
             
+            <!-- 만 14세 이상 확인 -->
             <label style="
               display: flex; align-items: flex-start; cursor: pointer; 
-              font-size: 0.95rem;
+              padding-top: 1rem; border-top: 2px solid #e5e7eb; font-size: 0.95rem;
             ">
               <input 
                 type="checkbox" 
-                id="agreeMarketing" 
-                style="width: 18px; height: 18px; margin-right: 0.75rem; margin-top: 0.1rem; cursor: pointer;"
+                class="agreement-checkbox required-checkbox"
+                id="agreeAge14" 
+                required 
+                style="width: 18px; height: 18px; margin-right: 0.75rem; margin-top: 0.15rem; cursor: pointer;"
               >
-              <span style="color: #6b7280; line-height: 1.5;">
-                <strong>[선택]</strong> 마케팅 정보 수신에 동의합니다<br>
-                <small>이벤트, 할인 혜택 등의 안내를 받아보실 수 있습니다</small>
+              <span style="color: #374151; line-height: 1.6;">
+                <strong style="color: #ef4444;">[필수]</strong> 만 14세 이상입니다
               </span>
             </label>
           </div>
@@ -5976,7 +6132,7 @@ function showRegistrationCompleteModal(userId) {
             onmouseover="this.style.transform='translateY(-2px)'"
             onmouseout="this.style.transform='translateY(0)'"
           >
-            저장하고 시작하기
+            가입하기
           </button>
         </form>
       </div>
@@ -5985,45 +6141,132 @@ function showRegistrationCompleteModal(userId) {
   
   document.body.insertAdjacentHTML('beforeend', modalHTML);
   
+  // 전체동의 체크박스 로직
+  const agreeAllCheckbox = document.getElementById('agreeAll');
+  const agreementCheckboxes = document.querySelectorAll('.agreement-checkbox');
+  
+  agreeAllCheckbox.addEventListener('change', (e) => {
+    const isChecked = e.target.checked;
+    agreementCheckboxes.forEach(checkbox => {
+      checkbox.checked = isChecked;
+    });
+  });
+  
+  // 개별 체크박스 변경 시 전체동의 상태 업데이트
+  agreementCheckboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', () => {
+      const allChecked = Array.from(agreementCheckboxes).every(cb => cb.checked);
+      agreeAllCheckbox.checked = allChecked;
+    });
+  });
+  
   // 폼 제출 이벤트 처리
   document.getElementById('registrationCompleteForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
+    const name = document.getElementById('userName').value.trim();
+    const gender = document.querySelector('input[name="gender"]:checked')?.value;
+    const birthDate = document.getElementById('userBirthDate').value;
     const phone = document.getElementById('userPhone').value.trim();
-    const privacyAgreed = document.getElementById('agreePrivacy').checked;
-    const marketingAgreed = document.getElementById('agreeMarketing').checked;
+    
+    // 약관 동의
+    const agreeTerms = document.getElementById('agreeTerms').checked;
+    const agreePrivacy = document.getElementById('agreePrivacy').checked;
+    const agreeCollection = document.getElementById('agreeCollection').checked;
+    const agreePersonalInfo = document.getElementById('agreePersonalInfo').checked;
+    const agreeAge14 = document.getElementById('agreeAge14').checked;
+    const agreeMarketing = document.getElementById('agreeMarketing').checked;
+    const agreeCustomInfo = document.getElementById('agreeCustomInfo').checked;
     
     // 입력값 검증
+    if (!name) {
+      showToast('❌ 이름을 입력해주세요', 'error');
+      document.getElementById('userName').focus();
+      return;
+    }
+    
+    if (!gender) {
+      showToast('❌ 성별을 선택해주세요', 'error');
+      return;
+    }
+    
+    if (!birthDate) {
+      showToast('❌ 생년월일을 입력해주세요', 'error');
+      document.getElementById('userBirthDate').focus();
+      return;
+    }
+    
+    // 만 14세 이상 확인
+    const birthYear = new Date(birthDate).getFullYear();
+    const currentYear = new Date().getFullYear();
+    if (currentYear - birthYear < 14) {
+      showToast('❌ 만 14세 이상만 가입 가능합니다', 'error');
+      return;
+    }
+    
     if (!phone) {
-      showToast('❌ 연락처를 입력해주세요', 'error');
+      showToast('❌ 휴대전화번호를 입력해주세요', 'error');
       document.getElementById('userPhone').focus();
       return;
     }
     
-    if (!privacyAgreed) {
-      showToast('❌ 개인정보 처리방침에 동의해주세요', 'error');
+    // 필수 약관 동의 확인
+    if (!agreeTerms) {
+      showToast('❌ 이용약관에 동의해주세요', 'error');
+      return;
+    }
+    
+    if (!agreePrivacy) {
+      showToast('❌ 개인정보처리방침에 동의해주세요', 'error');
+      return;
+    }
+    
+    if (!agreeCollection) {
+      showToast('❌ 개인정보 수집 및 이용에 동의해주세요', 'error');
+      return;
+    }
+    
+    if (!agreePersonalInfo) {
+      showToast('❌ 성별 및 생년월일 정보 수집에 동의해주세요', 'error');
+      return;
+    }
+    
+    if (!agreeAge14) {
+      showToast('❌ 만 14세 이상임을 확인해주세요', 'error');
       return;
     }
     
     // 로딩 상태
     const submitBtn = document.getElementById('registrationSubmitBtn');
     const originalText = submitBtn.textContent;
-    submitBtn.textContent = '저장 중...';
+    submitBtn.textContent = '가입 중...';
     submitBtn.disabled = true;
     submitBtn.style.opacity = '0.6';
     submitBtn.style.cursor = 'not-allowed';
     
     try {
-      console.log('📝 회원가입 완료 처리 시작:', { userId, phone, privacyAgreed, marketingAgreed });
+      console.log('📝 회원가입 완료 처리 시작:', { 
+        userId, name, gender, birthDate, phone,
+        agreeTerms, agreePrivacy, agreeCollection, agreePersonalInfo, 
+        agreeAge14, agreeMarketing, agreeCustomInfo
+      });
       
       const response = await fetch('/api/auth/complete-registration', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user_id: userId,
+          name: name,
+          gender: gender,
+          birth_date: birthDate,
           phone: phone,
-          privacy_agreed: privacyAgreed,
-          marketing_agreed: marketingAgreed
+          terms_agreed: agreeTerms,
+          privacy_agreed: agreePrivacy,
+          collection_agreed: agreeCollection,
+          personal_info_agreed: agreePersonalInfo,
+          age_14_confirmed: agreeAge14,
+          marketing_agreed: agreeMarketing,
+          custom_info_agreed: agreeCustomInfo
         })
       });
       
@@ -6069,10 +6312,10 @@ function showRegistrationCompleteModal(userId) {
     }
   });
   
-  // 연락처 입력 필드에 자동 포커스
+  // 이름 입력 필드에 자동 포커스
   setTimeout(() => {
-    const phoneInput = document.getElementById('userPhone');
-    if (phoneInput) phoneInput.focus();
+    const nameInput = document.getElementById('userName');
+    if (nameInput) nameInput.focus();
   }, 100);
 }
 

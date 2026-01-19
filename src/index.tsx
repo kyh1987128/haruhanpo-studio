@@ -2166,13 +2166,34 @@ app.get('/api/auth/check-registration-status', async (c) => {
 // ===================================
 app.post('/api/auth/complete-registration', async (c) => {
   try {
-    const { user_id, phone, privacy_agreed, marketing_agreed } = await c.req.json();
+    const { 
+      user_id, 
+      name,
+      gender, 
+      birth_date,
+      phone, 
+      terms_agreed,
+      privacy_agreed,
+      collection_agreed,
+      personal_info_agreed,
+      age_14_confirmed,
+      marketing_agreed,
+      custom_info_agreed
+    } = await c.req.json();
     
     // 입력값 검증
-    if (!user_id || !phone || !privacy_agreed) {
+    if (!user_id || !name || !gender || !birth_date || !phone) {
       return c.json({ 
         success: false, 
-        error: '필수 정보(사용자ID, 연락처, 개인정보 동의)를 모두 입력해주세요' 
+        error: '필수 정보(이름, 성별, 생년월일, 연락처)를 모두 입력해주세요' 
+      }, 400);
+    }
+    
+    // 필수 약관 동의 확인
+    if (!terms_agreed || !privacy_agreed || !collection_agreed || !personal_info_agreed || !age_14_confirmed) {
+      return c.json({ 
+        success: false, 
+        error: '필수 약관에 모두 동의해주세요' 
       }, 400);
     }
     
@@ -2185,6 +2206,16 @@ app.post('/api/auth/complete-registration', async (c) => {
       }, 400);
     }
     
+    // 만 14세 이상 확인
+    const birthYear = new Date(birth_date).getFullYear();
+    const currentYear = new Date().getFullYear();
+    if (currentYear - birthYear < 14) {
+      return c.json({ 
+        success: false, 
+        error: '만 14세 이상만 가입 가능합니다' 
+      }, 400);
+    }
+    
     const supabase = createSupabaseAdmin(
       c.env.SUPABASE_URL,
       c.env.SUPABASE_SERVICE_KEY
@@ -2194,16 +2225,24 @@ app.post('/api/auth/complete-registration', async (c) => {
     const { data: updatedUser, error } = await supabase
       .from('users')
       .update({
+        name: name,
+        gender: gender,
+        birth_date: birth_date,
         phone: phone,
+        terms_agreed: terms_agreed,
         privacy_agreed: privacy_agreed,
+        collection_agreed: collection_agreed || false,
+        personal_info_agreed: personal_info_agreed || false,
+        age_14_confirmed: age_14_confirmed || false,
         marketing_agreed: marketing_agreed || false,
+        custom_info_agreed: custom_info_agreed || false,
         registration_completed: true,
         registration_completed_at: new Date().toISOString(),
         terms_agreed_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
       .eq('id', user_id)
-      .select('id, email, name, phone, tier, free_credits, paid_credits, registration_completed')
+      .select('id, email, name, gender, birth_date, phone, tier, free_credits, paid_credits, registration_completed')
       .single();
     
     if (error) {
@@ -2211,7 +2250,7 @@ app.post('/api/auth/complete-registration', async (c) => {
       throw error;
     }
     
-    console.log(`✅ 회원가입 완료: ${updatedUser.email} (연락처: ${phone})`);
+    console.log(`✅ 회원가입 완료: ${updatedUser.email} (이름: ${name}, 연락처: ${phone})`);
     
     return c.json({
       success: true,
@@ -2220,6 +2259,8 @@ app.post('/api/auth/complete-registration', async (c) => {
         id: updatedUser.id,
         email: updatedUser.email,
         name: updatedUser.name,
+        gender: updatedUser.gender,
+        birth_date: updatedUser.birth_date,
         phone: updatedUser.phone,
         tier: updatedUser.tier,
         free_credits: updatedUser.free_credits,
