@@ -2232,7 +2232,7 @@ function getAIRecommendKey(contentIndex) {
 function checkAIRecommendLimit(contentIndex) {
   const key = getAIRecommendKey(contentIndex);
   const count = parseInt(localStorage.getItem(key) || '0');
-  return count < 3;
+  return count < 10;
 }
 
 function incrementAIRecommendCount(contentIndex) {
@@ -2241,8 +2241,8 @@ function incrementAIRecommendCount(contentIndex) {
   const newCount = currentCount + 1;
   localStorage.setItem(key, newCount.toString());
   
-  if (newCount >= 3) {
-    console.log(`⚠️ AI 추천 일일 한도 도달 (콘텐츠 #${contentIndex + 1}: ${newCount}/3)`);
+  if (newCount >= 10) {
+    console.log(`⚠️ AI 추천 일일 한도 도달 (콘텐츠 #${contentIndex + 1}: ${newCount}/10)`);
     // 해당 콘텐츠의 AI 추천 버튼만 비활성화
     const btn = document.querySelector(`[onclick*="suggestKeywordsForContent(${contentIndex}"]`);
     if (btn) {
@@ -2262,7 +2262,7 @@ async function suggestKeywordsForContent(index, event) {
   
   // 🔒 콘텐츠별 일일 3회 제한 체크
   if (!checkAIRecommendLimit(index)) {
-    showToast(`❌ 콘텐츠 #${index + 1}의 AI 추천은 하루 3회까지만 가능합니다`, 'error');
+    showToast(`❌ 콘텐츠 #${index + 1}의 AI 추천은 하루 10회까지만 가능합니다`, 'error');
     return;
   }
   
@@ -10193,7 +10193,7 @@ const DEFAULT_SNS_PLATFORMS = [
   { name: '스레드', url: 'https://www.threads.net', icon: 'fab fa-threads', color: '#000000' },
   { name: '트위터', url: 'https://twitter.com', icon: 'fab fa-twitter', color: '#1DA1F2' },
   { name: '링크드인', url: 'https://www.linkedin.com', icon: 'fab fa-linkedin', color: '#0A66C2' },
-  { name: '브런치', url: 'https://brunch.co.kr', icon: 'fas fa-coffee', color: '#00C896' },
+  { name: '브런치', url: 'https://brunch.co.kr', icon: 'fas fa-feather', color: '#00C896' },
   { name: '틱톡', url: 'https://www.tiktok.com', icon: 'fab fa-tiktok', color: '#000000' },
   { name: '유튜브', url: 'https://studio.youtube.com', icon: 'fab fa-youtube', color: '#FF0000' }
 ];
