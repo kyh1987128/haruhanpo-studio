@@ -363,11 +363,23 @@ export const headerScript = `
         }
     }
 
-    // userUpdated 이벤트 리스너
+    // userUpdated 이벤트 리스너 - 크레딧 실시간 반영
     window.addEventListener('userUpdated', (e) => {
         console.log('🔔 [헤더] userUpdated 이벤트 수신:', e.detail);
-        const user = e.detail;
-        window.updateHeaderUserInfo(user);
+        
+        // 크레딧 정보가 있으면 즉시 헤더 업데이트
+        if (e.detail && (e.detail.free_credits !== undefined || e.detail.paid_credits !== undefined)) {
+            const creditEl = document.getElementById('userCreditsDisplay');
+            if (creditEl) {
+                const freeCredits = e.detail.free_credits || 0;
+                const paidCredits = e.detail.paid_credits || 0;
+                creditEl.textContent = \`무료 \${freeCredits} · 유료 \${paidCredits}\`;
+                console.log('✅ [헤더] 크레딧 실시간 업데이트:', creditEl.textContent);
+            }
+        }
+        
+        // 전체 사용자 정보도 업데이트
+        window.updateHeaderUserInfo(e.detail);
     });
     
     // ✅ BroadcastChannel로 크레딧 실시간 동기화
