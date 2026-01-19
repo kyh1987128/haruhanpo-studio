@@ -10444,7 +10444,7 @@ const DEFAULT_SNS_PLATFORMS = [
   { name: '스레드', url: 'https://www.threads.net', icon: 'fas fa-at', color: '#000000' },
   { name: '트위터', url: 'https://twitter.com', icon: 'fab fa-twitter', color: '#1DA1F2' },
   { name: '링크드인', url: 'https://www.linkedin.com', icon: 'fab fa-linkedin', color: '#0A66C2' },
-  { name: '브런치', url: 'https://brunch.co.kr', icon: 'fas fa-mug-hot', color: '#00C896' },
+  { name: '브런치', url: 'https://brunch.co.kr', icon: 'fas fa-book', color: '#00C896' },
   { name: '틱톡', url: 'https://www.tiktok.com', icon: 'fab fa-tiktok', color: '#000000' },
   { name: '유튜브', url: 'https://studio.youtube.com', icon: 'fab fa-youtube', color: '#FF0000' }
 ];
