@@ -10584,7 +10584,7 @@ async function reloadWorkflows() {
   }
 }
 
-// SNS 링크 불러오기 (계정별 저장)
+// SNS 링크 불러오기 (템플릿처럼 병합 방식)
 async function loadSnsLinks() {
   try {
     // 로그인 확인
@@ -10606,7 +10606,7 @@ async function loadSnsLinks() {
     
     const token = session.data.session.access_token;
     
-    console.log('📡 SNS 링크 로드 중... (계정별)', { userId });
+    console.log('📡 SNS 링크 로드 중... (병합 방식)', { userId });
     
     const response = await fetch(`/api/workflows?user_id=${userId}&category=sns`, {
       headers: {
@@ -10630,22 +10630,39 @@ async function loadSnsLinks() {
     const data = await response.json();
     console.log('📦 SNS 링크 API 응답:', data);
     
-    if (data.success && data.workflows && data.workflows.length > 0) {
-      cachedSnsLinks = data.workflows.map(w => ({
-        id: w.id,
-        name: w.name,
-        url: w.url,
-        icon: w.icon || 'fas fa-link',
-        color: '#6366f1'
-      }));
-      console.log(`✅ SNS 링크 ${cachedSnsLinks.length}개 로드 완료`);
-      return cachedSnsLinks;
-    }
+    // ✅ 템플릿처럼 병합: DB 데이터 + 기본값
+    const dbWorkflows = data.workflows || [];
     
-    // 워크플로우가 없으면 기본값 사용
-    console.log('📦 저장된 SNS 링크 없음 - 기본값 사용');
-    cachedSnsLinks = DEFAULT_SNS_PLATFORMS;
-    return DEFAULT_SNS_PLATFORMS;
+    // DB 데이터를 Map으로 변환 (name 기준)
+    const dbMap = new Map(dbWorkflows.map(w => [w.name, {
+      id: w.id,
+      name: w.name,
+      url: w.url,
+      icon: w.icon || 'fas fa-link',
+      color: '#6366f1'
+    }]));
+    
+    // 기본값을 순회하며 DB에 있으면 DB 데이터, 없으면 기본값 사용
+    cachedSnsLinks = DEFAULT_SNS_PLATFORMS.map(platform => {
+      const dbLink = dbMap.get(platform.name);
+      return dbLink || platform;  // DB 우선, 없으면 기본값
+    });
+    
+    // DB에만 있는 추가 링크도 포함 (사용자가 새로 추가한 링크)
+    dbWorkflows.forEach(w => {
+      if (!DEFAULT_SNS_PLATFORMS.find(p => p.name === w.name)) {
+        cachedSnsLinks.push({
+          id: w.id,
+          name: w.name,
+          url: w.url,
+          icon: w.icon || 'fas fa-link',
+          color: '#6366f1'
+        });
+      }
+    });
+    
+    console.log(`✅ SNS 링크 병합 완료: 총 ${cachedSnsLinks.length}개 (DB: ${dbWorkflows.length}개, 기본값: ${DEFAULT_SNS_PLATFORMS.length}개)`);
+    return cachedSnsLinks;
     
   } catch (error) {
     console.error('❌ SNS 링크 로드 예외:', error);
@@ -10919,7 +10936,7 @@ const DEFAULT_AI_TOOLS = [
   { name: 'Tome', url: 'https://tome.app', category: '프레젠테이션', icon: 'fas fa-book-open', color: '#10B981' }
 ];
 
-// AI 도구 불러오기 (계정별 저장)
+// AI 도구 불러오기 (템플릿처럼 병합 방식)
 async function loadAiTools() {
   try {
     // 로그인 확인
@@ -10941,7 +10958,7 @@ async function loadAiTools() {
     
     const token = session.data.session.access_token;
     
-    console.log('📡 AI 워크플로우 로드 중... (계정별)', { userId });
+    console.log('📡 AI 워크플로우 로드 중... (병합 방식)', { userId });
     
     const response = await fetch(`/api/workflows?user_id=${userId}&category=ai_tool`, {
       headers: {
@@ -10965,23 +10982,41 @@ async function loadAiTools() {
     const data = await response.json();
     console.log('📦 AI 워크플로우 API 응답:', data);
     
-    if (data.success && data.workflows && data.workflows.length > 0) {
-      cachedAiTools = data.workflows.map(w => ({
-        id: w.id,
-        name: w.name,
-        url: w.url,
-        category: w.description || '기타', // description을 category로 사용
-        icon: w.icon || 'fas fa-robot',
-        color: '#6366f1'
-      }));
-      console.log(`✅ AI 워크플로우 ${cachedAiTools.length}개 로드 완료`);
-      return cachedAiTools;
-    }
+    // ✅ 템플릿처럼 병합: DB 데이터 + 기본값
+    const dbWorkflows = data.workflows || [];
     
-    // 워크플로우가 없으면 기본값 사용
-    console.log('📦 저장된 AI 워크플로우 없음 - 기본값 사용');
-    cachedAiTools = DEFAULT_AI_TOOLS;
-    return DEFAULT_AI_TOOLS;
+    // DB 데이터를 Map으로 변환 (name 기준)
+    const dbMap = new Map(dbWorkflows.map(w => [w.name, {
+      id: w.id,
+      name: w.name,
+      url: w.url,
+      category: w.description || '기타', // description을 category로 사용
+      icon: w.icon || 'fas fa-robot',
+      color: '#6366f1'
+    }]));
+    
+    // 기본값을 순회하며 DB에 있으면 DB 데이터, 없으면 기본값 사용
+    cachedAiTools = DEFAULT_AI_TOOLS.map(tool => {
+      const dbTool = dbMap.get(tool.name);
+      return dbTool || tool;  // DB 우선, 없으면 기본값
+    });
+    
+    // DB에만 있는 추가 도구도 포함 (사용자가 새로 추가한 도구)
+    dbWorkflows.forEach(w => {
+      if (!DEFAULT_AI_TOOLS.find(t => t.name === w.name)) {
+        cachedAiTools.push({
+          id: w.id,
+          name: w.name,
+          url: w.url,
+          category: w.description || '기타',
+          icon: w.icon || 'fas fa-robot',
+          color: '#6366f1'
+        });
+      }
+    });
+    
+    console.log(`✅ AI 워크플로우 병합 완료: 총 ${cachedAiTools.length}개 (DB: ${dbWorkflows.length}개, 기본값: ${DEFAULT_AI_TOOLS.length}개)`);
+    return cachedAiTools;
     
   } catch (error) {
     console.error('❌ AI 워크플로우 로드 예외:', error);
