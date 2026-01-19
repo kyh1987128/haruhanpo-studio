@@ -8472,10 +8472,9 @@ async function generateSingleContent(contentIndex) {
         }
       });
       
-      // 🔥 중요: updateAuthUI() 호출하여 헤더 전체 업데이트
-      if (typeof updateAuthUI === 'function') {
-        updateAuthUI();
-      }
+      // ❌ updateAuthUI() 호출 제거: 덮어쓰기 방지
+      // updateAuthUI()가 구버전 currentUser로 헤더를 덮어씀
+      // 대신 window.currentUser만 업데이트 (이미 Line 8456-8460에서 완료)
       
       console.log(`✅ [콘텐츠 #${contentIndex + 1}] 크레딧 동기화 완료:`, {
         free_credits,
