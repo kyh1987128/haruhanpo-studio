@@ -8472,6 +8472,11 @@ async function generateSingleContent(contentIndex) {
         }
       });
       
+      // 🔥 중요: updateAuthUI() 호출하여 헤더 전체 업데이트
+      if (typeof updateAuthUI === 'function') {
+        updateAuthUI();
+      }
+      
       console.log(`✅ [콘텐츠 #${contentIndex + 1}] 크레딧 동기화 완료:`, {
         free_credits,
         paid_credits,
