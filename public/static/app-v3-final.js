@@ -11250,7 +11250,7 @@ window.addEventListener('profileChanged', async (event) => {
 // ========================================
 
 // 설정 모달 표시
-function showSettingsModal() {
+async function showSettingsModal() {
   const user = window.currentUser;
   
   if (!user || !user.isLoggedIn || user.isGuest) {
@@ -11264,8 +11264,28 @@ function showSettingsModal() {
     existingModal.remove();
   }
   
-  // 가입일 포맷
-  const joinDate = user.created_at ? new Date(user.created_at).toLocaleDateString('ko-KR') : '정보 없음';
+  // Supabase에서 사용자 정보 가져오기 (가입일 및 로그인 제공자)
+  let joinDate = '정보 없음';
+  let authProvider = 'email'; // 기본값
+  
+  try {
+    const session = await supabaseClient.auth.getSession();
+    if (session?.data?.session?.user) {
+      const supabaseUser = session.data.session.user;
+      
+      // 가입일
+      if (supabaseUser.created_at) {
+        joinDate = new Date(supabaseUser.created_at).toLocaleDateString('ko-KR');
+      }
+      
+      // 로그인 제공자 (google, kakao, email)
+      authProvider = supabaseUser.app_metadata?.provider || 'email';
+      
+      console.log('📋 사용자 정보:', { created_at: supabaseUser.created_at, provider: authProvider });
+    }
+  } catch (error) {
+    console.error('❌ 사용자 정보 조회 실패:', error);
+  }
   
   // 회원 등급 한글 변환
   const tierLabels = {
@@ -11377,7 +11397,8 @@ function showSettingsModal() {
             </div>
           </div>
           
-          <!-- 🔒 비밀번호 변경 섹션 -->
+          <!-- 🔒 비밀번호 변경 섹션 (이메일 가입자만) -->
+          ${authProvider === 'email' ? `
           <div style="margin-bottom: 32px;">
             <h3 style="font-size: 1.125rem; font-weight: 600; color: #1f2937; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
               <i class="fas fa-lock" style="color: #667eea;"></i>
@@ -11414,6 +11435,7 @@ function showSettingsModal() {
               </button>
             </div>
           </div>
+          ` : ''}
           
           <!-- ⚠️ 위험 영역 -->
           <div style="border-top: 1px solid #e5e7eb; padding-top: 24px;">
@@ -11541,12 +11563,15 @@ async function updateNotificationSettings() {
   
   try {
     const session = await supabaseClient.auth.getSession();
+    console.log('🔐 세션 확인:', { hasSession: !!session?.data?.session, userId: window.currentUser.id });
+    
     if (!session?.data?.session) {
       showToast('세션이 만료되었습니다. 다시 로그인해주세요', 'error');
       return;
     }
     
     const token = session.data.session.access_token;
+    console.log('🔑 토큰 확인:', { hasToken: !!token, tokenLength: token?.length });
     
     console.log('📡 알림 설정 변경 요청:', { userId: window.currentUser.id, marketingAgreed });
     
@@ -11562,7 +11587,10 @@ async function updateNotificationSettings() {
       })
     });
     
+    console.log('📥 API 응답:', { status: response.status, ok: response.ok });
+    
     const data = await response.json();
+    console.log('📦 응답 데이터:', data);
     
     if (data.success) {
       window.currentUser.marketing_agreed = marketingAgreed;
