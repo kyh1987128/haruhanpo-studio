@@ -648,7 +648,8 @@ app.post('/api/generate', async (c) => {
     let comprehensiveValidation: any = null;
 
     // ✅ 이미지가 있을 때만 검증 (이미지 없으면 키워드 중심 생성)
-    if (images.length > 0 && !forceGenerate && combinedImageDescription.length < 100) {
+    // 🔥 100자 → 50자로 완화 (고양이 이미지 등 간단한 분석도 통과)
+    if (images.length > 0 && !forceGenerate && combinedImageDescription.length < 50) {
       return c.json({
         success: false,
         requireConfirmation: true,
