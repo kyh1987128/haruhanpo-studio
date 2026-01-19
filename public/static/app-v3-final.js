@@ -10613,12 +10613,20 @@ async function loadSnsLinks() {
     });
     
     if (!response.ok) {
-      console.error('❌ SNS 링크 로드 실패:', response.status);
+      const errorData = await response.json().catch(() => ({}));
+      console.error('❌ SNS 링크 로드 실패:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorData,
+        profileId,
+        url: `/api/profiles/${profileId}/workflows?category=sns`
+      });
       cachedSnsLinks = DEFAULT_SNS_PLATFORMS;
       return DEFAULT_SNS_PLATFORMS;
     }
     
     const data = await response.json();
+    console.log('📦 SNS 링크 API 응답:', data);
     
     if (data.success && data.workflows && data.workflows.length > 0) {
       cachedSnsLinks = data.workflows.map(w => ({
@@ -10932,12 +10940,20 @@ async function loadAiTools() {
     });
     
     if (!response.ok) {
-      console.error('❌ AI 워크플로우 로드 실패:', response.status);
+      const errorData = await response.json().catch(() => ({}));
+      console.error('❌ AI 워크플로우 로드 실패:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorData,
+        profileId,
+        url: `/api/profiles/${profileId}/workflows?category=ai_tool`
+      });
       cachedAiTools = DEFAULT_AI_TOOLS;
       return DEFAULT_AI_TOOLS;
     }
     
     const data = await response.json();
+    console.log('📦 AI 워크플로우 API 응답:', data);
     
     if (data.success && data.workflows && data.workflows.length > 0) {
       cachedAiTools = data.workflows.map(w => ({
