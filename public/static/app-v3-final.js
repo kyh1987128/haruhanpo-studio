@@ -10441,10 +10441,10 @@ let cachedAiTools = null;
 const DEFAULT_SNS_PLATFORMS = [
   { name: '네이버 블로그', url: 'https://blog.naver.com', icon: 'fas fa-blog', color: '#03C75A' },
   { name: '인스타그램', url: 'https://www.instagram.com', icon: 'fab fa-instagram', color: '#E4405F' },
-  { name: '스레드', url: 'https://www.threads.net', icon: 'fab fa-threads', color: '#000000' },
+  { name: '스레드', url: 'https://www.threads.net', icon: 'fas fa-at', color: '#000000' },
   { name: '트위터', url: 'https://twitter.com', icon: 'fab fa-twitter', color: '#1DA1F2' },
   { name: '링크드인', url: 'https://www.linkedin.com', icon: 'fab fa-linkedin', color: '#0A66C2' },
-  { name: '브런치', url: 'https://brunch.co.kr', icon: 'fas fa-feather', color: '#00C896' },
+  { name: '브런치', url: 'https://brunch.co.kr', icon: 'fas fa-mug-hot', color: '#00C896' },
   { name: '틱톡', url: 'https://www.tiktok.com', icon: 'fab fa-tiktok', color: '#000000' },
   { name: '유튜브', url: 'https://studio.youtube.com', icon: 'fab fa-youtube', color: '#FF0000' }
 ];
@@ -11374,28 +11374,6 @@ async function showSettingsModal() {
             </div>
           </div>
           
-          <!-- 🔔 알림 설정 섹션 -->
-          <div style="margin-bottom: 32px;">
-            <h3 style="font-size: 1.125rem; font-weight: 600; color: #1f2937; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-              <i class="fas fa-bell" style="color: #667eea;"></i>
-              알림 설정
-            </h3>
-            
-            <!-- 마케팅 알림 -->
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 8px; margin-bottom: 12px;">
-              <div>
-                <div style="font-weight: 500; color: #1f2937; margin-bottom: 4px;">마케팅 정보 수신</div>
-                <div style="font-size: 0.875rem; color: #6b7280;">이벤트, 프로모션 알림 받기</div>
-              </div>
-              <label style="position: relative; display: inline-block; width: 48px; height: 24px;">
-                <input type="checkbox" id="marketingNotification" ${user.marketing_agreed ? 'checked' : ''} 
-                  onchange="updateNotificationSettings()" 
-                  style="opacity: 0; width: 0; height: 0;">
-                <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px;"></span>
-                <span style="position: absolute; content: ''; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%;"></span>
-              </label>
-            </div>
-          </div>
           
           <!-- 🔒 비밀번호 변경 섹션 (이메일 가입자만) -->
           ${authProvider === 'email' ? `
@@ -11552,60 +11530,8 @@ async function updateUserName() {
   }
 }
 
-// 알림 설정 변경
-async function updateNotificationSettings() {
-  const marketingAgreed = document.getElementById('marketingNotification').checked;
-  
-  if (!window.currentUser || !window.currentUser.id) {
-    showToast('로그인 정보를 찾을 수 없습니다', 'error');
-    return;
-  }
-  
-  try {
-    const session = await supabaseClient.auth.getSession();
-    console.log('🔐 세션 확인:', { hasSession: !!session?.data?.session, userId: window.currentUser.id });
-    
-    if (!session?.data?.session) {
-      showToast('세션이 만료되었습니다. 다시 로그인해주세요', 'error');
-      return;
-    }
-    
-    const token = session.data.session.access_token;
-    console.log('🔑 토큰 확인:', { hasToken: !!token, tokenLength: token?.length });
-    
-    console.log('📡 알림 설정 변경 요청:', { userId: window.currentUser.id, marketingAgreed });
-    
-    const response = await fetch('/api/users/update-profile', {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        user_id: window.currentUser.id,
-        marketing_agreed: marketingAgreed
-      })
-    });
-    
-    console.log('📥 API 응답:', { status: response.status, ok: response.ok });
-    
-    const data = await response.json();
-    console.log('📦 응답 데이터:', data);
-    
-    if (data.success) {
-      window.currentUser.marketing_agreed = marketingAgreed;
-      
-      showToast('✅ 알림 설정이 변경되었습니다', 'success');
-      console.log('✅ 알림 설정 변경 완료:', marketingAgreed);
-    } else {
-      throw new Error(data.error || '알림 설정 변경 실패');
-    }
-    
-  } catch (error) {
-    console.error('❌ 알림 설정 변경 실패:', error);
-    showToast(`❌ ${error.message}`, 'error');
-  }
-}
+// 알림 설정 변경 (더 이상 사용 안 함 - 가입 시에만 동의 받음)
+// async function updateNotificationSettings() { ... }
 
 // 비밀번호 변경
 async function changePassword() {
@@ -11748,7 +11674,7 @@ async function deleteAccount() {
 window.showSettingsModal = showSettingsModal;
 window.closeSettingsModal = closeSettingsModal;
 window.updateUserName = updateUserName;
-window.updateNotificationSettings = updateNotificationSettings;
+// window.updateNotificationSettings = updateNotificationSettings; // 더 이상 사용 안 함
 window.changePassword = changePassword;
 window.confirmAccountDeletion = confirmAccountDeletion;
 window.deleteAccount = deleteAccount;
