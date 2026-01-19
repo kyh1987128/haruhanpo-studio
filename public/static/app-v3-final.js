@@ -6357,16 +6357,6 @@ function updateAuthUI() {
       creditText = `${totalCredits}크레딧 (유료)`;
     } else {
       creditText = '0크레딧';
-      
-      // NEW v7.5: 재가입 사용자 안내
-      // 최초 1회만 표시 (sessionStorage 사용)
-      // ✅ 수정: totalCredits가 실제로 0일 때만 표시
-      if (totalCredits === 0 && !sessionStorage.getItem('rejoin_notice_shown')) {
-        setTimeout(() => {
-          showToast('ℹ️ 크레딧을 충전해주세요.', 'info');
-          sessionStorage.setItem('rejoin_notice_shown', 'true');
-        }, 1000);
-      }
     }
     
     if (userCredits) userCredits.textContent = creditText;
@@ -8459,10 +8449,21 @@ async function generateSingleContent(contentIndex) {
         window.currentUser.paid_credits = paid_credits;
       }
       
-      // 상단 크레딧 UI 업데이트
+      // 상단 크레딧 UI 업데이트 (updateAuthUI()와 동일한 포맷)
       const userCreditsElement = document.getElementById('userCredits');
       if (userCreditsElement) {
-        userCreditsElement.textContent = free_credits + paid_credits;
+        const totalCredits = free_credits + paid_credits;
+        let creditText = `${totalCredits}크레딧`;
+        if (free_credits > 0 && paid_credits > 0) {
+          creditText = `${totalCredits}크레딧 (무료 ${free_credits} + 유료 ${paid_credits})`;
+        } else if (free_credits > 0) {
+          creditText = `${totalCredits}크레딧 (무료)`;
+        } else if (paid_credits > 0) {
+          creditText = `${totalCredits}크레딧 (유료)`;
+        } else {
+          creditText = '0크레딧';
+        }
+        userCreditsElement.textContent = creditText;
       }
       
       // 키워드 분석 화면 크레딧 표시 업데이트 (정확한 ID 사용)
