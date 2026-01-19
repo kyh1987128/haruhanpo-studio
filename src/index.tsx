@@ -2456,6 +2456,92 @@ app.get('/api/profiles/:profileId/workflows', async (c) => {
   }
 });
 
+// 1️⃣-2 계정별 워크플로우 조회 (프로필 없이)
+app.get('/api/workflows', async (c) => {
+  try {
+    const userId = c.req.query('user_id');
+    const category = c.req.query('category'); // 'sns' 또는 'ai_tool'
+    
+    // 입력값 검증
+    if (!userId) {
+      return c.json({ 
+        success: false, 
+        error: 'user_id는 필수입니다' 
+      }, 400);
+    }
+    
+    // Authorization 헤더에서 토큰 추출
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json({ 
+        success: false, 
+        error: '인증이 필요합니다' 
+      }, 401);
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Supabase Admin 클라이언트 생성
+    const supabase = createSupabaseAdmin(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    );
+    
+    // 토큰으로 사용자 확인
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return c.json({ 
+        success: false, 
+        error: '유효하지 않은 토큰입니다' 
+      }, 401);
+    }
+    
+    // 본인 데이터만 조회 가능
+    if (user.id !== userId) {
+      return c.json({ 
+        success: false, 
+        error: '본인의 데이터만 조회할 수 있습니다' 
+      }, 403);
+    }
+    
+    console.log('📡 계정별 워크플로우 조회:', { userId, category });
+    
+    // user_workflows에서 직접 조회
+    let query = supabase
+      .from('user_workflows')
+      .select('*')
+      .eq('user_id', userId);
+    
+    // category 필터링
+    if (category) {
+      query = query.eq('category', category);
+    }
+    
+    const { data: workflows, error: workflowError } = await query
+      .order('sort_order', { ascending: true });
+    
+    if (workflowError) {
+      console.error('❌ 워크플로우 조회 실패:', workflowError);
+      throw workflowError;
+    }
+    
+    console.log(`✅ 계정별 워크플로우 조회 완료: ${workflows?.length || 0}개`);
+    
+    return c.json({
+      success: true,
+      workflows: workflows || [],
+      count: workflows?.length || 0
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 계정별 워크플로우 조회 예외:', error);
+    return c.json({ 
+      success: false, 
+      error: error.message || '워크플로우 조회 중 오류가 발생했습니다'
+    }, 500);
+  }
+});
+
 // 2️⃣ 워크플로우 생성
 app.post('/api/workflows', async (c) => {
   try {

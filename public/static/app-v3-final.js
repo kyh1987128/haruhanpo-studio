@@ -10584,15 +10584,17 @@ async function reloadWorkflows() {
   }
 }
 
-// SNS 링크 불러오기 (API 기반)
+// SNS 링크 불러오기 (계정별 저장)
 async function loadSnsLinks() {
   try {
-    const profileId = getCurrentProfileId();
-    if (!profileId) {
+    // 로그인 확인
+    if (!window.currentUser || !window.currentUser.id) {
       console.log('📦 로그인 전이므로 기본 SNS 플랫폼 사용');
       cachedSnsLinks = DEFAULT_SNS_PLATFORMS;
       return DEFAULT_SNS_PLATFORMS;
     }
+    
+    const userId = window.currentUser.id;
     
     // Supabase 세션 토큰 가져오기
     const session = await supabaseClient.auth.getSession();
@@ -10604,9 +10606,9 @@ async function loadSnsLinks() {
     
     const token = session.data.session.access_token;
     
-    console.log('📡 SNS 링크 로드 중...', { profileId });
+    console.log('📡 SNS 링크 로드 중... (계정별)', { userId });
     
-    const response = await fetch(`/api/profiles/${profileId}/workflows?category=sns`, {
+    const response = await fetch(`/api/workflows?user_id=${userId}&category=sns`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -10618,8 +10620,8 @@ async function loadSnsLinks() {
         status: response.status,
         statusText: response.statusText,
         errorData,
-        profileId,
-        url: `/api/profiles/${profileId}/workflows?category=sns`
+        userId,
+        url: `/api/workflows?user_id=${userId}&category=sns`
       });
       cachedSnsLinks = DEFAULT_SNS_PLATFORMS;
       return DEFAULT_SNS_PLATFORMS;
@@ -10738,7 +10740,7 @@ function editSnsLink(index) {
   document.getElementById('editSnsModal').style.display = 'flex';
 }
 
-// SNS 수정 저장 (API 기반)
+// SNS 수정 저장 (계정별 저장)
 async function saveEditSns() {
   const name = document.getElementById('editSnsName').value.trim();
   const url = document.getElementById('editSnsUrl').value.trim();
@@ -10748,11 +10750,12 @@ async function saveEditSns() {
     return;
   }
   
-  const profileId = getCurrentProfileId();
-  if (!profileId) {
+  if (!window.currentUser || !window.currentUser.id) {
     showToast('❌ 로그인이 필요합니다', 'error');
     return;
   }
+  
+  const userId = window.currentUser.id;
   
   try {
     const session = await supabaseClient.auth.getSession();
@@ -10763,9 +10766,10 @@ async function saveEditSns() {
     
     const token = session.data.session.access_token;
     
-    if (editingSnsIndex === null) {
+    // 새로 추가 또는 기본값 수정
+    if (editingSnsIndex === null || !cachedSnsLinks[editingSnsIndex].id) {
       // 새로 추가
-      console.log('📡 SNS 링크 생성 중...', { name, url });
+      console.log('📡 SNS 링크 생성 중...', { name, url, userId });
       
       const response = await fetch('/api/workflows', {
         method: 'POST',
@@ -10774,7 +10778,7 @@ async function saveEditSns() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          profile_id: profileId,
+          user_id: userId,
           category: 'sns',
           name: name,
           url: url,
@@ -10834,18 +10838,22 @@ function cancelEditSns() {
   editingSnsIndex = null;
 }
 
-// SNS 링크 삭제 (API 기반)
+// SNS 링크 삭제 (계정별 저장)
 async function deleteSnsLink(index) {
   if (!confirm('이 SNS 링크를 삭제하시겠습니까?')) return;
   
-  const profileId = getCurrentProfileId();
-  if (!profileId) {
+  if (!window.currentUser || !window.currentUser.id) {
     showToast('❌ 로그인이 필요합니다', 'error');
     return;
   }
   
   try {
     const workflowId = cachedSnsLinks[index].id;
+    
+    if (!workflowId) {
+      showToast('❌ 기본 SNS 링크는 삭제할 수 없습니다', 'error');
+      return;
+    }
     
     const session = await supabaseClient.auth.getSession();
     if (!session?.data?.session) {
@@ -10911,15 +10919,17 @@ const DEFAULT_AI_TOOLS = [
   { name: 'Tome', url: 'https://tome.app', category: '프레젠테이션', icon: 'fas fa-book-open', color: '#10B981' }
 ];
 
-// AI 도구 불러오기 (API 기반)
+// AI 도구 불러오기 (계정별 저장)
 async function loadAiTools() {
   try {
-    const profileId = getCurrentProfileId();
-    if (!profileId) {
+    // 로그인 확인
+    if (!window.currentUser || !window.currentUser.id) {
       console.log('📦 로그인 전이므로 기본 AI 도구 사용');
       cachedAiTools = DEFAULT_AI_TOOLS;
       return DEFAULT_AI_TOOLS;
     }
+    
+    const userId = window.currentUser.id;
     
     // Supabase 세션 토큰 가져오기
     const session = await supabaseClient.auth.getSession();
@@ -10931,9 +10941,9 @@ async function loadAiTools() {
     
     const token = session.data.session.access_token;
     
-    console.log('📡 AI 워크플로우 로드 중...', { profileId });
+    console.log('📡 AI 워크플로우 로드 중... (계정별)', { userId });
     
-    const response = await fetch(`/api/profiles/${profileId}/workflows?category=ai_tool`, {
+    const response = await fetch(`/api/workflows?user_id=${userId}&category=ai_tool`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -10945,8 +10955,8 @@ async function loadAiTools() {
         status: response.status,
         statusText: response.statusText,
         errorData,
-        profileId,
-        url: `/api/profiles/${profileId}/workflows?category=ai_tool`
+        userId,
+        url: `/api/workflows?user_id=${userId}&category=ai_tool`
       });
       cachedAiTools = DEFAULT_AI_TOOLS;
       return DEFAULT_AI_TOOLS;
@@ -11095,11 +11105,12 @@ async function saveEditAiTool() {
     return;
   }
   
-  const profileId = getCurrentProfileId();
-  if (!profileId) {
+  if (!window.currentUser || !window.currentUser.id) {
     showToast('❌ 로그인이 필요합니다', 'error');
     return;
   }
+  
+  const userId = window.currentUser.id;
   
   try {
     const session = await supabaseClient.auth.getSession();
@@ -11110,9 +11121,10 @@ async function saveEditAiTool() {
     
     const token = session.data.session.access_token;
     
-    if (editingAiToolIndex === null) {
+    // 새로 추가 또는 기본값 수정
+    if (editingAiToolIndex === null || !cachedAiTools[editingAiToolIndex].id) {
       // 새로 추가
-      console.log('📡 AI 워크플로우 생성 중...', { name, url, category });
+      console.log('📡 AI 워크플로우 생성 중...', { name, url, category, userId });
       
       const response = await fetch('/api/workflows', {
         method: 'POST',
@@ -11121,7 +11133,7 @@ async function saveEditAiTool() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          profile_id: profileId,
+          user_id: userId,
           category: 'ai_tool',
           name: name,
           url: url,
@@ -11183,18 +11195,22 @@ function cancelEditAiTool() {
   editingAiToolIndex = null;
 }
 
-// AI 도구 삭제 (API 기반)
+// AI 도구 삭제 (계정별 저장)
 async function deleteAiTool(index) {
   if (!confirm('이 AI 도구를 삭제하시겠습니까?')) return;
   
-  const profileId = getCurrentProfileId();
-  if (!profileId) {
+  if (!window.currentUser || !window.currentUser.id) {
     showToast('❌ 로그인이 필요합니다', 'error');
     return;
   }
   
   try {
     const workflowId = cachedAiTools[index].id;
+    
+    if (!workflowId) {
+      showToast('❌ 기본 AI 도구는 삭제할 수 없습니다', 'error');
+      return;
+    }
     
     const session = await supabaseClient.auth.getSession();
     if (!session?.data?.session) {
