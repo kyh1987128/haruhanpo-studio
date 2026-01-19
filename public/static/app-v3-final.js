@@ -6348,16 +6348,8 @@ function updateAuthUI() {
     const paidCredits = user.paid_credits || 0;
     const totalCredits = freeCredits + paidCredits;
     
-    let creditText = `${totalCredits}크레딧`;
-    if (freeCredits > 0 && paidCredits > 0) {
-      creditText = `${totalCredits}크레딧 (무료 ${freeCredits} + 유료 ${paidCredits})`;
-    } else if (freeCredits > 0) {
-      creditText = `${totalCredits}크레딧 (무료)`;
-    } else if (paidCredits > 0) {
-      creditText = `${totalCredits}크레딧 (유료)`;
-    } else {
-      creditText = '0크레딧';
-    }
+    // 🔥 키워드 분석과 동일한 포맷 사용 (가운뎃점 ·)
+    let creditText = `무료 ${freeCredits} · 유료 ${paidCredits}`;
     
     if (userCredits) userCredits.textContent = creditText;
     
