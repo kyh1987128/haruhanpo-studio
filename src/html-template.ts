@@ -1511,14 +1511,8 @@ export const htmlTemplate = `
             const freeCredits = user.free_credits || localUser.free_credits || 0;
             const paidCredits = user.paid_credits || localUser.paid_credits || 0;
             const totalCredits = freeCredits + paidCredits;
-            let creditText = totalCredits + '크레딧';
-            if (freeCredits > 0 && paidCredits > 0) {
-                creditText = totalCredits + '크레딧 (무료 ' + freeCredits + ' + 유료 ' + paidCredits + ')';
-            } else if (freeCredits > 0) {
-                creditText = totalCredits + '크레딧 (무료)';
-            } else if (paidCredits > 0) {
-                creditText = totalCredits + '크레딧 (유료)';
-            }
+            // 🔥 키워드 분석과 동일한 포맷 사용 (가운뎃점 ·)
+            let creditText = '무료 ' + freeCredits + ' · 유료 ' + paidCredits;
             
             const tierLabels = {
                 'guest': '비회원',
@@ -2064,7 +2058,7 @@ export const htmlTemplate = `
     </div><!-- layout-container -->
     
     <!-- JavaScript -->
-    <script src="/static/i18n.js?v=24.0.0"></script>
+    <script src="/static/i18n.js?v=24.0.1"></script>
     
     <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
@@ -2073,8 +2067,8 @@ export const htmlTemplate = `
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ko.js"></script>
     
-    <script src="/static/app-v3-final.js?v=24.0.0"></script>
-    <script src="/static/keyword-analysis.js?v=24.0.0"></script>
+    <script src="/static/app-v3-final.js?v=24.0.1"></script>
+    <script src="/static/keyword-analysis.js?v=24.0.1"></script>
     <script src="/static/keyword-extended.js?v=19.0.0"></script>
     
     <!-- 온보딩 시스템 로드 -->
