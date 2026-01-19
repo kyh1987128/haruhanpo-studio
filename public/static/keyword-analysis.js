@@ -345,6 +345,20 @@ async function analyzeKeywordsQuality() {
           paid: ci.remaining_paid_credits
         });
         
+        // 🔥 헤더 동기화를 위한 이벤트 발송
+        window.dispatchEvent(new CustomEvent('userUpdated', {
+          detail: {
+            free_credits: ci.remaining_free_credits || 0,
+            paid_credits: ci.remaining_paid_credits || 0,
+            id: window.currentUser?.id,
+            name: window.currentUser?.name,
+            email: window.currentUser?.email,
+            isLoggedIn: true,
+            isGuest: false
+          }
+        }));
+        console.log('📢 [키워드분석] userUpdated 이벤트 발송 완료');
+        
         // 성공 메시지
         let message = '✅ 분석 완료!';
         if (ci.type === 'cached') {

@@ -8474,6 +8474,20 @@ async function generateSingleContent(contentIndex) {
         total_credits: free_credits + paid_credits,
         usage: result.usage
       });
+      
+      // 🔥 헤더 동기화를 위한 이벤트 발송
+      window.dispatchEvent(new CustomEvent('userUpdated', {
+        detail: {
+          free_credits: free_credits,
+          paid_credits: paid_credits,
+          id: window.currentUser?.id,
+          name: window.currentUser?.name,
+          email: window.currentUser?.email,
+          isLoggedIn: true,
+          isGuest: false
+        }
+      }));
+      console.log('📢 [콘텐츠생성] userUpdated 이벤트 발송 완료');
     } else {
       console.warn(`⚠️ [콘텐츠 #${contentIndex + 1}] 크레딧 정보 없음:`, result);
     }
