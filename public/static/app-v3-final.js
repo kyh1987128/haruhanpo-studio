@@ -8465,7 +8465,7 @@ async function generateSingleContent(contentIndex) {
       }
       
       // 통합: 모든 크레딧 표시 업데이트 (헤더 + 키워드 분석)
-      const allCreditsElements = document.querySelectorAll('[id^="keywordCredits"], .keyword-credits-display, #userCredits');
+      const allCreditsElements = document.querySelectorAll('[id^="keywordCredits"], .keyword-credits-display, #userCreditsDisplay');
       allCreditsElements.forEach(element => {
         if (element.textContent.includes('무료') && element.textContent.includes('유료')) {
           element.textContent = `무료 ${free_credits} · 유료 ${paid_credits}`;
