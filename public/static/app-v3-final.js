@@ -6572,6 +6572,13 @@ function updateAuthUI() {
       leftPanelMemberFeatures.classList.remove('hidden');
     }
     
+    // 🔄 프로필 자동 로드 (로그인 시 한 번만)
+    if (!window.cachedProfiles) {
+      loadUserProfiles().catch(err => {
+        console.error('❌ 프로필 로드 실패:', err);
+      });
+    }
+    
     // 히어로 섹션 숨기기
     if (heroSection) {
       heroSection.classList.add('hidden');
@@ -10442,18 +10449,139 @@ const DEFAULT_SNS_PLATFORMS = [
   { name: '유튜브', url: 'https://studio.youtube.com', icon: 'fab fa-youtube', color: '#FF0000' }
 ];
 
-// 현재 프로필 ID 가져오기
+// 현재 프로필 ID 가져오기 (개선된 버전)
 function getCurrentProfileId() {
-  // TODO: 실제 프로필 전환 기능이 구현되면 현재 선택된 프로필 ID를 반환
-  // 임시로 window.currentUser에서 첫 번째 프로필을 사용
+  // 1순위: localStorage에서 선택된 프로필 ID 가져오기
+  const selectedProfileId = localStorage.getItem('postflow_selected_profile_id');
+  if (selectedProfileId) {
+    return selectedProfileId;
+  }
+  
+  // 2순위: 캐시된 프로필 목록에서 첫 번째 프로필 사용
+  if (window.cachedProfiles && window.cachedProfiles.length > 0) {
+    return window.cachedProfiles[0].id;
+  }
+  
+  // 3순위: 로그인되지 않음
   if (!window.currentUser || !window.currentUser.id) {
     console.warn('⚠️ 로그인된 사용자가 없습니다');
     return null;
   }
   
-  // TODO: profiles 테이블에서 사용자의 첫 번째 프로필 조회
-  // 임시로 사용자 ID를 프로필 ID로 사용 (실제로는 별도 API 호출 필요)
-  return window.currentUser.id;
+  // 프로필을 아직 로드하지 않았으면 null 반환
+  console.warn('⚠️ 프로필을 로드해야 합니다');
+  return null;
+}
+
+// 사용자 프로필 목록 로드
+async function loadUserProfiles() {
+  try {
+    if (!window.currentUser || !window.currentUser.id) {
+      console.warn('⚠️ 로그인된 사용자가 없습니다');
+      return [];
+    }
+    
+    const session = await supabaseClient.auth.getSession();
+    if (!session?.data?.session) {
+      console.warn('⚠️ 세션이 없습니다');
+      return [];
+    }
+    
+    const token = session.data.session.access_token;
+    const userId = window.currentUser.id;
+    
+    console.log('📡 프로필 목록 로드 중...', { userId });
+    
+    const response = await fetch(`/api/profiles?user_id=${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      console.error('❌ 프로필 로드 실패:', response.status);
+      return [];
+    }
+    
+    const data = await response.json();
+    
+    if (data.success && data.profiles && data.profiles.length > 0) {
+      window.cachedProfiles = data.profiles;
+      
+      // 선택된 프로필이 없으면 첫 번째 프로필을 기본값으로 설정
+      const selectedProfileId = localStorage.getItem('postflow_selected_profile_id');
+      if (!selectedProfileId) {
+        localStorage.setItem('postflow_selected_profile_id', data.profiles[0].id);
+        console.log('✅ 기본 프로필 설정:', data.profiles[0].profile_name);
+      }
+      
+      console.log(`✅ 프로필 ${data.profiles.length}개 로드 완료`);
+      return data.profiles;
+    }
+    
+    console.log('📦 프로필이 없습니다');
+    return [];
+    
+  } catch (error) {
+    console.error('❌ 프로필 로드 예외:', error);
+    return [];
+  }
+}
+
+// 프로필 전환
+async function switchProfile(profileId) {
+  try {
+    console.log('🔄 프로필 전환:', profileId);
+    
+    // 선택된 프로필 저장
+    localStorage.setItem('postflow_selected_profile_id', profileId);
+    
+    // 워크플로우 캐시 무효화
+    cachedSnsLinks = null;
+    cachedAiTools = null;
+    
+    // 프로필 전환 이벤트 발생
+    window.dispatchEvent(new CustomEvent('profileChanged', { detail: { profileId } }));
+    
+    console.log('✅ 프로필 전환 완료:', profileId);
+    
+    // 워크플로우 자동 로드
+    await reloadWorkflows();
+    
+  } catch (error) {
+    console.error('❌ 프로필 전환 실패:', error);
+    showToast('프로필 전환에 실패했습니다', 'error');
+  }
+}
+
+// 워크플로우 재로드
+async function reloadWorkflows() {
+  try {
+    console.log('🔄 워크플로우 재로드 중...');
+    
+    // SNS & AI 워크플로우 동시 로드
+    const [snsLinks, aiTools] = await Promise.all([
+      loadSnsLinks(),
+      loadAiTools()
+    ]);
+    
+    // 모달이 열려있으면 UI 업데이트
+    const snsModal = document.getElementById('snsLinksModal');
+    const aiModal = document.getElementById('aiWorkflowModal');
+    
+    if (snsModal && snsModal.style.display === 'flex') {
+      await renderSnsList();
+    }
+    
+    if (aiModal && aiModal.style.display === 'flex') {
+      await renderAiToolsList();
+    }
+    
+    console.log('✅ 워크플로우 재로드 완료');
+    
+  } catch (error) {
+    console.error('❌ 워크플로우 재로드 실패:', error);
+  }
 }
 
 // SNS 링크 불러오기 (API 기반)
@@ -11103,3 +11231,16 @@ window.editAiTool = editAiTool;
 window.saveEditAiTool = saveEditAiTool;
 window.cancelEditAiTool = cancelEditAiTool;
 window.deleteAiTool = deleteAiTool;
+
+// 프로필 관련 함수 전역 노출
+window.loadUserProfiles = loadUserProfiles;
+window.switchProfile = switchProfile;
+window.reloadWorkflows = reloadWorkflows;
+
+// 프로필 전환 이벤트 리스너
+window.addEventListener('profileChanged', async (event) => {
+  console.log('🔄 프로필 전환 이벤트 감지:', event.detail);
+  
+  // 워크플로우 자동 재로드는 switchProfile 함수 내에서 이미 처리됨
+  // 추가 UI 업데이트가 필요하면 여기에 추가
+});
