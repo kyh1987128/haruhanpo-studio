@@ -139,6 +139,19 @@ app.get('/api/user/stats', async (c) => {
       throw statsError;
     }
     
+    // 🆕 현재 크레딧 잔액 조회
+    const { data: credits, error: creditsError } = await supabase
+      .from('user_credits')
+      .select('free_credits, paid_credits')
+      .eq('user_id', userId)
+      .single();
+    
+    const currentCredits = {
+      free: credits?.free_credits || 0,
+      paid: credits?.paid_credits || 0,
+      total: (credits?.free_credits || 0) + (credits?.paid_credits || 0)
+    };
+    
     // 데이터가 없으면 초기화
     if (!stats) {
       return c.json({
@@ -148,7 +161,8 @@ app.get('/api/user/stats', async (c) => {
           total_content_generated: 0,
           rank_position: null,
           rank_percentage: null,
-          last_usage_at: null
+          last_usage_at: null,
+          current_credits: currentCredits
         }
       });
     }
@@ -160,7 +174,8 @@ app.get('/api/user/stats', async (c) => {
         total_content_generated: stats.total_content_generated || 0,
         rank_position: stats.rank_position,
         rank_percentage: stats.rank_percentage,
-        last_usage_at: stats.last_usage_at
+        last_usage_at: stats.last_usage_at,
+        current_credits: currentCredits
       }
     });
     

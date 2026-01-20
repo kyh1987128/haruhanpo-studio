@@ -11764,6 +11764,16 @@ async function loadUserStats() {
       totalUsedElement.innerHTML = `지금까지 총 <strong>${stats.total_credits_used || 0}</strong> 크레딧 사용`;
     }
     
+    // 🆕 현재 크레딧 잔액 실시간 업데이트
+    const currentCreditsElement = document.querySelector('#settingsModal .fa-coins')?.parentElement;
+    if (currentCreditsElement && stats.current_credits) {
+      const { free, paid, total } = stats.current_credits;
+      currentCreditsElement.innerHTML = `
+        <i class="fas fa-coins" style="margin-right: 8px;"></i>
+        무료 ${free} · 유료 ${paid} (총 ${total})
+      `;
+    }
+    
     // 랭킹 표시
     if (stats.rank_percentage) {
       const rankBadgeContainer = document.getElementById('rank-badge-container');
