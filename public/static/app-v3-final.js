@@ -10757,9 +10757,9 @@ function editSnsLink(index) {
   document.getElementById('editSnsModal').style.display = 'flex';
 }
 
-// SNS 수정 저장 (계정별 저장)
+// SNS 수정 저장 (계정별 저장 + 템플릿 방식)
 async function saveEditSns() {
-  const name = document.getElementById('editSnsName').value.trim();
+  let name = document.getElementById('editSnsName').value.trim();
   const url = document.getElementById('editSnsUrl').value.trim();
   
   if (!name || !url) {
@@ -10775,6 +10775,17 @@ async function saveEditSns() {
   const userId = window.currentUser.id;
   
   try {
+    // ✅ 템플릿 방식: 기본값 수정 시 name 강제 유지
+    if (editingSnsIndex !== null) {
+      const snsToEdit = cachedSnsLinks[editingSnsIndex];
+      const isDefaultPlatform = DEFAULT_SNS_PLATFORMS.some(p => p.name === snsToEdit.name);
+      
+      if (isDefaultPlatform) {
+        name = snsToEdit.name;  // 🔒 기본값은 name 변경 불가
+        console.log(`🔒 기본 플랫폼 수정: name 유지됨 (${name})`);
+      }
+    }
+    
     const session = await supabaseClient.auth.getSession();
     if (!session?.data?.session) {
       showToast('❌ 세션이 만료되었습니다. 다시 로그인해주세요', 'error');
@@ -11131,7 +11142,7 @@ function editAiTool(index) {
 
 // AI 도구 수정 저장 (API 기반)
 async function saveEditAiTool() {
-  const name = document.getElementById('editAiToolName').value.trim();
+  let name = document.getElementById('editAiToolName').value.trim();
   const url = document.getElementById('editAiToolUrl').value.trim();
   const category = document.getElementById('editAiToolCategory').value;
   
@@ -11148,6 +11159,17 @@ async function saveEditAiTool() {
   const userId = window.currentUser.id;
   
   try {
+    // ✅ 템플릿 방식: 기본값 수정 시 name 강제 유지
+    if (editingAiToolIndex !== null) {
+      const aiToolToEdit = cachedAiTools[editingAiToolIndex];
+      const isDefaultTool = DEFAULT_AI_TOOLS.some(t => t.name === aiToolToEdit.name);
+      
+      if (isDefaultTool) {
+        name = aiToolToEdit.name;  // 🔒 기본값은 name 변경 불가
+        console.log(`🔒 기본 AI 도구 수정: name 유지됨 (${name})`);
+      }
+    }
+    
     const session = await supabaseClient.auth.getSession();
     if (!session?.data?.session) {
       showToast('❌ 세션이 만료되었습니다. 다시 로그인해주세요', 'error');
