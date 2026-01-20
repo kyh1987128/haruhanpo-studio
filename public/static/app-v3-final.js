@@ -10584,7 +10584,58 @@ async function reloadWorkflows() {
   }
 }
 
-// SNS 링크 불러오기 (템플릿처럼 병합 방식)
+// SNS 기본값 초기화 함수 (첫 로그인 시 DB에 저장)
+async function initializeDefaultSnsLinks() {
+  try {
+    const userId = window.currentUser.id;
+    const session = await supabaseClient.auth.getSession();
+    if (!session?.data?.session) {
+      console.error('❌ 세션 없음 - 초기화 실패');
+      return false;
+    }
+    
+    const token = session.data.session.access_token;
+    
+    console.log('🔄 첫 로그인: 기본 SNS 8개 DB에 저장 중...');
+    
+    // 8개 기본값을 순차적으로 POST
+    let successCount = 0;
+    for (const platform of DEFAULT_SNS_PLATFORMS) {
+      try {
+        const response = await fetch('/api/workflows', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            user_id: userId,
+            category: 'sns',
+            name: platform.name,
+            url: platform.url,
+            icon: platform.icon,
+            is_favorite: false
+          })
+        });
+        
+        if (response.ok) {
+          successCount++;
+        }
+      } catch (error) {
+        console.error(`❌ ${platform.name} 저장 실패:`, error);
+      }
+    }
+    
+    console.log(`✅ 기본 SNS ${successCount}개 저장 완료`);
+    return true;
+    
+  } catch (error) {
+    console.error('❌ SNS 초기화 예외:', error);
+    return false;
+  }
+}
+
+// SNS 링크 불러오기 (방법 B: DB 전용)
 async function loadSnsLinks() {
   try {
     // 로그인 확인
@@ -10630,38 +10681,53 @@ async function loadSnsLinks() {
     const data = await response.json();
     console.log('📦 SNS 링크 API 응답:', data);
     
-    // ✅ 템플릿처럼 병합: DB 데이터 + 기본값
     const dbWorkflows = data.workflows || [];
     
-    // DB 데이터를 Map으로 변환 (name 기준)
-    const dbMap = new Map(dbWorkflows.map(w => [w.name, {
+    // ✅ 방법 B: DB에 데이터 없으면 기본값 8개 자동 저장
+    if (dbWorkflows.length === 0) {
+      console.log('🔄 첫 로그인 감지: 기본 SNS 8개 초기화 시작');
+      const initialized = await initializeDefaultSnsLinks();
+      
+      if (initialized) {
+        // 다시 로드
+        const retryResponse = await fetch(`/api/workflows?user_id=${userId}&category=sns`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (retryResponse.ok) {
+          const retryData = await retryResponse.json();
+          const retryWorkflows = retryData.workflows || [];
+          
+          cachedSnsLinks = retryWorkflows.map(w => ({
+            id: w.id,
+            name: w.name,
+            url: w.url,
+            icon: w.icon || 'fas fa-link',
+            color: '#6366f1'
+          }));
+          
+          console.log(`✅ SNS 초기화 완료: ${cachedSnsLinks.length}개 로드`);
+          return cachedSnsLinks;
+        }
+      }
+      
+      // 초기화 실패 시 기본값 사용
+      cachedSnsLinks = DEFAULT_SNS_PLATFORMS;
+      return DEFAULT_SNS_PLATFORMS;
+    }
+    
+    // ✅ DB 데이터만 사용 (병합 안 함)
+    cachedSnsLinks = dbWorkflows.map(w => ({
       id: w.id,
       name: w.name,
       url: w.url,
       icon: w.icon || 'fas fa-link',
       color: '#6366f1'
-    }]));
+    }));
     
-    // 기본값을 순회하며 DB에 있으면 DB 데이터, 없으면 기본값 사용
-    cachedSnsLinks = DEFAULT_SNS_PLATFORMS.map(platform => {
-      const dbLink = dbMap.get(platform.name);
-      return dbLink || platform;  // DB 우선, 없으면 기본값
-    });
-    
-    // DB에만 있는 추가 링크도 포함 (사용자가 새로 추가한 링크)
-    dbWorkflows.forEach(w => {
-      if (!DEFAULT_SNS_PLATFORMS.find(p => p.name === w.name)) {
-        cachedSnsLinks.push({
-          id: w.id,
-          name: w.name,
-          url: w.url,
-          icon: w.icon || 'fas fa-link',
-          color: '#6366f1'
-        });
-      }
-    });
-    
-    console.log(`✅ SNS 링크 병합 완료: 총 ${cachedSnsLinks.length}개 (DB: ${dbWorkflows.length}개, 기본값: ${DEFAULT_SNS_PLATFORMS.length}개)`);
+    console.log(`✅ SNS 링크 로드 완료: 총 ${cachedSnsLinks.length}개 (DB 전용)`);
     return cachedSnsLinks;
     
   } catch (error) {
@@ -10757,9 +10823,9 @@ function editSnsLink(index) {
   document.getElementById('editSnsModal').style.display = 'flex';
 }
 
-// SNS 수정 저장 (계정별 저장 + 템플릿 방식)
+// SNS 수정 저장 (방법 B: DB 전용, name 자유 수정)
 async function saveEditSns() {
-  let name = document.getElementById('editSnsName').value.trim();
+  const name = document.getElementById('editSnsName').value.trim();
   const url = document.getElementById('editSnsUrl').value.trim();
   
   if (!name || !url) {
@@ -10775,17 +10841,6 @@ async function saveEditSns() {
   const userId = window.currentUser.id;
   
   try {
-    // ✅ 템플릿 방식: 기본값 수정 시 name 강제 유지
-    if (editingSnsIndex !== null) {
-      const snsToEdit = cachedSnsLinks[editingSnsIndex];
-      const isDefaultPlatform = DEFAULT_SNS_PLATFORMS.some(p => p.name === snsToEdit.name);
-      
-      if (isDefaultPlatform) {
-        name = snsToEdit.name;  // 🔒 기본값은 name 변경 불가
-        console.log(`🔒 기본 플랫폼 수정: name 유지됨 (${name})`);
-      }
-    }
-    
     const session = await supabaseClient.auth.getSession();
     if (!session?.data?.session) {
       showToast('❌ 세션이 만료되었습니다. 다시 로그인해주세요', 'error');
@@ -10947,7 +11002,59 @@ const DEFAULT_AI_TOOLS = [
   { name: 'Tome', url: 'https://tome.app', category: '프레젠테이션', icon: 'fas fa-book-open', color: '#10B981' }
 ];
 
-// AI 도구 불러오기 (템플릿처럼 병합 방식)
+// AI 워크플로우 기본값 초기화 함수 (첫 로그인 시 DB에 저장)
+async function initializeDefaultAiTools() {
+  try {
+    const userId = window.currentUser.id;
+    const session = await supabaseClient.auth.getSession();
+    if (!session?.data?.session) {
+      console.error('❌ 세션 없음 - 초기화 실패');
+      return false;
+    }
+    
+    const token = session.data.session.access_token;
+    
+    console.log('🔄 첫 로그인: 기본 AI 도구 12개 DB에 저장 중...');
+    
+    // 12개 기본값을 순차적으로 POST
+    let successCount = 0;
+    for (const tool of DEFAULT_AI_TOOLS) {
+      try {
+        const response = await fetch('/api/workflows', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            user_id: userId,
+            category: 'ai_tool',
+            name: tool.name,
+            url: tool.url,
+            icon: tool.icon,
+            description: tool.category,
+            is_favorite: false
+          })
+        });
+        
+        if (response.ok) {
+          successCount++;
+        }
+      } catch (error) {
+        console.error(`❌ ${tool.name} 저장 실패:`, error);
+      }
+    }
+    
+    console.log(`✅ 기본 AI 도구 ${successCount}개 저장 완료`);
+    return true;
+    
+  } catch (error) {
+    console.error('❌ AI 워크플로우 초기화 예외:', error);
+    return false;
+  }
+}
+
+// AI 도구 불러오기 (방법 B: DB 전용)
 async function loadAiTools() {
   try {
     // 로그인 확인
@@ -10993,39 +11100,56 @@ async function loadAiTools() {
     const data = await response.json();
     console.log('📦 AI 워크플로우 API 응답:', data);
     
-    // ✅ 템플릿처럼 병합: DB 데이터 + 기본값
     const dbWorkflows = data.workflows || [];
     
-    // DB 데이터를 Map으로 변환 (name 기준)
-    const dbMap = new Map(dbWorkflows.map(w => [w.name, {
+    // ✅ 방법 B: DB에 데이터 없으면 기본값 12개 자동 저장
+    if (dbWorkflows.length === 0) {
+      console.log('🔄 첫 로그인 감지: 기본 AI 도구 12개 초기화 시작');
+      const initialized = await initializeDefaultAiTools();
+      
+      if (initialized) {
+        // 다시 로드
+        const retryResponse = await fetch(`/api/workflows?user_id=${userId}&category=ai_tool`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (retryResponse.ok) {
+          const retryData = await retryResponse.json();
+          const retryWorkflows = retryData.workflows || [];
+          
+          cachedAiTools = retryWorkflows.map(w => ({
+            id: w.id,
+            name: w.name,
+            url: w.url,
+            category: w.description || '기타',
+            icon: w.icon || 'fas fa-robot',
+            color: '#6366f1'
+          }));
+          
+          console.log(`✅ AI 워크플로우 초기화 완료: ${cachedAiTools.length}개 로드`);
+          return cachedAiTools;
+        }
+      }
+      
+      // 초기화 실패 시 기본값 사용
+      cachedAiTools = DEFAULT_AI_TOOLS;
+      return DEFAULT_AI_TOOLS;
+    }
+    
+    // ✅ DB 데이터만 사용 (병합 안 함)
+    cachedAiTools = dbWorkflows.map(w => ({
       id: w.id,
       name: w.name,
       url: w.url,
-      category: w.description || '기타', // description을 category로 사용
+      category: w.description || '기타',
       icon: w.icon || 'fas fa-robot',
       color: '#6366f1'
-    }]));
+    }));
     
-    // 기본값을 순회하며 DB에 있으면 DB 데이터, 없으면 기본값 사용
-    cachedAiTools = DEFAULT_AI_TOOLS.map(tool => {
-      const dbTool = dbMap.get(tool.name);
-      return dbTool || tool;  // DB 우선, 없으면 기본값
-    });
-    
-    // DB에만 있는 추가 도구도 포함 (사용자가 새로 추가한 도구)
-    dbWorkflows.forEach(w => {
-      if (!DEFAULT_AI_TOOLS.find(t => t.name === w.name)) {
-        cachedAiTools.push({
-          id: w.id,
-          name: w.name,
-          url: w.url,
-          category: w.description || '기타',
-          icon: w.icon || 'fas fa-robot',
-          color: '#6366f1'
-        });
-      }
-    });
-    
+    console.log(`✅ AI 워크플로우 로드 완료: 총 ${cachedAiTools.length}개 (DB 전용)`);
+    return cachedAiTools;
     console.log(`✅ AI 워크플로우 병합 완료: 총 ${cachedAiTools.length}개 (DB: ${dbWorkflows.length}개, 기본값: ${DEFAULT_AI_TOOLS.length}개)`);
     return cachedAiTools;
     
@@ -11142,7 +11266,7 @@ function editAiTool(index) {
 
 // AI 도구 수정 저장 (API 기반)
 async function saveEditAiTool() {
-  let name = document.getElementById('editAiToolName').value.trim();
+  const name = document.getElementById('editAiToolName').value.trim();
   const url = document.getElementById('editAiToolUrl').value.trim();
   const category = document.getElementById('editAiToolCategory').value;
   
@@ -11159,17 +11283,6 @@ async function saveEditAiTool() {
   const userId = window.currentUser.id;
   
   try {
-    // ✅ 템플릿 방식: 기본값 수정 시 name 강제 유지
-    if (editingAiToolIndex !== null) {
-      const aiToolToEdit = cachedAiTools[editingAiToolIndex];
-      const isDefaultTool = DEFAULT_AI_TOOLS.some(t => t.name === aiToolToEdit.name);
-      
-      if (isDefaultTool) {
-        name = aiToolToEdit.name;  // 🔒 기본값은 name 변경 불가
-        console.log(`🔒 기본 AI 도구 수정: name 유지됨 (${name})`);
-      }
-    }
-    
     const session = await supabaseClient.auth.getSession();
     if (!session?.data?.session) {
       showToast('❌ 세션이 만료되었습니다. 다시 로그인해주세요', 'error');
