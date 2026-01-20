@@ -11600,21 +11600,6 @@ async function showSettingsModal() {
               </div>
             </div>
             
-            <!-- 누적 사용량 섹션 -->
-            <div id="usage-stats-section" style="margin-bottom: 16px;">
-              <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #6b7280; margin-bottom: 8px;">누적 사용량</label>
-              <div style="padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white;">
-                <div style="margin-bottom: 12px;">
-                  <i class="fas fa-chart-bar" style="margin-right: 8px;"></i>
-                  <span id="total-credits-used" style="font-size: 0.875rem;">지금까지 총 <strong>0</strong> 크레딧 사용</span>
-                </div>
-                <div id="rank-badge-container" style="display: none;">
-                  <i class="fas fa-trophy" style="margin-right: 8px; color: #fbbf24;"></i>
-                  <span id="rank-badge" style="font-size: 0.875rem;"></span>
-                </div>
-              </div>
-            </div>
-            
             <!-- 가입일 (읽기 전용) -->
             <div style="margin-bottom: 16px;">
               <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #6b7280; margin-bottom: 4px;">가입일</label>
@@ -11703,8 +11688,8 @@ async function showSettingsModal() {
   
   document.body.insertAdjacentHTML('beforeend', modalHTML);
   
-  // 📊 사용자 통계 로드
-  loadUserStats();
+  // 📊 사용자 통계 로드 (누적 사용량 기능 제거로 비활성화)
+  // loadUserStats();
   
   // 토글 스위치 CSS 동적 추가
   const style = document.createElement('style');
