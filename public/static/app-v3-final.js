@@ -10584,13 +10584,25 @@ async function reloadWorkflows() {
   }
 }
 
+// SNS 초기화 플래그
+let isInitializingSns = false;
+
 // SNS 기본값 초기화 함수 (첫 로그인 시 DB에 저장)
 async function initializeDefaultSnsLinks() {
+  // 중복 초기화 방지
+  if (isInitializingSns) {
+    console.log('⏳ SNS 초기화 이미 진행 중...');
+    return false;
+  }
+  
   try {
+    isInitializingSns = true;
+    
     const userId = window.currentUser.id;
     const session = await supabaseClient.auth.getSession();
     if (!session?.data?.session) {
       console.error('❌ 세션 없음 - 초기화 실패');
+      isInitializingSns = false;
       return false;
     }
     
@@ -10598,9 +10610,8 @@ async function initializeDefaultSnsLinks() {
     
     console.log('🔄 첫 로그인: 기본 SNS 8개 DB에 저장 중...');
     
-    // 8개 기본값을 순차적으로 POST
-    let successCount = 0;
-    for (const platform of DEFAULT_SNS_PLATFORMS) {
+    // ✅ Promise.all()로 병렬 처리
+    const promises = DEFAULT_SNS_PLATFORMS.map(async (platform) => {
       try {
         const response = await fetch('/api/workflows', {
           method: 'POST',
@@ -10619,18 +10630,27 @@ async function initializeDefaultSnsLinks() {
         });
         
         if (response.ok) {
-          successCount++;
+          return { success: true, name: platform.name };
+        } else {
+          console.error(`❌ ${platform.name} 저장 실패:`, response.status);
+          return { success: false, name: platform.name };
         }
       } catch (error) {
         console.error(`❌ ${platform.name} 저장 실패:`, error);
+        return { success: false, name: platform.name };
       }
-    }
+    });
+    
+    const results = await Promise.all(promises);
+    const successCount = results.filter(r => r.success).length;
     
     console.log(`✅ 기본 SNS ${successCount}개 저장 완료`);
+    isInitializingSns = false;
     return true;
     
   } catch (error) {
     console.error('❌ SNS 초기화 예외:', error);
+    isInitializingSns = false;
     return false;
   }
 }
@@ -10638,6 +10658,12 @@ async function initializeDefaultSnsLinks() {
 // SNS 링크 불러오기 (방법 B: DB 전용)
 async function loadSnsLinks() {
   try {
+    // ✅ 초기화 중이면 대기
+    while (isInitializingSns) {
+      console.log('⏳ SNS 초기화 완료 대기 중...');
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
     // 로그인 확인
     if (!window.currentUser || !window.currentUser.id) {
       console.log('📦 로그인 전이므로 기본 SNS 플랫폼 사용');
@@ -11002,13 +11028,25 @@ const DEFAULT_AI_TOOLS = [
   { name: 'Tome', url: 'https://tome.app', category: '프레젠테이션', icon: 'fas fa-book-open', color: '#10B981' }
 ];
 
+// AI 워크플로우 초기화 플래그
+let isInitializingAi = false;
+
 // AI 워크플로우 기본값 초기화 함수 (첫 로그인 시 DB에 저장)
 async function initializeDefaultAiTools() {
+  // 중복 초기화 방지
+  if (isInitializingAi) {
+    console.log('⏳ AI 워크플로우 초기화 이미 진행 중...');
+    return false;
+  }
+  
   try {
+    isInitializingAi = true;
+    
     const userId = window.currentUser.id;
     const session = await supabaseClient.auth.getSession();
     if (!session?.data?.session) {
       console.error('❌ 세션 없음 - 초기화 실패');
+      isInitializingAi = false;
       return false;
     }
     
@@ -11016,9 +11054,8 @@ async function initializeDefaultAiTools() {
     
     console.log('🔄 첫 로그인: 기본 AI 도구 12개 DB에 저장 중...');
     
-    // 12개 기본값을 순차적으로 POST
-    let successCount = 0;
-    for (const tool of DEFAULT_AI_TOOLS) {
+    // ✅ Promise.all()로 병렬 처리
+    const promises = DEFAULT_AI_TOOLS.map(async (tool) => {
       try {
         const response = await fetch('/api/workflows', {
           method: 'POST',
@@ -11038,18 +11075,27 @@ async function initializeDefaultAiTools() {
         });
         
         if (response.ok) {
-          successCount++;
+          return { success: true, name: tool.name };
+        } else {
+          console.error(`❌ ${tool.name} 저장 실패:`, response.status);
+          return { success: false, name: tool.name };
         }
       } catch (error) {
         console.error(`❌ ${tool.name} 저장 실패:`, error);
+        return { success: false, name: tool.name };
       }
-    }
+    });
+    
+    const results = await Promise.all(promises);
+    const successCount = results.filter(r => r.success).length;
     
     console.log(`✅ 기본 AI 도구 ${successCount}개 저장 완료`);
+    isInitializingAi = false;
     return true;
     
   } catch (error) {
     console.error('❌ AI 워크플로우 초기화 예외:', error);
+    isInitializingAi = false;
     return false;
   }
 }
@@ -11057,6 +11103,12 @@ async function initializeDefaultAiTools() {
 // AI 도구 불러오기 (방법 B: DB 전용)
 async function loadAiTools() {
   try {
+    // ✅ 초기화 중이면 대기
+    while (isInitializingAi) {
+      console.log('⏳ AI 워크플로우 초기화 완료 대기 중...');
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
     // 로그인 확인
     if (!window.currentUser || !window.currentUser.id) {
       console.log('📦 로그인 전이므로 기본 AI 도구 사용');
