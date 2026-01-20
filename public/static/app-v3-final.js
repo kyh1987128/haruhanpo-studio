@@ -11600,12 +11600,18 @@ async function showSettingsModal() {
               </div>
             </div>
             
-            <!-- 회원 등급 (읽기 전용) -->
-            <div style="margin-bottom: 16px;">
-              <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #6b7280; margin-bottom: 4px;">회원 등급</label>
-              <div style="padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; color: #6b7280;">
-                <i class="fas fa-crown" style="margin-right: 8px; color: #f59e0b;"></i>
-                ${tierLabel}
+            <!-- 누적 사용량 섹션 -->
+            <div id="usage-stats-section" style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #6b7280; margin-bottom: 8px;">누적 사용량</label>
+              <div style="padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white;">
+                <div style="margin-bottom: 12px;">
+                  <i class="fas fa-chart-bar" style="margin-right: 8px;"></i>
+                  <span id="total-credits-used" style="font-size: 0.875rem;">지금까지 총 <strong>0</strong> 크레딧 사용</span>
+                </div>
+                <div id="rank-badge-container" style="display: none;">
+                  <i class="fas fa-trophy" style="margin-right: 8px; color: #fbbf24;"></i>
+                  <span id="rank-badge" style="font-size: 0.875rem;"></span>
+                </div>
               </div>
             </div>
             
@@ -11697,6 +11703,9 @@ async function showSettingsModal() {
   
   document.body.insertAdjacentHTML('beforeend', modalHTML);
   
+  // 📊 사용자 통계 로드
+  loadUserStats();
+  
   // 토글 스위치 CSS 동적 추가
   const style = document.createElement('style');
   style.textContent = `
@@ -11708,6 +11717,88 @@ async function showSettingsModal() {
     }
   `;
   document.head.appendChild(style);
+}
+
+// 사용자 통계 로드
+async function loadUserStats() {
+  try {
+    if (!window.currentUser || !window.currentUser.id) {
+      console.log('로그인 전이므로 통계 로드 생략');
+      return;
+    }
+    
+    const session = await supabaseClient.auth.getSession();
+    const token = session.data.session?.access_token;
+    
+    if (!token) {
+      console.log('세션 토큰 없음 - 통계 로드 생략');
+      return;
+    }
+    
+    console.log('📊 사용자 통계 로드 중...');
+    
+    const response = await fetch('/api/user/stats', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      console.error('통계 로드 실패:', response.status);
+      return;
+    }
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      console.error('통계 로드 실패:', data.error);
+      return;
+    }
+    
+    const stats = data.stats;
+    console.log('✅ 사용자 통계 로드 완료:', stats);
+    
+    // UI 업데이트
+    const totalUsedElement = document.getElementById('total-credits-used');
+    if (totalUsedElement) {
+      totalUsedElement.innerHTML = `지금까지 총 <strong>${stats.total_credits_used || 0}</strong> 크레딧 사용`;
+    }
+    
+    // 랭킹 표시
+    if (stats.rank_percentage) {
+      const rankBadgeContainer = document.getElementById('rank-badge-container');
+      const rankBadge = document.getElementById('rank-badge');
+      
+      if (rankBadgeContainer && rankBadge) {
+        // 랭킹에 따른 아이콘 및 색상
+        let icon = '🏆';
+        let badgeColor = '#fbbf24';
+        
+        if (stats.rank_percentage <= 1) {
+          icon = '👑';
+          badgeColor = '#d4af37';
+        } else if (stats.rank_percentage <= 5) {
+          icon = '🏆';
+          badgeColor = '#c0c0c0';
+        } else if (stats.rank_percentage <= 15) {
+          icon = '🥇';
+          badgeColor = '#cd7f32';
+        } else if (stats.rank_percentage <= 30) {
+          icon = '🥈';
+          badgeColor = '#7c7c7c';
+        } else {
+          icon = '🥉';
+          badgeColor = '#a0a0a0';
+        }
+        
+        rankBadge.innerHTML = `상위 <strong>${stats.rank_percentage}%</strong> 사용자 ${icon}`;
+        rankBadgeContainer.style.display = 'block';
+      }
+    }
+    
+  } catch (error) {
+    console.error('❌ 통계 로드 예외:', error);
+  }
 }
 
 // 설정 모달 닫기

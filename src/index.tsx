@@ -25,6 +25,30 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>();
 
+// ========================================
+// 크레딧 계산 상수
+// ========================================
+const COSTS: Record<string, number> = {
+  IMAGE_ANALYSIS: 0.01,
+  BLOG: 0.04,
+  INSTAGRAM: 0.03,
+  INSTAGRAM_FEED: 0.03,
+  INSTAGRAM_REELS: 0.04,
+  THREADS: 0.02,
+  YOUTUBE: 0.04,
+  YOUTUBE_SHORTS: 0.04,
+  YOUTUBE_LONGFORM: 0.08,
+  TIKTOK: 0.04,
+  SHORTFORM_MULTI: 0.05,
+  METADATA_GENERATION: 0.03,
+  TWITTER: 0.02,
+  LINKEDIN: 0.03,
+  KAKAOTALK: 0.02,
+  BRUNCH: 0.04
+};
+
+const EXCHANGE_RATE = 1300; // 1 USD = 1300 KRW
+
 // CORS 설정
 app.use('/api/*', cors());
 
@@ -36,6 +60,142 @@ app.use('/payment*', serveStatic({ root: './public' }));
 app.post('/api/templates/save', async (c) => {
   // 실제로는 프론트엔드 LocalStorage에서 관리하므로 이 API는 참고용
   return c.json({ success: true, message: 'Template management is handled on client-side' });
+});
+
+// ========================================
+// API 라우트: 사용자 통계 및 사용 내역
+// ========================================
+
+// POST /api/usage-history - 사용 내역 기록
+app.post('/api/usage-history', async (c) => {
+  try {
+    const { user_id, content_type, platform, cost, credits_used, content_title } = await c.req.json();
+    
+    if (!user_id || !content_type || !credits_used) {
+      return c.json({ 
+        success: false, 
+        error: 'user_id, content_type, credits_used는 필수입니다.' 
+      }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_KEY);
+    
+    const { data, error } = await supabase
+      .from('usage_history')
+      .insert({
+        user_id,
+        content_type,
+        platform: platform || content_type,
+        cost: cost || 0,
+        credits_used,
+        content_title: content_title || null
+      })
+      .select();
+    
+    if (error) {
+      console.error('❌ usage_history 기록 실패:', error);
+      throw error;
+    }
+    
+    console.log('✅ usage_history 기록 성공:', { user_id, content_type, credits_used });
+    
+    return c.json({ success: true, data });
+  } catch (error: any) {
+    console.error('❌ usage_history API 에러:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// GET /api/user/stats - 사용자 통계 조회
+app.get('/api/user/stats', async (c) => {
+  try {
+    // Authorization 헤더에서 토큰 추출
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader) {
+      return c.json({ success: false, error: 'No authorization header' }, 401);
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Supabase에서 사용자 정보 가져오기
+    const supabase = createSupabaseAdmin(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_KEY);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    
+    const userId = user.id;
+    
+    // user_stats에서 통계 조회
+    const { data: stats, error: statsError } = await supabase
+      .from('user_stats')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (statsError && statsError.code !== 'PGRST116') { // PGRST116 = 데이터 없음
+      console.error('❌ user_stats 조회 실패:', statsError);
+      throw statsError;
+    }
+    
+    // 데이터가 없으면 초기화
+    if (!stats) {
+      return c.json({
+        success: true,
+        stats: {
+          total_credits_used: 0,
+          total_content_generated: 0,
+          rank_position: null,
+          rank_percentage: null,
+          last_usage_at: null
+        }
+      });
+    }
+    
+    return c.json({
+      success: true,
+      stats: {
+        total_credits_used: stats.total_credits_used || 0,
+        total_content_generated: stats.total_content_generated || 0,
+        rank_position: stats.rank_position,
+        rank_percentage: stats.rank_percentage,
+        last_usage_at: stats.last_usage_at
+      }
+    });
+    
+  } catch (error: any) {
+    console.error('❌ user/stats API 에러:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// POST /api/admin/calculate-rankings - 랭킹 재계산 (관리자용)
+app.post('/api/admin/calculate-rankings', async (c) => {
+  try {
+    // 간단한 관리자 인증 (필요시 추가)
+    const adminSecret = c.req.header('X-Admin-Secret');
+    // if (adminSecret !== c.env.ADMIN_SECRET) {
+    //   return c.json({ success: false, error: 'Unauthorized' }, 401);
+    // }
+    
+    const supabase = createSupabaseAdmin(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_KEY);
+    
+    // PostgreSQL 함수 실행
+    const { error } = await supabase.rpc('calculate_user_rankings');
+    
+    if (error) {
+      console.error('❌ 랭킹 계산 실패:', error);
+      throw error;
+    }
+    
+    console.log('✅ 랭킹 계산 완료');
+    
+    return c.json({ success: true, message: 'Rankings calculated successfully' });
+  } catch (error: any) {
+    console.error('❌ calculate-rankings API 에러:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
 });
 
 // API 라우트: 대시보드 통계
@@ -781,6 +941,25 @@ app.post('/api/generate', async (c) => {
           type: 'usage',
           description: `콘텐츠 생성 ${platforms.length}개 플랫폼 (${platforms.join(', ')})`
         });
+        
+        // 6️⃣ usage_history 기록 (누적 사용량 추적)
+        for (const platform of platforms) {
+          const platformCost = COSTS[platform.toUpperCase()] || 0;
+          const platformCredits = Math.ceil(platformCost * EXCHANGE_RATE);
+          
+          await supabase.from('usage_history').insert({
+            user_id,
+            content_type: platform,
+            platform: platform,
+            cost: platformCost,
+            credits_used: platformCredits,
+            content_title: `${brand || '콘텐츠'} - ${platform}`
+          }).then(() => {
+            console.log(`📊 usage_history 기록: ${platform} (${platformCredits} 크레딧)`);
+          }).catch((err) => {
+            console.error(`❌ usage_history 기록 실패 (${platform}):`, err);
+          });
+        }
         
       } catch (error: any) {
         console.error('❌ 크레딧 처리 중 오류:', error);
