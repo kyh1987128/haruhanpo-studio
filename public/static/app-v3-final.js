@@ -4546,8 +4546,8 @@ function openTemplateModal() {
           <p>• <code>{브랜드명}</code> - 브랜드/서비스/상품명</p>
           <p>• <code>{키워드}</code> - 핵심 키워드</p>
           <p>• <code>{톤앤매너}</code> - 콘텐츠 톤앤매너</p>
-          <p>• <code>{타겟연령대}</code> - 타겟 연령대</p>
-          <p>• <code>{타겟성별}</code> - 타겟 성별</p>
+          <p>• <code>{타겟연령대}</code> - 주 연령층</p>
+          <p>• <code>{타겟성별}</code> - 주 고객층 성별</p>
           <p>• <code>{산업분야}</code> - 산업 분야</p>
         </div>
       </div>
@@ -6871,13 +6871,13 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error('❌ snsLinksBtn 요소를 찾을 수 없습니다!');
   }
   
-  // AI 워크플로우 버튼
+  // AI 빠른 설정 버튼
   const aiWorkflowBtn = document.getElementById('aiWorkflowBtn');
   if (aiWorkflowBtn) {
     aiWorkflowBtn.addEventListener('click', () => {
       openAiWorkflowModal();
     });
-    console.log('✅ AI 워크플로우 버튼 이벤트 리스너 등록 완료');
+    console.log('✅ AI 빠른 설정 버튼 이벤트 리스너 등록 완료');
   } else {
     console.error('❌ aiWorkflowBtn 요소를 찾을 수 없습니다!');
   }
@@ -9213,7 +9213,7 @@ async function confirmSaveProfile() {
       throw new Error(data.error || '프로필 저장 실패');
     }
     
-    // 워크플로우 연결 저장
+    // 빠른 설정 연결 저장
     if (typeof window.saveProfileWorkflows === 'function') {
       await window.saveProfileWorkflows(profileName);
     }
@@ -9365,7 +9365,7 @@ async function applyProfile(profileId) {
     showToast('✅ 프로필이 적용되었습니다', 'success');
     closeProfileListModal();
     
-    // 워크플로우도 함께 불러오기
+    // 빠른 설정도 함께 불러오기
     if (typeof window.loadProfileWorkflows === 'function') {
       await window.loadProfileWorkflows(profile.profile_name);
     }
@@ -10430,10 +10430,10 @@ window.updateCreditsUI = updateCreditsUI;
 window.broadcastCreditUpdate = broadcastCreditUpdate;
 
 // ========================================
-// SNS 바로가기 & AI 워크플로우 기능 (NEW v9.0 - API 기반)
+// SNS 바로가기 & AI 빠른 설정 기능 (NEW v9.0 - API 기반)
 // ========================================
 
-// 현재 로드된 워크플로우 캐시
+// 현재 로드된 빠른 설정 캐시
 let cachedSnsLinks = null;
 let cachedAiTools = null;
 
@@ -10536,7 +10536,7 @@ async function switchProfile(profileId) {
     // 선택된 프로필 저장
     localStorage.setItem('postflow_selected_profile_id', profileId);
     
-    // 워크플로우 캐시 무효화
+    // 빠른 설정 캐시 무효화
     cachedSnsLinks = null;
     cachedAiTools = null;
     
@@ -10545,7 +10545,7 @@ async function switchProfile(profileId) {
     
     console.log('✅ 프로필 전환 완료:', profileId);
     
-    // 워크플로우 자동 로드
+    // 빠른 설정 자동 로드
     await reloadWorkflows();
     
   } catch (error) {
@@ -10554,12 +10554,12 @@ async function switchProfile(profileId) {
   }
 }
 
-// 워크플로우 재로드
+// 빠른 설정 재로드
 async function reloadWorkflows() {
   try {
-    console.log('🔄 워크플로우 재로드 중...');
+    console.log('🔄 빠른 설정 재로드 중...');
     
-    // SNS & AI 워크플로우 동시 로드
+    // SNS & AI 빠른 설정 동시 로드
     const [snsLinks, aiTools] = await Promise.all([
       loadSnsLinks(),
       loadAiTools()
@@ -10577,10 +10577,10 @@ async function reloadWorkflows() {
       await renderAiToolsList();
     }
     
-    console.log('✅ 워크플로우 재로드 완료');
+    console.log('✅ 빠른 설정 재로드 완료');
     
   } catch (error) {
-    console.error('❌ 워크플로우 재로드 실패:', error);
+    console.error('❌ 빠른 설정 재로드 실패:', error);
   }
 }
 
@@ -11000,7 +11000,7 @@ async function deleteSnsLink(index) {
 }
 
 // ========================================
-// AI 워크플로우 기능 (NEW v9.0 - API 기반)
+// AI 빠른 설정 기능 (NEW v9.0 - API 기반)
 // ========================================
 
 // 기본 AI 도구 목록 (카테고리별)
@@ -11028,14 +11028,14 @@ const DEFAULT_AI_TOOLS = [
   { name: 'Tome', url: 'https://tome.app', category: '프레젠테이션', icon: 'fas fa-book-open', color: '#10B981' }
 ];
 
-// AI 워크플로우 초기화 플래그
+// AI 빠른 설정 초기화 플래그
 let isInitializingAi = false;
 
-// AI 워크플로우 기본값 초기화 함수 (첫 로그인 시 DB에 저장)
+// AI 빠른 설정 기본값 초기화 함수 (첫 로그인 시 DB에 저장)
 async function initializeDefaultAiTools() {
   // 중복 초기화 방지
   if (isInitializingAi) {
-    console.log('⏳ AI 워크플로우 초기화 이미 진행 중...');
+    console.log('⏳ AI 빠른 설정 초기화 이미 진행 중...');
     return false;
   }
   
@@ -11094,7 +11094,7 @@ async function initializeDefaultAiTools() {
     return true;
     
   } catch (error) {
-    console.error('❌ AI 워크플로우 초기화 예외:', error);
+    console.error('❌ AI 빠른 설정 초기화 예외:', error);
     isInitializingAi = false;
     return false;
   }
@@ -11105,7 +11105,7 @@ async function loadAiTools() {
   try {
     // ✅ 초기화 중이면 대기
     while (isInitializingAi) {
-      console.log('⏳ AI 워크플로우 초기화 완료 대기 중...');
+      console.log('⏳ AI 빠른 설정 초기화 완료 대기 중...');
       await new Promise(resolve => setTimeout(resolve, 100));
     }
     
@@ -11128,7 +11128,7 @@ async function loadAiTools() {
     
     const token = session.data.session.access_token;
     
-    console.log('📡 AI 워크플로우 로드 중... (병합 방식)', { userId });
+    console.log('📡 AI 빠른 설정 로드 중... (병합 방식)', { userId });
     
     const response = await fetch(`/api/workflows?user_id=${userId}&category=ai_tool`, {
       headers: {
@@ -11138,7 +11138,7 @@ async function loadAiTools() {
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('❌ AI 워크플로우 로드 실패:', {
+      console.error('❌ AI 빠른 설정 로드 실패:', {
         status: response.status,
         statusText: response.statusText,
         errorData,
@@ -11150,7 +11150,7 @@ async function loadAiTools() {
     }
     
     const data = await response.json();
-    console.log('📦 AI 워크플로우 API 응답:', data);
+    console.log('📦 AI 빠른 설정 API 응답:', data);
     
     const dbWorkflows = data.workflows || [];
     
@@ -11180,7 +11180,7 @@ async function loadAiTools() {
             color: '#6366f1'
           }));
           
-          console.log(`✅ AI 워크플로우 초기화 완료: ${cachedAiTools.length}개 로드`);
+          console.log(`✅ AI 빠른 설정 초기화 완료: ${cachedAiTools.length}개 로드`);
           return cachedAiTools;
         }
       }
@@ -11200,13 +11200,13 @@ async function loadAiTools() {
       color: '#6366f1'
     }));
     
-    console.log(`✅ AI 워크플로우 로드 완료: 총 ${cachedAiTools.length}개 (DB 전용)`);
+    console.log(`✅ AI 빠른 설정 로드 완료: 총 ${cachedAiTools.length}개 (DB 전용)`);
     return cachedAiTools;
-    console.log(`✅ AI 워크플로우 병합 완료: 총 ${cachedAiTools.length}개 (DB: ${dbWorkflows.length}개, 기본값: ${DEFAULT_AI_TOOLS.length}개)`);
+    console.log(`✅ AI 빠른 설정 병합 완료: 총 ${cachedAiTools.length}개 (DB: ${dbWorkflows.length}개, 기본값: ${DEFAULT_AI_TOOLS.length}개)`);
     return cachedAiTools;
     
   } catch (error) {
-    console.error('❌ AI 워크플로우 로드 예외:', error);
+    console.error('❌ AI 빠른 설정 로드 예외:', error);
     cachedAiTools = DEFAULT_AI_TOOLS;
     return DEFAULT_AI_TOOLS;
   }
@@ -11218,11 +11218,11 @@ function saveAiTools(tools) {
   console.warn('⚠️ saveAiTools()는 더 이상 사용되지 않습니다. createAiTool(), updateAiTool(), deleteAiTool()을 사용하세요');
 }
 
-// AI 워크플로우 모달 열기
+// AI 빠른 설정 모달 열기
 async function openAiWorkflowModal() {
   const modal = document.getElementById('aiWorkflowModal');
   if (!modal) {
-    console.error('❌ AI 워크플로우 모달을 찾을 수 없습니다');
+    console.error('❌ AI 빠른 설정 모달을 찾을 수 없습니다');
     return;
   }
   
@@ -11230,7 +11230,7 @@ async function openAiWorkflowModal() {
   await renderAiToolsList();
 }
 
-// AI 워크플로우 모달 닫기
+// AI 빠른 설정 모달 닫기
 function closeAiWorkflowModal() {
   const modal = document.getElementById('aiWorkflowModal');
   if (modal) {
@@ -11346,7 +11346,7 @@ async function saveEditAiTool() {
     // 새로 추가 또는 기본값 수정
     if (editingAiToolIndex === null || !cachedAiTools[editingAiToolIndex].id) {
       // 새로 추가
-      console.log('📡 AI 워크플로우 생성 중...', { name, url, category, userId });
+      console.log('📡 AI 빠른 설정 생성 중...', { name, url, category, userId });
       
       const response = await fetch('/api/workflows', {
         method: 'POST',
@@ -11368,7 +11368,7 @@ async function saveEditAiTool() {
       const data = await response.json();
       
       if (!data.success) {
-        throw new Error(data.error || 'AI 워크플로우 생성 실패');
+        throw new Error(data.error || 'AI 빠른 설정 생성 실패');
       }
       
       showToast('✅ AI 도구가 추가되었습니다', 'success');
@@ -11376,7 +11376,7 @@ async function saveEditAiTool() {
     } else {
       // 기존 수정
       const workflowId = cachedAiTools[editingAiToolIndex].id;
-      console.log('📡 AI 워크플로우 수정 중...', { workflowId, name, url, category });
+      console.log('📡 AI 빠른 설정 수정 중...', { workflowId, name, url, category });
       
       const response = await fetch(`/api/workflows/${workflowId}`, {
         method: 'PUT',
@@ -11394,7 +11394,7 @@ async function saveEditAiTool() {
       const data = await response.json();
       
       if (!data.success) {
-        throw new Error(data.error || 'AI 워크플로우 수정 실패');
+        throw new Error(data.error || 'AI 빠른 설정 수정 실패');
       }
       
       showToast('✅ AI 도구가 수정되었습니다', 'success');
@@ -11406,7 +11406,7 @@ async function saveEditAiTool() {
     cancelEditAiTool();
     
   } catch (error) {
-    console.error('❌ AI 워크플로우 저장 실패:', error);
+    console.error('❌ AI 빠른 설정 저장 실패:', error);
     showToast(`❌ ${error.message}`, 'error');
   }
 }
@@ -11442,7 +11442,7 @@ async function deleteAiTool(index) {
     
     const token = session.data.session.access_token;
     
-    console.log('📡 AI 워크플로우 삭제 중...', { workflowId });
+    console.log('📡 AI 빠른 설정 삭제 중...', { workflowId });
     
     const response = await fetch(`/api/workflows/${workflowId}`, {
       method: 'DELETE',
@@ -11454,7 +11454,7 @@ async function deleteAiTool(index) {
     const data = await response.json();
     
     if (!data.success) {
-      throw new Error(data.error || 'AI 워크플로우 삭제 실패');
+      throw new Error(data.error || 'AI 빠른 설정 삭제 실패');
     }
     
     showToast('✅ AI 도구가 삭제되었습니다', 'success');
@@ -11464,7 +11464,7 @@ async function deleteAiTool(index) {
     await renderAiToolsList();
     
   } catch (error) {
-    console.error('❌ AI 워크플로우 삭제 실패:', error);
+    console.error('❌ AI 빠른 설정 삭제 실패:', error);
     showToast(`❌ ${error.message}`, 'error');
   }
 }
@@ -11495,7 +11495,7 @@ window.reloadWorkflows = reloadWorkflows;
 window.addEventListener('profileChanged', async (event) => {
   console.log('🔄 프로필 전환 이벤트 감지:', event.detail);
   
-  // 워크플로우 자동 재로드는 switchProfile 함수 내에서 이미 처리됨
+  // 빠른 설정 자동 재로드는 switchProfile 함수 내에서 이미 처리됨
   // 추가 UI 업데이트가 필요하면 여기에 추가
 });
 
@@ -12018,3 +12018,361 @@ window.updateUserName = updateUserName;
 window.changePassword = changePassword;
 window.confirmAccountDeletion = confirmAccountDeletion;
 window.deleteAccount = deleteAccount;
+
+// ============================================================
+// 📘 도움말 가이드 기능
+// ============================================================
+
+const HELP_GUIDES = [
+  {
+    id: 'blog',
+    title: '📝 블로그 콘텐츠 활용법',
+    icon: '📝',
+    description: '생성된 블로그 콘텐츠를 네이버/티스토리에 게시하는 방법',
+    content: `
+      <h3>✅ 블로그 콘텐츠 게시 3단계</h3>
+      
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">1️⃣ 생성된 콘텐츠 복사</h4>
+        <p style="margin-bottom: 0;">✓ 제목, 본문, 해시태그를 모두 복사하세요</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">2️⃣ 이미지 준비</h4>
+        <p>• 이미지 2개 중 <strong>"이미지 1"</strong>은 자동 생성된 대표 이미지입니다</p>
+        <p>• <strong>"이미지 2"</strong>는 Pexels 추천 이미지입니다 (아래 무료 이미지 다운로드 버튼 클릭)</p>
+        <p style="margin-bottom: 0;">• 또는 본인이 직접 촬영/제작한 이미지를 사용하세요</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">3️⃣ 블로그에 게시</h4>
+        <p>• 네이버 블로그: <a href="https://blog.naver.com" target="_blank" style="color: white; text-decoration: underline;">blog.naver.com</a></p>
+        <p>• 티스토리: <a href="https://www.tistory.com" target="_blank" style="color: white; text-decoration: underline;">tistory.com</a></p>
+        <p style="margin-bottom: 0;">• 제목, 본문, 이미지, 해시태그를 붙여넣기하고 발행하세요</p>
+      </div>
+
+      <h4 style="margin-top: 30px;">💡 꿀팁</h4>
+      <ul style="line-height: 1.8;">
+        <li>제목은 <strong>60자 이내</strong>로 작성하면 검색 노출에 유리합니다</li>
+        <li>이미지는 <strong>3~5개</strong> 사용하면 가독성이 좋습니다</li>
+        <li>해시태그는 <strong>5~10개</strong>가 적당합니다</li>
+        <li>본문은 <strong>1,500자 이상</strong>이면 SEO에 유리합니다</li>
+      </ul>
+    `
+  },
+  {
+    id: 'instagram-feed',
+    title: '📷 인스타그램 피드 활용법',
+    icon: '📷',
+    description: '생성된 피드 콘텐츠를 인스타그램에 게시하는 방법',
+    content: `
+      <h3>✅ 인스타그램 피드 게시 3단계</h3>
+      
+      <div style="background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">1️⃣ 이미지 다운로드</h4>
+        <p style="margin-bottom: 0;">• AI가 생성한 이미지를 다운로드하거나<br>• Pexels에서 관련 이미지를 다운로드하세요</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">2️⃣ 본문 & 해시태그 복사</h4>
+        <p style="margin-bottom: 0;">• 생성된 본문과 해시태그를 복사하세요<br>• 이모지가 자동으로 포함되어 있습니다</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">3️⃣ 인스타그램 앱에서 게시</h4>
+        <p style="margin-bottom: 0;">• 인스타그램 앱 열기 → + 버튼<br>• 이미지 업로드 → 본문/해시태그 붙여넣기<br>• 공유 버튼 클릭!</p>
+      </div>
+
+      <h4 style="margin-top: 30px;">💡 꿀팁</h4>
+      <ul style="line-height: 1.8;">
+        <li>해시태그는 <strong>20~30개</strong>가 적당합니다</li>
+        <li>본문 첫 줄에 <strong>강력한 hook</strong>을 넣으세요</li>
+        <li><strong>정사각형 (1:1)</strong> 이미지가 가장 안전합니다</li>
+        <li>게시 후 <strong>10분 이내</strong>에 댓글/답글을 달면 알고리즘에 유리합니다</li>
+      </ul>
+    `
+  },
+  {
+    id: 'instagram-reels',
+    title: '🎬 인스타그램 릴스 활용법',
+    icon: '🎬',
+    description: '생성된 릴스 스크립트로 영상을 제작하는 방법',
+    content: `
+      <h3>✅ 릴스 영상 제작 3단계</h3>
+      
+      <div style="background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">1️⃣ 스크립트 확인</h4>
+        <p style="margin-bottom: 0;">• 생성된 스크립트를 읽어보고 수정이 필요하면 수정하세요<br>• 각 장면별로 나눠져 있습니다</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">2️⃣ 영상 촬영 또는 편집</h4>
+        <p><strong>방법 1: 직접 촬영</strong></p>
+        <p>• 스마트폰으로 9:16 세로 영상 촬영<br>• 스크립트대로 장면별로 촬영</p>
+        <p><strong>방법 2: 편집 툴 사용</strong></p>
+        <p style="margin-bottom: 0;">• <strong>CapCut (무료)</strong>: 초보자 추천<br>• <strong>InShot (무료)</strong>: 간단한 편집<br>• <strong>Canva (일부 무료)</strong>: 템플릿 활용</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">3️⃣ 릴스 업로드</h4>
+        <p style="margin-bottom: 0;">• 인스타그램 앱 → 릴스 탭 → + 버튼<br>• 영상 업로드 → 음악/자막 추가<br>• 본문/해시태그 붙여넣기 → 공유</p>
+      </div>
+
+      <h4 style="margin-top: 30px;">💡 꿀팁</h4>
+      <ul style="line-height: 1.8;">
+        <li>릴스 길이는 <strong>15~30초</strong>가 가장 좋습니다</li>
+        <li>첫 <strong>3초 안에 시선을 사로잡으세요</strong></li>
+        <li><strong>트렌디한 음악</strong>을 사용하면 노출이 증가합니다</li>
+        <li>자막은 <strong>필수</strong>입니다 (소리 없이 보는 사람이 많음)</li>
+      </ul>
+    `
+  },
+  {
+    id: 'youtube-shorts',
+    title: '🎥 유튜브 쇼츠 활용법',
+    icon: '🎥',
+    description: '생성된 쇼츠 스크립트로 영상을 제작하는 방법',
+    content: `
+      <h3>✅ 유튜브 쇼츠 제작 3단계</h3>
+      
+      <div style="background: linear-gradient(135deg, #ff0000 0%, #ff4444 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">1️⃣ 스크립트 확인</h4>
+        <p style="margin-bottom: 0;">• 생성된 스크립트를 확인하고 필요시 수정<br>• Hook → 본문 → CTA 구조를 유지하세요</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">2️⃣ 영상 제작</h4>
+        <p><strong>방법 1: 직접 촬영</strong></p>
+        <p>• 스마트폰 세로 모드 (9:16)<br>• 스크립트를 읽으면서 촬영</p>
+        <p><strong>방법 2: AI 도구 활용</strong></p>
+        <p style="margin-bottom: 0;">• <strong>CapCut (무료)</strong>: 자막/효과 자동 생성<br>• <strong>Descript (유료)</strong>: 텍스트 → 비디오<br>• <strong>Runway Gen-2 (유료)</strong>: AI 비디오 생성</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">3️⃣ 쇼츠 업로드</h4>
+        <p style="margin-bottom: 0;">• 유튜브 앱/웹 → + 버튼 → 쇼츠 동영상 만들기<br>• 영상 업로드 → 제목/설명 입력<br>• #Shorts 해시태그 필수 추가 → 게시</p>
+      </div>
+
+      <h4 style="margin-top: 30px;">💡 꿀팁</h4>
+      <ul style="line-height: 1.8;">
+        <li>쇼츠는 <strong>60초 이내</strong>여야 합니다</li>
+        <li>제목은 <strong>40자 이내</strong>로 간결하게</li>
+        <li>썸네일은 <strong>자동 생성</strong>되지만 직접 설정도 가능합니다</li>
+        <li><strong>#Shorts</strong> 해시태그는 필수입니다</li>
+      </ul>
+    `
+  },
+  {
+    id: 'youtube-long',
+    title: '🎞️ 유튜브 롱폼 활용법',
+    icon: '🎞️',
+    description: '생성된 스토리보드로 롱폼 영상을 제작하는 방법',
+    content: `
+      <h3>✅ 유튜브 롱폼 제작 3단계</h3>
+      
+      <div style="background: linear-gradient(135deg, #ff0000 0%, #ff4444 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">1️⃣ 스토리보드 확인</h4>
+        <p style="margin-bottom: 0;">• 생성된 스토리보드를 확인하세요<br>• 각 장면별 설명과 타임라인이 포함되어 있습니다</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">2️⃣ 영상 제작 방법 선택</h4>
+        <p><strong>방법 1: 직접 제작 (무료)</strong></p>
+        <p>• 스마트폰/카메라로 촬영<br>• CapCut, DaVinci Resolve 등으로 편집</p>
+        <p><strong>방법 2: 외주 맡기기</strong></p>
+        <p>• <strong>크몽</strong>: <a href="https://kmong.com" target="_blank" style="color: white; text-decoration: underline;">kmong.com</a><br>• <strong>숨고</strong>: <a href="https://soomgo.com" target="_blank" style="color: white; text-decoration: underline;">soomgo.com</a><br>• <strong>프리랜서코리아</strong>: <a href="https://www.freemon.co.kr" target="_blank" style="color: white; text-decoration: underline;">freemon.co.kr</a></p>
+        <p><strong>방법 3: AI 도구 활용</strong></p>
+        <p style="margin-bottom: 0;">• <strong>Runway Gen-2</strong>: AI 비디오 생성<br>• <strong>Pika Labs</strong>: 텍스트 → 비디오<br>• <strong>Descript</strong>: 텍스트 편집 → 비디오</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">3️⃣ 유튜브 업로드</h4>
+        <p style="margin-bottom: 0;">• 유튜브 스튜디오: <a href="https://studio.youtube.com" target="_blank" style="color: white; text-decoration: underline;">studio.youtube.com</a><br>• 만들기 → 동영상 업로드<br>• 제목/설명/태그/썸네일 설정 → 게시</p>
+      </div>
+
+      <h4 style="margin-top: 30px;">💡 꿀팁</h4>
+      <ul style="line-height: 1.8;">
+        <li>제목은 <strong>60자 이내</strong>, 클릭을 유도하는 문구 사용</li>
+        <li>썸네일은 <strong>1280x720 (16:9)</strong> 비율로 제작</li>
+        <li>설명란에 <strong>타임스탬프</strong>를 추가하면 시청 시간이 증가합니다</li>
+        <li>태그는 <strong>10~15개</strong>가 적당합니다</li>
+      </ul>
+    `
+  },
+  {
+    id: 'free-images',
+    title: '🖼️ 무료 이미지 다운로드',
+    icon: '🖼️',
+    description: '고품질 무료 이미지를 다운로드할 수 있는 사이트 모음',
+    content: `
+      <h3>✅ 무료 이미지 다운로드 사이트</h3>
+      
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">📷 사진 전문 사이트</h4>
+        <p><strong>Unsplash</strong> (가장 인기)<br>
+        <a href="https://unsplash.com" target="_blank" style="color: white; text-decoration: underline;">unsplash.com</a><br>
+        • 고품질 사진, 상업적 사용 가능, 출처 표기 권장</p>
+        
+        <p><strong>Pexels</strong> (다양한 카테고리)<br>
+        <a href="https://www.pexels.com" target="_blank" style="color: white; text-decoration: underline;">pexels.com</a><br>
+        • 사진 + 비디오, 상업적 사용 가능, 출처 표기 불필요</p>
+        
+        <p style="margin-bottom: 0;"><strong>Pixabay</strong> (1백만+ 이미지)<br>
+        <a href="https://pixabay.com" target="_blank" style="color: white; text-decoration: underline;">pixabay.com</a><br>
+        • 사진 + 일러스트, 상업적 사용 가능, 출처 표기 불필요</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">🎨 디자인 리소스</h4>
+        <p><strong>Freepik</strong> (벡터 + 사진)<br>
+        <a href="https://www.freepik.com" target="_blank" style="color: white; text-decoration: underline;">freepik.com</a><br>
+        • 벡터 + 사진, 무료 계정 제한 있음, 출처 표기 필요</p>
+        
+        <p><strong>Canva</strong> (디자인 툴)<br>
+        <a href="https://www.canva.com" target="_blank" style="color: white; text-decoration: underline;">canva.com</a><br>
+        • 디자인 툴 + 무료 템플릿, 일부 유료, 바로 편집 가능</p>
+        
+        <p style="margin-bottom: 0;"><strong>Flaticon</strong> (아이콘 전문)<br>
+        <a href="https://www.flaticon.com" target="_blank" style="color: white; text-decoration: underline;">flaticon.com</a><br>
+        • 아이콘 전문, 무료 계정 10개/일, 출처 표기 필요</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">🔧 유틸리티</h4>
+        <p><strong>Noun Project</strong> (아이콘)<br>
+        <a href="https://thenounproject.com" target="_blank" style="color: white; text-decoration: underline;">thenounproject.com</a><br>
+        • 아이콘 + 사진, 무료 계정 제한 있음</p>
+        
+        <p style="margin-bottom: 0;"><strong>Lorem Picsum</strong> (플레이스홀더)<br>
+        <a href="https://picsum.photos" target="_blank" style="color: white; text-decoration: underline;">picsum.photos</a><br>
+        • 랜덤 이미지 제공, 개발/테스트용</p>
+      </div>
+
+      <h4 style="margin-top: 30px;">💡 라이선스 주의사항</h4>
+      <ul style="line-height: 1.8;">
+        <li><strong>상업적 사용 가능</strong> 여부를 확인하세요</li>
+        <li><strong>출처 표기 필요</strong> 여부를 확인하세요</li>
+        <li>Freepik, Flaticon은 무료 계정 사용 시 출처 표기 필수입니다</li>
+        <li>안전하게 <strong>Unsplash, Pexels, Pixabay</strong>를 추천합니다</li>
+      </ul>
+    `
+  }
+];
+
+// 도움말 가이드 모달 HTML 생성
+function createHelpGuideModal() {
+  const modalHTML = `
+    <div id="helpGuideModal" class="modal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6);">
+      <div class="modal-content" style="position: relative; background-color: #fff; margin: 2% auto; padding: 0; border-radius: 16px; width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <!-- 헤더 -->
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 24px; border-radius: 16px 16px 0 0; color: white;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin: 0; font-size: 24px; font-weight: bold;">📘 도움말 가이드</h2>
+            <button onclick="closeHelpGuideModal()" style="background: none; border: none; color: white; font-size: 28px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s;">&times;</button>
+          </div>
+          <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 14px;">콘텐츠 생성 후 활용 방법을 확인하세요</p>
+        </div>
+
+        <!-- 가이드 목록 -->
+        <div style="padding: 24px;">
+          <div id="helpGuideList" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+            <!-- 버튼들이 여기에 동적으로 추가됩니다 -->
+          </div>
+        </div>
+
+        <!-- 상세 내용 -->
+        <div id="helpGuideDetail" style="display: none; padding: 24px; border-top: 1px solid #e5e7eb;">
+          <button onclick="showHelpGuideList()" style="background: #f3f4f6; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; margin-bottom: 16px; font-size: 14px;">
+            ← 목록으로 돌아가기
+          </button>
+          <div id="helpGuideContent" style="line-height: 1.8; color: #374151;">
+            <!-- 가이드 내용이 여기에 표시됩니다 -->
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  
+  // 가이드 버튼 렌더링
+  renderHelpGuideButtons();
+}
+
+// 도움말 가이드 버튼 렌더링
+function renderHelpGuideButtons() {
+  const listContainer = document.getElementById('helpGuideList');
+  if (!listContainer) return;
+  
+  listContainer.innerHTML = HELP_GUIDES.map(guide => `
+    <button onclick="showHelpGuideDetail('${guide.id}')" style="
+      background: white;
+      border: 2px solid #e5e7eb;
+      padding: 20px;
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    " onmouseover="this.style.borderColor='#667eea'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)';" onmouseout="this.style.borderColor='#e5e7eb'; this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)';">
+      <div style="font-size: 32px; margin-bottom: 8px;">${guide.icon}</div>
+      <h4 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #111827;">${guide.title}</h4>
+      <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.5;">${guide.description}</p>
+    </button>
+  `).join('');
+}
+
+// 도움말 가이드 모달 열기
+function openHelpGuideModal() {
+  const modal = document.getElementById('helpGuideModal');
+  if (!modal) {
+    createHelpGuideModal();
+  }
+  
+  showHelpGuideList();
+  document.getElementById('helpGuideModal').style.display = 'flex';
+  console.log('✅ 도움말 가이드 모달 열림');
+}
+
+// 도움말 가이드 모달 닫기
+function closeHelpGuideModal() {
+  const modal = document.getElementById('helpGuideModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+// 가이드 목록 표시
+function showHelpGuideList() {
+  document.getElementById('helpGuideList').style.display = 'grid';
+  document.getElementById('helpGuideDetail').style.display = 'none';
+}
+
+// 가이드 상세 표시
+function showHelpGuideDetail(guideId) {
+  const guide = HELP_GUIDES.find(g => g.id === guideId);
+  if (!guide) return;
+  
+  document.getElementById('helpGuideList').style.display = 'none';
+  document.getElementById('helpGuideDetail').style.display = 'block';
+  document.getElementById('helpGuideContent').innerHTML = guide.content;
+  
+  console.log(`✅ 도움말 가이드 표시: ${guide.title}`);
+}
+
+// 모달 외부 클릭 시 닫기
+window.addEventListener('click', (event) => {
+  const modal = document.getElementById('helpGuideModal');
+  if (event.target === modal) {
+    closeHelpGuideModal();
+  }
+});
+
+// 전역 노출
+window.openHelpGuideModal = openHelpGuideModal;
+window.closeHelpGuideModal = closeHelpGuideModal;
+window.showHelpGuideList = showHelpGuideList;
+window.showHelpGuideDetail = showHelpGuideDetail;
+
+console.log('✅ 도움말 가이드 기능 로드 완료');
+
