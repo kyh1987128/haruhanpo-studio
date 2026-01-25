@@ -1449,7 +1449,7 @@ export const landingPageTemplate = `
     </script>
 
     <!-- app-v3-final.js 로드 (인증 시스템) -->
-    <script src="/static/app-v3-final.js?v=24.0.0"></script>
+    <script src="/static/app-v3-final.js?v=24.0.3"></script>
     
     <!-- 온보딩 시스템 로드 -->
     <script src="/static/onboarding-integration.js"></script>

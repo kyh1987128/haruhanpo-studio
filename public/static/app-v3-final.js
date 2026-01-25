@@ -11587,16 +11587,12 @@ async function showSettingsModal() {
               </div>
             </div>
             
-            <!-- 이름 -->
+            <!-- 이름 (읽기 전용) -->
             <div style="margin-bottom: 16px;">
               <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #6b7280; margin-bottom: 4px;">이름</label>
-              <div style="display: flex; gap: 8px;">
-                <input type="text" id="settingsUserName" value="${user.name || user.email?.split('@')[0] || ''}" 
-                  style="flex: 1; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.875rem;" 
-                  placeholder="이름을 입력하세요">
-                <button onclick="updateUserName()" style="padding: 12px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; white-space: nowrap;">
-                  <i class="fas fa-save"></i> 저장
-                </button>
+              <div style="padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; color: #6b7280;">
+                <i class="fas fa-user" style="margin-right: 8px;"></i>
+                ${user.name || user.email?.split('@')[0] || '익명'}
               </div>
             </div>
             
@@ -11804,71 +11800,8 @@ function closeSettingsModal() {
   }
 }
 
-// 이름 변경
-async function updateUserName() {
-  const newName = document.getElementById('settingsUserName').value.trim();
-  
-  if (!newName) {
-    showToast('이름을 입력해주세요', 'warning');
-    return;
-  }
-  
-  if (!window.currentUser || !window.currentUser.id) {
-    showToast('로그인 정보를 찾을 수 없습니다', 'error');
-    return;
-  }
-  
-  try {
-    const session = await supabaseClient.auth.getSession();
-    if (!session?.data?.session) {
-      showToast('세션이 만료되었습니다. 다시 로그인해주세요', 'error');
-      return;
-    }
-    
-    const token = session.data.session.access_token;
-    
-    console.log('📡 이름 변경 요청:', { userId: window.currentUser.id, newName });
-    
-    const response = await fetch('/api/users/update-profile', {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        user_id: window.currentUser.id,
-        name: newName
-      })
-    });
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      // 전역 사용자 정보 업데이트
-      window.currentUser.name = newName;
-      
-      // localStorage 업데이트
-      const savedUser = localStorage.getItem('postflow_user');
-      if (savedUser) {
-        const userObj = JSON.parse(savedUser);
-        userObj.name = newName;
-        localStorage.setItem('postflow_user', JSON.stringify(userObj));
-      }
-      
-      // UI 업데이트
-      updateAuthUI();
-      
-      showToast('✅ 이름이 변경되었습니다', 'success');
-      console.log('✅ 이름 변경 완료:', newName);
-    } else {
-      throw new Error(data.error || '이름 변경 실패');
-    }
-    
-  } catch (error) {
-    console.error('❌ 이름 변경 실패:', error);
-    showToast(`❌ ${error.message}`, 'error');
-  }
-}
+// 이름 변경 기능 제거됨 (2026-01-25)
+// 사용자 요청으로 UI에서 이름 수정 불가 처리
 
 // 알림 설정 변경 (더 이상 사용 안 함 - 가입 시에만 동의 받음)
 // async function updateNotificationSettings() { ... }
@@ -12013,7 +11946,7 @@ async function deleteAccount() {
 // 전역 노출
 window.showSettingsModal = showSettingsModal;
 window.closeSettingsModal = closeSettingsModal;
-window.updateUserName = updateUserName;
+// window.updateUserName = updateUserName; // 제거됨
 // window.updateNotificationSettings = updateNotificationSettings; // 더 이상 사용 안 함
 window.changePassword = changePassword;
 window.confirmAccountDeletion = confirmAccountDeletion;
@@ -12025,38 +11958,115 @@ window.deleteAccount = deleteAccount;
 
 const HELP_GUIDES = [
   {
-    id: 'blog',
-    title: '📝 블로그 콘텐츠 활용법',
-    icon: '📝',
-    description: '생성된 블로그 콘텐츠를 네이버/티스토리에 게시하는 방법',
+    id: 'common',
+    title: '🔄 공통 활용 프로세스',
+    icon: '🔄',
+    description: '모든 플랫폼 공통 콘텐츠 생성 및 활용 3단계',
     content: `
-      <h3>✅ 블로그 콘텐츠 게시 3단계</h3>
+      <h3>✅ 공통 활용 프로세스 (모든 플랫폼)</h3>
       
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
-        <h4 style="margin-top: 0;">1️⃣ 생성된 콘텐츠 복사</h4>
-        <p style="margin-bottom: 0;">✓ 제목, 본문, 해시태그를 모두 복사하세요</p>
+        <h4 style="margin-top: 0;">1️⃣ 준비 단계</h4>
+        <p>✅ 브랜드 프로필 저장 (타겟층, 톤앤매너, 연락처)</p>
+        <p>✅ 키워드 준비 (제품명, 특징, 혜택 등)</p>
+        <p style="margin-bottom: 0;">✅ 참고 이미지 업로드 (선택사항)</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">2️⃣ 콘텐츠 생성</h4>
+        <p>✅ 플랫폼 선택 (블로그/인스타 피드/인스타 릴스/유튜브...)</p>
+        <p>✅ 생성 버튼 클릭 → 3~5초 대기</p>
+        <p style="margin-bottom: 0;">✅ 결과 확인 (제목, 본문, 해시태그, AI 이미지)</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">3️⃣ 활용 단계</h4>
+        <p><strong>Step 1: 📋 복사 버튼</strong> 클릭 → 텍스트 전체 복사 완료</p>
+        <p><strong>Step 2: 🖼️ 이미지 준비</strong> (3가지 옵션)<br>
+        • 옵션 A: 생성된 AI 이미지 다운로드<br>
+        • 옵션 B: 무료 이미지 사이트에서 다운로드 → <strong>🔗 무료 리소스 탭</strong> 참고<br>
+        • 옵션 C: Canva/Figma로 직접 편집</p>
+        <p style="margin-bottom: 0;"><strong>Step 3: 🚀 플랫폼별 업로드</strong><br>
+        → 각 플랫폼 가이드 참고 (블로그, 인스타, 유튜브 등)</p>
+      </div>
+
+      <h4 style="margin-top: 30px;">💡 핵심 포인트</h4>
+      <ul style="line-height: 1.8;">
+        <li>모든 플랫폼은 <strong>복사 → 이미지 준비 → 업로드</strong> 3단계 공통</li>
+        <li>이미지는 <strong>AI 생성 + 무료 다운로드 + 직접 편집</strong> 조합 활용</li>
+        <li>플랫폼별 상세 가이드는 아래 각 탭에서 확인</li>
+      </ul>
+    `
+  },
+  {
+    id: 'blog',
+    title: '📝 블로그 활용법',
+    icon: '📝',
+    description: '네이버/티스토리 블로그 포스팅 방법',
+    content: `
+      <h3>✅ 블로그 콘텐츠 활용법 (3단계)</h3>
+      
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">1️⃣ 콘���츠 복사</h4>
+        <p style="margin-bottom: 0;">📋 <strong>복사</strong> 버튼 클릭 → 전체 텍스트 복사 완료</p>
       </div>
 
       <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
         <h4 style="margin-top: 0;">2️⃣ 이미지 준비</h4>
-        <p>• 이미지 2개 중 <strong>"이미지 1"</strong>은 자동 생성된 대표 이미지입니다</p>
-        <p>• <strong>"이미지 2"</strong>는 Pexels 추천 이미지입니다 (아래 무료 이미지 다운로드 버튼 클릭)</p>
-        <p style="margin-bottom: 0;">• 또는 본인이 직접 촬영/제작한 이미지를 사용하세요</p>
+        <p><strong>옵션 1:</strong> 콘텐츠 생성 시 함께 생성된 AI 이미지 다운로드</p>
+        <p><strong>옵션 2:</strong> 무료 이미지 다운로드 (Unsplash, Pexels, Pixabay)</p>
+        <p style="margin-bottom: 0;"><strong>옵션 3:</strong> Canva/Figma로 썸네일 제작</p>
       </div>
 
       <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
-        <h4 style="margin-top: 0;">3️⃣ 블로그에 게시</h4>
-        <p>• 네이버 블로그: <a href="https://blog.naver.com" target="_blank" style="color: white; text-decoration: underline;">blog.naver.com</a></p>
-        <p>• 티스토리: <a href="https://www.tistory.com" target="_blank" style="color: white; text-decoration: underline;">tistory.com</a></p>
-        <p style="margin-bottom: 0;">• 제목, 본문, 이미지, 해시태그를 붙여넣기하고 발행하세요</p>
+        <h4 style="margin-top: 0;">3️⃣ 네이버 블로그 포스팅</h4>
+        <p>• <a href="https://blog.naver.com" target="_blank" style="color: white; text-decoration: underline; font-weight: bold;">blog.naver.com</a> 접속 → 글쓰기</p>
+        <p>• 복사한 텍스트 붙여넣기</p>
+        <p>• 이미지 삽입 (본문 중간중간 배치)</p>
+        <p style="margin-bottom: 0;">• 발행 ✅</p>
       </div>
 
       <h4 style="margin-top: 30px;">💡 꿀팁</h4>
       <ul style="line-height: 1.8;">
-        <li>제목은 <strong>60자 이내</strong>로 작성하면 검색 노출에 유리합니다</li>
-        <li>이미지는 <strong>3~5개</strong> 사용하면 가독성이 좋습니다</li>
-        <li>해시태그는 <strong>5~10개</strong>가 적당합니다</li>
-        <li>본문은 <strong>1,500자 이상</strong>이면 SEO에 유리합니다</li>
+        <li>이미지 배치: <strong>서론 앞</strong> 대표 이미지 1개, <strong>본론 중간</strong> 관련 이미지 2~3개</li>
+        <li>해시태그는 본문 <strong>맨 아래</strong> 추가</li>
+        <li>제목 60자 이내, 이미지 3~5개, 본문 1,500자 이상 → SEO 유리</li>
+      </ul>
+    `
+  },
+  {
+    id: 'brunch',
+    title: '📝 브런치 활용법',
+    icon: '📝',
+    description: '브런치 스토리텔링 포스팅 방법',
+    content: `
+      <h3>✅ 브런치 포스팅 (3단계)</h3>
+      
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">1️⃣ 콘텐츠 복사</h4>
+        <p style="margin-bottom: 0;">📋 <strong>복사</strong> 버튼 클릭 → 전체 텍스트 복사 완료</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">2️⃣ 이미지 준비</h4>
+        <p>• AI 생성 이미지 또는 고품질 무료 이미지 사용</p>
+        <p style="margin-bottom: 0;">• <strong>고해상도 필수</strong> (브런치는 이미지 품질 중요)</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">3️⃣ 브런치 업로드</h4>
+        <p>• <a href="https://brunch.co.kr" target="_blank" style="color: white; text-decoration: underline; font-weight: bold;">brunch.co.kr</a> 접속 → 글쓰기</p>
+        <p>• 복사한 텍스트 붙여넣기</p>
+        <p>• 대표 이미지 1개 + 본문 이미지 3~5개 삽입</p>
+        <p>• 태그 5~10개 추가</p>
+        <p style="margin-bottom: 0;">• 발행 ✅</p>
+      </div>
+
+      <h4 style="margin-top: 30px;">💡 꿀팁</h4>
+      <ul style="line-height: 1.8;">
+        <li>브런치는 <strong>"스토리텔링"</strong> 중심 → 감성적 문체 효과적</li>
+        <li>첫 문단이 미리보기로 노출 → <strong>흥미로운 도입부 필수</strong></li>
+        <li>시리즈로 묶으면 연속 조회수 ↑</li>
       </ul>
     `
   },
@@ -12064,31 +12074,35 @@ const HELP_GUIDES = [
     id: 'instagram-feed',
     title: '📷 인스타그램 피드 활용법',
     icon: '📷',
-    description: '생성된 피드 콘텐츠를 인스타그램에 게시하는 방법',
+    description: '인스타그램 피드 포스팅 방법',
     content: `
-      <h3>✅ 인스타그램 피드 게시 3단계</h3>
+      <h3>✅ 인스타그램 피드 게시 (3단계)</h3>
       
       <div style="background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
         <h4 style="margin-top: 0;">1️⃣ 이미지 다운로드</h4>
-        <p style="margin-bottom: 0;">• AI가 생성한 이미지를 다운로드하거나<br>• Pexels에서 관련 이미지를 다운로드하세요</p>
+        <p style="margin-bottom: 0;">• AI 생성 이미지 다운로드<br>• 또는 무료 이미지 사이트에서 다운로드</p>
       </div>
 
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
         <h4 style="margin-top: 0;">2️⃣ 본문 & 해시태그 복사</h4>
-        <p style="margin-bottom: 0;">• 생성된 본문과 해시태그를 복사하세요<br>• 이모지가 자동으로 포함되어 있습니다</p>
+        <p style="margin-bottom: 0;">📋 <strong>복사</strong> 버튼 클릭 → 캡션 + 해시태그 복사 완료</p>
       </div>
 
       <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
         <h4 style="margin-top: 0;">3️⃣ 인스타그램 앱에서 게시</h4>
-        <p style="margin-bottom: 0;">• 인스타그램 앱 열기 → + 버튼<br>• 이미지 업로드 → 본문/해시태그 붙여넣기<br>• 공유 버튼 클릭!</p>
+        <p>• 인스타그램 앱 열기 → 하단 <strong>+</strong> 버튼</p>
+        <p>• 이미지 선택 (정사각형 또는 세로형)</p>
+        <p>• 필터/편집 (선택사항)</p>
+        <p>• 다음 → 복사한 캡션 붙여넣기</p>
+        <p style="margin-bottom: 0;">• 공유 ✅</p>
       </div>
 
       <h4 style="margin-top: 30px;">💡 꿀팁</h4>
       <ul style="line-height: 1.8;">
-        <li>해시태그는 <strong>20~30개</strong>가 적당합니다</li>
-        <li>본문 첫 줄에 <strong>강력한 hook</strong>을 넣으세요</li>
-        <li><strong>정사각형 (1:1)</strong> 이미지가 가장 안전합니다</li>
-        <li>게시 후 <strong>10분 이내</strong>에 댓글/답글을 달면 알고리즘에 유리합니다</li>
+        <li>해시태그 <strong>20~30개</strong> (권장 10~15개)</li>
+        <li>캡션 첫 줄이 중요 → <strong>강력한 hook</strong> 필수</li>
+        <li>단일 이미지가 도달률 높음</li>
+        <li>게시 후 <strong>10분 이내</strong> 댓글/답글 → 알고리즘 우대</li>
       </ul>
     `
   },
@@ -12197,6 +12211,162 @@ const HELP_GUIDES = [
         <li>설명란에 <strong>타임스탬프</strong>를 추가하면 시청 시간이 증가합니다</li>
         <li>태그는 <strong>10~15개</strong>가 적당합니다</li>
       </ul>
+    `
+  },
+  {
+    id: 'linkedin',
+    title: '💼 링크드인 활용법',
+    icon: '💼',
+    description: 'B2B/전문가 네트워킹 포스팅 방법',
+    content: `
+      <h3>✅ 링크드인 포스팅 (3단계)</h3>
+      
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">1️⃣ 콘텐츠 복사</h4>
+        <p style="margin-bottom: 0;">📋 <strong>복사</strong> 버튼 클릭 → 전체 텍스트 복사 완료</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">2️⃣ 이미지 준비</h4>
+        <p>• 비즈니스 관련 고품질 이미지 또는 인포그래픽</p>
+        <p style="margin-bottom: 0;">• 데이터/통계 자료가 있으면 신뢰도↑</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">3️⃣ 링크드인 업로드</h4>
+        <p>• <a href="https://linkedin.com" target="_blank" style="color: white; text-decoration: underline; font-weight: bold;">linkedin.com</a> 접속 → 게시물 작성</p>
+        <p>• 본문 붙여넣기 (3,000자 제한)</p>
+        <p>• 이미지 1~9장 업로드</p>
+        <p style="margin-bottom: 0;">• 해시태그 3~5개 추가 → 게시 ✅</p>
+      </div>
+
+      <h4 style="margin-top: 30px;">💡 꿀팁</h4>
+      <ul style="line-height: 1.8;">
+        <li>첫 3줄이 미리보기 → <strong>핵심 메시지를 맨 앞에</strong></li>
+        <li><strong>질문형 마무리</strong>로 댓글 유도 (예: "여러분은 어떻게 생각하시나요?")</li>
+        <li>데이터/통계 인용 시 신뢰도가 크게 상승합니다</li>
+        <li>최적 업로드 시간: <strong>평일 오전 8~10시</strong></li>
+      </ul>
+    `
+  },
+  {
+    id: 'kakaotalk',
+    title: '💬 카카오톡 채널 활용법',
+    icon: '💬',
+    description: '카카오톡 채널 메시지 발송 방법',
+    content: `
+      <h3>✅ 카카오톡 채널 메시지 발송 (3단계)</h3>
+      
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">1️⃣ 콘텐츠 복사</h4>
+        <p style="margin-bottom: 0;">📋 <strong>복사</strong> 버튼 클릭 → 전체 텍스트 복사 완료</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">2️⃣ 이미지 준비</h4>
+        <p>• 이미지 1~5장 준비 (정사각형 권장)</p>
+        <p style="margin-bottom: 0;">• 모바일 최적화 (작은 화면에서도 보기 좋게)</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">3️⃣ 카카오톡 채널 발송</h4>
+        <p>• <a href="https://center-pf.kakao.com" target="_blank" style="color: white; text-decoration: underline; font-weight: bold;">center-pf.kakao.com</a> 접속 → 관리자센터</p>
+        <p>• "메시지 보내기" 클릭</p>
+        <p>• 텍스트 붙여넣기 (1,000자 제한)</p>
+        <p>• 이미지 첨부, 버튼 링크 설정 (선택)</p>
+        <p style="margin-bottom: 0;">• 전송 완료 ✅</p>
+      </div>
+
+      <h4 style="margin-top: 30px;">💡 꿀팁</h4>
+      <ul style="line-height: 1.8;">
+        <li>제목은 <strong>25자 이내</strong> (알림 표시 영역)</li>
+        <li><strong>버튼 링크</strong> 활용 (홈페이지/쇼핑몰 이동)</li>
+        <li>최적 발송 시간: <strong>평일 12~1시, 저녁 8~9시</strong></li>
+        <li>⚠️ 과도한 발송 시 차단율↑ → <strong>주 2~3회 권장</strong></li>
+      </ul>
+    `
+  },
+  {
+    id: 'threads',
+    title: '🧵 스레드 활용법',
+    icon: '🧵',
+    description: '스레드(Threads) 포스팅 방법',
+    content: `
+      <h3>✅ 스레드 포스팅 (3단계)</h3>
+      
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">1️⃣ 콘텐츠 복사</h4>
+        <p style="margin-bottom: 0;">📋 <strong>복사</strong> 버튼 클릭 → 전체 텍스트 복사 완료</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">2️⃣ 이미지 준비</h4>
+        <p>• 이미지 최대 10장</p>
+        <p style="margin-bottom: 0;">• 정사각형 또는 세로형 권장</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">3️⃣ 스레드 업로드</h4>
+        <p>• <a href="https://threads.net" target="_blank" style="color: white; text-decoration: underline; font-weight: bold;">threads.net</a> 접속 또는 앱 실행</p>
+        <p>• 새 스레드 작성 버튼 클릭</p>
+        <p>• 텍스트 붙여넣기 (500자/개 제한)</p>
+        <p>• 긴 글은 여러 개로 분할 (연속 게시)</p>
+        <p style="margin-bottom: 0;">• 이미지 첨부 → 게시 ✅</p>
+      </div>
+
+      <h4 style="margin-top: 30px;">💡 꿀팁</h4>
+      <ul style="line-height: 1.8;">
+        <li><strong>첫 스레드가 가장 중요</strong> → 핵심 메시지를 맨 앞에</li>
+        <li>해시태그는 <strong>2~3개</strong>가 적당</li>
+        <li>댓글/리포스트로 확산 가능</li>
+        <li>인스타그램 팔로워에게 <strong>자동 노출</strong> (연동 시)</li>
+      </ul>
+    `
+  },
+  {
+    id: 'twitter',
+    title: '𝕏 트위터(X) 활용법',
+    icon: '𝕏',
+    description: '트위터(X) 포스팅 및 스레드 작성 방법',
+    content: `
+      <h3>✅ 트위터(X) 포스팅 (3단계)</h3>
+      
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">1️⃣ 콘텐츠 복사</h4>
+        <p style="margin-bottom: 0;">📋 <strong>복사</strong> 버튼 클릭 → 전체 텍스트 복사 완료</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">2️⃣ 이미지 준비</h4>
+        <p>• 이미지 최대 4장</p>
+        <p style="margin-bottom: 0;">• 가로형 또는 정사각형 권장</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">3️⃣ 트위터 업로드</h4>
+        <p>• <a href="https://x.com" target="_blank" style="color: white; text-decoration: underline; font-weight: bold;">x.com</a> 또는 <a href="https://twitter.com" target="_blank" style="color: white; text-decoration: underline;">twitter.com</a> 접속</p>
+        <p>• "무슨 일이 일어나고 있나요?" 클릭</p>
+        <p>• 텍스트 붙여넣기 (280자 제한, 한글 약 140자)</p>
+        <p>• <strong>긴 글은 스레드로 분할</strong> (+ 버튼 클릭)</p>
+        <p style="margin-bottom: 0;">• 이미지 첨부 → 트윗 완료 ✅</p>
+      </div>
+
+      <h4 style="margin-top: 30px;">💡 꿀팁</h4>
+      <ul style="line-height: 1.8;">
+        <li>280자를 꽉 채우면 리드율↓ → <strong>간결하게</strong> 작성</li>
+        <li>스레드는 <strong>1~5개</strong>가 적당</li>
+        <li>해시태그는 <strong>최대 3개</strong></li>
+        <li>이미지/GIF 포함 시 참여율 <strong>2배↑</strong></li>
+        <li>최적 시간: <strong>평일 9~11시, 19~21시</strong></li>
+      </ul>
+      
+      <h4 style="margin-top: 30px;">📝 스레드 작성법</h4>
+      <ol style="line-height: 1.8;">
+        <li>첫 트윗 작성 후 <strong>+ 버튼</strong> 클릭</li>
+        <li>두 번째 트윗 작성 (연속)</li>
+        <li>필요시 세 번째, 네 번째 추가</li>
+        <li>전체 작성 완료 후 <strong>"모두 트윗하기"</strong> 클릭</li>
+      </ol>
     `
   },
   {
