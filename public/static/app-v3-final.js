@@ -11983,6 +11983,12 @@ const HELP_GUIDES = [
     description: '모든 플랫폼 공통 콘텐츠 생성 및 활용 3단계',
     content: `
       <h3>✅ 공통 활용 프로세스 (모든 플랫폼)</h3>
+      <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin: 15px 0;">
+        <p style="margin: 0; color: #856404;"><strong>💡 하루한포스트 핵심 가치</strong><br>
+        → <strong>콘텐츠(텍스트) 자동 생성</strong>: 브랜드 정보 입력만으로 플랫폼별 최적화된 텍스트 완성<br>
+        → <strong>시간 절약</strong>: 30분 작업이 3분으로 단축 (이미지는 AI 도구로 빠르게 제작)<br>
+        → <strong>즉시 활용</strong>: 복사 버튼 한 번으로 바로 포스팅 가능</p>
+      </div>
       
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
         <h4 style="margin-top: 0;">1️⃣ 준비 단계</h4>
@@ -11995,16 +12001,16 @@ const HELP_GUIDES = [
         <h4 style="margin-top: 0;">2️⃣ 콘텐츠 생성</h4>
         <p>✅ 플랫폼 선택 (블로그/인스타 피드/인스타 릴스/유튜브...)</p>
         <p>✅ 생성 버튼 클릭 → 3~5초 대기</p>
-        <p style="margin-bottom: 0;">✅ 결과 확인 (제목, 본문, 해시태그, AI 이미지)</p>
+        <p style="margin-bottom: 0;">✅ 결과 확인 (제목, 본문, 해시태그)</p>
       </div>
 
       <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
         <h4 style="margin-top: 0;">3️⃣ 활용 단계</h4>
         <p><strong>Step 1: 📋 복사 버튼</strong> 클릭 → 텍스트 전체 복사 완료</p>
         <p><strong>Step 2: 🖼️ 이미지 준비</strong> (3가지 옵션)<br>
-        • 옵션 A: 생성된 AI 이미지 다운로드<br>
+        • 옵션 A: AI 이미지 생성 (Midjourney, DALL-E, Adobe Firefly)<br>
         • 옵션 B: 무료 이미지 사이트에서 다운로드 → <strong>🔗 무료 리소스 탭</strong> 참고<br>
-        • 옵션 C: Canva/Figma로 직접 편집</p>
+        • 옵션 C: Canva/Figma로 직접 제작</p>
         <p style="margin-bottom: 0;"><strong>Step 3: 🚀 플랫폼별 업로드</strong><br>
         → 각 플랫폼 가이드 참고 (블로그, 인스타, 유튜브 등)</p>
       </div>
@@ -12012,7 +12018,7 @@ const HELP_GUIDES = [
       <h4 style="margin-top: 30px;">💡 핵심 포인트</h4>
       <ul style="line-height: 1.8;">
         <li>모든 플랫폼은 <strong>복사 → 이미지 준비 → 업로드</strong> 3단계 공통</li>
-        <li>이미지는 <strong>AI 생성 + 무료 다운로드 + 직접 편집</strong> 조합 활용</li>
+        <li>이미지는 <strong>AI 이미지 생성 도구 + 무료 다운로드 + 직접 제작</strong> 조합 활용</li>
         <li>플랫폼별 상세 가이드는 아래 각 탭에서 확인</li>
       </ul>
     `
@@ -12024,6 +12030,10 @@ const HELP_GUIDES = [
     description: '네이버/티스토리 블로그 포스팅 방법',
     content: `
       <h3>✅ 블로그 콘텐츠 활용법 (3단계)</h3>
+      <div style="background: #e7f3ff; padding: 12px; border-radius: 8px; border-left: 4px solid #2196F3; margin: 10px 0;">
+        <p style="margin: 0; color: #0d47a1; font-size: 14px;"><strong>🚀 하루한포스트가 해주는 것:</strong> 블로그 콘텐츠 텍스트 자동 생성 (제목, 본문, 해시태그)<br>
+        <strong>✍️ 내가 할 일:</strong> 이미지 준비 (AI 도구 활용) + 복사 붙여넣기 + 발행</p>
+      </div>
       
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
         <h4 style="margin-top: 0;">1️⃣ 콘���츠 복사</h4>
@@ -12032,9 +12042,11 @@ const HELP_GUIDES = [
 
       <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
         <h4 style="margin-top: 0;">2️⃣ 이미지 준비</h4>
-        <p><strong>옵션 1:</strong> 콘텐츠 생성 시 함께 생성된 AI 이미지 다운로드</p>
-        <p><strong>옵션 2:</strong> 무료 이미지 다운로드 (Unsplash, Pexels, Pixabay)</p>
-        <p style="margin-bottom: 0;"><strong>옵션 3:</strong> Canva/Figma로 썸네일 제작</p>
+        <p><strong>옵션 1:</strong> AI 이미지 생성 (추천!)</p>
+        <p>• <strong>Midjourney</strong>: 고품질 AI 이미지 생성<br>• <strong>DALL-E</strong>: OpenAI 이미지 생성<br>• <strong>Adobe Firefly</strong>: 상업적 사용 가능<br>→ 하루한포스트 콘텐츠 기반으로 프롬프트 작성</p>
+        <p><strong>옵션 2:</strong> 무료 이미지 다운로드</p>
+        <p>• Unsplash, Pexels, Pixabay</p>
+        <p style="margin-bottom: 0;"><strong>옵션 3:</strong> Canva/Figma로 직접 제작</p>
       </div>
 
       <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
@@ -12060,6 +12072,10 @@ const HELP_GUIDES = [
     description: '브런치 스토리텔링 포스팅 방법',
     content: `
       <h3>✅ 브런치 포스팅 (3단계)</h3>
+      <div style="background: #e7f3ff; padding: 12px; border-radius: 8px; border-left: 4px solid #2196F3; margin: 10px 0;">
+        <p style="margin: 0; color: #0d47a1; font-size: 14px;"><strong>🚀 하루한포스트가 해주는 것:</strong> 브런치 스토리텔링 텍스트 자동 생성<br>
+        <strong>✍️ 내가 할 일:</strong> AI로 고품질 이미지 준비 + 복사 붙여넣기 + 발행</p>
+      </div>
       
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
         <h4 style="margin-top: 0;">1️⃣ 콘텐츠 복사</h4>
@@ -12068,8 +12084,8 @@ const HELP_GUIDES = [
 
       <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
         <h4 style="margin-top: 0;">2️⃣ 이미지 준비</h4>
-        <p>• AI 생성 이미지 또는 고품질 무료 이미지 사용</p>
-        <p style="margin-bottom: 0;">• <strong>고해상도 필수</strong> (브런치는 이미지 품질 중요)</p>
+        <p>• <strong>AI 이미지 생성</strong> (Midjourney, DALL-E, Adobe Firefly)<br>→ 하루한포스트 콘텐츠 기반으로 프롬프트 작성</p>
+        <p style="margin-bottom: 0;">• <strong>고해상도 필수</strong> (브런치는 이미지 품질 중요)<br>• 또는 고품질 무료 이미지 사용 (Unsplash, Pexels)</p>
       </div>
 
       <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
@@ -12096,10 +12112,18 @@ const HELP_GUIDES = [
     description: '인스타그램 피드 포스팅 방법',
     content: `
       <h3>✅ 인스타그램 피드 게시 (3단계)</h3>
+      <div style="background: #e7f3ff; padding: 12px; border-radius: 8px; border-left: 4px solid #2196F3; margin: 10px 0;">
+        <p style="margin: 0; color: #0d47a1; font-size: 14px;"><strong>🚀 하루한포스트가 해주는 것:</strong> 캐션 + 해시태그 자동 생성<br>
+        <strong>✍️ 내가 할 일:</strong> AI로 이미지 준비 + 복사 붙여놓기 + 게시</p>
+      </div>
       
       <div style="background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
-        <h4 style="margin-top: 0;">1️⃣ 이미지 다운로드</h4>
-        <p style="margin-bottom: 0;">• AI 생성 이미지 다운로드<br>• 또는 무료 이미지 사이트에서 다운로드</p>
+        <h4 style="margin-top: 0;">1️⃣ 이미지 준비</h4>
+        <p><strong>옵션 1:</strong> AI 이미지 생성 (추천!)</p>
+        <p>• <strong>Midjourney</strong>, <strong>DALL-E</strong>, <strong>Adobe Firefly</strong><br>→ 하루한포스트 캡션 기반으로 프롬프트 작성</p>
+        <p><strong>옵션 2:</strong> 무료 이미지 사이트</p>
+        <p>• Unsplash, Pexels, Pixabay</p>
+        <p style="margin-bottom: 0;"><strong>옵션 3:</strong> Canva 템플릿 활용</p>
       </div>
 
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
@@ -12132,6 +12156,10 @@ const HELP_GUIDES = [
     description: '생성된 릴스 스크립트로 영상을 제작하는 방법',
     content: `
       <h3>✅ 릴스 영상 제작 3단계</h3>
+      <div style="background: #e7f3ff; padding: 12px; border-radius: 8px; border-left: 4px solid #2196F3; margin: 10px 0;">
+        <p style="margin: 0; color: #0d47a1; font-size: 14px;"><strong>🚀 하루한포스트가 해주는 것:</strong> 릴스 스크립트 자동 생성 (장면별 구성)<br>
+        <strong>✍️ 내가 할 일:</strong> AI 영상 도구로 빠르게 제작 + 업로드</p>
+      </div>
       
       <div style="background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
         <h4 style="margin-top: 0;">1️⃣ 스크립트 확인</h4>
@@ -12139,11 +12167,13 @@ const HELP_GUIDES = [
       </div>
 
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
-        <h4 style="margin-top: 0;">2️⃣ 영상 촬영 또는 편집</h4>
-        <p><strong>방법 1: 직접 촬영</strong></p>
+        <h4 style="margin-top: 0;">2️⃣ 영상 제작</h4>
+        <p><strong>방법 1: AI 영상 생성 (가장 빠름, 추천!)</strong></p>
+        <p>• <strong>Runway Gen-2</strong>: AI 비디오 생성<br>• <strong>Pika Labs</strong>: 텍스트 → 비디오<br>• <strong>HeyGen</strong>: AI 아바타 영상<br>• <strong>Leonardo.ai</strong>: 이미지 애니메이션<br>→ 하루한포스트 스크립트를 AI 도구에 입력</p>
+        <p><strong>방법 2: 직접 촬영</strong></p>
         <p>• 스마트폰으로 9:16 세로 영상 촬영<br>• 스크립트대로 장면별로 촬영</p>
-        <p><strong>방법 2: 편집 툴 사용</strong></p>
-        <p style="margin-bottom: 0;">• <strong>CapCut (무료)</strong>: 초보자 추천<br>• <strong>InShot (무료)</strong>: 간단한 편집<br>• <strong>Canva (일부 무료)</strong>: 템플릿 활용</p>
+        <p><strong>방법 3: 편집 툴 활용</strong></p>
+        <p style="margin-bottom: 0;">• <strong>CapCut</strong> (무료): 초보자 추천<br>• <strong>InShot</strong> (무료): 간단한 편집<br>• <strong>Canva</strong> (일부 무료): 템플릿 활용</p>
       </div>
 
       <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
@@ -12167,6 +12197,10 @@ const HELP_GUIDES = [
     description: '생성된 쇼츠 스크립트로 영상을 제작하는 방법',
     content: `
       <h3>✅ 유튜브 쇼츠 제작 3단계</h3>
+      <div style="background: #e7f3ff; padding: 12px; border-radius: 8px; border-left: 4px solid #2196F3; margin: 10px 0;">
+        <p style="margin: 0; color: #0d47a1; font-size: 14px;"><strong>🚀 하루한포스트가 해주는 것:</strong> 쇼츠 스크립트 자동 생성 (Hook-본문-CTA)<br>
+        <strong>✍️ 내가 할 일:</strong> AI 영상 생성 또는 촬영/편집 + 업로드</p>
+      </div>
       
       <div style="background: linear-gradient(135deg, #ff0000 0%, #ff4444 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
         <h4 style="margin-top: 0;">1️⃣ 스크립트 확인</h4>
@@ -12175,10 +12209,10 @@ const HELP_GUIDES = [
 
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
         <h4 style="margin-top: 0;">2️⃣ 영상 제작</h4>
-        <p><strong>방법 1: 직접 촬영</strong></p>
-        <p>• 스마트폰 세로 모드 (9:16)<br>• 스크립트를 읽으면서 촬영</p>
-        <p><strong>방법 2: AI 도구 활용</strong></p>
-        <p style="margin-bottom: 0;">• <strong>CapCut (무료)</strong>: 자막/효과 자동 생성<br>• <strong>Descript (유료)</strong>: 텍스트 → 비디오<br>• <strong>Runway Gen-2 (유료)</strong>: AI 비디오 생성</p>
+        <p><strong>방법 1: AI 영상 생성 (가장 빠름, 추천!)</strong></p>
+        <p>• <strong>Runway Gen-2</strong>: AI 비디오 생성<br>• <strong>Pika Labs</strong>: 텍스트 → 비디오<br>• <strong>D-ID</strong>: AI 아바타 영상<br>→ 하루한포스트 스크립트를 AI 도구에 입력</p>
+        <p><strong>방법 2: 직접 촬영</strong></p>
+        <p style="margin-bottom: 0;">• 스마트폰 세로 모드 (9:16)<br>• 스크립트를 읽으면서 촬영<br>• CapCut (무료)으로 자막/효과 추가</p>
       </div>
 
       <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
@@ -12202,6 +12236,10 @@ const HELP_GUIDES = [
     description: '생성된 스토리보드로 롱폼 영상을 제작하는 방법',
     content: `
       <h3>✅ 유튜브 롱폼 제작 3단계</h3>
+      <div style="background: #e7f3ff; padding: 12px; border-radius: 8px; border-left: 4px solid #2196F3; margin: 10px 0;">
+        <p style="margin: 0; color: #0d47a1; font-size: 14px;"><strong>🚀 하루한포스트가 해주는 것:</strong> 롱폼 영상 스토리보드 자동 생성 (장면별 구성)<br>
+        <strong>✍️ 내가 할 일:</strong> AI 영상 생성 또는 촬영/편집 + 업로드</p>
+      </div>
       
       <div style="background: linear-gradient(135deg, #ff0000 0%, #ff4444 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
         <h4 style="margin-top: 0;">1️⃣ 스토리보드 확인</h4>
@@ -12210,12 +12248,10 @@ const HELP_GUIDES = [
 
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
         <h4 style="margin-top: 0;">2️⃣ 영상 제작 방법 선택</h4>
-        <p><strong>방법 1: 직접 제작 (무료)</strong></p>
-        <p>• 스마트폰/카메라로 촬영<br>• CapCut, DaVinci Resolve 등으로 편집</p>
-        <p><strong>방법 2: 외주 맡기기</strong></p>
-        <p>• <strong>크몽</strong>: <a href="https://kmong.com" target="_blank" style="color: white; text-decoration: underline;">kmong.com</a><br>• <strong>숨고</strong>: <a href="https://soomgo.com" target="_blank" style="color: white; text-decoration: underline;">soomgo.com</a><br>• <strong>프리랜서코리아</strong>: <a href="https://www.freemon.co.kr" target="_blank" style="color: white; text-decoration: underline;">freemon.co.kr</a></p>
-        <p><strong>방법 3: AI 도구 활용</strong></p>
-        <p style="margin-bottom: 0;">• <strong>Runway Gen-2</strong>: AI 비디오 생성<br>• <strong>Pika Labs</strong>: 텍스트 → 비디오<br>• <strong>Descript</strong>: 텍스트 편집 → 비디오</p>
+        <p><strong>방법 1: AI 영상 생성 (추천 ⭐)</strong></p>
+        <p>• <strong>Runway Gen-2</strong>: AI 비디오 생성<br>• <strong>Pika Labs</strong>: 텍스트 → 비디오<br>• <strong>HeyGen</strong>: AI 아바타 영상<br>• <strong>Leonardo.ai</strong>: 이미지 → 비디오</p>
+        <p><strong>방법 2: 직접 제작</strong></p>
+        <p style="margin-bottom: 0;">• 스마트폰/카메라로 촬영<br>• CapCut, DaVinci Resolve 등으로 편집</p>
       </div>
 
       <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
@@ -12239,6 +12275,10 @@ const HELP_GUIDES = [
     description: 'B2B/전문가 네트워킹 포스팅 방법',
     content: `
       <h3>✅ 링크드인 포스팅 (3단계)</h3>
+      <div style="background: #e7f3ff; padding: 12px; border-radius: 8px; border-left: 4px solid #2196F3; margin: 10px 0;">
+        <p style="margin: 0; color: #0d47a1; font-size: 14px;"><strong>🚀 하루한포스트가 해주는 것:</strong> 전문가 네트워킹 콘텐츠 자동 생성<br>
+        <strong>✍️ 내가 할 일:</strong> 비즈니스 이미지 준비 + 복사 붙여놓기 + 게시</p>
+      </div>
       
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
         <h4 style="margin-top: 0;">1️⃣ 콘텐츠 복사</h4>
@@ -12275,6 +12315,10 @@ const HELP_GUIDES = [
     description: '카카오톡 채널 메시지 발송 방법',
     content: `
       <h3>✅ 카카오톡 채널 메시지 발송 (3단계)</h3>
+      <div style="background: #e7f3ff; padding: 12px; border-radius: 8px; border-left: 4px solid #2196F3; margin: 10px 0;">
+        <p style="margin: 0; color: #0d47a1; font-size: 14px;"><strong>🚀 하루한포스트가 해주는 것:</strong> 카카오톡 채널 메시지 자동 생성<br>
+        <strong>✍️ 내가 할 일:</strong> 복사 붙여놓기 + 발송</p>
+      </div>
       
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
         <h4 style="margin-top: 0;">1️⃣ 콘텐츠 복사</h4>
@@ -12312,6 +12356,10 @@ const HELP_GUIDES = [
     description: '스레드(Threads) 포스팅 방법',
     content: `
       <h3>✅ 스레드 포스팅 (3단계)</h3>
+      <div style="background: #e7f3ff; padding: 12px; border-radius: 8px; border-left: 4px solid #2196F3; margin: 10px 0;">
+        <p style="margin: 0; color: #0d47a1; font-size: 14px;"><strong>🚀 하루한포스트가 해주는 것:</strong> 스레드 콘텐츠 자동 생성<br>
+        <strong>✍️ 내가 할 일:</strong> 복사 붙여놓기 + 게시</p>
+      </div>
       
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
         <h4 style="margin-top: 0;">1️⃣ 콘텐츠 복사</h4>
@@ -12349,6 +12397,10 @@ const HELP_GUIDES = [
     description: '트위터(X) 포스팅 및 스레드 작성 방법',
     content: `
       <h3>✅ 트위터(X) 포스팅 (3단계)</h3>
+      <div style="background: #e7f3ff; padding: 12px; border-radius: 8px; border-left: 4px solid #2196F3; margin: 10px 0;">
+        <p style="margin: 0; color: #0d47a1; font-size: 14px;"><strong>🚀 하루한포스트가 해주는 것:</strong> X(트위터) 콘텐츠 자동 생성 (280자 제한 준수)<br>
+        <strong>✍️ 내가 할 일:</strong> 복사 붙여넣기 + 게시</p>
+      </div>
       
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
         <h4 style="margin-top: 0;">1️⃣ 콘텐츠 복사</h4>
