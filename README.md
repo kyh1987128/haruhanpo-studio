@@ -11,7 +11,39 @@
 
 ## 🌟 최신 업데이트
 
-### 🚀 **v24.0.4 트위터(X) 아이콘 전면 개편** ⭐⭐⭐ NEW (2026-01-25)
+### 🚀 **v24.0.5 도움말 가이드 아이콘 FontAwesome 통일** ⭐⭐⭐ NEW (2026-01-25)
+**이모지 → FontAwesome 아이콘으로 전면 개편**
+
+**주요 변경사항:**
+- ✅ **12개 플랫폼 아이콘 전체 통일**:
+  - 이모지(📝, 📷, 🎬 등) → FontAwesome 아이콘으로 변경
+  - 전문적이고 일관된 UI/UX 제공
+  - 브라우저/OS별 이모지 렌더링 차이 해결
+
+**아이콘 변경 목록:**
+| **플랫폼** | **변경 전** | **변경 후** |
+|----------|----------|----------|
+| 공통 프로세스 | 🔄 | `<i class="fas fa-sync-alt"></i>` |
+| 블로그 | 📝 | `<i class="fas fa-blog"></i>` |
+| 브런치 | 📝 | `<i class="fas fa-book-open"></i>` |
+| 인스타 피드 | 📷 | `<i class="fab fa-instagram"></i>` |
+| 인스타 릴스 | 🎬 | `<i class="fas fa-film"></i>` |
+| 유튜브 쇼츠 | 🎥 | `<i class="fab fa-youtube"></i>` |
+| 유튜브 롱폼 | 🎞️ | `<i class="fas fa-video"></i>` |
+| 링크드인 | 💼 | `<i class="fab fa-linkedin"></i>` |
+| 카카오톡 | 💬 | `<i class="fas fa-comment-dots"></i>` |
+| 스레드 | 🧵 | `<i class="fas fa-at"></i>` |
+| 트위터 | 𝕏 | `<span style="font-weight: 600;">𝕏</span>` |
+| 무료 이미지 | 🖼️ | `<i class="fas fa-images"></i>` |
+
+**기술 상세:**
+- **파일**: `public/static/app-v3-final.js` - HELP_GUIDES 배열 전체 아이콘 교체
+- **장점**: 
+  - 크로스 브라우저/OS 호환성 향상
+  - 일관된 시각적 품질 보장
+  - 전문적인 UI/UX 제공
+
+### 🚀 **v24.0.4 트위터(X) 아이콘 전면 개편** ⭐⭐⭐ (2026-01-25)
 **파란 새 → 𝕏 아이콘 전체 통일 + UX 개선**
 
 **주요 변경사항:**
