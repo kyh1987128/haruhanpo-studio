@@ -6,11 +6,13 @@ import { getBlogPrompt, getInstagramPrompt, getThreadsPrompt, getYouTubePrompt, 
 import { htmlTemplate } from './html-template';
 import { landingPageTemplate } from './landing-page';
 import { dashboardTemplate } from './dashboard-template';
+import { youtubeAnalyzerTemplate } from './youtube-analyzer-template';
 import { analyzeImageWithGemini, generateContentWithGemini, calculateGeminiCost, estimateTokens } from './gemini';
 import { createSupabaseAdmin, createSupabaseClient, grantMilestoneCredit, updateConsecutiveLogin, checkAndUseMonthlyQuota } from './lib/supabase';
 import { parseMultipleDocuments, combineDocumentTexts, truncateText } from './document-parser';
 import payments from './routes/payments';
 import images, { fetchSmartImages } from './routes/images';
+import youtubeApi from './routes/api/youtube';
 import { injectImagesIntoBlogContent, injectImagesIntoBrunchContent, convertHtmlToNaverText, addInstagramImageMetadata, injectBlogImageGuide, injectBrunchImageGuide, injectYoutubeThumbnailGuide } from './image-injection';
 import './styles.css'; // ✅ Tailwind CSS import
 
@@ -21,6 +23,7 @@ type Bindings = {
   SUPABASE_ANON_KEY: string;
   SUPABASE_SERVICE_KEY: string;
   UNSPLASH_ACCESS_KEY?: string;
+  YOUTUBE_API_KEY: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -6037,6 +6040,11 @@ app.get('/dashboard', (c) => {
   return c.html(dashboardTemplate);
 });
 
+// YouTube 분석기 페이지
+app.get('/youtube-analyzer', (c) => {
+  return c.html(youtubeAnalyzerTemplate());
+});
+
 // ========================================
 // 🔥 /postflow 라우트 (PostFlow 작업 공간)
 // ========================================
@@ -6231,5 +6239,8 @@ app.delete('/api/users/delete-account', async (c) => {
     return c.json({ success: false, error: '회원 탈퇴 중 오류가 발생했습니다', details: error.message }, 500);
   }
 });
+
+// YouTube 분석기 API 라우트 등록
+app.route('/', youtubeApi);
 
 export default app;
