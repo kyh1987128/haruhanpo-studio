@@ -12036,7 +12036,7 @@ const HELP_GUIDES = [
       </div>
       
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
-        <h4 style="margin-top: 0;">1️⃣ 콘���츠 복사</h4>
+        <h4 style="margin-top: 0;">1️⃣ 콘텐츠 복사</h4>
         <p style="margin-bottom: 0;">📋 <strong>복사</strong> 버튼 클릭 → 전체 텍스트 복사 완료</p>
       </div>
 
@@ -12442,59 +12442,113 @@ const HELP_GUIDES = [
   },
   {
     id: 'free-images',
-    title: '<i class="fas fa-images"></i> 무료 이미지 다운로드',
+    title: '<i class="fas fa-images"></i> 무료 리소스 활용하기 (20개)',
     icon: '<i class="fas fa-images"></i>',
-    description: '고품질 무료 이미지를 다운로드할 수 있는 사이트 모음',
+    description: '이미지, 디자인, 비디오, 음악, 유틸리티 무료 리소스 20개',
     content: `
-      <h3>✅ 무료 이미지 다운로드 사이트</h3>
+      <h3>✅ 무료 리소스 활용하기 (20개 사이트)</h3>
       
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
-        <h4 style="margin-top: 0;">📷 사진 전문 사이트</h4>
-        <p><strong>Unsplash</strong> (가장 인기)<br>
+        <h4 style="margin-top: 0;">📷 사진 전문 사이트 (5개)</h4>
+        <p><strong>1. Unsplash</strong> (가장 인기)<br>
         <a href="https://unsplash.com" target="_blank" style="color: white; text-decoration: underline;">unsplash.com</a><br>
         • 고품질 사진, 상업적 사용 가능, 출처 표기 권장</p>
         
-        <p><strong>Pexels</strong> (다양한 카테고리)<br>
+        <p><strong>2. Pexels</strong> (다양한 카테고리)<br>
         <a href="https://www.pexels.com" target="_blank" style="color: white; text-decoration: underline;">pexels.com</a><br>
         • 사진 + 비디오, 상업적 사용 가능, 출처 표기 불필요</p>
         
-        <p style="margin-bottom: 0;"><strong>Pixabay</strong> (1백만+ 이미지)<br>
+        <p><strong>3. Pixabay</strong> (1백만+ 이미지)<br>
         <a href="https://pixabay.com" target="_blank" style="color: white; text-decoration: underline;">pixabay.com</a><br>
         • 사진 + 일러스트, 상업적 사용 가능, 출처 표기 불필요</p>
+        
+        <p><strong>4. Burst</strong> (Shopify 제공)<br>
+        <a href="https://burst.shopify.com" target="_blank" style="color: white; text-decoration: underline;">burst.shopify.com</a><br>
+        • 상업적 사용 가능, 무료, 고품질 이미지</p>
+        
+        <p style="margin-bottom: 0;"><strong>5. StockSnap</strong> (CC0 라이선스)<br>
+        <a href="https://stocksnap.io" target="_blank" style="color: white; text-decoration: underline;">stocksnap.io</a><br>
+        • 고품질 사진, 출처 표기 불필요</p>
       </div>
 
       <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
-        <h4 style="margin-top: 0;">🎨 디자인 리소스</h4>
-        <p><strong>Freepik</strong> (벡터 + 사진)<br>
+        <h4 style="margin-top: 0;">🎨 디자인 리소스 (5개)</h4>
+        <p><strong>6. Freepik</strong> (벡터 + 사진)<br>
         <a href="https://www.freepik.com" target="_blank" style="color: white; text-decoration: underline;">freepik.com</a><br>
         • 벡터 + 사진, 무료 계정 제한 있음, 출처 표기 필요</p>
         
-        <p><strong>Canva</strong> (디자인 툴)<br>
+        <p><strong>7. Canva</strong> (디자인 툴)<br>
         <a href="https://www.canva.com" target="_blank" style="color: white; text-decoration: underline;">canva.com</a><br>
         • 디자인 툴 + 무료 템플릿, 일부 유료, 바로 편집 가능</p>
         
-        <p style="margin-bottom: 0;"><strong>Flaticon</strong> (아이콘 전문)<br>
+        <p><strong>8. Flaticon</strong> (아이콘 전문)<br>
         <a href="https://www.flaticon.com" target="_blank" style="color: white; text-decoration: underline;">flaticon.com</a><br>
         • 아이콘 전문, 무료 계정 10개/일, 출처 표기 필요</p>
+        
+        <p><strong>9. Vecteezy</strong> (벡터 그래픽)<br>
+        <a href="https://www.vecteezy.com" target="_blank" style="color: white; text-decoration: underline;">vecteezy.com</a><br>
+        • 벡터 그래픽, 일부 무료, 출처 표기 필요</p>
+        
+        <p style="margin-bottom: 0;"><strong>10. unDraw</strong> (오픈소스 일러스트)<br>
+        <a href="https://undraw.co" target="_blank" style="color: white; text-decoration: underline;">undraw.co</a><br>
+        • 오픈소스 일러스트, 상업적 사용 가능, 색상 커스터마이징 가능</p>
       </div>
 
       <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
-        <h4 style="margin-top: 0;">🔧 유틸리티</h4>
-        <p><strong>Noun Project</strong> (아이콘)<br>
-        <a href="https://thenounproject.com" target="_blank" style="color: white; text-decoration: underline;">thenounproject.com</a><br>
-        • 아이콘 + 사진, 무료 계정 제한 있음</p>
+        <h4 style="margin-top: 0;">🎬 비디오 리소스 (3개)</h4>
+        <p><strong>11. Coverr</strong> (무료 배경 비디오)<br>
+        <a href="https://coverr.co" target="_blank" style="color: white; text-decoration: underline;">coverr.co</a><br>
+        • 무료 배경 비디오, 상업적 사용 가능</p>
         
-        <p style="margin-bottom: 0;"><strong>Lorem Picsum</strong> (플레이스홀더)<br>
-        <a href="https://picsum.photos" target="_blank" style="color: white; text-decoration: underline;">picsum.photos</a><br>
-        • 랜덤 이미지 제공, 개발/테스트용</p>
+        <p><strong>12. Videvo</strong> (무료 영상 클립)<br>
+        <a href="https://www.videvo.net" target="_blank" style="color: white; text-decoration: underline;">videvo.net</a><br>
+        • 무료 영상 클립, 일부 출처 표기 필요</p>
+        
+        <p style="margin-bottom: 0;"><strong>13. Mixkit</strong> (비디오 + 음악)<br>
+        <a href="https://mixkit.co" target="_blank" style="color: white; text-decoration: underline;">mixkit.co</a><br>
+        • 비디오 + 음악, 상업적 사용 가능, 출처 표기 불필요</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); padding: 20px; border-radius: 12px; color: white; margin: 20px 0;">
+        <h4 style="margin-top: 0;">🎵 음악 & 효과음 (3개)</h4>
+        <p><strong>14. YouTube Audio Library</strong><br>
+        <a href="https://studio.youtube.com" target="_blank" style="color: white; text-decoration: underline;">studio.youtube.com</a><br>
+        • 유튜브 제공 무료 음악 + 효과음</p>
+        
+        <p><strong>15. Epidemic Sound</strong> (30일 무료 체험)<br>
+        <a href="https://www.epidemicsound.com" target="_blank" style="color: white; text-decoration: underline;">epidemicsound.com</a><br>
+        • 일부 무료, 대부분 구독 필요</p>
+        
+        <p style="margin-bottom: 0;"><strong>16. Bensound</strong> (무료 음악)<br>
+        <a href="https://www.bensound.com" target="_blank" style="color: white; text-decoration: underline;">bensound.com</a><br>
+        • 무료 음악, 출처 표기 필요</p>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); padding: 20px; border-radius: 12px; color: #333; margin: 20px 0;">
+        <h4 style="margin-top: 0;">🔧 유틸리티 (4개)</h4>
+        <p><strong>17. Remove.bg</strong> (AI 배경 제거)<br>
+        <a href="https://www.remove.bg" target="_blank" style="color: #333; text-decoration: underline;">remove.bg</a><br>
+        • AI 배경 제거, 무료 계정 제한 있음</p>
+        
+        <p><strong>18. TinyPNG</strong> (이미지 압축)<br>
+        <a href="https://tinypng.com" target="_blank" style="color: #333; text-decoration: underline;">tinypng.com</a><br>
+        • 이미지 압축, 무료</p>
+        
+        <p><strong>19. Photopea</strong> (온라인 포토샵)<br>
+        <a href="https://www.photopea.com" target="_blank" style="color: #333; text-decoration: underline;">photopea.com</a><br>
+        • 온라인 포토샵 대체, 무료 (광고 있음)</p>
+        
+        <p style="margin-bottom: 0;"><strong>20. Coolors</strong> (컬러 팔레트)<br>
+        <a href="https://coolors.co" target="_blank" style="color: #333; text-decoration: underline;">coolors.co</a><br>
+        • 컬러 팔레트 생성, 무료</p>
       </div>
 
       <h4 style="margin-top: 30px;">💡 라이선스 주의사항</h4>
       <ul style="line-height: 1.8;">
         <li><strong>상업적 사용 가능</strong> 여부를 확인하세요</li>
         <li><strong>출처 표기 필요</strong> 여부를 확인하세요</li>
-        <li>Freepik, Flaticon은 무료 계정 사용 시 출처 표기 필수입니다</li>
-        <li>안전하게 <strong>Unsplash, Pexels, Pixabay</strong>를 추천합니다</li>
+        <li><strong>무료 계정 제한</strong> (일일 다운로드 수, 해상도 등)</li>
+        <li>안전하게 사용하려면: <strong>Unsplash, Pexels, Pixabay, Mixkit</strong> 추천</li>
       </ul>
     `
   }

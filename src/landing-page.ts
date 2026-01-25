@@ -1217,50 +1217,23 @@ export const landingPageTemplate = `
         }
         
         function playBeep(frequency = 800, duration = 100, volume = 0.1) {
-            initAudio();
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            
-            oscillator.frequency.value = frequency;
-            oscillator.type = 'sine';
-            
-            gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration / 1000);
-            
-            oscillator.start(audioCtx.currentTime);
-            oscillator.stop(audioCtx.currentTime + duration / 1000);
+            // 사운드 비활성화
+            return;
         }
         
         function playPopSound() {
-            playBeep(1200, 80, 0.08); // 팝업 사운드
+            // 사운드 비활성화
+            return;
         }
         
         function playWhooshSound() {
-            initAudio();
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            
-            oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.3);
-            oscillator.type = 'sawtooth';
-            
-            gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-            
-            oscillator.start(audioCtx.currentTime);
-            oscillator.stop(audioCtx.currentTime + 0.3);
+            // 사운드 비활성화
+            return;
         }
         
         function playSuccessSound() {
-            playBeep(1000, 100, 0.08);
-            setTimeout(() => playBeep(1200, 100, 0.08), 100);
-            setTimeout(() => playBeep(1500, 150, 0.08), 200);
+            // 사운드 비활성화
+            return;
         }
         
         // ===== PostFlow 애니메이션 =====
@@ -1449,7 +1422,7 @@ export const landingPageTemplate = `
     </script>
 
     <!-- app-v3-final.js 로드 (인증 시스템) -->
-    <script src="/static/app-v3-final.js?v=24.0.6"></script>
+    <script src="/static/app-v3-final.js?v=24.0.7"></script>
     
     <!-- 온보딩 시스템 로드 -->
     <script src="/static/onboarding-integration.js"></script>
