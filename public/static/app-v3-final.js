@@ -1164,7 +1164,7 @@ CTR 15% 이상, 검색 노출 최적화를 달성합니다.
   // ===================================
   // 신규 플랫폼: Twitter
   // ===================================
-  twitter: `당신은 Twitter 마케팅 전문가입니다.
+  twitter: `당신은 X(트위터) 마케팅 전문가입니다.
 
 【브랜드 정보】
 - 브랜드/서비스/상품: {브랜드명}
@@ -1941,6 +1941,10 @@ function generateContentBlocks() {
           <label class="block mb-2 font-semibold text-gray-700">
             <i class="fas fa-image mr-2"></i>이미지 업로드 (최대 10장, 1장당 10MB)
           </label>
+          <p class="text-sm text-gray-600 mb-2">
+            <i class="fas fa-info-circle mr-1"></i>
+            💡 콘텐츠 생성 시 참고할 이미지를 업로드해주세요 (제품 사진, 로고, 참고 자료 등)
+          </p>
           <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition cursor-pointer bg-white" 
                onclick="document.getElementById('imageInput_${i}').click()">
             <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
@@ -2037,7 +2041,7 @@ function generateContentBlocks() {
             </label>
             <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
               <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="twitter" onchange="updateContentPlatforms(${i})">
-              <i class="fab fa-twitter text-blue-400"></i>
+              <span style="font-size: 1.25rem; font-weight: 600;">𝕏</span>
               <span class="text-sm font-medium">트위터(X)</span>
             </label>
             <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
@@ -3658,7 +3662,7 @@ function displayResults(data, platforms, options = {}) {
     instagram: '<i class="fab fa-instagram text-pink-600 mr-2"></i>인스타그램',
     instagram_feed: '<i class="fab fa-instagram text-pink-600 mr-2"></i>인스타그램 피드',
     threads: '<i class="fas fa-at text-gray-800 mr-2"></i>스레드',
-    twitter: '<i class="fab fa-twitter text-blue-400 mr-2"></i>트위터(X)',
+    twitter: '<span style="font-size: 1rem; font-weight: 600; color: #000; margin-right: 0.5rem;">𝕏</span>트위터(X)',
     linkedin: '<i class="fab fa-linkedin text-blue-700 mr-2"></i>LinkedIn',
     kakaotalk: '<i class="fas fa-comment text-yellow-500 mr-2"></i>카카오톡',
     brunch: '<i class="fas fa-book-open text-orange-600 mr-2"></i>브런치',
@@ -3820,7 +3824,7 @@ function formatContent(content) {
     .replace(/📸/g, '<i class="fab fa-instagram"></i>')     // 인스타그램 피드
     .replace(/🎬/g, '<i class="fas fa-video"></i>')         // 인스타그램 릴스
     .replace(/🧵/g, '<i class="fab fa-threads"></i>')       // 스레드
-    .replace(/🐦/g, '<i class="fab fa-twitter"></i>')       // 트위터
+    .replace(/🐦/g, '<span style="font-weight: 600; color: #000;">𝕏</span>')       // 트위터
     .replace(/💼/g, '<i class="fab fa-linkedin"></i>')      // LinkedIn
     .replace(/💬/g, '<i class="fas fa-comment"></i>')       // 카카오톡
     .replace(/🎥/g, '<i class="fab fa-youtube"></i>')       // 유튜브 롱폼
@@ -4527,7 +4531,7 @@ function openTemplateModal() {
     instagram: '<i class="fab fa-instagram text-pink-600 mr-2"></i>',
     instagram_feed: '<i class="fab fa-instagram text-pink-600 mr-2"></i>',
     threads: '<i class="fas fa-at text-gray-800 mr-2"></i>',
-    twitter: '<i class="fab fa-twitter text-blue-400 mr-2"></i>',
+    twitter: '<span style="font-size: 1rem; font-weight: 600; color: #000; margin-right: 0.5rem;">𝕏</span>',
     linkedin: '<i class="fab fa-linkedin text-blue-700 mr-2"></i>',
     kakaotalk: '<i class="fas fa-comment-dots text-yellow-500 mr-2"></i>',
     brunch: '<i class="fas fa-book-open text-orange-600 mr-2"></i>',
@@ -5088,7 +5092,7 @@ function renderHistory() {
     instagram_feed: '<i class="fab fa-instagram text-pink-600 mr-2"></i>인스타그램 피드',
     instagram_reels: '<i class="fab fa-instagram text-purple-600 mr-2"></i>인스타 릴스',
     threads: '<i class="fas fa-at text-gray-800 mr-2"></i>스레드',
-    twitter: '<i class="fab fa-twitter text-blue-400 mr-2"></i>트위터(X)',
+    twitter: '<span style="font-size: 1rem; font-weight: 600; color: #000; margin-right: 0.5rem;">𝕏</span>트위터(X)',
     linkedin: '<i class="fab fa-linkedin text-blue-700 mr-2"></i>LinkedIn',
     kakaotalk: '<i class="fas fa-comment-dots text-yellow-500 mr-2"></i>카카오톡',
     brunch: '<i class="fas fa-book-open text-orange-600 mr-2"></i>브런치',
@@ -7039,7 +7043,7 @@ function openTemplateEditor() {
     instagram: '<i class="fab fa-instagram text-pink-600 mr-2"></i>',
     instagram_feed: '<i class="fab fa-instagram text-pink-600 mr-2"></i>',
     threads: '<i class="fas fa-at text-gray-800 mr-2"></i>',
-    twitter: '<i class="fab fa-twitter text-blue-400 mr-2"></i>',
+    twitter: '<span style="font-size: 1rem; font-weight: 600; color: #000; margin-right: 0.5rem;">𝕏</span>',
     linkedin: '<i class="fab fa-linkedin text-blue-700 mr-2"></i>',
     kakaotalk: '<i class="fas fa-comment-dots text-yellow-500 mr-2"></i>',
     brunch: '<i class="fas fa-book-open text-orange-600 mr-2"></i>',
@@ -7267,7 +7271,7 @@ function initFullCalendar() {
         youtubeLongform: { class: 'fab fa-youtube', color: '#ffffff' },
         linkedin: { class: 'fab fa-linkedin', color: '#ffffff' },
         facebook: { class: 'fab fa-facebook', color: '#ffffff' },
-        twitter: { class: 'fab fa-twitter', color: '#ffffff' },
+        twitter: { text: '𝕏', color: '#ffffff' },
         kakaotalk: { class: 'fas fa-comment-dots', color: '#ffffff' },
         brunch: { class: 'fas fa-book-open', color: '#ffffff' },
         naverband: { class: 'fas fa-users', color: '#ffffff' },
@@ -7278,6 +7282,11 @@ function initFullCalendar() {
       };
       
       const iconData = platformIcons[platform] || { class: 'fas fa-file', color: '#ffffff' };
+      
+      // 아이콘 HTML 생성 (text 또는 class 기반)
+      const iconHtml = iconData.text 
+        ? `<span style="font-weight: 600; margin-right: 4px; color: ${iconData.color};">${iconData.text}</span>`
+        : `<i class="${iconData.class}" style="margin-right: 4px; color: ${iconData.color};"></i>`;
       
       // 메모인 경우 기본 렌더링
       if (props.type === 'memo') {
@@ -7297,7 +7306,7 @@ function initFullCalendar() {
           ${arg.timeText ? `<div class="fc-event-time">${arg.timeText}</div>` : ''}
           <div class="fc-event-title-container">
             <div class="fc-event-title fc-sticky">
-              <i class="${iconData.class}" style="margin-right: 4px; color: ${iconData.color};"></i>
+              ${iconHtml}
               ${arg.event.title}
             </div>
           </div>
@@ -7393,7 +7402,7 @@ async function loadCalendarEvents() {
         youtubeLongform: { class: 'fab fa-youtube', color: 'text-red-600' },
         linkedin: { class: 'fab fa-linkedin', color: 'text-blue-700' },
         facebook: { class: 'fab fa-facebook', color: 'text-blue-600' },
-        twitter: { class: 'fab fa-twitter', color: 'text-blue-400' },
+        twitter: { text: '𝕏', color: 'text-gray-900' },
         kakaotalk: { class: 'fas fa-comment-dots', color: 'text-yellow-500' },
         brunch: { class: 'fas fa-book-open', color: 'text-orange-600' },
         naverband: { class: 'fas fa-users', color: 'text-green-600' },
@@ -7620,7 +7629,7 @@ function showEventDetails(event) {
     youtubeLongform: { class: 'fab fa-youtube', color: 'text-red-600' },
     linkedin: { class: 'fab fa-linkedin', color: 'text-blue-700' },
     facebook: { class: 'fab fa-facebook', color: 'text-blue-600' },
-    twitter: { class: 'fab fa-twitter', color: 'text-blue-400' },
+    twitter: { text: '𝕏', color: 'text-gray-900' },
     kakaotalk: { class: 'fas fa-comment-dots', color: 'text-yellow-500' },
     brunch: { class: 'fas fa-book-open', color: 'text-orange-600' },
     naverband: { class: 'fas fa-users', color: 'text-green-600' },
@@ -7633,6 +7642,11 @@ function showEventDetails(event) {
   const status = statusLabels[props.publish_status] || '초안';
   const platform = platformNames[props.platform] || props.platform;
   const iconData = platformIcons[props.platform] || { class: 'fas fa-file', color: 'text-gray-600' };
+  
+  // 아이콘 HTML 생성 (text 또는 class 기반)
+  const iconHtml = iconData.text 
+    ? `<span class="text-5xl font-bold" style="color: ${iconData.color === 'text-gray-900' ? '#111' : iconData.color};">${iconData.text}</span>`
+    : `<i class="${iconData.class} ${iconData.color}"></i>`;
   const title = props.content_title || event.title.replace(/^[^\s]+\s/, ''); // 이모지 제거
   const content = props.content ? props.content.substring(0, 300) : '내용 없음';
   
@@ -7662,7 +7676,7 @@ function showEventDetails(event) {
       <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-lg mx-4 w-full max-h-[90vh] overflow-y-auto">
         <div class="text-center mb-6">
           <div class="text-5xl mb-4">
-            <i class="${iconData.class} ${iconData.color}"></i>
+            ${iconHtml}
           </div>
           <h3 class="text-2xl font-bold text-gray-800 mb-2">${platform}</h3>
           <p class="text-gray-600">${status}</p>
@@ -8223,7 +8237,7 @@ function renderScheduledContentList(contentList) {
     youtubeLongform: { class: 'fab fa-youtube', color: 'text-red-600' },
     linkedin: { class: 'fab fa-linkedin', color: 'text-blue-800' },
     facebook: { class: 'fab fa-facebook', color: 'text-blue-700' },
-    twitter: { class: 'fab fa-twitter', color: 'text-blue-400' },
+    twitter: { text: '𝕏', color: 'text-gray-900' },
     kakaotalk: { class: 'fas fa-comment-dots', color: 'text-yellow-500' },
     naverband: { class: 'fas fa-users', color: 'text-green-700' },
     band: { class: 'fas fa-users', color: 'text-green-700' },
@@ -8276,6 +8290,11 @@ function renderScheduledContentList(contentList) {
       const platformName = platformNames[platform] || platform || '알 수 없음';
       const iconData = platformIcons[platform] || { class: 'fas fa-file', color: 'text-gray-600' };
       
+      // 아이콘 HTML 생성 (text 또는 class 기반)
+      const iconHtml = iconData.text 
+        ? `<span style="font-weight: 600; margin-right: 4px;">${iconData.text}</span>`
+        : `<i class="${iconData.class} ${iconData.color} mr-1"></i>`;
+      
       // ✅ 플랫폼별 상태 사용
       const platformStatus = (item.platform_status && item.platform_status[platform]) || item.publish_status || 'draft';
       const platformStatusBadge = statusBadges[platformStatus] || statusBadges.draft;
@@ -8313,7 +8332,7 @@ function renderScheduledContentList(contentList) {
         <div class="border-l-4 border-blue-400 pl-3 mb-2">
           <div class="flex items-center gap-2 mb-1">
             <span class="text-lg font-bold text-gray-800">
-              <i class="${iconData.class} ${iconData.color} mr-1"></i>${platformName}
+              ${iconHtml}${platformName}
             </span>
             ${platformStatusBadge}
           </div>
@@ -8882,7 +8901,7 @@ function displaySingleContentResult(contentIndex, result, platforms) {
     youtube: '<i class="fab fa-youtube text-red-600 mr-2"></i>',
     youtube_shorts: '<i class="fab fa-youtube text-red-500 mr-2"></i>',
     youtube_longform: '<i class="fab fa-youtube text-red-600 mr-2"></i>',
-    twitter: '<i class="fab fa-twitter text-blue-400 mr-2"></i>',
+    twitter: '<span style="font-size: 1rem; font-weight: 600; color: #000; margin-right: 0.5rem;">𝕏</span>',
     linkedin: '<i class="fab fa-linkedin text-blue-700 mr-2"></i>',
     kakaotalk: '<i class="fas fa-comment-dots text-yellow-500 mr-2"></i>',
     tiktok: '<i class="fab fa-tiktok text-black mr-2"></i>',
@@ -10442,7 +10461,7 @@ const DEFAULT_SNS_PLATFORMS = [
   { name: '네이버 블로그', url: 'https://blog.naver.com', icon: 'fas fa-blog', color: '#03C75A' },
   { name: '인스타그램', url: 'https://www.instagram.com', icon: 'fab fa-instagram', color: '#E4405F' },
   { name: '스레드', url: 'https://www.threads.net', icon: 'fas fa-at', color: '#000000' },
-  { name: '트위터', url: 'https://twitter.com', icon: 'fab fa-twitter', color: '#1DA1F2' },
+  { name: '트위터(X)', url: 'https://x.com', text: '𝕏', color: '#000000' },
   { name: '링크드인', url: 'https://www.linkedin.com', icon: 'fab fa-linkedin', color: '#0A66C2' },
   { name: '브런치', url: 'https://brunch.co.kr', icon: 'fas fa-book', color: '#00C896' },
   { name: '틱톡', url: 'https://www.tiktok.com', icon: 'fab fa-tiktok', color: '#000000' },
