@@ -12376,3 +12376,61 @@ window.showHelpGuideDetail = showHelpGuideDetail;
 
 console.log('✅ 도움말 가이드 기능 로드 완료');
 
+
+// ============================================================
+// 📘 도움말 버튼 동적 추가 (AI 빠른 설정 버튼 옆에 추가)
+// ============================================================
+
+// 페이지 로드 완료 후 도움말 버튼 추가
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    addHelpGuideButton();
+  }, 1000); // 1초 후 추가 (다른 초기화 완료 대기)
+});
+
+function addHelpGuideButton() {
+  // AI 빠른 설정 버튼 찾기
+  const aiWorkflowBtn = document.getElementById('aiWorkflowBtn');
+  
+  if (!aiWorkflowBtn) {
+    console.log('⚠️ aiWorkflowBtn을 찾을 수 없습니다. 나중에 재시도합니다.');
+    // 5초 후 재시도
+    setTimeout(addHelpGuideButton, 5000);
+    return;
+  }
+  
+  // 이미 도움말 버튼이 있으면 중복 추가 방지
+  if (document.getElementById('helpGuideBtn')) {
+    console.log('✅ 도움말 버튼이 이미 존재합니다');
+    return;
+  }
+  
+  // AI 빠른 설정 버튼의 부모 찾기
+  const parentContainer = aiWorkflowBtn.parentElement;
+  
+  if (!parentContainer) {
+    console.error('❌ AI 빠른 설정 버튼의 부모 요소를 찾을 수 없습니다');
+    return;
+  }
+  
+  // 도움말 버튼 생성
+  const helpBtn = document.createElement('button');
+  helpBtn.id = 'helpGuideBtn';
+  helpBtn.onclick = openHelpGuideModal;
+  
+  // AI 빠른 설정 버튼과 동일한 스타일 복사
+  const aiWorkflowBtnClasses = aiWorkflowBtn.className;
+  helpBtn.className = aiWorkflowBtnClasses;
+  
+  // 버튼 내용
+  helpBtn.innerHTML = `
+    <i class="fas fa-question-circle" style="margin-right: 8px;"></i>
+    도움말
+  `;
+  
+  // AI 빠른 설정 버튼 바로 다음에 추가
+  aiWorkflowBtn.parentNode.insertBefore(helpBtn, aiWorkflowBtn.nextSibling);
+  
+  console.log('✅ 도움말 버튼이 성공적으로 추가되었습니다');
+}
+
