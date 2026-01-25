@@ -1,25 +1,37 @@
 // YouTube 분석기 프론트엔드 JavaScript
 
-// Supabase 클라이언트 초기화
-const SUPABASE_URL = 'https://gmjbsndricdogtqsovnb.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtamJzbmRyaWNkb2d0cXNvdm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyNzE1ODksImV4cCI6MjA4Mjg0NzU4OX0.naZnsBPYd84pdLoLAh-mEz_qerl5UakYs2FfVumnEJw';
-
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+// Supabase 클라이언트는 app-v3-final.js에서 초기화됨
+// window.supabaseClient 사용
 let selectedAnalysisType = 'video-stats'; // 기본값
 let currentUser = null;
 let authToken = null;
 
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', async () => {
+  // Supabase 클라이언트가 로드될 때까지 대기
+  await waitForSupabase();
   await checkAuth();
   await loadUserCredits();
   await loadHistory();
 });
 
+// Supabase 클라이언트 대기
+async function waitForSupabase() {
+  let attempts = 0;
+  while (!window.supabaseClient && attempts < 50) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    attempts++;
+  }
+  
+  if (!window.supabaseClient) {
+    console.error('❌ Supabase 클라이언트를 로드할 수 없습니다.');
+    alert('페이지 로딩 중 오류가 발생했습니다. 새로고침 해주세요.');
+  }
+}
+
 // 인증 확인
 async function checkAuth() {
-  const { data: { session }, error } = await supabase.auth.getSession();
+  const { data: { session }, error } = await window.supabaseClient.auth.getSession();
   
   if (error || !session) {
     alert('로그인이 필요합니다.');
@@ -31,20 +43,31 @@ async function checkAuth() {
   authToken = session.access_token;
   
   console.log('✅ 인증 성공:', currentUser.email);
+  
+  // window.currentUser 설정 (헤더와 동기화)
+  if (!window.currentUser) {
+    window.currentUser = currentUser;
+  }
 }
 
 // 사용자 크레딧 로드
 async function loadUserCredits() {
   if (!currentUser) return;
   
-  const { data, error } = await supabase
+  const { data, error } = await window.supabaseClient
     .from('users')
-    .select('credits')
+    .select('free_credits, paid_credits')
     .eq('id', currentUser.id)
     .single();
   
   if (data) {
-    document.getElementById('user-credits').textContent = data.credits || 0;
+    const totalCredits = (data.free_credits || 0) + (data.paid_credits || 0);
+    
+    // 헤더의 크레딧도 업데이트 (window.currentUser에 반영)
+    if (window.currentUser) {
+      window.currentUser.free_credits = data.free_credits || 0;
+      window.currentUser.paid_credits = data.paid_credits || 0;
+    }
   }
 }
 

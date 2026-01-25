@@ -1,4 +1,5 @@
 // 유튜브 파인더 (TrendFinder) 페이지 템플릿
+import { header } from './components/header';
 
 export function youtubeAnalyzerTemplate() {
   return `
@@ -32,37 +33,14 @@ export function youtubeAnalyzerTemplate() {
     }
   </style>
 </head>
-<body class="bg-gray-50">
-  <!-- 네비게이션 -->
-  <nav class="bg-white shadow-sm border-b">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center h-16">
-        <div class="flex items-center space-x-4">
-          <a href="/" class="text-2xl font-bold text-blue-600">
-            <i class="fas fa-rocket"></i> 하루한포스트
-          </a>
-          <span class="text-gray-400">|</span>
-          <span class="text-gray-700 font-medium">유튜브 파인더 (TrendFinder)</span>
-        </div>
-        <div class="flex items-center space-x-4">
-          <div class="flex items-center space-x-2 bg-blue-50 px-4 py-2 rounded-lg">
-            <i class="fas fa-coins text-yellow-500"></i>
-            <span id="user-credits" class="font-semibold text-gray-800">0</span>
-            <span class="text-sm text-gray-600">크레딧</span>
-          </div>
-          <button onclick="location.href='/dashboard'" class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
-            <i class="fas fa-th-large mr-2"></i>대시보드
-          </button>
-        </div>
-      </div>
-    </div>
-  </nav>
+<body class="bg-gray-50" data-page="youtube-analyzer">
+  ${header}
 
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- 헤더 -->
     <div class="mb-8">
       <h1 class="text-3xl font-bold text-gray-900 mb-2">
-        <i class="fas fa-youtube text-red-600 mr-2"></i>YouTube 영상 분석기
+        <i class="fas fa-youtube text-red-600 mr-2"></i>유튜브 파인더 (TrendFinder)
       </h1>
       <p class="text-gray-600">YouTube 영상의 성과를 AI로 분석하고 성공 전략을 제안받으세요</p>
     </div>
