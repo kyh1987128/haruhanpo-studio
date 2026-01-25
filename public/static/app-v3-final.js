@@ -11978,8 +11978,8 @@ window.deleteAccount = deleteAccount;
 const HELP_GUIDES = [
   {
     id: 'common',
-    title: '🔄 공통 활용 프로세스',
-    icon: '🔄',
+    title: '<i class="fas fa-sync-alt"></i> 공통 활용 프로세스',
+    icon: '<i class="fas fa-sync-alt"></i>',
     description: '모든 플랫폼 공통 콘텐츠 생성 및 활용 3단계',
     content: `
       <h3>✅ 공통 활용 프로세스 (모든 플랫폼)</h3>
@@ -12019,8 +12019,8 @@ const HELP_GUIDES = [
   },
   {
     id: 'blog',
-    title: '📝 블로그 활용법',
-    icon: '📝',
+    title: '<i class="fas fa-blog"></i> 블로그 활용법',
+    icon: '<i class="fas fa-blog"></i>',
     description: '네이버/티스토리 블로그 포스팅 방법',
     content: `
       <h3>✅ 블로그 콘텐츠 활용법 (3단계)</h3>
@@ -12055,8 +12055,8 @@ const HELP_GUIDES = [
   },
   {
     id: 'brunch',
-    title: '📝 브런치 활용법',
-    icon: '📝',
+    title: '<i class="fas fa-book-open"></i> 브런치 활용법',
+    icon: '<i class="fas fa-book-open"></i>',
     description: '브런치 스토리텔링 포스팅 방법',
     content: `
       <h3>✅ 브런치 포스팅 (3단계)</h3>
@@ -12091,8 +12091,8 @@ const HELP_GUIDES = [
   },
   {
     id: 'instagram-feed',
-    title: '📷 인스타그램 피드 활용법',
-    icon: '📷',
+    title: '<i class="fab fa-instagram"></i> 인스타그램 피드 활용법',
+    icon: '<i class="fab fa-instagram"></i>',
     description: '인스타그램 피드 포스팅 방법',
     content: `
       <h3>✅ 인스타그램 피드 게시 (3단계)</h3>
@@ -12127,8 +12127,8 @@ const HELP_GUIDES = [
   },
   {
     id: 'instagram-reels',
-    title: '🎬 인스타그램 릴스 활용법',
-    icon: '🎬',
+    title: '<i class="fas fa-film"></i> 인스타그램 릴스 활용법',
+    icon: '<i class="fas fa-film"></i>',
     description: '생성된 릴스 스크립트로 영상을 제작하는 방법',
     content: `
       <h3>✅ 릴스 영상 제작 3단계</h3>
@@ -12162,8 +12162,8 @@ const HELP_GUIDES = [
   },
   {
     id: 'youtube-shorts',
-    title: '🎥 유튜브 쇼츠 활용법',
-    icon: '🎥',
+    title: '<i class="fab fa-youtube"></i> 유튜브 쇼츠 활용법',
+    icon: '<i class="fab fa-youtube"></i>',
     description: '생성된 쇼츠 스크립트로 영상을 제작하는 방법',
     content: `
       <h3>✅ 유튜브 쇼츠 제작 3단계</h3>
@@ -12197,8 +12197,8 @@ const HELP_GUIDES = [
   },
   {
     id: 'youtube-long',
-    title: '🎞️ 유튜브 롱폼 활용법',
-    icon: '🎞️',
+    title: '<i class="fas fa-video"></i> 유튜브 롱폼 활용법',
+    icon: '<i class="fas fa-video"></i>',
     description: '생성된 스토리보드로 롱폼 영상을 제작하는 방법',
     content: `
       <h3>✅ 유튜브 롱폼 제작 3단계</h3>
@@ -12234,8 +12234,8 @@ const HELP_GUIDES = [
   },
   {
     id: 'linkedin',
-    title: '💼 링크드인 활용법',
-    icon: '💼',
+    title: '<i class="fab fa-linkedin"></i> 링크드인 활용법',
+    icon: '<i class="fab fa-linkedin"></i>',
     description: 'B2B/전문가 네트워킹 포스팅 방법',
     content: `
       <h3>✅ 링크드인 포스팅 (3단계)</h3>
@@ -12270,8 +12270,8 @@ const HELP_GUIDES = [
   },
   {
     id: 'kakaotalk',
-    title: '💬 카카오톡 채널 활용법',
-    icon: '💬',
+    title: '<i class="fas fa-comment-dots"></i> 카카오톡 채널 활용법',
+    icon: '<i class="fas fa-comment-dots"></i>',
     description: '카카오톡 채널 메시지 발송 방법',
     content: `
       <h3>✅ 카카오톡 채널 메시지 발송 (3단계)</h3>
@@ -12307,8 +12307,8 @@ const HELP_GUIDES = [
   },
   {
     id: 'threads',
-    title: '🧵 스레드 활용법',
-    icon: '🧵',
+    title: '<i class="fas fa-at"></i> 스레드 활용법',
+    icon: '<i class="fas fa-at"></i>',
     description: '스레드(Threads) 포스팅 방법',
     content: `
       <h3>✅ 스레드 포스팅 (3단계)</h3>
@@ -12344,8 +12344,8 @@ const HELP_GUIDES = [
   },
   {
     id: 'twitter',
-    title: '𝕏 트위터(X) 활용법',
-    icon: '𝕏',
+    title: '<span style="font-size: 1.2rem; font-weight: 600;">𝕏</span> 트위터(X) 활용법',
+    icon: '<span style="font-size: 1.2rem; font-weight: 600;">𝕏</span>',
     description: '트위터(X) 포스팅 및 스레드 작성 방법',
     content: `
       <h3>✅ 트위터(X) 포스팅 (3단계)</h3>
@@ -12390,8 +12390,8 @@ const HELP_GUIDES = [
   },
   {
     id: 'free-images',
-    title: '🖼️ 무료 이미지 다운로드',
-    icon: '🖼️',
+    title: '<i class="fas fa-images"></i> 무료 이미지 다운로드',
+    icon: '<i class="fas fa-images"></i>',
     description: '고품질 무료 이미지를 다운로드할 수 있는 사이트 모음',
     content: `
       <h3>✅ 무료 이미지 다운로드 사이트</h3>
