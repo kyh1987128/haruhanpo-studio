@@ -201,10 +201,9 @@ export const headerHTML = `
         <i class="fas fa-magic"></i>
         <span>하루한포스트</span>
       </a>
-      <a href="/static/trendfinder.html" class="nav-link" data-page="trendfinder">
+      <a href="/youtube-analyzer" class="nav-link" data-page="youtube-analyzer">
         <i class="fas fa-chart-line"></i>
         <span>유튜브 파인더</span>
-        <span class="badge-preparing">준비중</span>
       </a>
       <a href="/static/storymaker.html" class="nav-link" data-page="storymaker">
         <i class="fas fa-film"></i>
