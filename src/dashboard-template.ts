@@ -78,12 +78,14 @@ export const dashboardTemplate = `
                     <p class="text-2xl font-bold text-purple-600 mt-2" id="postflowCount">0</p>
                 </div>
                 
-                <div class="p-4 bg-gray-50 rounded-lg opacity-50">
+                <div class="p-4 bg-gradient-to-br from-red-50 to-orange-50 rounded-lg">
                     <div class="flex items-center justify-between">
-                        <span class="text-gray-700 font-medium">TrendFinder</span>
-                        <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">준비중</span>
+                        <span class="text-gray-700 font-medium">유튜브 파인더</span>
+                        <button onclick="location.href='/youtube-analyzer'" class="text-sm text-red-600 hover:text-red-800">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
                     </div>
-                    <p class="text-2xl font-bold text-gray-400 mt-2">-</p>
+                    <p class="text-2xl font-bold text-red-600 mt-2" id="youtubeAnalyzerCount">0</p>
                 </div>
                 
                 <div class="p-4 bg-gray-50 rounded-lg opacity-50">
@@ -179,6 +181,7 @@ export const dashboardTemplate = `
                     document.getElementById('totalGenerations').textContent = data.stats.total_generations || 0;
                     document.getElementById('monthlyGenerations').textContent = data.stats.monthly_generations || 0;
                     document.getElementById('postflowCount').textContent = data.stats.postflow_count || 0;
+                    document.getElementById('youtubeAnalyzerCount').textContent = data.stats.youtube_analysis_count || 0;
                 }
 
                 // 최근 콘텐츠 렌더링 (히스토리 UI 재사용)

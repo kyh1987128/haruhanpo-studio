@@ -1,4 +1,4 @@
-// YouTube 분석기 페이지 템플릿
+// 유튜브 파인더 (TrendFinder) 페이지 템플릿
 
 export function youtubeAnalyzerTemplate() {
   return `
@@ -7,7 +7,7 @@ export function youtubeAnalyzerTemplate() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YouTube 분석기 - 하루한포스트</title>
+  <title>유튜브 파인더 (TrendFinder) - 하루한포스트</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
   <style>
@@ -42,7 +42,7 @@ export function youtubeAnalyzerTemplate() {
             <i class="fas fa-rocket"></i> 하루한포스트
           </a>
           <span class="text-gray-400">|</span>
-          <span class="text-gray-700 font-medium">YouTube 분석기</span>
+          <span class="text-gray-700 font-medium">유튜브 파인더 (TrendFinder)</span>
         </div>
         <div class="flex items-center space-x-4">
           <div class="flex items-center space-x-2 bg-blue-50 px-4 py-2 rounded-lg">

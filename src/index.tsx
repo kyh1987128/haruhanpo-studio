@@ -3773,6 +3773,19 @@ app.get('/api/dashboard/stats', async (c) => {
     
     console.log('✅ [대시보드] 통계 조회 완료');
     
+    // user_stats 테이블에서 youtube_analysis_count 조회
+    const { data: userStats, error: statsError } = await supabase
+      .from('user_stats')
+      .select('youtube_analysis_count')
+      .eq('user_id', user_id)
+      .single();
+    
+    if (statsError) {
+      console.error('❌ [대시보드] user_stats 조회 실패:', statsError);
+    }
+    
+    const youtubeAnalysisCount = userStats?.youtube_analysis_count || 0;
+    
     return c.json({
       success: true,
       user: {
@@ -3785,7 +3798,8 @@ app.get('/api/dashboard/stats', async (c) => {
       stats: {
         total_generations: totalCount || 0,
         monthly_generations: monthlyCount || 0,
-        postflow_count: totalCount || 0
+        postflow_count: totalCount || 0,
+        youtube_analysis_count: youtubeAnalysisCount
       },
       recent_content: recentContent || []
     });
