@@ -1692,11 +1692,261 @@ async function refreshChannel(channelId) {
 }
 
 /**
- * 채널 상세 모달 열기 (Phase 4 Step 4에서 구현)
+ * 채널 상세 모달 열기
  */
-function openChannelDetail(channelId) {
-  alert(`채널 상세 보기 기능은 다음 단계에서 구현됩니다. (Channel ID: ${channelId})`);
-  // TODO: 스냅샷 조회 → 차트 렌더링
+let currentChannelChart = null; // Chart.js 인스턴스 저장
+let currentChannelData = null; // 현재 채널 데이터 저장
+
+async function openChannelDetail(channelId) {
+  const token = localStorage.getItem('postflow_token');
+  if (!token) {
+    alert('로그인이 필요합니다.');
+    return;
+  }
+
+  const modal = document.getElementById('channel-detail-modal');
+  const loading = document.getElementById('channel-modal-loading');
+  const dataDiv = document.getElementById('channel-modal-data');
+
+  // 모달 열기
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+
+  // 로딩 표시
+  loading.classList.remove('hidden');
+  dataDiv.classList.add('hidden');
+
+  try {
+    // 1. 즐겨찾기 목록에서 채널 정보 조회
+    const favResponse = await fetch('/api/channels/favorite', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    const favResult = await favResponse.json();
+    
+    if (!favResult.success) {
+      throw new Error('채널 정보 조회 실패');
+    }
+
+    const channel = favResult.data.find(c => c.channel_id === channelId);
+    if (!channel) {
+      throw new Error('채널을 찾을 수 없습니다.');
+    }
+
+    currentChannelData = channel;
+
+    // 2. 채널 정보 표시
+    document.getElementById('channel-modal-thumbnail').src = channel.channel_thumbnail || '/static/placeholder-channel.png';
+    document.getElementById('channel-modal-thumbnail').alt = channel.channel_name;
+    document.getElementById('channel-modal-name').textContent = channel.channel_name;
+    document.getElementById('channel-modal-description').textContent = channel.channel_description || '설명 없음';
+    document.getElementById('channel-modal-subscribers').textContent = formatNumber(channel.subscriber_count);
+    document.getElementById('channel-modal-videos').textContent = formatNumber(channel.total_videos);
+    document.getElementById('channel-modal-views').textContent = formatNumber(channel.total_views);
+
+    // 3. 기본 7일 차트 로드
+    await loadChannelChart(channelId, 7);
+
+    // 로딩 숨기고 데이터 표시
+    loading.classList.add('hidden');
+    dataDiv.classList.remove('hidden');
+
+  } catch (error) {
+    console.error('❌ [Open Channel Detail Error]', error);
+    alert('채널 상세 정보 불러오기 실패: ' + error.message);
+    closeChannelDetailModal();
+  }
+}
+
+/**
+ * 채널 차트 로드
+ */
+async function loadChannelChart(channelId, days = 7) {
+  const token = localStorage.getItem('postflow_token');
+
+  try {
+    // 스냅샷 조회
+    const response = await fetch(`/api/channels/snapshots/${channelId}?days=${days}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error('스냅샷 조회 실패');
+    }
+
+    const snapshots = result.data || [];
+
+    if (snapshots.length === 0) {
+      // 데이터 없음
+      const canvas = document.getElementById('channel-growth-chart');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.font = '16px sans-serif';
+      ctx.fillStyle = '#9CA3AF';
+      ctx.textAlign = 'center';
+      ctx.fillText('데이터가 충분하지 않습니다. 시간이 지나면 차트가 표시됩니다.', canvas.width / 2, canvas.height / 2);
+      return;
+    }
+
+    // 날짜 라벨 및 데이터
+    const labels = snapshots.map(s => {
+      const date = new Date(s.snapshot_date);
+      return `${date.getMonth() + 1}/${date.getDate()}`;
+    });
+
+    const subscriberData = snapshots.map(s => s.subscriber_count);
+    const viewsData = snapshots.map(s => s.total_views);
+
+    // 기존 차트 제거
+    if (currentChannelChart) {
+      currentChannelChart.destroy();
+    }
+
+    // Chart.js 차트 생성
+    const ctx = document.getElementById('channel-growth-chart').getContext('2d');
+    currentChannelChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: '구독자 수',
+            data: subscriberData,
+            borderColor: '#EF4444',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            tension: 0.4,
+            yAxisID: 'y'
+          },
+          {
+            label: '총 조회수',
+            data: viewsData,
+            borderColor: '#10B981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            tension: 0.4,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top'
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                label += formatNumber(context.parsed.y);
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            title: {
+              display: true,
+              text: '구독자 수'
+            },
+            ticks: {
+              callback: function(value) {
+                return formatNumber(value);
+              }
+            }
+          },
+          y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            title: {
+              display: true,
+              text: '총 조회수'
+            },
+            ticks: {
+              callback: function(value) {
+                return formatNumber(value);
+              }
+            },
+            grid: {
+              drawOnChartArea: false
+            }
+          }
+        }
+      }
+    });
+
+    // 증가율 계산 및 표시
+    if (snapshots.length >= 2) {
+      const firstSnapshot = snapshots[0];
+      const lastSnapshot = snapshots[snapshots.length - 1];
+
+      const subscriberGrowth = lastSnapshot.subscriber_count - firstSnapshot.subscriber_count;
+      const subscriberGrowthRate = ((subscriberGrowth / firstSnapshot.subscriber_count) * 100).toFixed(2);
+
+      const viewsGrowth = lastSnapshot.total_views - firstSnapshot.total_views;
+      const viewsGrowthRate = ((viewsGrowth / firstSnapshot.total_views) * 100).toFixed(2);
+
+      const videosGrowth = lastSnapshot.total_videos - firstSnapshot.total_videos;
+
+      const summaryDiv = document.getElementById('channel-growth-summary');
+      summaryDiv.innerHTML = `
+        <div class="bg-red-50 rounded-lg p-4 text-center">
+          <div class="text-sm text-gray-600 mb-1">구독자 증가</div>
+          <div class="text-2xl font-bold text-red-600">${subscriberGrowth > 0 ? '+' : ''}${formatNumber(subscriberGrowth)}</div>
+          <div class="text-xs text-gray-500 mt-1">${subscriberGrowthRate > 0 ? '+' : ''}${subscriberGrowthRate}%</div>
+        </div>
+        <div class="bg-green-50 rounded-lg p-4 text-center">
+          <div class="text-sm text-gray-600 mb-1">조회수 증가</div>
+          <div class="text-2xl font-bold text-green-600">${viewsGrowth > 0 ? '+' : ''}${formatNumber(viewsGrowth)}</div>
+          <div class="text-xs text-gray-500 mt-1">${viewsGrowthRate > 0 ? '+' : ''}${viewsGrowthRate}%</div>
+        </div>
+        <div class="bg-blue-50 rounded-lg p-4 text-center">
+          <div class="text-sm text-gray-600 mb-1">영상 증가</div>
+          <div class="text-2xl font-bold text-blue-600">${videosGrowth > 0 ? '+' : ''}${formatNumber(videosGrowth)}</div>
+          <div class="text-xs text-gray-500 mt-1">${days}일간</div>
+        </div>
+      `;
+    }
+
+  } catch (error) {
+    console.error('❌ [Load Chart Error]', error);
+    alert('차트 로드 실패: ' + error.message);
+  }
+}
+
+/**
+ * 채널 상세 모달 닫기
+ */
+function closeChannelDetailModal() {
+  const modal = document.getElementById('channel-detail-modal');
+  modal.classList.add('hidden');
+  document.body.style.overflow = 'auto';
+
+  // 차트 정리
+  if (currentChannelChart) {
+    currentChannelChart.destroy();
+    currentChannelChart = null;
+  }
+
+  currentChannelData = null;
 }
 
 // ==============================
@@ -1719,5 +1969,41 @@ document.addEventListener('DOMContentLoaded', () => {
         loadFavoriteChannels();
       }
     });
+  });
+
+  // 채널 상세 모달 닫기
+  const closeChannelModalBtn = document.getElementById('close-channel-modal-btn');
+  if (closeChannelModalBtn) {
+    closeChannelModalBtn.addEventListener('click', closeChannelDetailModal);
+  }
+
+  // 모달 배경 클릭 시 닫기
+  const channelModal = document.getElementById('channel-detail-modal');
+  if (channelModal) {
+    channelModal.addEventListener('click', (e) => {
+      if (e.target === channelModal) {
+        closeChannelDetailModal();
+      }
+    });
+  }
+
+  // 차트 기간 버튼
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('chart-period-btn')) {
+      const days = parseInt(e.target.dataset.days);
+      
+      // 버튼 활성화 상태 변경
+      document.querySelectorAll('.chart-period-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-500', 'text-white');
+        btn.classList.add('bg-gray-200', 'text-gray-700');
+      });
+      e.target.classList.remove('bg-gray-200', 'text-gray-700');
+      e.target.classList.add('bg-blue-500', 'text-white');
+
+      // 차트 다시 로드
+      if (currentChannelData) {
+        loadChannelChart(currentChannelData.channel_id, days);
+      }
+    }
   });
 });

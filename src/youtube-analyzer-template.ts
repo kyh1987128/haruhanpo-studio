@@ -11,6 +11,7 @@ export function youtubeAnalyzerTemplate() {
   <title>유튜브 파인더 (TrendFinder) - 하루한포스트</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     /* ========================================
        Phase 1: Viewtrap 스타일 레이아웃 
@@ -952,6 +953,95 @@ export function youtubeAnalyzerTemplate() {
               <div class="bg-gray-200 h-64 rounded-xl mb-4"></div>
               <div class="bg-gray-200 h-8 rounded mb-2"></div>
               <div class="bg-gray-200 h-6 rounded w-2/3"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase 4: 채널 상세 모달 -->
+      <div id="channel-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4" style="backdrop-filter: blur(4px);">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto relative">
+          <!-- 닫기 버튼 -->
+          <button 
+            id="close-channel-modal-btn" 
+            class="absolute top-4 right-4 w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition z-10"
+            aria-label="닫기"
+          >
+            <i class="fas fa-times text-gray-600"></i>
+          </button>
+
+          <!-- 모달 콘텐츠 -->
+          <div id="channel-modal-content" class="p-8">
+            <!-- 로딩 -->
+            <div id="channel-modal-loading" class="text-center py-12">
+              <div class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent"></div>
+              <p class="text-gray-500 mt-4">채널 데이터 불러오는 중...</p>
+            </div>
+
+            <!-- 채널 정보 (JavaScript로 동적 생성) -->
+            <div id="channel-modal-data" class="hidden">
+              <!-- 헤더 -->
+              <div class="flex items-center gap-6 mb-8 pb-6 border-b">
+                <img id="channel-modal-thumbnail" src="" alt="" class="w-24 h-24 rounded-full object-cover shadow-lg" />
+                <div class="flex-1">
+                  <h2 id="channel-modal-name" class="text-3xl font-bold text-gray-800 mb-2"></h2>
+                  <p id="channel-modal-description" class="text-gray-600 line-clamp-2"></p>
+                </div>
+              </div>
+
+              <!-- 현재 통계 -->
+              <div class="grid grid-cols-3 gap-4 mb-8">
+                <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 text-center">
+                  <div class="text-sm text-gray-600 mb-2">구독자</div>
+                  <div id="channel-modal-subscribers" class="text-3xl font-bold text-red-600"></div>
+                </div>
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 text-center">
+                  <div class="text-sm text-gray-600 mb-2">총 영상</div>
+                  <div id="channel-modal-videos" class="text-3xl font-bold text-blue-600"></div>
+                </div>
+                <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 text-center">
+                  <div class="text-sm text-gray-600 mb-2">총 조회수</div>
+                  <div id="channel-modal-views" class="text-3xl font-bold text-green-600"></div>
+                </div>
+              </div>
+
+              <!-- 기간 선택 -->
+              <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-800">
+                  <i class="fas fa-chart-line text-blue-500 mr-2"></i>
+                  성장 추이
+                </h3>
+                <div class="flex gap-2">
+                  <button 
+                    class="chart-period-btn px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-semibold transition" 
+                    data-days="7"
+                  >
+                    7일
+                  </button>
+                  <button 
+                    class="chart-period-btn px-4 py-2 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg text-sm font-semibold transition" 
+                    data-days="30"
+                  >
+                    30일
+                  </button>
+                  <button 
+                    class="chart-period-btn px-4 py-2 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg text-sm font-semibold transition" 
+                    data-days="90"
+                  >
+                    90일
+                  </button>
+                </div>
+              </div>
+
+              <!-- 차트 -->
+              <div class="bg-gray-50 rounded-xl p-6">
+                <canvas id="channel-growth-chart" width="800" height="400"></canvas>
+              </div>
+
+              <!-- 증가율 요약 -->
+              <div id="channel-growth-summary" class="mt-6 grid grid-cols-3 gap-4">
+                <!-- JavaScript로 동적 생성 -->
+              </div>
             </div>
           </div>
         </div>
