@@ -727,6 +727,9 @@ export function youtubeAnalyzerTemplate() {
   <!-- YouTube 분석기 (app-v3-final.js 의존) -->
   <script src="/static/youtube-analyzer.js"></script>
   
+  <!-- Phase 2: YouTube Finder 검색 기능 -->
+  <script src="/static/youtube-finder.js"></script>
+  
   <!-- 탭 전환 스크립트 -->
   <script>
     // 서브 네비게이션 탭 전환
