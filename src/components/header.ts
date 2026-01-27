@@ -78,6 +78,17 @@ export const headerStyles = `
     white-space: nowrap;
   }
 
+  /* 준비중 버튼 비활성화 스타일 */
+  .nav-link.disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  .nav-link.disabled:hover {
+    background: transparent;
+  }
+
   .user-section {
     display: flex !important;
     align-items: center;
@@ -205,16 +216,16 @@ export const headerHTML = `
         <i class="fas fa-chart-line"></i>
         <span>유튜브 파인더</span>
       </a>
-      <a href="/static/storymaker.html" class="nav-link" data-page="storymaker">
+      <div class="nav-link disabled" data-page="storymaker" title="스토리 메이커는 준비 중입니다" onclick="alert('🚧 스토리 메이커는 현재 열심히 개발 중입니다!\n곧 만나실 수 있습니다 😊')">
         <i class="fas fa-film"></i>
         <span>스토리 메이커</span>
         <span class="badge-preparing">준비중</span>
-      </a>
-      <a href="/static/community.html" class="nav-link" data-page="community">
+      </div>
+      <div class="nav-link disabled" data-page="community" title="커뮤니티는 준비 중입니다" onclick="alert('🚧 커뮤니티는 현재 열심히 개발 중입니다!\n곧 만나실 수 있습니다 😊')">
         <i class="fas fa-users"></i>
         <span>커뮤니티</span>
         <span class="badge-preparing">준비중</span>
-      </a>
+      </div>
     </nav>
 
     <!-- 사용자 섹션 -->
