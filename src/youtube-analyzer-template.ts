@@ -14,10 +14,10 @@ export function youtubeAnalyzerTemplate() {
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     /* ========================================
-       Phase 1: Viewtrap 스타일 레이아웃 
+       Phase 5A: Viewtrap 수준 3단 레이아웃 
        ======================================== */
     
-    /* 서브 네비게이션 (Layer 2) */
+    /* 서브 네비게이션 (Layer 2) - 2개 탭으로 축소 */
     .youtube-finder-subnav {
       background: #ffffff;
       border-bottom: 2px solid #e5e7eb;
@@ -25,6 +25,76 @@ export function youtubeAnalyzerTemplate() {
       top: 64px; /* 공통 헤더 높이 */
       z-index: 40;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    }
+    
+    /* 3단 레이아웃 컨테이너 */
+    .three-column-layout {
+      display: flex;
+      height: calc(100vh - 120px); /* 헤더 + 서브네비 제외 */
+      overflow: hidden;
+      max-width: 100%;
+      margin: 0;
+    }
+    
+    /* 좌측 필터 사이드바 */
+    .filter-sidebar {
+      width: 280px;
+      background: #ffffff;
+      border-right: 1px solid #e5e7eb;
+      overflow-y: auto;
+      position: sticky;
+      top: 120px;
+      height: calc(100vh - 120px);
+      flex-shrink: 0;
+    }
+    
+    .filter-sidebar::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .filter-sidebar::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 3px;
+    }
+    
+    /* 중앙 테이블 영역 */
+    .main-table-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: #f9fafb;
+    }
+    
+    /* 우측 상세 패널 */
+    .detail-sidebar {
+      width: 420px;
+      background: #ffffff;
+      border-left: 1px solid #e5e7eb;
+      overflow-y: auto;
+      position: sticky;
+      top: 120px;
+      height: calc(100vh - 120px);
+      flex-shrink: 0;
+    }
+    
+    .detail-sidebar::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .detail-sidebar::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 3px;
+    }
+    
+    /* 빈 상태 */
+    .detail-sidebar-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #9ca3af;
+      font-size: 14px;
     }
     
     .subnav-container {
@@ -177,6 +247,216 @@ export function youtubeAnalyzerTemplate() {
       text-transform: uppercase;
     }
     
+    /* ========================================
+       Viewtrap 수준 테이블 스타일 
+       ======================================== */
+    
+    /* 테이블 컨테이너 */
+    .table-container {
+      flex: 1;
+      overflow: auto;
+      background: #ffffff;
+    }
+    
+    /* 테이블 */
+    .video-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    
+    /* 고정 헤더 */
+    .video-table thead {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: #f9fafb;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    
+    .video-table th {
+      padding: 16px 12px;
+      text-align: left;
+      font-weight: 700;
+      color: #111827;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    
+    .video-table th:hover {
+      background: #f3f4f6;
+    }
+    
+    .video-table th.sortable::after {
+      content: '⇅';
+      margin-left: 6px;
+      color: #9ca3af;
+      font-size: 12px;
+    }
+    
+    .video-table th.sorted-asc::after {
+      content: '↑';
+      color: #00B87D;
+    }
+    
+    .video-table th.sorted-desc::after {
+      content: '↓';
+      color: #00B87D;
+    }
+    
+    /* 테이블 행 */
+    .video-table tbody tr {
+      border-bottom: 1px solid #f3f4f6;
+      transition: background-color 0.15s;
+      cursor: pointer;
+    }
+    
+    .video-table tbody tr:hover {
+      background: #f9fafb;
+    }
+    
+    .video-table tbody tr.selected {
+      background: #ecfdf5;
+      border-left: 3px solid #00B87D;
+    }
+    
+    .video-table td {
+      padding: 12px;
+      vertical-align: middle;
+    }
+    
+    /* 썸네일 셀 */
+    .video-thumbnail-cell {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      min-width: 400px;
+    }
+    
+    .video-thumbnail-wrapper {
+      position: relative;
+      flex-shrink: 0;
+      width: 180px;
+      height: 101px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    }
+    
+    .video-thumbnail-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .video-duration-badge {
+      position: absolute;
+      bottom: 4px;
+      right: 4px;
+      background: rgba(0,0,0,0.85);
+      color: white;
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+    
+    .video-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .video-title {
+      font-weight: 700;
+      font-size: 15px;
+      color: #111827;
+      line-height: 1.4;
+      margin-bottom: 6px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    .video-title:hover {
+      color: #00B87D;
+    }
+    
+    .video-channel-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #6b7280;
+    }
+    
+    .channel-avatar {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+    }
+    
+    /* 숫자 셀 */
+    .metric-cell {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    
+    .metric-value {
+      font-weight: 700;
+      font-size: 16px;
+      color: #111827;
+    }
+    
+    .metric-change {
+      font-size: 12px;
+      margin-top: 2px;
+    }
+    
+    .metric-change.positive {
+      color: #10b981;
+    }
+    
+    .metric-change.negative {
+      color: #ef4444;
+    }
+    
+    /* 성과도 배지 */
+    .performance-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    
+    .performance-badge.viral {
+      background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+      color: white;
+    }
+    
+    .performance-badge.algorithm {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+    }
+    
+    .performance-badge.normal {
+      background: #e5e7eb;
+      color: #374151;
+    }
+    
+    .performance-badge.low {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    
     .badge-great {
       background: #d1fae5;
       color: #065f46;
@@ -291,47 +571,223 @@ export function youtubeAnalyzerTemplate() {
   ${header}
 
   <!-- ========================================
-       Phase 1: 서브 네비게이션 (Layer 2) 
+       Phase 5A: 2-Tab 네비게이션 
        ======================================== -->
   <nav class="youtube-finder-subnav">
     <div class="subnav-container">
-      <div class="subnav-item active" data-tab="video-analysis">
+      <div class="subnav-item active" data-tab="market-explorer">
+        <span class="subnav-icon">🔍</span>
+        <span class="subnav-text">마켓 탐색 & 분석</span>
+      </div>
+      
+      <div class="subnav-item" data-tab="channel-tracking">
         <span class="subnav-icon">📊</span>
-        <span class="subnav-text">영상 분석</span>
-      </div>
-      
-      <div class="subnav-item" data-tab="channel-analysis">
-        <span class="subnav-icon">📺</span>
-        <span class="subnav-text">채널 분석</span>
-      </div>
-      
-      <div class="subnav-item" data-tab="content-strategy">
-        <span class="subnav-icon">💡</span>
-        <span class="subnav-text">콘텐츠 전략</span>
-        <span class="subnav-badge">AI</span>
-      </div>
-      
-      <div class="subnav-item" data-tab="performance-tracking">
-        <span class="subnav-icon">📈</span>
-        <span class="subnav-text">성과 추적</span>
-      </div>
-      
-      <div class="subnav-item" data-tab="my-channel">
-        <span class="subnav-icon">🎬</span>
-        <span class="subnav-text">내 채널</span>
+        <span class="subnav-text">관심 채널 추적 & 분석</span>
       </div>
     </div>
   </nav>
 
   <!-- ========================================
-       Phase 1.5: 풀 와이드 워크스페이스 (사이드바 제거)
+       Phase 5A: 3단 레이아웃 - 마켓 탐색 & 분석
        ======================================== -->
-  <div class="youtube-finder-workspace" style="display: block; max-width: 1440px; margin: 0 auto; padding: 24px;">
-    
-    <!-- 메인 콘텐츠 영역 (전체 너비) -->
-    <main class="youtube-finder-main">
-      <!-- 탭 콘텐츠: 영상 분석 (Viewtrap 스타일 재구성) -->
-      <div id="tab-video-analysis" class="tab-content">
+  <div id="tab-market-explorer" class="tab-content">
+    <div class="three-column-layout">
+      
+      <!-- 좌측 필터 사이드바 -->
+      <aside class="filter-sidebar">
+        <div class="p-4">
+          <h2 class="font-bold text-lg mb-4">🔍 상세 필터</h2>
+          
+          <!-- 구독자 구간 -->
+          <div class="mb-6">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">구독자 구간</h3>
+            <div class="space-y-2">
+              <label class="checkbox-label">
+                <input type="checkbox" id="filter-sub-1k" checked />
+                <span>1만 미만</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="filter-sub-10k" checked />
+                <span>1만-10만</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="filter-sub-100k" checked />
+                <span>10만-100만</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="filter-sub-1m" checked />
+                <span>100만-1000만</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="filter-sub-10m" checked />
+                <span>1000만 이상</span>
+              </label>
+            </div>
+          </div>
+          
+          <!-- 영상 길이 -->
+          <div class="mb-6">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">영상 길이</h3>
+            <div class="space-y-2">
+              <label class="checkbox-label">
+                <input type="checkbox" id="filter-duration-short" checked />
+                <span>3분 이하</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="filter-duration-medium" checked />
+                <span>3-10분</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="filter-duration-long" checked />
+                <span>10-30분</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="filter-duration-verylong" checked />
+                <span>30분 이상</span>
+              </label>
+            </div>
+          </div>
+          
+          <!-- 성과도 등급 -->
+          <div class="mb-6">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">성과도</h3>
+            <div class="space-y-2">
+              <label class="checkbox-label">
+                <input type="checkbox" id="filter-perf-viral" checked />
+                <span>🔥 떡상 중 (300%+)</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="filter-perf-algorithm" checked />
+                <span>🟢 알고리즘 픽 (100-300%)</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="filter-perf-normal" checked />
+                <span>⚪ 일반 (50-100%)</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="filter-perf-low" checked />
+                <span>🔵 저조 (50% 미만)</span>
+              </label>
+            </div>
+          </div>
+          
+          <!-- 조회수 범위 -->
+          <div class="mb-6">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">최소 조회수</h3>
+            <input 
+              type="number" 
+              id="filter-min-views"
+              placeholder="예: 10000"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            />
+          </div>
+          
+          <!-- 업로드 날짜 -->
+          <div class="mb-6">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">업로드 기간</h3>
+            <select id="filter-upload-date" class="filter-select">
+              <option value="">전체</option>
+              <option value="day">오늘</option>
+              <option value="week">이번 주</option>
+              <option value="month">이번 달</option>
+              <option value="year">올해</option>
+            </select>
+          </div>
+          
+          <!-- 필터 적용 버튼 -->
+          <div class="mt-6">
+            <button id="apply-filters-btn" class="btn-apply w-full">
+              필터 적용
+            </button>
+            <button id="reset-filters-btn" class="btn-reset w-full mt-2">
+              초기화
+            </button>
+          </div>
+        </div>
+      </aside>
+      
+      <!-- 중앙 테이블 영역 -->
+      <main class="main-table-area">
+        <!-- 검색 바 -->
+        <div class="p-4 bg-white border-b">
+          <div class="flex gap-3 mb-3">
+            <div class="flex-1 relative">
+              <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <i class="fas fa-search"></i>
+              </span>
+              <input
+                type="text"
+                id="market-search-input"
+                placeholder="키워드 또는 채널 URL 입력 (200개 결과 수집)"
+                class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
+            <button
+              id="market-search-btn"
+              class="px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg"
+              style="background: #00B87D;"
+            >
+              <i class="fas fa-search mr-2"></i>
+              검색
+            </button>
+          </div>
+          
+          <!-- 액션 버튼 -->
+          <div class="flex gap-2">
+            <button id="export-csv-btn" class="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">
+              📥 CSV 다운로드
+            </button>
+            <button id="export-excel-btn" class="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">
+              📊 Excel 다운로드
+            </button>
+            <span id="result-count" class="px-4 py-2 text-sm text-gray-600">
+              총 0개 결과
+            </span>
+          </div>
+        </div>
+        
+        <!-- 테이블 컨테이너 -->
+        <div class="table-container">
+          <table class="video-table">
+            <thead>
+              <tr>
+                <th class="sortable" data-sort="title">영상</th>
+                <th class="sortable text-right" data-sort="views">조회수</th>
+                <th class="sortable text-center" data-sort="performance">성과도</th>
+                <th class="sortable text-right" data-sort="subscribers">구독자</th>
+                <th class="sortable text-right" data-sort="likeRate">좋아요율</th>
+                <th class="sortable text-right" data-sort="comments">댓글</th>
+                <th class="sortable text-center" data-sort="publishedAt">업로드</th>
+                <th class="text-center">길이</th>
+              </tr>
+            </thead>
+            <tbody id="video-table-body">
+              <!-- 빈 상태 -->
+              <tr>
+                <td colspan="8" class="text-center py-12 text-gray-400">
+                  <i class="fas fa-search text-4xl mb-3"></i>
+                  <p class="text-lg">키워드를 입력하여 검색을 시작하세요</p>
+                  <p class="text-sm mt-1">최대 200개의 영상을 분석합니다</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+      
+      <!-- 우측 상세 패널 -->
+      <aside class="detail-sidebar">
+        <div id="detail-panel-content" class="detail-sidebar-empty">
+          영상을 선택하세요
+        </div>
+      </aside>
+      
+    </div>
+  </div>
+  
+  <!-- ========================================
+       Tab 2: 관심 채널 추적 & 분석 (기존 코드 유지)
+       ======================================== -->
         
         <!-- 검색 바 영역 -->
         <div class="search-section bg-white rounded-xl shadow-sm border p-6 mb-6">
@@ -873,6 +1329,9 @@ export function youtubeAnalyzerTemplate() {
 
       <!-- 탭 콘텐츠: 내 채널 -->
       <div id="tab-my-channel" class="tab-content hidden">
+        <!-- Phase 4: 내 채널 관리 UI -->
+        <!-- 이름은 "관심 채널 추적 & 분석"으로 변경되었지만 ID는 유지 -->
+        <!-- JavaScript에서 'channel-tracking' 탭 클릭 시 'my-channel' ID를 호출 -->
         <!-- 채널 추가 섹션 -->
         <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8 mb-8">
           <div class="flex items-center justify-between mb-6">
@@ -1058,7 +1517,7 @@ export function youtubeAnalyzerTemplate() {
   <!-- Phase 2: YouTube Finder 검색 기능 -->
   <script src="/static/youtube-finder.js"></script>
   
-  <!-- 탭 전환 스크립트 -->
+  <!-- Phase 5A: 탭 전환 스크립트 (2개 탭) -->
   <script>
     // 서브 네비게이션 탭 전환
     document.querySelectorAll('.subnav-item').forEach(item => {
@@ -1071,11 +1530,22 @@ export function youtubeAnalyzerTemplate() {
         
         // 탭 콘텐츠 표시/숨김
         document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
-        document.getElementById('tab-' + tab).classList.remove('hidden');
+        
+        // 새로운 탭 구조에 맞게 매핑
+        if (tab === 'market-explorer') {
+          document.getElementById('tab-market-explorer')?.classList.remove('hidden');
+        } else if (tab === 'channel-tracking') {
+          // 'channel-tracking' 탭은 기존 'my-channel' ID를 사용
+          document.getElementById('tab-my-channel')?.classList.remove('hidden');
+          // 즐겨찾기 채널 목록 로드
+          if (typeof loadFavoriteChannels === 'function') {
+            loadFavoriteChannels();
+          }
+        }
       });
     });
     
-    // 필터 초기화
+    // 필터 초기화 (기존 유지)
     document.getElementById('resetFilters')?.addEventListener('click', function() {
       document.getElementById('viewsFilter').value = 'all';
       document.getElementById('uploadDateFilter').value = 'all';
