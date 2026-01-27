@@ -1185,3 +1185,259 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// ========================================
+// Phase 4: 콘텐츠 전략 AI
+// ========================================
+
+// 분석된 영상 데이터 저장소 (LocalStorage 활용)
+let analyzedVideosData = [];
+
+// 페이지 로드 시 분석된 영상 수 표시
+function updateAnalyzedCount() {
+  // LocalStorage에서 분석 히스토리 읽기
+  const historyData = JSON.parse(localStorage.getItem('youtube_analysis_history') || '[]');
+  analyzedVideosData = historyData.slice(0, 20); // 최대 20개
+  
+  const countElement = document.getElementById('analyzed-count');
+  if (countElement) {
+    countElement.textContent = `${analyzedVideosData.length}개`;
+  }
+  
+  // 버튼 활성화/비활성화
+  const generateBtn = document.getElementById('generate-strategy-btn');
+  if (generateBtn) {
+    if (analyzedVideosData.length < 3) {
+      generateBtn.disabled = true;
+      generateBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      generateBtn.innerHTML = `
+        <i class="fas fa-lock"></i>
+        <span>최소 3개 영상 분석 필요</span>
+      `;
+    } else {
+      generateBtn.disabled = false;
+      generateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      generateBtn.innerHTML = `
+        <i class="fas fa-magic"></i>
+        <span>AI 전략 생성하기 (${analyzedVideosData.length}개 영상 분석 데이터 활용)</span>
+      `;
+    }
+  }
+}
+
+// 콘텐츠 전략 생성
+async function handleGenerateStrategy() {
+  if (analyzedVideosData.length < 3) {
+    alert('최소 3개 이상의 영상을 분석한 후 이용하세요.\n\n영상 분석 탭에서 영상을 선택하고 AI 분석을 실행하세요.');
+    return;
+  }
+
+  const goalSelect = document.getElementById('strategy-goal');
+  const goal = goalSelect?.value || 'views';
+
+  console.log('🎯 전략 생성 시작:', { goal, videoCount: analyzedVideosData.length });
+
+  // 로딩 표시
+  showStrategyLoading(true);
+  hideStrategyResults();
+
+  try {
+    // API 호출
+    const response = await fetch('/api/youtube/strategy', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('postflow_token')}`
+      },
+      body: JSON.stringify({
+        goal,
+        analyzedVideos: analyzedVideosData
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error?.message || '전략 생성 실패');
+    }
+
+    console.log('✅ 전략 생성 완료:', result.data);
+
+    // 결과 표시
+    displayStrategyResults(result.data);
+
+  } catch (error) {
+    console.error('❌ 전략 생성 오류:', error);
+    alert(`전략 생성 중 오류가 발생했습니다: ${error.message}`);
+  } finally {
+    showStrategyLoading(false);
+  }
+}
+
+// 로딩 표시
+function showStrategyLoading(show) {
+  const loading = document.getElementById('strategy-loading');
+  if (!loading) return;
+  
+  if (show) {
+    loading.classList.remove('hidden');
+  } else {
+    loading.classList.add('hidden');
+  }
+}
+
+// 결과 숨기기
+function hideStrategyResults() {
+  document.getElementById('strategy-results')?.classList.add('hidden');
+}
+
+// 전략 결과 표시
+function displayStrategyResults(data) {
+  const resultsContainer = document.getElementById('strategy-results');
+  if (!resultsContainer) return;
+
+  // 1. 트렌드 분석
+  const trendAnalysis = document.getElementById('trend-analysis');
+  if (trendAnalysis && data.trends) {
+    trendAnalysis.innerHTML = `
+      <div class="grid grid-cols-3 gap-4">
+        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+          <h4 class="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+            <i class="fas fa-hashtag text-green-600"></i>
+            공통 키워드
+          </h4>
+          <div class="flex flex-wrap gap-2">
+            ${data.trends.commonKeywords.map(keyword => `
+              <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">${keyword}</span>
+            `).join('')}
+          </div>
+        </div>
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h4 class="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+            <i class="fas fa-star text-blue-600"></i>
+            성공 패턴
+          </h4>
+          <ul class="space-y-1">
+            ${data.trends.successPatterns.map(pattern => `
+              <li class="text-sm text-gray-700 flex items-start gap-2">
+                <i class="fas fa-check text-blue-600 mt-1"></i>
+                <span>${pattern}</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+        <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <h4 class="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+            <i class="fas fa-clock text-orange-600"></i>
+            최적 게시 시간
+          </h4>
+          <p class="text-2xl font-bold text-orange-600">${data.trends.bestPublishTime}</p>
+        </div>
+      </div>
+    `;
+  }
+
+  // 2. 콘텐츠 제안
+  const contentSuggestions = document.getElementById('content-suggestions');
+  if (contentSuggestions && data.contentSuggestions) {
+    contentSuggestions.innerHTML = `
+      <div class="space-y-4">
+        ${data.contentSuggestions.map((suggestion, index) => `
+          <div class="border border-gray-200 rounded-lg p-4 hover:border-green-300 transition">
+            <div class="flex items-start gap-3">
+              <div class="flex-shrink-0 w-8 h-8 bg-green-100 text-green-700 rounded-full flex items-center justify-center font-bold">
+                ${index + 1}
+              </div>
+              <div class="flex-1">
+                <h5 class="font-bold text-gray-900 mb-2">${suggestion.title}</h5>
+                <p class="text-sm text-gray-600 mb-2">${suggestion.description}</p>
+                <div class="flex items-center gap-4 text-sm">
+                  <div class="flex items-center gap-1">
+                    <i class="fas fa-hashtag text-gray-400"></i>
+                    <span class="text-gray-600">${suggestion.keywords.join(', ')}</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <i class="fas fa-eye text-gray-400"></i>
+                    <span class="text-gray-600">${suggestion.estimatedViews}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  // 3. 실행 전략
+  const actionPlan = document.getElementById('action-plan');
+  if (actionPlan && data.actionPlan) {
+    actionPlan.innerHTML = `
+      <div class="grid grid-cols-3 gap-4">
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <i class="fas fa-bolt text-red-600"></i>
+            즉시 실행 (Today)
+          </h4>
+          <ul class="space-y-2">
+            ${data.actionPlan.immediate.map(item => `
+              <li class="text-sm text-gray-700 flex items-start gap-2">
+                <i class="fas fa-chevron-right text-red-600 mt-1 text-xs"></i>
+                <span>${item}</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <i class="fas fa-calendar-week text-yellow-600"></i>
+            단기 전략 (1-2주)
+          </h4>
+          <ul class="space-y-2">
+            ${data.actionPlan.shortTerm.map(item => `
+              <li class="text-sm text-gray-700 flex items-start gap-2">
+                <i class="fas fa-chevron-right text-yellow-600 mt-1 text-xs"></i>
+                <span>${item}</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+        <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+          <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <i class="fas fa-calendar-alt text-purple-600"></i>
+            장기 전략 (1-3개월)
+          </h4>
+          <ul class="space-y-2">
+            ${data.actionPlan.longTerm.map(item => `
+              <li class="text-sm text-gray-700 flex items-start gap-2">
+                <i class="fas fa-chevron-right text-purple-600 mt-1 text-xs"></i>
+                <span>${item}</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      </div>
+    `;
+  }
+
+  resultsContainer.classList.remove('hidden');
+}
+
+// DOMContentLoaded에 이벤트 추가
+document.addEventListener('DOMContentLoaded', () => {
+  // 전략 생성 버튼
+  const generateStrategyBtn = document.getElementById('generate-strategy-btn');
+  if (generateStrategyBtn) {
+    generateStrategyBtn.addEventListener('click', handleGenerateStrategy);
+  }
+
+  // 탭 전환 시 분석 개수 업데이트
+  document.querySelectorAll('.subnav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const tab = item.dataset.tab;
+      if (tab === 'content-strategy') {
+        updateAnalyzedCount();
+      }
+    });
+  });
+});

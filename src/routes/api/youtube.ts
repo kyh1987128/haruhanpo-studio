@@ -504,4 +504,139 @@ app.post('/api/youtube/channel', async (c) => {
   }
 })
 
+// ========================================
+// Phase 4: 콘텐츠 전략 AI
+// ========================================
+
+app.post('/api/youtube/strategy', async (c) => {
+  try {
+    const body = await c.req.json()
+    const { goal, analyzedVideos } = body
+
+    // 1. 입력 검증
+    if (!analyzedVideos || !Array.isArray(analyzedVideos) || analyzedVideos.length < 3) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'INSUFFICIENT_DATA',
+          message: '최소 3개 이상의 분석된 영상이 필요합니다.'
+        }
+      }, 400)
+    }
+
+    if (!goal) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'INVALID_INPUT',
+          message: '목표를 선택해주세요.'
+        }
+      }, 400)
+    }
+
+    // 2. OpenAI API 키 확인
+    const openaiApiKey = c.env.OPENAI_API_KEY
+    if (!openaiApiKey) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'API_KEY_MISSING',
+          message: 'OpenAI API 키가 설정되지 않았습니다.'
+        }
+      }, 500)
+    }
+
+    // 3. AI 전략 생성
+    const goalDescriptions = {
+      views: '조회수 증가',
+      subscribers: '구독자 증가',
+      engagement: '참여율 (좋아요, 댓글) 증가',
+      viral: '바이럴 콘텐츠 (빠른 확산)'
+    }
+
+    const goalText = goalDescriptions[goal as keyof typeof goalDescriptions] || '조회수 증가'
+
+    // OpenAI API 호출
+    const prompt = `당신은 YouTube 콘텐츠 전략 전문가입니다. 다음 분석된 영상 데이터를 기반으로 "${goalText}"를 목표로 하는 콘텐츠 전략을 제안해주세요.
+
+분석된 영상 데이터:
+${analyzedVideos.map((v: any, i: number) => `
+${i + 1}. ${v.title}
+   - 조회수: ${v.views?.toLocaleString()}
+   - 좋아요: ${v.likes?.toLocaleString()}
+   - 채널: ${v.channel} (구독자 ${v.subscriberCount?.toLocaleString()})
+   - 게시일: ${v.publishedAt}
+   - 성과도: ${v.performance}
+`).join('\n')}
+
+다음 형식으로 JSON 응답해주세요:
+{
+  "trends": {
+    "commonKeywords": ["키워드1", "키워드2", "키워드3"],
+    "successPatterns": ["패턴1", "패턴2", "패턴3"],
+    "bestPublishTime": "권장 게시 시간대"
+  },
+  "contentSuggestions": [
+    {
+      "title": "추천 제목 1",
+      "description": "콘텐츠 설명",
+      "keywords": ["키워드1", "키워드2"],
+      "estimatedViews": "예상 조회수 범위"
+    }
+  ],
+  "actionPlan": {
+    "immediate": ["즉시 실행 항목 1", "즉시 실행 항목 2"],
+    "shortTerm": ["단기 전략 1", "단기 전략 2"],
+    "longTerm": ["장기 전략 1", "장기 전략 2"]
+  }
+}`
+
+    const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openaiApiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: '당신은 YouTube 콘텐츠 전략 전문가입니다. 데이터 기반 인사이트를 제공하고 실행 가능한 전략을 제안합니다.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        response_format: { type: 'json_object' }
+      })
+    })
+
+    if (!aiResponse.ok) {
+      throw new Error('OpenAI API 호출 실패')
+    }
+
+    const aiResult = await aiResponse.json()
+    const strategyData = JSON.parse(aiResult.choices[0].message.content)
+
+    // 4. 결과 반환
+    return c.json({
+      success: true,
+      data: strategyData
+    })
+
+  } catch (error: any) {
+    console.error('Strategy generation error:', error)
+    return c.json<ApiResponse<null>>({
+      success: false,
+      error: {
+        code: 'STRATEGY_ERROR',
+        message: error.message || '전략 생성 중 오류가 발생했습니다.'
+      }
+    }, 500)
+  }
+})
+
 export default app

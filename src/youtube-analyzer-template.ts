@@ -764,10 +764,100 @@ export function youtubeAnalyzerTemplate() {
 
       <!-- 탭 콘텐츠: 콘텐츠 전략 (준비중) -->
       <div id="tab-content-strategy" class="tab-content hidden">
-        <div class="text-center py-12">
-          <i class="fas fa-lightbulb text-6xl text-gray-300 mb-4"></i>
-          <h2 class="text-2xl font-bold text-gray-700 mb-2">콘텐츠 전략 AI</h2>
-          <p class="text-gray-500">Phase 2에서 구현 예정입니다</p>
+        <!-- Phase 4: 콘텐츠 전략 AI -->
+        
+        <!-- 전략 생성 영역 -->
+        <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+          <h3 class="text-lg font-bold text-gray-800 mb-4">
+            <i class="fas fa-lightbulb mr-2" style="color: #00B87D;"></i>
+            AI 콘텐츠 전략 생성
+          </h3>
+          
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div class="flex items-start gap-3">
+              <i class="fas fa-info-circle text-blue-600 mt-1"></i>
+              <div class="text-sm text-blue-800">
+                <p class="font-semibold mb-1">분석된 영상을 기반으로 AI가 콘텐츠 전략을 제안합니다</p>
+                <p class="text-blue-700">영상 분석 탭에서 3개 이상의 영상을 분석한 후 이용하세요.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 전략 설정 -->
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">목표 설정</label>
+              <select 
+                id="strategy-goal" 
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <option value="views">조회수 증가</option>
+                <option value="subscribers">구독자 증가</option>
+                <option value="engagement">참여율 증가</option>
+                <option value="viral">바이럴 콘텐츠</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">분석 영상 수</label>
+              <div class="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+                <i class="fas fa-video text-gray-600"></i>
+                <span id="analyzed-count" class="font-semibold text-gray-900">0개</span>
+                <span class="text-sm text-gray-500">분석됨</span>
+              </div>
+            </div>
+          </div>
+
+          <button 
+            id="generate-strategy-btn"
+            class="w-full px-8 py-3 text-white font-semibold rounded-lg transition flex items-center justify-center gap-2"
+            style="background: #00B87D;"
+            onmouseover="this.style.background='#00a06f'" 
+            onmouseout="this.style.background='#00B87D'"
+          >
+            <i class="fas fa-magic"></i>
+            <span>AI 전략 생성하기</span>
+          </button>
+        </div>
+
+        <!-- 로딩 상태 -->
+        <div id="strategy-loading" class="hidden bg-white rounded-xl shadow-sm border p-8 mb-6">
+          <div class="flex flex-col items-center justify-center space-y-4">
+            <div class="loading-spinner"></div>
+            <div class="text-center">
+              <p class="text-lg font-semibold text-gray-900">AI 전략 생성 중...</p>
+              <p class="text-sm text-gray-600 mt-1">분석된 영상 데이터를 기반으로 전략을 생성하고 있습니다.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 전략 결과 -->
+        <div id="strategy-results" class="hidden space-y-6">
+          <!-- 1. 트렌드 분석 -->
+          <div class="bg-white rounded-xl shadow-sm border p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <i class="fas fa-chart-line text-green-600"></i>
+              트렌드 분석
+            </h3>
+            <div id="trend-analysis"></div>
+          </div>
+
+          <!-- 2. 콘텐츠 제안 -->
+          <div class="bg-white rounded-xl shadow-sm border p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <i class="fas fa-lightbulb text-yellow-600"></i>
+              추천 콘텐츠 아이디어 (TOP 5)
+            </h3>
+            <div id="content-suggestions"></div>
+          </div>
+
+          <!-- 3. 실행 전략 -->
+          <div class="bg-white rounded-xl shadow-sm border p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <i class="fas fa-tasks text-blue-600"></i>
+              실행 전략
+            </h3>
+            <div id="action-plan"></div>
+          </div>
         </div>
       </div>
 
