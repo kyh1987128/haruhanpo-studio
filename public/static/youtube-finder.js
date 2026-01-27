@@ -310,6 +310,23 @@ function updateVideoTable(videos) {
   
   // 정렬 헤더 이벤트 리스너 추가
   attachSortListeners();
+
+  // Phase 3: 행 클릭 시 모달 열기
+  document.querySelectorAll('.video-row').forEach(row => {
+    row.addEventListener('click', (e) => {
+      // 체크박스 클릭은 제외
+      if (e.target.classList.contains('video-select') || e.target.type === 'checkbox') {
+        return;
+      }
+      
+      const videoId = row.dataset.videoId;
+      const video = currentSearchResults.find(v => v.videoId === videoId);
+      
+      if (video) {
+        openVideoDetailModal(video);
+      }
+    });
+  });
 }
 
 // ========================================
@@ -671,6 +688,29 @@ document.addEventListener('DOMContentLoaded', () => {
     applyFilters();
   });
 
+  // Phase 3: 모달 닫기 이벤트
+  const closeModalBtn = document.getElementById('close-modal-btn');
+  if (closeModalBtn) {
+    closeModalBtn.addEventListener('click', closeVideoDetailModal);
+  }
+
+  // 모달 외부 클릭 시 닫기
+  const modal = document.getElementById('video-detail-modal');
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeVideoDetailModal();
+      }
+    });
+  }
+
+  // ESC 키로 모달 닫기
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeVideoDetailModal();
+    }
+  });
+
   console.log('✅ [YouTube Finder] 모든 이벤트 리스너 등록 완료');
 });
 
@@ -767,4 +807,159 @@ async function handleLoadMore() {
   } finally {
     isLoadingMore = false;
   }
+}
+
+// ========================================
+// Phase 3: 영상 상세 모달
+// ========================================
+
+// 모달 열기
+function openVideoDetailModal(video) {
+  console.log('📺 모달 열기:', video.title);
+
+  const modal = document.getElementById('video-detail-modal');
+  const modalContent = document.getElementById('modal-content');
+
+  if (!modal || !modalContent) return;
+
+  // 성과도 배지 색상
+  const performanceBadgeClass = {
+    'Great': 'bg-green-100 text-green-700 border-green-300',
+    'Good': 'bg-blue-100 text-blue-700 border-blue-300',
+    'Normal': 'bg-gray-100 text-gray-700 border-gray-300'
+  }[video.performance] || 'bg-gray-100 text-gray-700';
+
+  // 기여도 배지 색상
+  const contributionBadgeClass = {
+    'Great': 'bg-green-100 text-green-700 border-green-300',
+    'Good': 'bg-blue-100 text-blue-700 border-blue-300',
+    'Normal': 'bg-gray-100 text-gray-700 border-gray-300'
+  }[video.contribution] || 'bg-gray-100 text-gray-700';
+
+  // 게시일 포맷
+  const publishDate = new Date(video.publishedAt).toLocaleDateString('ko-KR', {
+    year: '2-digit',
+    month: '2-digit',
+    day: '2-digit'
+  }).replace(/\. /g, '.').replace(/\.$/, '');
+
+  // 모달 콘텐츠 생성
+  modalContent.innerHTML = `
+    <!-- 썸네일 -->
+    <div class="relative rounded-xl overflow-hidden mb-6">
+      <img 
+        src="${video.thumbnailUrl}" 
+        alt="${video.title}"
+        class="w-full h-auto"
+        style="max-height: 400px; object-fit: cover;"
+      />
+      <div class="absolute top-4 right-4 flex gap-2">
+        <span class="px-3 py-1 ${performanceBadgeClass} rounded-full text-xs font-semibold border">
+          ${video.performance}
+        </span>
+        <span class="px-3 py-1 ${contributionBadgeClass} rounded-full text-xs font-semibold border">
+          ${video.contribution}
+        </span>
+      </div>
+    </div>
+
+    <!-- 제목 및 채널 정보 -->
+    <div class="mb-6">
+      <h2 class="text-2xl font-bold text-gray-900 mb-3">${video.title}</h2>
+      <div class="flex items-center gap-3 text-gray-600">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-tv text-gray-400"></i>
+          <span class="font-semibold">${video.channel}</span>
+        </div>
+        <span class="text-gray-300">•</span>
+        <div class="flex items-center gap-1">
+          <i class="fas fa-users text-gray-400"></i>
+          <span>${formatNumber(video.subscriberCount)} 구독자</span>
+        </div>
+        <span class="text-gray-300">•</span>
+        <div class="flex items-center gap-1">
+          <i class="fas fa-video text-gray-400"></i>
+          <span>${formatNumber(video.videoCount)}개 영상</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 통계 정보 -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="bg-gray-50 rounded-lg p-4 text-center">
+        <div class="text-gray-500 text-sm mb-1">조회수</div>
+        <div class="text-xl font-bold text-gray-900">${formatNumber(video.views)}</div>
+      </div>
+      <div class="bg-gray-50 rounded-lg p-4 text-center">
+        <div class="text-gray-500 text-sm mb-1">좋아요</div>
+        <div class="text-xl font-bold text-gray-900">${formatNumber(video.likes)}</div>
+      </div>
+      <div class="bg-gray-50 rounded-lg p-4 text-center">
+        <div class="text-gray-500 text-sm mb-1">게시일</div>
+        <div class="text-xl font-bold text-gray-900">${publishDate}</div>
+      </div>
+    </div>
+
+    <!-- 액션 버튼 -->
+    <div class="flex gap-3">
+      <a 
+        href="https://www.youtube.com/watch?v=${video.videoId}" 
+        target="_blank"
+        class="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition flex items-center justify-center gap-2"
+      >
+        <i class="fab fa-youtube"></i>
+        YouTube에서 보기
+      </a>
+      <button 
+        onclick="handleAnalyzeSingleVideo('${video.videoId}')"
+        class="flex-1 px-6 py-3 hover:bg-green-700 text-white font-semibold rounded-lg transition flex items-center justify-center gap-2"
+        style="background: #00B87D;"
+      >
+        <i class="fas fa-bolt"></i>
+        AI 분석 시작 (10 크레딧)
+      </button>
+    </div>
+  `;
+
+  // 모달 표시
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden'; // 배경 스크롤 방지
+}
+
+// 모달 닫기
+function closeVideoDetailModal() {
+  const modal = document.getElementById('video-detail-modal');
+  if (!modal) return;
+
+  modal.classList.add('hidden');
+  document.body.style.overflow = ''; // 배경 스크롤 복원
+}
+
+// 단일 영상 분석
+async function handleAnalyzeSingleVideo(videoId) {
+  console.log('🎬 단일 영상 분석:', videoId);
+  
+  // 모달 닫기
+  closeVideoDetailModal();
+  
+  // 해당 영상만 선택
+  selectedVideos.clear();
+  selectedVideos.add(videoId);
+  
+  // AI 분석 시작
+  await handleAnalyzeSelected();
+}
+
+// 숫자 포맷팅 헬퍼
+function formatNumber(num) {
+  if (num >= 10000000) {
+    return (num / 10000000).toFixed(1) + '천만';
+  } else if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + '백만';
+  } else if (num >= 10000) {
+    return (num / 10000).toFixed(1) + '만';
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'K';
+  }
+  return num.toLocaleString();
 }

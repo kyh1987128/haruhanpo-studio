@@ -723,6 +723,30 @@ export function youtubeAnalyzerTemplate() {
           <p class="text-gray-500">Phase 2에서 구현 예정입니다</p>
         </div>
       </div>
+
+      <!-- Phase 3: 영상 상세 모달 -->
+      <div id="video-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4" style="backdrop-filter: blur(4px);">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto relative">
+          <!-- 닫기 버튼 -->
+          <button 
+            id="close-modal-btn" 
+            class="absolute top-4 right-4 w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition z-10"
+            aria-label="닫기"
+          >
+            <i class="fas fa-times text-gray-600"></i>
+          </button>
+
+          <!-- 모달 콘텐츠 -->
+          <div id="modal-content" class="p-8">
+            <!-- JavaScript로 동적 생성 -->
+            <div class="animate-pulse">
+              <div class="bg-gray-200 h-64 rounded-xl mb-4"></div>
+              <div class="bg-gray-200 h-8 rounded mb-2"></div>
+              <div class="bg-gray-200 h-6 rounded w-2/3"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 
