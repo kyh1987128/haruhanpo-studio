@@ -13,6 +13,7 @@ import { parseMultipleDocuments, combineDocumentTexts, truncateText } from './do
 import payments from './routes/payments';
 import images, { fetchSmartImages } from './routes/images';
 import youtubeApi from './routes/api/youtube';
+import channelsApi from './routes/api/channels';
 import { injectImagesIntoBlogContent, injectImagesIntoBrunchContent, convertHtmlToNaverText, addInstagramImageMetadata, injectBlogImageGuide, injectBrunchImageGuide, injectYoutubeThumbnailGuide } from './image-injection';
 import './styles.css'; // ✅ Tailwind CSS import
 
@@ -6256,5 +6257,8 @@ app.delete('/api/users/delete-account', async (c) => {
 
 // YouTube 분석기 API 라우트 등록
 app.route('/', youtubeApi);
+
+// 채널 관리 API 라우트 등록
+app.route('/', channelsApi);
 
 export default app;

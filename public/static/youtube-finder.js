@@ -1441,3 +1441,283 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+// ==============================
+// Phase 4: 내 채널 관리 (즐겨찾기 채널)
+// ==============================
+
+/**
+ * 즐겨찾기 채널 목록 불러오기
+ */
+async function loadFavoriteChannels() {
+  const token = localStorage.getItem('postflow_token');
+  if (!token) {
+    showChannelsEmpty();
+    return;
+  }
+
+  const loadingEl = document.getElementById('channels-loading');
+  const emptyEl = document.getElementById('channels-empty');
+  const gridEl = document.getElementById('channels-grid');
+
+  // 로딩 표시
+  loadingEl.classList.remove('hidden');
+  emptyEl.classList.add('hidden');
+  gridEl.classList.add('hidden');
+
+  try {
+    const response = await fetch('/api/channels/favorite', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error?.message || '채널 목록 조회 실패');
+    }
+
+    const channels = result.data || [];
+
+    if (channels.length === 0) {
+      showChannelsEmpty();
+      return;
+    }
+
+    // 채널 카드 렌더링
+    renderChannelCards(channels);
+
+  } catch (error) {
+    console.error('❌ [Load Channels Error]', error);
+    alert('채널 목록 불러오기 실패: ' + error.message);
+    showChannelsEmpty();
+  } finally {
+    loadingEl.classList.add('hidden');
+  }
+}
+
+/**
+ * 빈 상태 표시
+ */
+function showChannelsEmpty() {
+  document.getElementById('channels-loading').classList.add('hidden');
+  document.getElementById('channels-empty').classList.remove('hidden');
+  document.getElementById('channels-grid').classList.add('hidden');
+}
+
+/**
+ * 채널 카드 렌더링
+ */
+function renderChannelCards(channels) {
+  const gridEl = document.getElementById('channels-grid');
+  gridEl.innerHTML = channels.map(channel => `
+    <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition p-6" data-channel-id="${channel.channel_id}">
+      <!-- 채널 썸네일 -->
+      <div class="flex items-center gap-4 mb-4">
+        <img 
+          src="${channel.channel_thumbnail || '/static/placeholder-channel.png'}" 
+          alt="${escapeHtml(channel.channel_name)}" 
+          class="w-16 h-16 rounded-full object-cover"
+        />
+        <div class="flex-1 min-w-0">
+          <h3 class="font-bold text-lg text-gray-800 truncate">${escapeHtml(channel.channel_name)}</h3>
+          <p class="text-sm text-gray-500">
+            <i class="fas fa-calendar-alt mr-1"></i>
+            추가: ${new Date(channel.added_at).toLocaleDateString('ko-KR')}
+          </p>
+        </div>
+      </div>
+
+      <!-- 통계 -->
+      <div class="grid grid-cols-3 gap-2 mb-4">
+        <div class="text-center bg-red-50 rounded-lg py-2">
+          <div class="text-xs text-gray-600 mb-1">구독자</div>
+          <div class="font-bold text-red-600">${formatNumber(channel.subscriber_count)}</div>
+        </div>
+        <div class="text-center bg-blue-50 rounded-lg py-2">
+          <div class="text-xs text-gray-600 mb-1">영상</div>
+          <div class="font-bold text-blue-600">${formatNumber(channel.total_videos)}</div>
+        </div>
+        <div class="text-center bg-green-50 rounded-lg py-2">
+          <div class="text-xs text-gray-600 mb-1">조회수</div>
+          <div class="font-bold text-green-600">${formatNumber(channel.total_views)}</div>
+        </div>
+      </div>
+
+      <!-- 액션 버튼 -->
+      <div class="flex gap-2">
+        <button 
+          class="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold rounded-lg transition"
+          onclick="openChannelDetail('${channel.channel_id}')"
+        >
+          <i class="fas fa-chart-line mr-1"></i>
+          상세 보기
+        </button>
+        <button 
+          class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-semibold rounded-lg transition"
+          onclick="refreshChannel('${channel.channel_id}')"
+          title="데이터 갱신"
+        >
+          <i class="fas fa-sync-alt"></i>
+        </button>
+        <button 
+          class="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 text-sm font-semibold rounded-lg transition"
+          onclick="deleteChannel('${channel.channel_id}', '${escapeHtml(channel.channel_name)}')"
+          title="삭제"
+        >
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('channels-loading').classList.add('hidden');
+  document.getElementById('channels-empty').classList.add('hidden');
+  gridEl.classList.remove('hidden');
+}
+
+/**
+ * 채널 추가
+ */
+async function handleAddChannel() {
+  const token = localStorage.getItem('postflow_token');
+  if (!token) {
+    alert('로그인이 필요합니다.');
+    return;
+  }
+
+  const input = document.getElementById('channel-input');
+  const channelInput = input.value.trim();
+
+  if (!channelInput) {
+    alert('채널 URL 또는 ID를 입력해주세요.');
+    return;
+  }
+
+  const btn = document.getElementById('add-channel-btn');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>추가 중...';
+
+  try {
+    const response = await fetch('/api/channels/favorite', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ channelInput })
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error?.message || '채널 추가 실패');
+    }
+
+    alert('✅ 채널이 즐겨찾기에 추가되었습니다!');
+    input.value = '';
+    loadFavoriteChannels(); // 목록 새로고침
+
+  } catch (error) {
+    console.error('❌ [Add Channel Error]', error);
+    alert('채널 추가 실패: ' + error.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
+}
+
+/**
+ * 채널 삭제
+ */
+async function deleteChannel(channelId, channelName) {
+  if (!confirm(`"${channelName}" 채널을 즐겨찾기에서 삭제하시겠습니까?`)) {
+    return;
+  }
+
+  const token = localStorage.getItem('postflow_token');
+
+  try {
+    const response = await fetch(`/api/channels/favorite/${channelId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error?.message || '삭제 실패');
+    }
+
+    alert('✅ 채널이 삭제되었습니다.');
+    loadFavoriteChannels(); // 목록 새로고침
+
+  } catch (error) {
+    console.error('❌ [Delete Channel Error]', error);
+    alert('채널 삭제 실패: ' + error.message);
+  }
+}
+
+/**
+ * 채널 데이터 갱신
+ */
+async function refreshChannel(channelId) {
+  const token = localStorage.getItem('postflow_token');
+
+  try {
+    const response = await fetch(`/api/channels/refresh/${channelId}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error?.message || '갱신 실패');
+    }
+
+    alert('✅ 채널 데이터가 갱신되었습니다!');
+    loadFavoriteChannels(); // 목록 새로고침
+
+  } catch (error) {
+    console.error('❌ [Refresh Channel Error]', error);
+    alert('채널 갱신 실패: ' + error.message);
+  }
+}
+
+/**
+ * 채널 상세 모달 열기 (Phase 4 Step 4에서 구현)
+ */
+function openChannelDetail(channelId) {
+  alert(`채널 상세 보기 기능은 다음 단계에서 구현됩니다. (Channel ID: ${channelId})`);
+  // TODO: 스냅샷 조회 → 차트 렌더링
+}
+
+// ==============================
+// 이벤트 리스너 등록
+// ==============================
+document.addEventListener('DOMContentLoaded', () => {
+  // 기존 이벤트 리스너...
+
+  // 내 채널 탭 관련
+  const addChannelBtn = document.getElementById('add-channel-btn');
+  if (addChannelBtn) {
+    addChannelBtn.addEventListener('click', handleAddChannel);
+  }
+
+  // 탭 전환 시 즐겨찾기 목록 로드
+  document.querySelectorAll('.subnav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const tab = item.dataset.tab;
+      if (tab === 'my-channel') {
+        loadFavoriteChannels();
+      }
+    });
+  });
+});

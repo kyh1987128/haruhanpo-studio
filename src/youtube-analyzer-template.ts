@@ -870,12 +870,66 @@ export function youtubeAnalyzerTemplate() {
         </div>
       </div>
 
-      <!-- 탭 콘텐츠: 내 채널 (준비중) -->
+      <!-- 탭 콘텐츠: 내 채널 -->
       <div id="tab-my-channel" class="tab-content hidden">
-        <div class="text-center py-12">
-          <i class="fas fa-video text-6xl text-gray-300 mb-4"></i>
-          <h2 class="text-2xl font-bold text-gray-700 mb-2">내 채널</h2>
-          <p class="text-gray-500">Phase 2에서 구현 예정입니다</p>
+        <!-- 채널 추가 섹션 -->
+        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8 mb-8">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                <i class="fas fa-bookmark text-blue-500 mr-2"></i>
+                즐겨찾기 채널 관리
+              </h2>
+              <p class="text-gray-600">관심 채널을 등록하고 성장 추이를 추적하세요</p>
+            </div>
+          </div>
+
+          <!-- 채널 추가 입력 폼 -->
+          <div class="bg-white rounded-xl p-6 shadow-sm">
+            <label class="block text-sm font-semibold text-gray-700 mb-3">
+              채널 URL 또는 ID 입력
+            </label>
+            <div class="flex gap-3">
+              <input
+                type="text"
+                id="channel-input"
+                placeholder="https://youtube.com/@channelname 또는 채널 ID"
+                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                id="add-channel-btn"
+                class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition flex items-center gap-2"
+              >
+                <i class="fas fa-plus"></i>
+                추가
+              </button>
+            </div>
+            <p class="text-xs text-gray-500 mt-2">
+              <i class="fas fa-info-circle mr-1"></i>
+              예시: https://youtube.com/@haruhanpo 또는 @haruhanpo 또는 UCxxxxx
+            </p>
+          </div>
+        </div>
+
+        <!-- 즐겨찾기 채널 목록 -->
+        <div id="favorite-channels-list">
+          <!-- 로딩 상태 -->
+          <div id="channels-loading" class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+            <p class="text-gray-500 mt-4">즐겨찾기 채널 불러오는 중...</p>
+          </div>
+
+          <!-- 빈 상태 -->
+          <div id="channels-empty" class="hidden text-center py-12">
+            <i class="fas fa-bookmark text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-bold text-gray-700 mb-2">등록된 채널이 없습니다</h3>
+            <p class="text-gray-500">위 입력창에 채널 URL을 입력하여 즐겨찾기에 추가하세요</p>
+          </div>
+
+          <!-- 채널 카드 그리드 -->
+          <div id="channels-grid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- JavaScript로 동적 생성 -->
+          </div>
         </div>
       </div>
 
