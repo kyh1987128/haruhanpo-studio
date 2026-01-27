@@ -323,245 +323,364 @@ export function youtubeAnalyzerTemplate() {
   </nav>
 
   <!-- ========================================
-       Phase 1: 2단 분할 워크스페이스 
+       Phase 1.5: 풀 와이드 워크스페이스 (사이드바 제거)
        ======================================== -->
-  <div class="youtube-finder-workspace">
+  <div class="youtube-finder-workspace" style="display: block; max-width: 1440px; margin: 0 auto; padding: 24px;">
     
-    <!-- 좌측 사이드바: 필터 영역 -->
-    <aside class="youtube-finder-sidebar">
-      <div class="sidebar-section">
-        <h3 class="sidebar-title">검색 필터</h3>
-        
-        <!-- 조회수 필터 -->
-        <div class="filter-group">
-          <label class="filter-label">조회수</label>
-          <select class="filter-select" id="viewsFilter">
-            <option value="all">전체</option>
-            <option value="0-10k">1만 이하</option>
-            <option value="10k-100k">1만 ~ 10만</option>
-            <option value="100k-1m">10만 ~ 100만</option>
-            <option value="1m-10m">100만 ~ 1000만</option>
-            <option value="10m+">1000만 이상</option>
-          </select>
-        </div>
-        
-        <!-- 업로드 기간 -->
-        <div class="filter-group">
-          <label class="filter-label">업로드 기간</label>
-          <select class="filter-select" id="uploadDateFilter">
-            <option value="all">전체</option>
-            <option value="today">오늘</option>
-            <option value="week">이번 주</option>
-            <option value="month">이번 달</option>
-            <option value="3months">3개월</option>
-            <option value="year">1년</option>
-          </select>
-        </div>
-        
-        <!-- 카테고리 필터 -->
-        <div class="filter-group">
-          <label class="filter-label">카테고리</label>
-          <select class="filter-select" id="categoryFilter">
-            <option value="all">전체</option>
-            <option value="music">음악</option>
-            <option value="gaming">게임</option>
-            <option value="sports">스포츠</option>
-            <option value="entertainment">엔터테인먼트</option>
-            <option value="news">뉴스/정치</option>
-            <option value="education">교육</option>
-            <option value="howto">노하우/스타일</option>
-            <option value="science">과학기술</option>
-            <option value="comedy">코미디</option>
-            <option value="people">인물/블로그</option>
-          </select>
-        </div>
-        
-        <!-- 성과도 필터 -->
-        <div class="filter-group">
-          <label class="filter-label">성과도</label>
-          <div class="checkbox-group">
-            <label class="checkbox-label">
-              <input type="checkbox" value="great" checked id="filterGreat">
-              <span class="badge badge-great">Great</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" value="good" checked id="filterGood">
-              <span class="badge badge-good">Good</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" value="normal" checked id="filterNormal">
-              <span class="badge badge-normal">Normal</span>
-            </label>
-          </div>
-        </div>
-      </div>
-      
-      <!-- 필터 액션 버튼 -->
-      <div class="sidebar-actions">
-        <button class="btn-reset" id="resetFilters">
-          <span>🔄</span>
-          <span>필터 초기화</span>
-        </button>
-        <button class="btn-apply" id="applyFilters">
-          <span>검색</span>
-        </button>
-      </div>
-    </aside>
-
-    <!-- 메인 콘텐츠 영역 -->
+    <!-- 메인 콘텐츠 영역 (전체 너비) -->
     <main class="youtube-finder-main">
-      <!-- 탭 콘텐츠: 영상 분석 -->
+      <!-- 탭 콘텐츠: 영상 분석 (Viewtrap 스타일 재구성) -->
       <div id="tab-video-analysis" class="tab-content">
-        <div class="mb-8">
-          <h1 class="text-3xl font-bold text-gray-900 mb-2">
-            <i class="fas fa-youtube text-red-600 mr-2"></i>영상 분석
-          </h1>
-          <p class="text-gray-600">YouTube 영상을 검색하고 성과를 분석하세요</p>
+        
+        <!-- 검색 바 영역 -->
+        <div class="search-section bg-white rounded-xl shadow-sm border p-6 mb-6">
+          <div class="flex gap-3">
+            <div class="flex-1 relative">
+              <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <i class="fas fa-search"></i>
+              </span>
+              <input
+                type="text"
+                id="video-search-input"
+                placeholder="영상 제목, 키워드 또는 YouTube URL 입력"
+                class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-base"
+              />
+            </div>
+            <button
+              id="search-button"
+              class="px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition flex items-center gap-2"
+              style="background: #00B87D; white-space: nowrap;"
+            >
+              <i class="fas fa-search"></i>
+              <span>검색</span>
+            </button>
+          </div>
+          
+          <!-- 빠른 필터 바 -->
+          <div class="flex gap-3 mt-4 flex-wrap">
+            <select class="filter-select-inline px-4 py-2 border border-gray-300 rounded-lg text-sm">
+              <option>조회수: 전체</option>
+              <option>1만 ~ 10만</option>
+              <option>10만 ~ 100만</option>
+              <option>100만 ~ 1000만</option>
+              <option>1000만 이상</option>
+            </select>
+            
+            <select class="filter-select-inline px-4 py-2 border border-gray-300 rounded-lg text-sm">
+              <option>기간: 전체</option>
+              <option>이번 주</option>
+              <option>이번 달</option>
+              <option>3개월</option>
+              <option>1년</option>
+            </select>
+            
+            <div class="flex gap-2 items-center">
+              <label class="flex items-center gap-1 cursor-pointer">
+                <input type="checkbox" checked class="w-4 h-4">
+                <span class="badge badge-great">Great</span>
+              </label>
+              <label class="flex items-center gap-1 cursor-pointer">
+                <input type="checkbox" checked class="w-4 h-4">
+                <span class="badge badge-good">Good</span>
+              </label>
+              <label class="flex items-center gap-1 cursor-pointer">
+                <input type="checkbox" checked class="w-4 h-4">
+                <span class="badge badge-normal">Normal</span>
+              </label>
+            </div>
+            
+            <button class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50">
+              <i class="fas fa-redo mr-1"></i>필터 초기화
+            </button>
+          </div>
         </div>
 
-        <!-- 분석 입력 섹션 -->
-        <div class="bg-white rounded-xl shadow-sm border p-6 mb-8">
-          <h2 class="text-xl font-semibold mb-4">영상 분석 시작하기</h2>
-          
-          <!-- YouTube URL 입력 -->
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              <i class="fas fa-link mr-2"></i>YouTube 영상 URL
-            </label>
-            <input
-              type="text"
-              id="youtube-url"
-              placeholder="https://www.youtube.com/watch?v=..."
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <p class="mt-1 text-sm text-gray-500">
-              예시: https://www.youtube.com/watch?v=dQw4w9WgXcQ
-            </p>
+        <!-- 검색 결과 요약 -->
+        <div class="results-summary mb-4 flex justify-between items-center">
+          <span class="text-gray-600">
+            총 <strong class="text-gray-900">1,923</strong>개 영상 | 
+            선택: <strong id="selected-count" class="text-green-600">0</strong>개
+          </span>
+          <span class="text-sm text-gray-500">
+            <i class="fas fa-info-circle mr-1"></i>선택한 영상을 AI 분석할 수 있습니다
+          </span>
+        </div>
+
+        <!-- 데이터 테이블 -->
+        <div class="table-container bg-white rounded-xl shadow-sm border overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="video-results-table w-full">
+              <thead class="bg-gray-50 border-b">
+                <tr>
+                  <th class="col-checkbox px-4 py-3 text-left">
+                    <input type="checkbox" id="select-all" class="w-4 h-4 cursor-pointer">
+                  </th>
+                  <th class="col-thumbnail px-4 py-3 text-left">썸네일</th>
+                  <th class="col-title px-4 py-3 text-left">
+                    <div class="flex items-center gap-1 cursor-pointer hover:text-green-600">
+                      <span>제목</span>
+                      <i class="fas fa-sort text-xs text-gray-400"></i>
+                    </div>
+                  </th>
+                  <th class="col-views px-4 py-3 text-right">
+                    <div class="flex items-center justify-end gap-1 cursor-pointer hover:text-green-600">
+                      <span>조회수</span>
+                      <i class="fas fa-sort text-xs text-gray-400"></i>
+                    </div>
+                  </th>
+                  <th class="col-subscribers px-4 py-3 text-right">
+                    <div class="flex items-center justify-end gap-1 cursor-pointer hover:text-green-600">
+                      <span>구독자</span>
+                      <i class="fas fa-sort text-xs text-gray-400"></i>
+                    </div>
+                  </th>
+                  <th class="col-performance px-4 py-3 text-center">기여도</th>
+                  <th class="col-contribution px-4 py-3 text-center">성과도</th>
+                  <th class="col-videos px-4 py-3 text-right">총 영상수</th>
+                  <th class="col-date px-4 py-3 text-center">
+                    <div class="flex items-center justify-center gap-1 cursor-pointer hover:text-green-600">
+                      <span>게시일</span>
+                      <i class="fas fa-sort text-xs text-gray-400"></i>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="video-table-body">
+                <!-- 더미 데이터 1 -->
+                <tr class="video-row border-b hover:bg-gray-50 cursor-pointer transition">
+                  <td class="px-4 py-3">
+                    <input type="checkbox" class="video-select w-4 h-4 cursor-pointer">
+                  </td>
+                  <td class="px-4 py-3">
+                    <img 
+                      src="https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg" 
+                      alt="썸네일"
+                      class="video-thumbnail w-32 h-18 object-cover rounded"
+                    >
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="video-info">
+                      <div class="video-title font-medium text-gray-900 mb-1 line-clamp-2">
+                        EP.3-1 | 청담캠디 이 편만물어봐도 보면, 입이 사각사각해지는 청담동 핫플레이스
+                      </div>
+                      <div class="channel-info flex items-center gap-2 text-sm text-gray-600">
+                        <img 
+                          src="https://via.placeholder.com/24" 
+                          alt="채널"
+                          class="channel-icon w-6 h-6 rounded-full"
+                        >
+                        <span class="channel-name">채널심오야</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3 text-right font-medium text-gray-900">67,119,110</td>
+                  <td class="px-4 py-3 text-right text-gray-700">7,120,000</td>
+                  <td class="px-4 py-3 text-center">
+                    <span class="badge badge-good">Good</span>
+                  </td>
+                  <td class="px-4 py-3 text-center">
+                    <span class="badge badge-good">Good</span>
+                  </td>
+                  <td class="px-4 py-3 text-right text-gray-700">1,923</td>
+                  <td class="px-4 py-3 text-center text-gray-700">22.07.31</td>
+                </tr>
+
+                <!-- 더미 데이터 2 -->
+                <tr class="video-row border-b hover:bg-gray-50 cursor-pointer transition">
+                  <td class="px-4 py-3">
+                    <input type="checkbox" class="video-select w-4 h-4 cursor-pointer">
+                  </td>
+                  <td class="px-4 py-3">
+                    <img 
+                      src="https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg" 
+                      alt="썸네일"
+                      class="video-thumbnail w-32 h-18 object-cover rounded"
+                    >
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="video-info">
+                      <div class="video-title font-medium text-gray-900 mb-1 line-clamp-2">
+                        EP.3-2 | 현실 세조대왕 등장?! 역사 속 인물들의 놀라운 재해석
+                      </div>
+                      <div class="channel-info flex items-center gap-2 text-sm text-gray-600">
+                        <img 
+                          src="https://via.placeholder.com/24" 
+                          alt="채널"
+                          class="channel-icon w-6 h-6 rounded-full"
+                        >
+                        <span class="channel-name">채널심오야</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3 text-right font-medium text-gray-900">36,547,892</td>
+                  <td class="px-4 py-3 text-right text-gray-700">7,120,000</td>
+                  <td class="px-4 py-3 text-center">
+                    <span class="badge badge-great">Great</span>
+                  </td>
+                  <td class="px-4 py-3 text-center">
+                    <span class="badge badge-good">Good</span>
+                  </td>
+                  <td class="px-4 py-3 text-right text-gray-700">1,923</td>
+                  <td class="px-4 py-3 text-center text-gray-700">22.08.14</td>
+                </tr>
+
+                <!-- 더미 데이터 3 -->
+                <tr class="video-row border-b hover:bg-gray-50 cursor-pointer transition">
+                  <td class="px-4 py-3">
+                    <input type="checkbox" class="video-select w-4 h-4 cursor-pointer">
+                  </td>
+                  <td class="px-4 py-3">
+                    <img 
+                      src="https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg" 
+                      alt="썸네일"
+                      class="video-thumbnail w-32 h-18 object-cover rounded"
+                    >
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="video-info">
+                      <div class="video-title font-medium text-gray-900 mb-1 line-clamp-2">
+                        EP.4-1 | 먹방 유튜버의 비밀 공개! 조회수 1000만 돌파의 비결
+                      </div>
+                      <div class="channel-info flex items-center gap-2 text-sm text-gray-600">
+                        <img 
+                          src="https://via.placeholder.com/24" 
+                          alt="채널"
+                          class="channel-icon w-6 h-6 rounded-full"
+                        >
+                        <span class="channel-name">푸드파이터</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3 text-right font-medium text-gray-900">12,345,678</td>
+                  <td class="px-4 py-3 text-right text-gray-700">2,340,000</td>
+                  <td class="px-4 py-3 text-center">
+                    <span class="badge badge-great">Great</span>
+                  </td>
+                  <td class="px-4 py-3 text-center">
+                    <span class="badge badge-great">Great</span>
+                  </td>
+                  <td class="px-4 py-3 text-right text-gray-700">856</td>
+                  <td class="px-4 py-3 text-center text-gray-700">23.01.22</td>
+                </tr>
+
+                <!-- 더미 데이터 4 -->
+                <tr class="video-row border-b hover:bg-gray-50 cursor-pointer transition">
+                  <td class="px-4 py-3">
+                    <input type="checkbox" class="video-select w-4 h-4 cursor-pointer">
+                  </td>
+                  <td class="px-4 py-3">
+                    <img 
+                      src="https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg" 
+                      alt="썸네일"
+                      class="video-thumbnail w-32 h-18 object-cover rounded"
+                    >
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="video-info">
+                      <div class="video-title font-medium text-gray-900 mb-1 line-clamp-2">
+                        브이로그 | 일상 속 작은 행복 찾기, 나만의 힐링 루틴
+                      </div>
+                      <div class="channel-info flex items-center gap-2 text-sm text-gray-600">
+                        <img 
+                          src="https://via.placeholder.com/24" 
+                          alt="채널"
+                          class="channel-icon w-6 h-6 rounded-full"
+                        >
+                        <span class="channel-name">힐링라이프</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3 text-right font-medium text-gray-900">4,567,890</td>
+                  <td class="px-4 py-3 text-right text-gray-700">892,000</td>
+                  <td class="px-4 py-3 text-center">
+                    <span class="badge badge-good">Good</span>
+                  </td>
+                  <td class="px-4 py-3 text-center">
+                    <span class="badge badge-normal">Normal</span>
+                  </td>
+                  <td class="px-4 py-3 text-right text-gray-700">342</td>
+                  <td class="px-4 py-3 text-center text-gray-700">23.05.18</td>
+                </tr>
+
+                <!-- 더미 데이터 5 -->
+                <tr class="video-row border-b hover:bg-gray-50 cursor-pointer transition">
+                  <td class="px-4 py-3">
+                    <input type="checkbox" class="video-select w-4 h-4 cursor-pointer">
+                  </td>
+                  <td class="px-4 py-3">
+                    <img 
+                      src="https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg" 
+                      alt="썸네일"
+                      class="video-thumbnail w-32 h-18 object-cover rounded"
+                    >
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="video-info">
+                      <div class="video-title font-medium text-gray-900 mb-1 line-clamp-2">
+                        게임 실황 | 레전드 플레이 모음집, 이건 미쳤다!
+                      </div>
+                      <div class="channel-info flex items-center gap-2 text-sm text-gray-600">
+                        <img 
+                          src="https://via.placeholder.com/24" 
+                          alt="채널"
+                          class="channel-icon w-6 h-6 rounded-full"
+                        >
+                        <span class="channel-name">겜덕TV</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3 text-right font-medium text-gray-900">8,901,234</td>
+                  <td class="px-4 py-3 text-right text-gray-700">1,567,000</td>
+                  <td class="px-4 py-3 text-center">
+                    <span class="badge badge-good">Good</span>
+                  </td>
+                  <td class="px-4 py-3 text-center">
+                    <span class="badge badge-good">Good</span>
+                  </td>
+                  <td class="px-4 py-3 text-right text-gray-700">634</td>
+                  <td class="px-4 py-3 text-center text-gray-700">23.09.05</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
+        </div>
 
-          <!-- 분석 타입 선택 -->
-          <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-3">
-              <i class="fas fa-chart-line mr-2"></i>분석 타입 선택
-            </label>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-              <button onclick="selectAnalysisType('video-stats')" class="analysis-type-btn p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition" data-type="video-stats">
-                <div class="flex items-center space-x-3">
-                  <i class="fas fa-chart-bar text-2xl text-blue-600"></i>
-                  <div class="text-left">
-                    <div class="font-semibold text-gray-900">영상 통계</div>
-                    <div class="text-xs text-gray-500">조회수, 참여율 분석</div>
-                  </div>
-                </div>
-              </button>
-
-              <button onclick="selectAnalysisType('success-factors')" class="analysis-type-btn p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition" data-type="success-factors">
-                <div class="flex items-center space-x-3">
-                  <i class="fas fa-trophy text-2xl text-yellow-600"></i>
-                  <div class="text-left">
-                    <div class="font-semibold text-gray-900">성공 요인</div>
-                    <div class="text-xs text-gray-500">성공 비결 분석</div>
-                  </div>
-                </div>
-              </button>
-
-              <button onclick="selectAnalysisType('title-optimization')" class="analysis-type-btn p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition" data-type="title-optimization">
-                <div class="flex items-center space-x-3">
-                  <i class="fas fa-heading text-2xl text-green-600"></i>
-                  <div class="text-left">
-                    <div class="font-semibold text-gray-900">제목 최적화</div>
-                    <div class="text-xs text-gray-500">더 나은 제목 제안</div>
-                  </div>
-                </div>
-              </button>
-
-              <button onclick="selectAnalysisType('sentiment-analysis')" class="analysis-type-btn p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition" data-type="sentiment-analysis">
-                <div class="flex items-center space-x-3">
-                  <i class="fas fa-smile text-2xl text-pink-600"></i>
-                  <div class="text-left">
-                    <div class="font-semibold text-gray-900">감성 분석</div>
-                    <div class="text-xs text-gray-500">댓글 반응 분석</div>
-                  </div>
-                </div>
-              </button>
-
-              <button onclick="selectAnalysisType('channel-strategy')" class="analysis-type-btn p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition" data-type="channel-strategy">
-                <div class="flex items-center space-x-3">
-                  <i class="fas fa-bullseye text-2xl text-purple-600"></i>
-                  <div class="text-left">
-                    <div class="font-semibold text-gray-900">채널 전략</div>
-                    <div class="text-xs text-gray-500">성장 전략 제안</div>
-                  </div>
-                </div>
-              </button>
-
-              <button onclick="selectAnalysisType('video-ideas')" class="analysis-type-btn p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition" data-type="video-ideas">
-                <div class="flex items-center space-x-3">
-                  <i class="fas fa-lightbulb text-2xl text-orange-600"></i>
-                  <div class="text-left">
-                    <div class="font-semibold text-gray-900">영상 아이디어</div>
-                    <div class="text-xs text-gray-500">콘텐츠 아이디어 제안</div>
-                  </div>
-                </div>
-              </button>
-
-              <button onclick="selectAnalysisType('competitor')" class="analysis-type-btn p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition" data-type="competitor">
-                <div class="flex items-center space-x-3">
-                  <i class="fas fa-users text-2xl text-red-600"></i>
-                  <div class="text-left">
-                    <div class="font-semibold text-gray-900">경쟁자 분석</div>
-                    <div class="text-xs text-gray-500">경쟁 우위 파악</div>
-                  </div>
-                </div>
-              </button>
-            </div>
-            <p class="mt-2 text-sm text-gray-500">
-              <i class="fas fa-info-circle mr-1"></i>분석당 <strong>10 크레딧</strong> 소모 (캐시 히트 시 무료)
-            </p>
-          </div>
-
-          <!-- 분석 시작 버튼 -->
-          <button
-            id="analyze-btn"
-            onclick="startAnalysis()"
-            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-lg transition flex items-center justify-center space-x-2"
+        <!-- 액션 바 (하단) -->
+        <div class="action-bar bg-white rounded-xl shadow-sm border p-4 mt-4 flex justify-between items-center">
+          <button 
+            id="clear-selection-btn"
+            class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
           >
-            <i class="fas fa-play-circle"></i>
-            <span>분석 시작하기</span>
+            <i class="fas fa-times mr-2"></i>선택 해제
+          </button>
+          
+          <button 
+            id="analyze-selected-btn"
+            class="px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition flex items-center gap-2"
+            style="background: #00B87D;"
+          >
+            <i class="fas fa-bolt"></i>
+            <span>선택한 영상 AI 분석 시작 (10 크레딧)</span>
           </button>
         </div>
 
         <!-- 로딩 상태 -->
-        <div id="loading-section" class="hidden bg-white rounded-xl shadow-sm border p-8 mb-8">
+        <div id="loading-section" class="hidden bg-white rounded-xl shadow-sm border p-8 mt-6">
           <div class="flex flex-col items-center justify-center space-y-4">
             <div class="loading-spinner"></div>
             <div class="text-center">
               <p class="text-lg font-semibold text-gray-900 mb-2">분석 중입니다...</p>
-              <p class="text-sm text-gray-600">YouTube 데이터를 수집하고 AI 분석을 진행하고 있습니다.</p>
+              <p class="text-sm text-gray-600">선택한 영상들을 AI가 분석하고 있습니다.</p>
               <p class="text-xs text-gray-500 mt-2">평균 3-5초 소요됩니다.</p>
             </div>
           </div>
         </div>
 
         <!-- 분석 결과 -->
-        <div id="result-section" class="hidden bg-white rounded-xl shadow-sm border mb-8">
+        <div id="result-section" class="hidden bg-white rounded-xl shadow-sm border mt-6">
           <!-- 결과는 JavaScript로 동적 생성 -->
         </div>
 
-        <!-- 히스토리 섹션 -->
-        <div class="bg-white rounded-xl shadow-sm border p-6">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold">
-              <i class="fas fa-history text-gray-600 mr-2"></i>분석 히스토리
-            </h2>
-            <button onclick="loadHistory()" class="text-blue-600 hover:text-blue-700">
-              <i class="fas fa-sync-alt mr-1"></i>새로고침
-            </button>
-          </div>
-          <div id="history-list">
-            <!-- 히스토리는 JavaScript로 동적 생성 -->
-          </div>
-        </div>
       </div>
 
       <!-- 탭 콘텐츠: 채널 분석 (준비중) -->
