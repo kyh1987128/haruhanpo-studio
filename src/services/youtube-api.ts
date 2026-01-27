@@ -93,3 +93,146 @@ export function estimateQuotaCost(operations: {
 export function isWithinQuotaLimit(usedToday: number, dailyLimit: number = 10000): boolean {
   return usedToday < dailyLimit
 }
+
+// ========================================
+// Phase 2: YouTube 검색 API
+// ========================================
+
+export interface YouTubeSearchResult {
+  videoId: string
+  title: string
+  channel: string
+  channelId: string
+  thumbnailUrl: string
+  publishedAt: string
+  views: number
+  likes: number
+  subscriberCount: number
+  videoCount: number
+  performance: 'Great' | 'Good' | 'Normal'
+  contribution: 'Great' | 'Good' | 'Normal'
+}
+
+export interface YouTubeSearchResponse {
+  items: {
+    id: {
+      videoId: string
+    }
+    snippet: {
+      title: string
+      channelTitle: string
+      channelId: string
+      thumbnails: {
+        medium?: { url: string }
+        high?: { url: string }
+      }
+      publishedAt: string
+    }
+  }[]
+  pageInfo: {
+    totalResults: number
+    resultsPerPage: number
+  }
+}
+
+/**
+ * YouTube 검색 API
+ * @param keyword 검색 키워드
+ * @param apiKey YouTube API 키
+ * @param maxResults 최대 결과 개수 (기본: 10, 최대: 50)
+ * @returns 검색 결과 배열
+ */
+export async function searchYouTubeVideos(
+  keyword: string,
+  apiKey: string,
+  maxResults: number = 10
+): Promise<YouTubeSearchResult[]> {
+  // 1. 검색 API 호출
+  const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(keyword)}&key=${apiKey}&maxResults=${Math.min(maxResults, 50)}&order=viewCount`
+  
+  const searchResponse = await fetch(searchUrl)
+  
+  if (!searchResponse.ok) {
+    if (searchResponse.status === 403) {
+      throw new YouTubeAPIError('YouTube API 키가 유효하지 않습니다.', 403)
+    }
+    if (searchResponse.status === 429) {
+      throw new YouTubeAPIError('YouTube API 할당량을 초과했습니다.', 429)
+    }
+    throw new YouTubeAPIError(`YouTube 검색 API 오류: ${searchResponse.statusText}`, searchResponse.status)
+  }
+
+  const searchData: YouTubeSearchResponse = await searchResponse.json()
+  
+  if (!searchData.items || searchData.items.length === 0) {
+    return []
+  }
+
+  // 2. 비디오 ID 목록 추출
+  const videoIds = searchData.items.map(item => item.id.videoId).join(',')
+  
+  // 3. 비디오 상세 정보 조회 (조회수, 좋아요 등)
+  const videoUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoIds}&key=${apiKey}&part=snippet,statistics`
+  const videoResponse = await fetch(videoUrl)
+  
+  if (!videoResponse.ok) {
+    throw new YouTubeAPIError('영상 정보 조회 실패', videoResponse.status)
+  }
+
+  const videoData: YouTubeVideoResponse = await videoResponse.json()
+  
+  // 4. 채널 ID 목록 추출 (중복 제거)
+  const channelIds = Array.from(new Set(videoData.items.map(item => item.snippet.channelId))).join(',')
+  
+  // 5. 채널 정보 조회 (구독자 수, 총 영상 수)
+  const channelUrl = `https://www.googleapis.com/youtube/v3/channels?id=${channelIds}&key=${apiKey}&part=statistics`
+  const channelResponse = await fetch(channelUrl)
+  
+  const channelData: YouTubeChannelResponse = channelResponse.ok ? await channelResponse.json() : { items: [] }
+  
+  // 6. 채널 정보 맵 생성
+  const channelMap = new Map(
+    channelData.items.map(channel => [
+      channel.id,
+      {
+        subscriberCount: parseInt(channel.statistics?.subscriberCount || '0'),
+        videoCount: parseInt(channel.statistics?.videoCount || '0')
+      }
+    ])
+  )
+
+  // 7. 결과 조합 및 성과도/기여도 계산
+  const results: YouTubeSearchResult[] = videoData.items.map(video => {
+    const views = parseInt(video.statistics.viewCount || '0')
+    const likes = parseInt(video.statistics.likeCount || '0')
+    const channelInfo = channelMap.get(video.snippet.channelId) || { subscriberCount: 0, videoCount: 0 }
+    
+    // 성과도 계산 (조회수 기준)
+    let performance: 'Great' | 'Good' | 'Normal' = 'Normal'
+    if (views >= 10000000) performance = 'Great'
+    else if (views >= 1000000) performance = 'Good'
+    
+    // 기여도 계산 (조회수 대비 구독자 비율)
+    const contribution_ratio = channelInfo.subscriberCount > 0 ? views / channelInfo.subscriberCount : 0
+    let contribution: 'Great' | 'Good' | 'Normal' = 'Normal'
+    if (contribution_ratio >= 10) contribution = 'Great'
+    else if (contribution_ratio >= 5) contribution = 'Good'
+
+    return {
+      videoId: video.id,
+      title: video.snippet.title,
+      channel: video.snippet.channelTitle,
+      channelId: video.snippet.channelId,
+      thumbnailUrl: video.snippet.thumbnails?.high?.url || video.snippet.thumbnails?.medium?.url || '',
+      publishedAt: video.snippet.publishedAt,
+      views,
+      likes,
+      subscriberCount: channelInfo.subscriberCount,
+      videoCount: channelInfo.videoCount,
+      performance,
+      contribution
+    }
+  })
+
+  return results
+}

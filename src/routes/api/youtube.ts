@@ -391,4 +391,61 @@ app.get('/api/youtube/cache/stats', adminMiddleware, async (c) => {
   }
 })
 
+// ========================================
+// Phase 2: YouTube 검색 API
+// ========================================
+app.post('/api/youtube/search', async (c) => {
+  try {
+    const body = await c.req.json()
+    const { keyword, maxResults = 20 } = body
+
+    // 1. 입력 검증
+    if (!keyword || typeof keyword !== 'string') {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'INVALID_INPUT',
+          message: '검색 키워드를 입력해주세요.'
+        }
+      }, 400)
+    }
+
+    // 2. YouTube API 키 확인
+    const youtubeApiKey = c.env.YOUTUBE_API_KEY
+    if (!youtubeApiKey) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'API_KEY_MISSING',
+          message: 'YouTube API 키가 설정되지 않았습니다.'
+        }
+      }, 500)
+    }
+
+    // 3. 검색 실행
+    const { searchYouTubeVideos } = await import('../../services/youtube-api')
+    const results = await searchYouTubeVideos(keyword, youtubeApiKey, maxResults)
+
+    // 4. 결과 반환
+    return c.json({
+      success: true,
+      data: {
+        keyword,
+        totalResults: results.length,
+        videos: results
+      }
+    })
+
+  } catch (error: any) {
+    console.error('YouTube search error:', error)
+    return c.json<ApiResponse<null>>({
+      success: false,
+      error: {
+        code: 'SEARCH_ERROR',
+        message: error.message || '검색 중 오류가 발생했습니다.'
+      }
+    }, 500)
+  }
+})
+
 export default app
