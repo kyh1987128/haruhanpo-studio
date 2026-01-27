@@ -688,12 +688,77 @@ export function youtubeAnalyzerTemplate() {
 
       </div>
 
-      <!-- 탭 콘텐츠: 채널 분석 (준비중) -->
+      <!-- 탭 콘텐츠: 채널 분석 -->
       <div id="tab-channel-analysis" class="tab-content hidden">
-        <div class="text-center py-12">
-          <i class="fas fa-tv text-6xl text-gray-300 mb-4"></i>
-          <h2 class="text-2xl font-bold text-gray-700 mb-2">채널 분석</h2>
-          <p class="text-gray-500">Phase 2에서 구현 예정입니다</p>
+        <!-- 채널 검색 영역 -->
+        <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+          <h3 class="text-lg font-bold text-gray-800 mb-4">
+            <i class="fas fa-tv mr-2" style="color: #00B87D;"></i>
+            채널 분석
+          </h3>
+          <div class="flex gap-3">
+            <input 
+              type="text" 
+              id="channel-search-input"
+              placeholder="채널 URL 또는 채널 ID를 입력하세요 (예: @channelname, UCxxxxxx)"
+              class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+            <button 
+              id="channel-search-button"
+              class="px-8 py-3 text-white font-semibold rounded-lg transition"
+              style="background: #00B87D;"
+              onmouseover="this.style.background='#00a06f'" 
+              onmouseout="this.style.background='#00B87D'"
+            >
+              <i class="fas fa-search mr-2"></i>
+              분석 시작
+            </button>
+          </div>
+          <p class="text-sm text-gray-500 mt-2">
+            💡 예시: youtube.com/@channelname, youtube.com/channel/UCxxxxxx, 또는 UCxxxxxx
+          </p>
+        </div>
+
+        <!-- 로딩 상태 -->
+        <div id="channel-loading" class="hidden bg-white rounded-xl shadow-sm border p-8 mb-6">
+          <div class="flex flex-col items-center justify-center space-y-4">
+            <div class="loading-spinner"></div>
+            <div class="text-center">
+              <p class="text-lg font-semibold text-gray-900">채널 분석 중...</p>
+              <p class="text-sm text-gray-600 mt-1">채널 정보와 인기 영상을 불러오고 있습니다.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 채널 정보 카드 -->
+        <div id="channel-info-card" class="hidden bg-white rounded-xl shadow-sm border p-6 mb-6">
+          <!-- JavaScript로 동적 생성 -->
+        </div>
+
+        <!-- 인기 영상 TOP 10 -->
+        <div id="channel-top-videos" class="hidden bg-white rounded-xl shadow-sm border p-6">
+          <h3 class="text-lg font-bold text-gray-800 mb-4">
+            <i class="fas fa-fire mr-2 text-orange-500"></i>
+            인기 영상 TOP 10
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gray-50 border-b">
+                <tr>
+                  <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">순위</th>
+                  <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">썸네일</th>
+                  <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">제목</th>
+                  <th class="px-4 py-3 text-right text-sm font-semibold text-gray-600">조회수</th>
+                  <th class="px-4 py-3 text-right text-sm font-semibold text-gray-600">좋아요</th>
+                  <th class="px-4 py-3 text-center text-sm font-semibold text-gray-600">게시일</th>
+                  <th class="px-4 py-3 text-center text-sm font-semibold text-gray-600">액션</th>
+                </tr>
+              </thead>
+              <tbody id="channel-videos-body">
+                <!-- JavaScript로 동적 생성 -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

@@ -963,3 +963,225 @@ function formatNumber(num) {
   }
   return num.toLocaleString();
 }
+
+// ========================================
+// Phase 3: 채널 분석
+// ========================================
+
+// 채널 분석 실행
+async function handleChannelAnalysis() {
+  const channelInput = document.getElementById('channel-search-input');
+  const channelIdOrUrl = channelInput?.value.trim();
+
+  if (!channelIdOrUrl) {
+    alert('채널 URL 또는 ID를 입력해주세요.');
+    return;
+  }
+
+  console.log('📺 채널 분석 시작:', channelIdOrUrl);
+
+  // 로딩 표시
+  showChannelLoading(true);
+  hideChannelResults();
+
+  try {
+    // API 호출
+    const response = await fetch('/api/youtube/channel', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('postflow_token')}`
+      },
+      body: JSON.stringify({ channelIdOrUrl })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error?.message || '채널 분석 실패');
+    }
+
+    console.log('✅ 채널 분석 완료:', result.data);
+
+    // 결과 표시
+    displayChannelInfo(result.data.channel);
+    displayTopVideos(result.data.topVideos);
+
+  } catch (error) {
+    console.error('❌ 채널 분석 오류:', error);
+    alert(`채널 분석 중 오류가 발생했습니다: ${error.message}`);
+  } finally {
+    showChannelLoading(false);
+  }
+}
+
+// 로딩 표시
+function showChannelLoading(show) {
+  const loading = document.getElementById('channel-loading');
+  if (!loading) return;
+  
+  if (show) {
+    loading.classList.remove('hidden');
+  } else {
+    loading.classList.add('hidden');
+  }
+}
+
+// 결과 숨기기
+function hideChannelResults() {
+  document.getElementById('channel-info-card')?.classList.add('hidden');
+  document.getElementById('channel-top-videos')?.classList.add('hidden');
+}
+
+// 채널 정보 표시
+function displayChannelInfo(channel) {
+  const card = document.getElementById('channel-info-card');
+  if (!card) return;
+
+  const createdDate = new Date(channel.publishedAt).toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  const averageViews = channel.videoCount > 0 
+    ? Math.floor(channel.viewCount / channel.videoCount) 
+    : 0;
+
+  card.innerHTML = `
+    <div class="flex gap-6">
+      <!-- 채널 썸네일 -->
+      <div class="flex-shrink-0">
+        <img 
+          src="${channel.thumbnailUrl}" 
+          alt="${channel.channelTitle}"
+          class="w-32 h-32 rounded-full border-4 border-green-100"
+        />
+      </div>
+
+      <!-- 채널 정보 -->
+      <div class="flex-1">
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">
+          ${channel.channelTitle}
+          ${channel.customUrl ? `<span class="text-sm font-normal text-gray-500 ml-2">${channel.customUrl}</span>` : ''}
+        </h2>
+        
+        <p class="text-gray-600 mb-4 line-clamp-2">${channel.description || '채널 설명이 없습니다.'}</p>
+
+        <!-- 통계 -->
+        <div class="grid grid-cols-4 gap-4">
+          <div class="bg-green-50 rounded-lg p-4 border border-green-100">
+            <div class="text-green-600 text-sm mb-1">구독자</div>
+            <div class="text-2xl font-bold text-gray-900">${formatNumber(channel.subscriberCount)}</div>
+          </div>
+          <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
+            <div class="text-blue-600 text-sm mb-1">총 영상</div>
+            <div class="text-2xl font-bold text-gray-900">${formatNumber(channel.videoCount)}개</div>
+          </div>
+          <div class="bg-purple-50 rounded-lg p-4 border border-purple-100">
+            <div class="text-purple-600 text-sm mb-1">총 조회수</div>
+            <div class="text-2xl font-bold text-gray-900">${formatNumber(channel.viewCount)}</div>
+          </div>
+          <div class="bg-orange-50 rounded-lg p-4 border border-orange-100">
+            <div class="text-orange-600 text-sm mb-1">평균 조회수</div>
+            <div class="text-2xl font-bold text-gray-900">${formatNumber(averageViews)}</div>
+          </div>
+        </div>
+
+        <div class="mt-4 flex gap-3">
+          <a 
+            href="https://www.youtube.com/channel/${channel.channelId}" 
+            target="_blank"
+            class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition flex items-center gap-2"
+          >
+            <i class="fab fa-youtube"></i>
+            채널 방문
+          </a>
+          <div class="text-sm text-gray-500 flex items-center">
+            <i class="fas fa-calendar-alt mr-2"></i>
+            개설일: ${createdDate}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  card.classList.remove('hidden');
+}
+
+// 인기 영상 TOP 10 표시
+function displayTopVideos(videos) {
+  const container = document.getElementById('channel-top-videos');
+  const tbody = document.getElementById('channel-videos-body');
+  
+  if (!container || !tbody) return;
+
+  tbody.innerHTML = videos.map((video, index) => {
+    const publishDate = new Date(video.publishedAt).toLocaleDateString('ko-KR', {
+      year: '2-digit',
+      month: '2-digit',
+      day: '2-digit'
+    }).replace(/\. /g, '.').replace(/\.$/, '');
+
+    return `
+      <tr class="border-b hover:bg-gray-50 transition">
+        <td class="px-4 py-3 text-center font-bold text-lg" style="color: ${index < 3 ? '#00B87D' : '#6b7280'}">
+          ${index + 1}
+        </td>
+        <td class="px-4 py-3">
+          <img 
+            src="${video.thumbnailUrl}" 
+            alt="썸네일"
+            class="w-24 h-14 object-cover rounded cursor-pointer hover:opacity-80 transition"
+            onclick="window.open('https://www.youtube.com/watch?v=${video.videoId}', '_blank')"
+          />
+        </td>
+        <td class="px-4 py-3">
+          <a 
+            href="https://www.youtube.com/watch?v=${video.videoId}" 
+            target="_blank"
+            class="font-medium text-gray-900 hover:text-green-600 line-clamp-2 transition"
+          >
+            ${escapeHtml(video.title)}
+          </a>
+        </td>
+        <td class="px-4 py-3 text-right font-semibold text-gray-900">${formatNumber(video.views)}</td>
+        <td class="px-4 py-3 text-right text-gray-700">${formatNumber(video.likes)}</td>
+        <td class="px-4 py-3 text-center text-gray-700">${publishDate}</td>
+        <td class="px-4 py-3 text-center">
+          <a 
+            href="https://www.youtube.com/watch?v=${video.videoId}" 
+            target="_blank"
+            class="inline-flex items-center gap-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition"
+            style="background: #00B87D;"
+            onmouseover="this.style.background='#00a06f'" 
+            onmouseout="this.style.background='#00B87D'"
+          >
+            <i class="fab fa-youtube"></i>
+            보기
+          </a>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  container.classList.remove('hidden');
+}
+
+// DOMContentLoaded에 채널 검색 버튼 이벤트 추가
+document.addEventListener('DOMContentLoaded', () => {
+  const channelSearchBtn = document.getElementById('channel-search-button');
+  if (channelSearchBtn) {
+    channelSearchBtn.addEventListener('click', handleChannelAnalysis);
+  }
+
+  // Enter 키로 채널 검색
+  const channelInput = document.getElementById('channel-search-input');
+  if (channelInput) {
+    channelInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        handleChannelAnalysis();
+      }
+    });
+  }
+});

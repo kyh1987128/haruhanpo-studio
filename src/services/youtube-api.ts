@@ -250,3 +250,125 @@ export async function searchYouTubeVideos(
     totalResults: searchData.pageInfo?.totalResults || results.length
   }
 }
+
+// ========================================
+// Phase 3: 채널 분석
+// ========================================
+
+export interface ChannelInfo {
+  channelId: string
+  channelTitle: string
+  description: string
+  subscriberCount: number
+  videoCount: number
+  viewCount: number
+  thumbnailUrl: string
+  publishedAt: string
+  customUrl?: string
+}
+
+export interface ChannelTopVideo {
+  videoId: string
+  title: string
+  thumbnailUrl: string
+  views: number
+  likes: number
+  publishedAt: string
+}
+
+export async function getChannelInfo(
+  channelIdOrUrl: string,
+  apiKey: string
+): Promise<{ channel: ChannelInfo, topVideos: ChannelTopVideo[] }> {
+  // 1. 채널 ID 추출
+  let channelId = channelIdOrUrl
+
+  // URL에서 채널 ID 추출
+  if (channelIdOrUrl.includes('youtube.com')) {
+    // youtube.com/@channelname 또는 youtube.com/channel/UCxxxxxx
+    if (channelIdOrUrl.includes('/@')) {
+      const username = channelIdOrUrl.split('/@')[1].split('/')[0].split('?')[0]
+      // username으로 채널 검색
+      const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(username)}&key=${apiKey}&maxResults=1`
+      const searchResponse = await fetch(searchUrl)
+      if (!searchResponse.ok) {
+        throw new YouTubeAPIError('채널을 찾을 수 없습니다.', searchResponse.status)
+      }
+      const searchData = await searchResponse.json()
+      if (!searchData.items || searchData.items.length === 0) {
+        throw new YouTubeAPIError('채널을 찾을 수 없습니다.', 404)
+      }
+      channelId = searchData.items[0].id.channelId
+    } else if (channelIdOrUrl.includes('/channel/')) {
+      channelId = channelIdOrUrl.split('/channel/')[1].split('/')[0].split('?')[0]
+    }
+  }
+
+  // 2. 채널 정보 조회
+  const channelUrl = `https://www.googleapis.com/youtube/v3/channels?id=${channelId}&key=${apiKey}&part=snippet,statistics`
+  const channelResponse = await fetch(channelUrl)
+
+  if (!channelResponse.ok) {
+    if (channelResponse.status === 403) {
+      throw new YouTubeAPIError('YouTube API 키가 유효하지 않습니다.', 403)
+    }
+    if (channelResponse.status === 404) {
+      throw new YouTubeAPIError('채널을 찾을 수 없습니다.', 404)
+    }
+    throw new YouTubeAPIError(`채널 정보 조회 실패: ${channelResponse.statusText}`, channelResponse.status)
+  }
+
+  const channelData = await channelResponse.json()
+
+  if (!channelData.items || channelData.items.length === 0) {
+    throw new YouTubeAPIError('채널을 찾을 수 없습니다.', 404)
+  }
+
+  const channel = channelData.items[0]
+  const channelInfo: ChannelInfo = {
+    channelId: channel.id,
+    channelTitle: channel.snippet.title,
+    description: channel.snippet.description,
+    subscriberCount: parseInt(channel.statistics.subscriberCount || '0'),
+    videoCount: parseInt(channel.statistics.videoCount || '0'),
+    viewCount: parseInt(channel.statistics.viewCount || '0'),
+    thumbnailUrl: channel.snippet.thumbnails?.high?.url || channel.snippet.thumbnails?.medium?.url || '',
+    publishedAt: channel.snippet.publishedAt,
+    customUrl: channel.snippet.customUrl
+  }
+
+  // 3. 채널의 인기 영상 TOP 10 조회
+  const videosUrl = `https://www.googleapis.com/youtube/v3/search?channelId=${channelId}&key=${apiKey}&part=snippet&type=video&order=viewCount&maxResults=10`
+  const videosResponse = await fetch(videosUrl)
+
+  if (!videosResponse.ok) {
+    throw new YouTubeAPIError('인기 영상 조회 실패', videosResponse.status)
+  }
+
+  const videosData = await videosResponse.json()
+  const videoIds = videosData.items.map((item: any) => item.id.videoId).join(',')
+
+  // 4. 영상 상세 정보 조회 (조회수, 좋아요)
+  const videoDetailsUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoIds}&key=${apiKey}&part=snippet,statistics`
+  const videoDetailsResponse = await fetch(videoDetailsUrl)
+
+  if (!videoDetailsResponse.ok) {
+    throw new YouTubeAPIError('영상 상세 정보 조회 실패', videoDetailsResponse.status)
+  }
+
+  const videoDetailsData = await videoDetailsResponse.json()
+
+  const topVideos: ChannelTopVideo[] = videoDetailsData.items.map((video: any) => ({
+    videoId: video.id,
+    title: video.snippet.title,
+    thumbnailUrl: video.snippet.thumbnails?.medium?.url || '',
+    views: parseInt(video.statistics.viewCount || '0'),
+    likes: parseInt(video.statistics.likeCount || '0'),
+    publishedAt: video.snippet.publishedAt
+  }))
+
+  return {
+    channel: channelInfo,
+    topVideos
+  }
+}

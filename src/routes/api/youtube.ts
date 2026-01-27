@@ -450,4 +450,58 @@ app.post('/api/youtube/search', async (c) => {
   }
 })
 
+// ========================================
+// Phase 3: 채널 분석 API
+// ========================================
+
+app.post('/api/youtube/channel', async (c) => {
+  try {
+    const body = await c.req.json()
+    const { channelIdOrUrl } = body
+
+    // 1. 입력 검증
+    if (!channelIdOrUrl || typeof channelIdOrUrl !== 'string') {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'INVALID_INPUT',
+          message: '채널 URL 또는 ID를 입력해주세요.'
+        }
+      }, 400)
+    }
+
+    // 2. YouTube API 키 확인
+    const youtubeApiKey = c.env.YOUTUBE_API_KEY
+    if (!youtubeApiKey) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'API_KEY_MISSING',
+          message: 'YouTube API 키가 설정되지 않았습니다.'
+        }
+      }, 500)
+    }
+
+    // 3. 채널 분석 실행
+    const { getChannelInfo } = await import('../../services/youtube-api')
+    const result = await getChannelInfo(channelIdOrUrl, youtubeApiKey)
+
+    // 4. 결과 반환
+    return c.json({
+      success: true,
+      data: result
+    })
+
+  } catch (error: any) {
+    console.error('YouTube channel error:', error)
+    return c.json<ApiResponse<null>>({
+      success: false,
+      error: {
+        code: error.statusCode === 404 ? 'CHANNEL_NOT_FOUND' : 'CHANNEL_ERROR',
+        message: error.message || '채널 분석 중 오류가 발생했습니다.'
+      }
+    }, error.statusCode || 500)
+  }
+})
+
 export default app
