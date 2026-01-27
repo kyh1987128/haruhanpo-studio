@@ -190,7 +190,10 @@ export function youtubeAnalyzerTemplate() {
     </div>
   </div>
 
-  <script src="https://gmjbsndricdogtqsovnb.supabase.co/storage/v1/object/public/public/supabase.js"></script>
+  <!-- 공통 인증 및 크레딧 시스템 (Supabase 초기화 포함) -->
+  <script src="/static/app-v3-final.js?v=24.0.7"></script>
+  
+  <!-- YouTube 분석기 (app-v3-final.js 의존) -->
   <script src="/static/youtube-analyzer.js"></script>
 </body>
 </html>

@@ -1,24 +1,27 @@
 // YouTube 분석기 프론트엔드 JavaScript
+// app-v3-final.js에서 window.supabaseClient, window.currentUser 사용
 
-// Supabase 클라이언트는 app-v3-final.js에서 초기화됨
-// window.supabaseClient 사용
 let selectedAnalysisType = 'video-stats'; // 기본값
-let currentUser = null;
 let authToken = null;
 
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', async () => {
-  // Supabase 클라이언트가 로드될 때까지 대기
-  await waitForSupabase();
+  console.log('🎬 [YouTube 분석기] 페이지 로드');
+  
+  // app-v3-final.js의 초기화 대기
+  await waitForAppReady();
+  
+  // 인증 확인
   await checkAuth();
-  await loadUserCredits();
+  
+  // 히스토리 로드
   await loadHistory();
 });
 
-// Supabase 클라이언트 대기
-async function waitForSupabase() {
+// app-v3-final.js 초기화 대기
+async function waitForAppReady() {
   let attempts = 0;
-  while (!window.supabaseClient && attempts < 50) {
+  while ((!window.supabaseClient || !window.currentUser) && attempts < 100) {
     await new Promise(resolve => setTimeout(resolve, 100));
     attempts++;
   }
@@ -26,11 +29,21 @@ async function waitForSupabase() {
   if (!window.supabaseClient) {
     console.error('❌ Supabase 클라이언트를 로드할 수 없습니다.');
     alert('페이지 로딩 중 오류가 발생했습니다. 새로고침 해주세요.');
+    return;
   }
+  
+  console.log('✅ [YouTube 분석기] app-v3-final.js 초기화 완료');
 }
 
-// 인증 확인
+// 인증 확인 (app-v3-final.js에서 이미 처리됨)
 async function checkAuth() {
+  if (!window.currentUser || !window.currentUser.isLoggedIn) {
+    console.warn('⚠️ [YouTube 분석기] 로그인 필요');
+    alert('로그인이 필요합니다.');
+    window.location.href = '/';
+    return;
+  }
+  
   const { data: { session }, error } = await window.supabaseClient.auth.getSession();
   
   if (error || !session) {
@@ -39,36 +52,8 @@ async function checkAuth() {
     return;
   }
   
-  currentUser = session.user;
   authToken = session.access_token;
-  
-  console.log('✅ 인증 성공:', currentUser.email);
-  
-  // window.currentUser 설정 (헤더와 동기화)
-  if (!window.currentUser) {
-    window.currentUser = currentUser;
-  }
-}
-
-// 사용자 크레딧 로드
-async function loadUserCredits() {
-  if (!currentUser) return;
-  
-  const { data, error } = await window.supabaseClient
-    .from('users')
-    .select('free_credits, paid_credits')
-    .eq('id', currentUser.id)
-    .single();
-  
-  if (data) {
-    const totalCredits = (data.free_credits || 0) + (data.paid_credits || 0);
-    
-    // 헤더의 크레딧도 업데이트 (window.currentUser에 반영)
-    if (window.currentUser) {
-      window.currentUser.free_credits = data.free_credits || 0;
-      window.currentUser.paid_credits = data.paid_credits || 0;
-    }
-  }
+  console.log('✅ [YouTube 분석기] 인증 확인:', window.currentUser.email);
 }
 
 // 분석 타입 선택

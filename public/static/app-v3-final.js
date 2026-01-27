@@ -6493,7 +6493,8 @@ function initializeAuth() {
     window.currentUser.isGuest = false;
     window.currentUser.isLoggedIn = true;
     
-    // 🔥 메인 페이지에서 로그인된 상태면 자동으로 /dashboard로 이동
+    // 🔥 메인 페이지에서만 로그인된 상태면 자동으로 /dashboard로 이동
+    // (다른 페이지는 그대로 유지 - YouTube Finder, PostFlow 등)
     if (window.location.pathname === '/' && !sessionStorage.getItem('landing_page_visited')) {
       console.log('🔄 [메인 페이지] 로그인 상태 감지 - /dashboard로 자동 이동');
       sessionStorage.setItem('landing_page_visited', 'true');
@@ -10113,13 +10114,14 @@ async function handleEmailLogin() {
     
     showToast('로그인 성공!', 'success');
     
-    // 랜딩 페이지에서 로그인한 경우 PostFlow로 이동
+    // 페이지별 리다이렉트 처리
     if (window.location.pathname === '/') {
+      // 랜딩 페이지 → 대시보드로 이동
       setTimeout(() => {
-        window.location.href = '/postflow';
+        window.location.href = '/dashboard';
       }, 500);
     } else {
-      // PostFlow 페이지에서 로그인한 경우 새로고침
+      // 다른 페이지(PostFlow, YouTube Finder 등) → 새로고침
       setTimeout(() => {
         window.location.reload();
       }, 500);
