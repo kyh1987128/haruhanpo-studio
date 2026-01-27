@@ -7,6 +7,9 @@ console.log('🚀 [YouTube Finder] 스크립트 로드');
 // 전역 상태
 let selectedVideos = new Set();
 let currentSearchResults = [];
+let allSearchResults = []; // 필터링 전 전체 결과
+let currentSortField = null;
+let currentSortOrder = 'desc'; // 'asc' or 'desc'
 
 // ========================================
 // 1. 검색 기능
@@ -45,14 +48,12 @@ async function handleSearch() {
 
     console.log('✅ 검색 완료:', result.data.totalResults, '개');
 
-    // 결과 저장
-    currentSearchResults = result.data.videos;
+    // 결과 저장 (필터링/정렬용)
+    allSearchResults = result.data.videos;
+    currentSearchResults = [...allSearchResults];
 
-    // 테이블 업데이트
-    updateVideoTable(currentSearchResults);
-
-    // 요약 업데이트
-    updateResultsSummary(currentSearchResults.length, 0);
+    // 필터 적용
+    applyFilters();
 
   } catch (error) {
     console.error('❌ 검색 오류:', error);
@@ -61,6 +62,159 @@ async function handleSearch() {
     updateVideoTable([]);
   } finally {
     showLoading(false);
+  }
+}
+
+// ========================================
+// 1.5. 필터링 로직 (Phase 2 Week 3)
+// ========================================
+
+function applyFilters() {
+  console.log('🔍 필터 적용 시작');
+  
+  // 1. 필터 값 가져오기
+  const viewsFilter = document.querySelector('select[class*="filter-select-inline"]')?.value || 'all';
+  const periodFilter = document.querySelectorAll('select[class*="filter-select-inline"]')[1]?.value || 'all';
+  const gradeGreat = document.querySelectorAll('input[type="checkbox"]')[1]?.checked ?? true;
+  const gradeGood = document.querySelectorAll('input[type="checkbox"]')[2]?.checked ?? true;
+  const gradeNormal = document.querySelectorAll('input[type="checkbox"]')[3]?.checked ?? true;
+
+  // 2. 필터링 시작
+  let filtered = [...allSearchResults];
+
+  // 3. 조회수 필터
+  if (viewsFilter && viewsFilter !== '조회수: 전체') {
+    if (viewsFilter.includes('1만 ~ 10만')) {
+      filtered = filtered.filter(v => v.views >= 10000 && v.views < 100000);
+    } else if (viewsFilter.includes('10만 ~ 100만')) {
+      filtered = filtered.filter(v => v.views >= 100000 && v.views < 1000000);
+    } else if (viewsFilter.includes('100만 ~ 1000만')) {
+      filtered = filtered.filter(v => v.views >= 1000000 && v.views < 10000000);
+    } else if (viewsFilter.includes('1000만 이상')) {
+      filtered = filtered.filter(v => v.views >= 10000000);
+    }
+  }
+
+  // 4. 기간 필터
+  if (periodFilter && periodFilter !== '기간: 전체') {
+    const now = new Date();
+    const filterDate = new Date();
+    
+    if (periodFilter.includes('이번 주')) {
+      filterDate.setDate(now.getDate() - 7);
+    } else if (periodFilter.includes('이번 달')) {
+      filterDate.setMonth(now.getMonth() - 1);
+    } else if (periodFilter.includes('3개월')) {
+      filterDate.setMonth(now.getMonth() - 3);
+    } else if (periodFilter.includes('1년')) {
+      filterDate.setFullYear(now.getFullYear() - 1);
+    }
+    
+    if (periodFilter !== '기간: 전체') {
+      filtered = filtered.filter(v => new Date(v.publishedAt) >= filterDate);
+    }
+  }
+
+  // 5. 성과도 필터
+  const allowedGrades = [];
+  if (gradeGreat) allowedGrades.push('Great');
+  if (gradeGood) allowedGrades.push('Good');
+  if (gradeNormal) allowedGrades.push('Normal');
+  
+  if (allowedGrades.length > 0) {
+    filtered = filtered.filter(v => allowedGrades.includes(v.performance));
+  }
+
+  console.log(`✅ 필터 완료: ${allSearchResults.length}개 → ${filtered.length}개`);
+
+  // 6. 정렬 적용
+  if (currentSortField) {
+    filtered = sortVideos(filtered, currentSortField, currentSortOrder);
+  }
+
+  // 7. 결과 업데이트
+  currentSearchResults = filtered;
+  updateVideoTable(currentSearchResults);
+  updateResultsSummary(currentSearchResults.length, 0);
+  
+  // 선택 초기화
+  selectedVideos.clear();
+}
+
+// ========================================
+// 1.6. 정렬 로직 (Phase 2 Week 3)
+// ========================================
+
+function sortVideos(videos, field, order) {
+  const sorted = [...videos];
+  
+  sorted.sort((a, b) => {
+    let aVal, bVal;
+    
+    if (field === 'views') {
+      aVal = a.views;
+      bVal = b.views;
+    } else if (field === 'subscribers') {
+      aVal = a.subscriberCount;
+      bVal = b.subscriberCount;
+    } else if (field === 'date') {
+      aVal = new Date(a.publishedAt).getTime();
+      bVal = new Date(b.publishedAt).getTime();
+    } else if (field === 'title') {
+      aVal = a.title.toLowerCase();
+      bVal = b.title.toLowerCase();
+      return order === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+    }
+    
+    return order === 'asc' ? aVal - bVal : bVal - aVal;
+  });
+  
+  return sorted;
+}
+
+function handleSort(field) {
+  console.log('📊 정렬:', field);
+  
+  // 같은 필드 클릭 시 순서 반전
+  if (currentSortField === field) {
+    currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSortField = field;
+    currentSortOrder = 'desc'; // 기본 내림차순
+  }
+  
+  // 정렬 아이콘 업데이트
+  updateSortIcons();
+  
+  // 필터 재적용 (정렬 포함)
+  applyFilters();
+}
+
+function updateSortIcons() {
+  // 모든 정렬 아이콘 초기화
+  document.querySelectorAll('.col-title, .col-views, .col-date').forEach(header => {
+    const icon = header.querySelector('i');
+    if (icon) {
+      icon.className = 'fas fa-sort text-xs text-gray-400';
+    }
+  });
+  
+  // 현재 정렬 필드 아이콘 업데이트
+  if (currentSortField) {
+    const headerMap = {
+      'title': '.col-title',
+      'views': '.col-views',
+      'date': '.col-date'
+    };
+    
+    const header = document.querySelector(headerMap[currentSortField]);
+    const icon = header?.querySelector('i');
+    
+    if (icon) {
+      icon.className = currentSortOrder === 'asc' 
+        ? 'fas fa-sort-up text-xs text-green-600'
+        : 'fas fa-sort-down text-xs text-green-600';
+    }
   }
 }
 
@@ -133,6 +287,9 @@ function updateVideoTable(videos) {
 
   // 체크박스 이벤트 리스너 추가
   attachCheckboxListeners();
+  
+  // 정렬 헤더 이벤트 리스너 추가
+  attachSortListeners();
 }
 
 // ========================================
@@ -170,6 +327,19 @@ function attachCheckboxListeners() {
       updateResultsSummary(currentSearchResults.length, selectedVideos.size);
     });
   }
+}
+
+function attachSortListeners() {
+  // 제목 정렬
+  document.querySelector('.col-title')?.addEventListener('click', () => handleSort('title'));
+  
+  // 조회수 정렬
+  document.querySelector('.col-views')?.addEventListener('click', () => handleSort('views'));
+  
+  // 게시일 정렬
+  document.querySelector('.col-date')?.addEventListener('click', () => handleSort('date'));
+  
+  console.log('✅ 정렬 헤더 이벤트 리스너 등록');
 }
 
 // ========================================
@@ -227,10 +397,10 @@ function handleClearSelection() {
 }
 
 // ========================================
-// 7. AI 분석 시작 버튼
+// 7. AI 분석 시작 버튼 (Phase 2 Week 3 연동)
 // ========================================
 
-function handleAnalyzeSelected() {
+async function handleAnalyzeSelected() {
   if (selectedVideos.size === 0) {
     alert('분석할 영상을 선택해주세요.');
     return;
@@ -239,8 +409,172 @@ function handleAnalyzeSelected() {
   const videoIds = Array.from(selectedVideos);
   console.log('🚀 AI 분석 시작:', videoIds);
 
-  // Phase 3에서 구현 예정
-  alert(`선택한 ${videoIds.length}개 영상의 AI 분석 기능은 Phase 3에서 구현됩니다.`);
+  // 확인 메시지
+  const confirm = window.confirm(
+    `선택한 ${videoIds.length}개 영상을 AI 분석하시겠습니까?\n` +
+    `소모 크레딧: ${videoIds.length * 10} 크레딧`
+  );
+
+  if (!confirm) {
+    return;
+  }
+
+  // 로딩 상태 표시
+  showLoading(true);
+  
+  const analyzeSelectedBtn = document.getElementById('analyze-selected-btn');
+  if (analyzeSelectedBtn) {
+    analyzeSelectedBtn.disabled = true;
+    analyzeSelectedBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>분석 중...</span>';
+  }
+
+  try {
+    // 각 영상별로 순차 분석
+    const results = [];
+    
+    for (let i = 0; i < videoIds.length; i++) {
+      const videoId = videoIds[i];
+      const video = currentSearchResults.find(v => v.videoId === videoId);
+      
+      if (!video) continue;
+
+      console.log(`📊 [${i + 1}/${videoIds.length}] 분석 중: ${video.title}`);
+
+      // YouTube URL 생성
+      const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+      // API 호출 (기존 /api/youtube/analyze 활용)
+      const response = await fetch('/api/youtube/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('postflow_token')}`
+        },
+        body: JSON.stringify({
+          videoUrl,
+          analysisType: 'video-stats' // 기본 분석 타입
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        results.push({
+          videoId,
+          title: video.title,
+          success: true,
+          data: result.data
+        });
+        console.log(`✅ [${i + 1}/${videoIds.length}] 분석 완료`);
+      } else {
+        results.push({
+          videoId,
+          title: video.title,
+          success: false,
+          error: result.error?.message || '분석 실패'
+        });
+        console.error(`❌ [${i + 1}/${videoIds.length}] 분석 실패:`, result.error);
+      }
+
+      // 다음 요청 전 0.5초 대기 (API 부하 방지)
+      if (i < videoIds.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+
+    // 결과 표시
+    showAnalysisResults(results);
+
+  } catch (error) {
+    console.error('❌ AI 분석 오류:', error);
+    alert(`분석 중 오류가 발생했습니다: ${error.message}`);
+  } finally {
+    showLoading(false);
+    
+    if (analyzeSelectedBtn) {
+      analyzeSelectedBtn.disabled = false;
+      analyzeSelectedBtn.innerHTML = '<i class="fas fa-bolt"></i> <span>선택한 영상 AI 분석 시작 (10 크레딧)</span>';
+    }
+  }
+}
+
+function showAnalysisResults(results) {
+  const resultSection = document.getElementById('result-section');
+  
+  if (!resultSection) {
+    console.error('❌ result-section 요소를 찾을 수 없습니다');
+    return;
+  }
+
+  const successCount = results.filter(r => r.success).length;
+  const failCount = results.filter(r => !r.success).length;
+
+  resultSection.innerHTML = `
+    <div class="p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold text-gray-900">
+          <i class="fas fa-check-circle text-green-600 mr-2"></i>
+          AI 분석 완료
+        </h2>
+        <button onclick="document.getElementById('result-section').classList.add('hidden')" class="text-gray-500 hover:text-gray-700">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+
+      <div class="mb-6 flex gap-4">
+        <div class="bg-green-50 border border-green-200 rounded-lg px-4 py-2">
+          <span class="text-green-700 font-semibold">성공: ${successCount}개</span>
+        </div>
+        <div class="bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+          <span class="text-red-700 font-semibold">실패: ${failCount}개</span>
+        </div>
+      </div>
+
+      <div class="space-y-4 max-h-96 overflow-y-auto">
+        ${results.map(result => {
+          if (result.success) {
+            const data = result.data;
+            return `
+              <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                <div class="flex items-start gap-4">
+                  <i class="fas fa-check-circle text-2xl text-green-600 mt-1"></i>
+                  <div class="flex-1">
+                    <h3 class="font-semibold text-gray-900 mb-2">${escapeHtml(result.title)}</h3>
+                    <div class="text-sm text-gray-600 space-y-1">
+                      <p><strong>조회수:</strong> ${formatNumber(data.videoInfo.views)}</p>
+                      <p><strong>좋아요:</strong> ${formatNumber(data.videoInfo.likes)}</p>
+                      <p><strong>댓글:</strong> ${formatNumber(data.videoInfo.comments)}</p>
+                      ${data.wasCached ? '<span class="text-green-600">💾 캐시 히트 (0 크레딧)</span>' : '<span class="text-blue-600">⚡ 새 분석 (10 크레딧)</span>'}
+                    </div>
+                    <div class="mt-3 p-3 bg-gray-50 rounded text-sm text-gray-700">
+                      ${data.aiSummary.substring(0, 200)}...
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          } else {
+            return `
+              <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div class="flex items-start gap-4">
+                  <i class="fas fa-times-circle text-2xl text-red-600 mt-1"></i>
+                  <div class="flex-1">
+                    <h3 class="font-semibold text-gray-900 mb-2">${escapeHtml(result.title)}</h3>
+                    <p class="text-sm text-red-600">${result.error}</p>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+        }).join('')}
+      </div>
+    </div>
+  `;
+
+  resultSection.classList.remove('hidden');
+  
+  // 결과 영역으로 스크롤
+  resultSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 // ========================================
@@ -278,6 +612,44 @@ document.addEventListener('DOMContentLoaded', () => {
   if (analyzeSelectedBtn) {
     analyzeSelectedBtn.addEventListener('click', handleAnalyzeSelected);
   }
+
+  // 필터 변경 이벤트 (Phase 2 Week 3)
+  document.querySelectorAll('select[class*="filter-select-inline"]').forEach(select => {
+    select.addEventListener('change', () => {
+      console.log('🔍 필터 변경:', select.value);
+      applyFilters();
+    });
+  });
+
+  // 성과도 체크박스 이벤트
+  document.querySelectorAll('input[type="checkbox"]').forEach((checkbox, index) => {
+    if (index >= 1 && index <= 3) { // Great, Good, Normal
+      checkbox.addEventListener('change', () => {
+        console.log('🔍 성과도 필터 변경');
+        applyFilters();
+      });
+    }
+  });
+
+  // 필터 초기화 버튼
+  document.querySelector('.filter-bar button')?.addEventListener('click', () => {
+    console.log('🔄 필터 초기화');
+    
+    // 드롭다운 초기화
+    document.querySelectorAll('select[class*="filter-select-inline"]').forEach(select => {
+      select.selectedIndex = 0;
+    });
+    
+    // 체크박스 초기화
+    document.querySelectorAll('input[type="checkbox"]').forEach((checkbox, index) => {
+      if (index >= 1 && index <= 3) {
+        checkbox.checked = true;
+      }
+    });
+    
+    // 필터 재적용
+    applyFilters();
+  });
 
   console.log('✅ [YouTube Finder] 모든 이벤트 리스너 등록 완료');
 });
