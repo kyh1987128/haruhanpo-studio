@@ -145,10 +145,16 @@ export interface YouTubeSearchResponse {
 export async function searchYouTubeVideos(
   keyword: string,
   apiKey: string,
-  maxResults: number = 10
-): Promise<YouTubeSearchResult[]> {
+  maxResults: number = 10,
+  pageToken?: string
+): Promise<{ videos: YouTubeSearchResult[], nextPageToken?: string, totalResults?: number }> {
   // 1. 검색 API 호출
-  const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(keyword)}&key=${apiKey}&maxResults=${Math.min(maxResults, 50)}&order=viewCount`
+  let searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(keyword)}&key=${apiKey}&maxResults=${Math.min(maxResults, 50)}&order=viewCount`
+  
+  // pageToken이 있으면 추가
+  if (pageToken) {
+    searchUrl += `&pageToken=${pageToken}`
+  }
   
   const searchResponse = await fetch(searchUrl)
   
@@ -165,7 +171,11 @@ export async function searchYouTubeVideos(
   const searchData: YouTubeSearchResponse = await searchResponse.json()
   
   if (!searchData.items || searchData.items.length === 0) {
-    return []
+    return { 
+      videos: [], 
+      nextPageToken: undefined,
+      totalResults: 0
+    }
   }
 
   // 2. 비디오 ID 목록 추출
@@ -234,5 +244,9 @@ export async function searchYouTubeVideos(
     }
   })
 
-  return results
+  return {
+    videos: results,
+    nextPageToken: searchData.nextPageToken,
+    totalResults: searchData.pageInfo?.totalResults || results.length
+  }
 }

@@ -664,6 +664,11 @@ export function youtubeAnalyzerTemplate() {
           </button>
         </div>
 
+        <!-- 더 보기 버튼 (Phase 3: 페이지네이션) -->
+        <div id="load-more-container" class="mt-6 flex justify-center">
+          <!-- JavaScript로 동적 생성 -->
+        </div>
+
         <!-- 로딩 상태 -->
         <div id="loading-section" class="hidden bg-white rounded-xl shadow-sm border p-8 mt-6">
           <div class="flex flex-col items-center justify-center space-y-4">

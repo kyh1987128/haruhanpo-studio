@@ -11,6 +11,12 @@ let allSearchResults = []; // 필터링 전 전체 결과
 let currentSortField = null;
 let currentSortOrder = 'desc'; // 'asc' or 'desc'
 
+// 페이지네이션 상태
+let currentKeyword = '';
+let nextPageToken = null;
+let isLoadingMore = false;
+let hasMoreResults = false;
+
 // ========================================
 // 1. 검색 기능
 // ========================================
@@ -25,6 +31,13 @@ async function handleSearch() {
   }
 
   console.log('🔍 검색 시작:', keyword);
+
+  // 새 검색 시 상태 초기화
+  currentKeyword = keyword;
+  nextPageToken = null;
+  selectedVideos.clear();
+  allSearchResults = [];
+  currentSearchResults = [];
 
   // 로딩 상태
   showLoading(true);
@@ -48,12 +61,19 @@ async function handleSearch() {
 
     console.log('✅ 검색 완료:', result.data.totalResults, '개');
 
+    // 페이지네이션 정보 저장
+    nextPageToken = result.data.nextPageToken;
+    hasMoreResults = result.data.hasMore;
+
     // 결과 저장 (필터링/정렬용)
     allSearchResults = result.data.videos;
     currentSearchResults = [...allSearchResults];
 
     // 필터 적용
     applyFilters();
+
+    // "더 보기" 버튼 표시
+    updateLoadMoreButton();
 
   } catch (error) {
     console.error('❌ 검색 오류:', error);
@@ -653,3 +673,98 @@ document.addEventListener('DOMContentLoaded', () => {
 
   console.log('✅ [YouTube Finder] 모든 이벤트 리스너 등록 완료');
 });
+
+// ========================================
+// Phase 3: 페이지네이션 (무한 스크롤)
+// ========================================
+
+// 더 보기 버튼 업데이트
+function updateLoadMoreButton() {
+  const loadMoreContainer = document.getElementById('load-more-container');
+  if (!loadMoreContainer) return;
+
+  if (hasMoreResults && nextPageToken) {
+    loadMoreContainer.innerHTML = `
+      <button 
+        id="load-more-btn" 
+        class="load-more-btn"
+        style="padding: 12px 24px; background: #00B87D; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+        onmouseover="this.style.background='#00a06f'" 
+        onmouseout="this.style.background='#00B87D'"
+      >
+        <i class="fas fa-chevron-down" style="margin-right: 8px;"></i>
+        더 보기 (20개 추가 로드)
+      </button>
+    `;
+    
+    // 이벤트 리스너 등록
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener('click', handleLoadMore);
+    }
+  } else {
+    loadMoreContainer.innerHTML = '';
+  }
+}
+
+// 더 보기 핸들러
+async function handleLoadMore() {
+  if (isLoadingMore || !nextPageToken) return;
+
+  console.log('📄 더 보기 시작:', nextPageToken);
+
+  isLoadingMore = true;
+
+  // 버튼 비활성화
+  const loadMoreBtn = document.getElementById('load-more-btn');
+  if (loadMoreBtn) {
+    loadMoreBtn.disabled = true;
+    loadMoreBtn.innerHTML = `
+      <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
+      로딩 중...
+    `;
+  }
+
+  try {
+    // YouTube API 호출
+    const response = await fetch('/api/youtube/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('postflow_token')}`
+      },
+      body: JSON.stringify({ 
+        keyword: currentKeyword, 
+        maxResults: 20,
+        pageToken: nextPageToken
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error?.message || '더 보기 실패');
+    }
+
+    console.log('✅ 더 보기 완료:', result.data.videos.length, '개');
+
+    // 페이지네이션 정보 업데이트
+    nextPageToken = result.data.nextPageToken;
+    hasMoreResults = result.data.hasMore;
+
+    // 결과 추가 (기존 결과 + 새 결과)
+    allSearchResults = [...allSearchResults, ...result.data.videos];
+    
+    // 필터 재적용
+    applyFilters();
+
+    // "더 보기" 버튼 업데이트
+    updateLoadMoreButton();
+
+  } catch (error) {
+    console.error('❌ 더 보기 오류:', error);
+    alert(`더 보기 중 오류가 발생했습니다: ${error.message}`);
+  } finally {
+    isLoadingMore = false;
+  }
+}

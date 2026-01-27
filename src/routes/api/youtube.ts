@@ -397,7 +397,7 @@ app.get('/api/youtube/cache/stats', adminMiddleware, async (c) => {
 app.post('/api/youtube/search', async (c) => {
   try {
     const body = await c.req.json()
-    const { keyword, maxResults = 20 } = body
+    const { keyword, maxResults = 20, pageToken } = body
 
     // 1. 입력 검증
     if (!keyword || typeof keyword !== 'string') {
@@ -424,15 +424,17 @@ app.post('/api/youtube/search', async (c) => {
 
     // 3. 검색 실행
     const { searchYouTubeVideos } = await import('../../services/youtube-api')
-    const results = await searchYouTubeVideos(keyword, youtubeApiKey, maxResults)
+    const result = await searchYouTubeVideos(keyword, youtubeApiKey, maxResults, pageToken)
 
     // 4. 결과 반환
     return c.json({
       success: true,
       data: {
         keyword,
-        totalResults: results.length,
-        videos: results
+        totalResults: result.totalResults,
+        videos: result.videos,
+        nextPageToken: result.nextPageToken,
+        hasMore: !!result.nextPageToken
       }
     })
 
