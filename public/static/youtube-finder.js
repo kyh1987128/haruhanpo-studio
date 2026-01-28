@@ -2019,6 +2019,10 @@ let selectedMarketVideo = null;
 let marketSortColumn = 'views';
 let marketSortOrder = 'desc';
 
+// 영상 비교 기능
+let selectedCompareVideos = []; // 선택된 영상 배열 (최대 3개)
+let compareChart = null; // Chart.js 인스턴스
+
 // 성과도 계산 함수
 function calculatePerformance(video) {
   const views = video.statistics?.viewCount || 0;
@@ -2354,7 +2358,7 @@ function renderMarketTable(videos) {
   if (videos.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="8" class="text-center py-12 text-gray-400">
+        <td colspan="9" class="text-center py-12 text-gray-400">
           <i class="fas fa-inbox text-4xl mb-3"></i>
           <p class="text-lg">검색 결과가 없습니다</p>
           <p class="text-sm mt-1">다른 키워드로 검색해보세요</p>
@@ -2381,12 +2385,23 @@ function renderMarketTable(videos) {
     
     const performance = video.performance || {};
     const likeRate = views > 0 ? ((likes / views) * 100).toFixed(2) : '0.00';
+    const isSelected = selectedCompareVideos.some(v => (v.id?.videoId || v.id) === videoId);
     
     return `
-      <tr data-video-id="${videoId}" onclick="selectMarketVideo('${videoId}')" 
-          class="${selectedMarketVideo?.id === videoId ? 'selected' : ''}">
+      <tr data-video-id="${videoId}" class="${selectedMarketVideo?.id === videoId ? 'selected' : ''}">
+        <!-- 체크박스 -->
+        <td class="text-center" onclick="event.stopPropagation();">
+          <input 
+            type="checkbox" 
+            class="video-compare-checkbox w-4 h-4 cursor-pointer" 
+            data-video-id="${videoId}"
+            ${isSelected ? 'checked' : ''}
+            onchange="toggleCompareVideo('${videoId}')"
+          />
+        </td>
+        
         <!-- 영상 (썸네일 + 제목 + 채널) -->
-        <td>
+        <td onclick="selectMarketVideo('${videoId}')">
           <div class="video-thumbnail-cell">
             <div class="video-thumbnail-wrapper">
               <img src="${thumbnail}" alt="${title}" />
@@ -2403,39 +2418,39 @@ function renderMarketTable(videos) {
         </td>
         
         <!-- 조회수 -->
-        <td class="metric-cell">
+        <td class="metric-cell" onclick="selectMarketVideo('${videoId}')">
           <div class="metric-value">${formatNumber(views)}</div>
         </td>
         
         <!-- 성과도 -->
-        <td class="text-center">
+        <td class="text-center" onclick="selectMarketVideo('${videoId}')">
           <div class="performance-badge ${performance.badgeClass}">
             ${performance.badge} ${performance.ratio}%
           </div>
         </td>
         
         <!-- 구독자 -->
-        <td class="metric-cell">
+        <td class="metric-cell" onclick="selectMarketVideo('${videoId}')">
           <div class="metric-value">${formatNumber(subscribers)}</div>
         </td>
         
         <!-- 좋아요율 -->
-        <td class="metric-cell">
+        <td class="metric-cell" onclick="selectMarketVideo('${videoId}')">
           <div class="metric-value">${likeRate}%</div>
         </td>
         
         <!-- 댓글 -->
-        <td class="metric-cell">
+        <td class="metric-cell" onclick="selectMarketVideo('${videoId}')">
           <div class="metric-value">${formatNumber(comments)}</div>
         </td>
         
         <!-- 업로드 -->
-        <td class="text-center text-sm text-gray-600">
+        <td class="text-center text-sm text-gray-600" onclick="selectMarketVideo('${videoId}')">
           ${formatDate(publishedAt)}
         </td>
         
         <!-- 길이 -->
-        <td class="text-center text-sm">
+        <td class="text-center text-sm" onclick="selectMarketVideo('${videoId}')">
           ${formatDuration(duration)}
         </td>
       </tr>
@@ -2805,12 +2820,33 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   
   // CSV/Excel 다운로드
+  // CSV/Excel 다운로드
   document.getElementById('export-csv-btn')?.addEventListener('click', () => {
     exportToCSV();
   });
   
   document.getElementById('export-excel-btn')?.addEventListener('click', () => {
     exportToExcel();
+  });
+  
+  // 비교 기능
+  document.getElementById('compare-videos-btn')?.addEventListener('click', () => {
+    openCompareModal();
+  });
+  
+  document.getElementById('close-compare-modal')?.addEventListener('click', () => {
+    closeCompareModal();
+  });
+  
+  document.getElementById('close-compare-modal-2')?.addEventListener('click', () => {
+    closeCompareModal();
+  });
+  
+  // 모달 배경 클릭 시 닫기
+  document.getElementById('compare-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'compare-modal') {
+      closeCompareModal();
+    }
   });
 });
 
@@ -3032,3 +3068,309 @@ function downloadFile(blob, filename) {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+// ========================================
+// 영상 비교 기능
+// ========================================
+
+/**
+ * 비교 영상 토글
+ */
+function toggleCompareVideo(videoId) {
+  const video = filteredMarketVideos.find(v => (v.id?.videoId || v.id) === videoId);
+  
+  if (!video) {
+    console.error('❌ [비교] 영상을 찾을 수 없음:', videoId);
+    return;
+  }
+  
+  const index = selectedCompareVideos.findIndex(v => (v.id?.videoId || v.id) === videoId);
+  
+  if (index >= 0) {
+    // 선택 해제
+    selectedCompareVideos.splice(index, 1);
+    console.log('✅ [비교] 선택 해제:', videoId);
+  } else {
+    // 선택 추가 (최대 3개)
+    if (selectedCompareVideos.length >= 3) {
+      alert('최대 3개까지만 선택할 수 있습니다.');
+      // 체크박스 해제
+      const checkbox = document.querySelector(`input[data-video-id="${videoId}"]`);
+      if (checkbox) checkbox.checked = false;
+      return;
+    }
+    selectedCompareVideos.push(video);
+    console.log('✅ [비교] 선택 추가:', videoId);
+  }
+  
+  updateCompareButton();
+}
+
+/**
+ * 비교 버튼 업데이트
+ */
+function updateCompareButton() {
+  const btn = document.getElementById('compare-videos-btn');
+  const countSpan = document.getElementById('selected-count');
+  
+  if (countSpan) {
+    countSpan.textContent = selectedCompareVideos.length;
+  }
+  
+  if (btn) {
+    btn.disabled = selectedCompareVideos.length < 2;
+  }
+}
+
+/**
+ * 비교 모달 열기
+ */
+function openCompareModal() {
+  if (selectedCompareVideos.length < 2) {
+    alert('최소 2개 이상의 영상을 선택해주세요.');
+    return;
+  }
+  
+  console.log('📊 [비교] 모달 열기:', selectedCompareVideos.length, '개');
+  
+  // 모달 표시
+  const modal = document.getElementById('compare-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+  }
+  
+  // 비교 테이블 렌더링
+  renderCompareTable();
+  
+  // 레이더 차트 렌더링
+  renderCompareChart();
+}
+
+/**
+ * 비교 모달 닫기
+ */
+function closeCompareModal() {
+  const modal = document.getElementById('compare-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+  
+  // Chart.js 인스턴스 파괴
+  if (compareChart) {
+    compareChart.destroy();
+    compareChart = null;
+  }
+}
+
+/**
+ * 비교 테이블 렌더링
+ */
+function renderCompareTable() {
+  const tbody = document.getElementById('compare-table-body');
+  
+  if (!tbody) return;
+  
+  // 헤더 업데이트
+  selectedCompareVideos.forEach((video, index) => {
+    const colHeader = document.getElementById(`compare-col-${index + 1}`);
+    if (colHeader) {
+      const title = video.snippet?.title || '제목 없음';
+      colHeader.innerHTML = `
+        <div class="text-xs text-gray-600 mb-1">영상 ${index + 1}</div>
+        <div class="font-semibold text-sm">${escapeHtml(title.substring(0, 30))}${title.length > 30 ? '...' : ''}</div>
+      `;
+    }
+  });
+  
+  // 비어있는 컬럼 숨기기
+  for (let i = selectedCompareVideos.length + 1; i <= 3; i++) {
+    const colHeader = document.getElementById(`compare-col-${i}`);
+    if (colHeader) {
+      colHeader.style.display = 'none';
+    }
+  }
+  
+  // 지표 정의
+  const metrics = [
+    { label: '조회수', key: 'views', format: 'number' },
+    { label: '구독자', key: 'subscribers', format: 'number' },
+    { label: '성과도 (%)', key: 'performance', format: 'percent' },
+    { label: '좋아요 수', key: 'likes', format: 'number' },
+    { label: '좋아요율 (%)', key: 'likeRate', format: 'percent2' },
+    { label: '댓글 수', key: 'comments', format: 'number' },
+    { label: '업로드 날짜', key: 'publishedAt', format: 'date' },
+    { label: '영상 길이', key: 'duration', format: 'duration' },
+    { label: '카테고리', key: 'categoryId', format: 'text' },
+    { label: '언어', key: 'language', format: 'text' }
+  ];
+  
+  // 테이블 생성
+  tbody.innerHTML = metrics.map(metric => {
+    // 각 영상의 값 추출
+    const values = selectedCompareVideos.map(video => {
+      let value = 0;
+      
+      switch (metric.key) {
+        case 'views':
+          value = video.statistics?.viewCount || 0;
+          break;
+        case 'subscribers':
+          value = video.channelInfo?.subscriberCount || 0;
+          break;
+        case 'performance':
+          value = parseFloat(video.performance?.ratio || 0);
+          break;
+        case 'likes':
+          value = video.statistics?.likeCount || 0;
+          break;
+        case 'likeRate':
+          const views = video.statistics?.viewCount || 0;
+          const likes = video.statistics?.likeCount || 0;
+          value = views > 0 ? (likes / views) * 100 : 0;
+          break;
+        case 'comments':
+          value = video.statistics?.commentCount || 0;
+          break;
+        case 'publishedAt':
+          return formatDate(video.snippet?.publishedAt || '');
+        case 'duration':
+          return formatDuration(video.contentDetails?.duration || '');
+        case 'categoryId':
+          return video.snippet?.categoryId || '-';
+        case 'language':
+          return video.snippet?.defaultLanguage || video.snippet?.defaultAudioLanguage || '-';
+      }
+      
+      return value;
+    });
+    
+    // 최고값 찾기 (숫자인 경우만)
+    let maxValue = -Infinity;
+    if (metric.format !== 'date' && metric.format !== 'duration' && metric.format !== 'text') {
+      maxValue = Math.max(...values.filter(v => typeof v === 'number'));
+    }
+    
+    // 셀 생성
+    const cells = values.map((value, index) => {
+      const isMax = typeof value === 'number' && value === maxValue && maxValue > 0;
+      const bgClass = isMax ? 'bg-green-50 font-bold text-green-700' : '';
+      
+      let displayValue = '';
+      
+      if (metric.format === 'number') {
+        displayValue = formatNumber(value);
+      } else if (metric.format === 'percent' || metric.format === 'percent2') {
+        displayValue = value.toFixed(2) + '%';
+      } else {
+        displayValue = value;
+      }
+      
+      // 빈 컬럼 숨기기
+      const hideStyle = index >= selectedCompareVideos.length ? 'style="display:none;"' : '';
+      
+      return `<td class="px-4 py-3 text-center border ${bgClass}" ${hideStyle}>${displayValue}</td>`;
+    });
+    
+    // 3개 컬럼 맞추기
+    while (cells.length < 3) {
+      cells.push('<td class="px-4 py-3 text-center border" style="display:none;">-</td>');
+    }
+    
+    return `
+      <tr>
+        <td class="px-4 py-3 text-left font-medium text-gray-700 border bg-gray-50">${metric.label}</td>
+        ${cells.join('')}
+      </tr>
+    `;
+  }).join('');
+}
+
+/**
+ * 레이더 차트 렌더링
+ */
+function renderCompareChart() {
+  const canvas = document.getElementById('compare-radar-chart');
+  
+  if (!canvas) return;
+  
+  // 기존 차트 파괴
+  if (compareChart) {
+    compareChart.destroy();
+  }
+  
+  // 데이터셋 준비
+  const datasets = selectedCompareVideos.map((video, index) => {
+    const views = video.statistics?.viewCount || 0;
+    const subscribers = video.channelInfo?.subscriberCount || 1;
+    const likes = video.statistics?.likeCount || 0;
+    const comments = video.statistics?.commentCount || 0;
+    const performance = parseFloat(video.performance?.ratio || 0);
+    
+    // 정규화 (0-100 스케일)
+    const maxViews = Math.max(...selectedCompareVideos.map(v => v.statistics?.viewCount || 0));
+    const maxSubscribers = Math.max(...selectedCompareVideos.map(v => v.channelInfo?.subscriberCount || 0));
+    const maxLikes = Math.max(...selectedCompareVideos.map(v => v.statistics?.likeCount || 0));
+    const maxComments = Math.max(...selectedCompareVideos.map(v => v.statistics?.commentCount || 0));
+    const maxPerformance = Math.max(...selectedCompareVideos.map(v => parseFloat(v.performance?.ratio || 0)));
+    
+    const data = [
+      maxViews > 0 ? (views / maxViews) * 100 : 0,
+      maxSubscribers > 0 ? (subscribers / maxSubscribers) * 100 : 0,
+      maxPerformance > 0 ? (performance / maxPerformance) * 100 : 0,
+      maxLikes > 0 ? (likes / maxLikes) * 100 : 0,
+      maxComments > 0 ? (comments / maxComments) * 100 : 0
+    ];
+    
+    const colors = [
+      { bg: 'rgba(59, 130, 246, 0.2)', border: 'rgb(59, 130, 246)' },
+      { bg: 'rgba(16, 185, 129, 0.2)', border: 'rgb(16, 185, 129)' },
+      { bg: 'rgba(239, 68, 68, 0.2)', border: 'rgb(239, 68, 68)' }
+    ];
+    
+    const title = video.snippet?.title || '제목 없음';
+    
+    return {
+      label: `영상 ${index + 1}: ${title.substring(0, 20)}${title.length > 20 ? '...' : ''}`,
+      data: data,
+      backgroundColor: colors[index].bg,
+      borderColor: colors[index].border,
+      borderWidth: 2,
+      pointBackgroundColor: colors[index].border,
+      pointBorderColor: '#fff',
+      pointHoverBackgroundColor: '#fff',
+      pointHoverBorderColor: colors[index].border
+    };
+  });
+  
+  // Chart.js 렌더링
+  compareChart = new Chart(canvas, {
+    type: 'radar',
+    data: {
+      labels: ['조회수', '구독자', '성과도', '좋아요', '댓글'],
+      datasets: datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        r: {
+          beginAtZero: true,
+          max: 100,
+          ticks: {
+            stepSize: 20
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          position: 'bottom'
+        }
+      }
+    }
+  });
+}
+
+// 전역 함수로 노출
+window.toggleCompareVideo = toggleCompareVideo;
+window.openCompareModal = openCompareModal;
+window.closeCompareModal = closeCompareModal;

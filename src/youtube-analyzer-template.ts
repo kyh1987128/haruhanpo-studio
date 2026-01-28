@@ -958,7 +958,15 @@ export function youtubeAnalyzerTemplate() {
           </div>
           
           <!-- 액션 버튼 -->
-          <div class="flex gap-2">
+          <div class="flex gap-2 items-center">
+            <button 
+              id="compare-videos-btn" 
+              class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled
+            >
+              <i class="fas fa-chart-bar mr-1"></i>
+              선택 영상 비교 (<span id="selected-count">0</span>/3)
+            </button>
             <button id="export-csv-btn" class="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">
               📥 CSV 다운로드
             </button>
@@ -976,6 +984,9 @@ export function youtubeAnalyzerTemplate() {
           <table class="video-table">
             <thead>
               <tr>
+                <th class="text-center" style="width: 40px;">
+                  <input type="checkbox" id="select-all-videos" class="w-4 h-4 cursor-pointer" title="전체 선택">
+                </th>
                 <th class="sortable" data-sort="title">영상</th>
                 <th class="sortable text-right" data-sort="views">조회수</th>
                 <th class="sortable text-center" data-sort="performance">성과도</th>
@@ -989,7 +1000,7 @@ export function youtubeAnalyzerTemplate() {
             <tbody id="video-table-body">
               <!-- 빈 상태 -->
               <tr>
-                <td colspan="8" class="text-center py-12 text-gray-400">
+                <td colspan="9" class="text-center py-12 text-gray-400">
                   <i class="fas fa-search text-4xl mb-3"></i>
                   <p class="text-lg">키워드를 입력하여 검색을 시작하세요</p>
                   <p class="text-sm mt-1">최대 200개의 영상을 분석합니다</p>
@@ -1007,6 +1018,72 @@ export function youtubeAnalyzerTemplate() {
         </div>
       </aside>
       
+    </div>
+  </div>
+  
+  <!-- ========================================
+       비교 모달
+       ======================================== -->
+  <div 
+    id="compare-modal" 
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden"
+    style="z-index: 9999;"
+  >
+    <div class="bg-white rounded-2xl shadow-2xl w-11/12 max-w-6xl max-h-[90vh] overflow-y-auto">
+      <!-- 모달 헤더 -->
+      <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+        <h2 class="text-2xl font-bold text-gray-900">
+          <i class="fas fa-chart-bar text-blue-600 mr-2"></i>
+          영상 비교 분석
+        </h2>
+        <button 
+          id="close-compare-modal" 
+          class="text-gray-400 hover:text-gray-600 text-2xl"
+        >
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <!-- 모달 본문 -->
+      <div class="p-6">
+        <!-- 비교 테이블 -->
+        <div class="overflow-x-auto mb-6">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr class="bg-gray-50">
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 border">지표</th>
+                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 border" id="compare-col-1">영상 1</th>
+                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 border" id="compare-col-2">영상 2</th>
+                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 border" id="compare-col-3">영상 3</th>
+              </tr>
+            </thead>
+            <tbody id="compare-table-body">
+              <!-- 동적 생성 -->
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- 레이더 차트 -->
+        <div class="bg-gray-50 rounded-xl p-6">
+          <h3 class="text-lg font-bold text-gray-900 mb-4 text-center">
+            <i class="fas fa-chart-area text-green-600 mr-2"></i>
+            성과 레이더 차트
+          </h3>
+          <div class="flex justify-center">
+            <canvas id="compare-radar-chart" style="max-width: 500px; max-height: 500px;"></canvas>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 모달 푸터 -->
+      <div class="border-t px-6 py-4 bg-gray-50 flex justify-end gap-3">
+        <button 
+          id="close-compare-modal-2" 
+          class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100"
+        >
+          닫기
+        </button>
+      </div>
     </div>
   </div>
   
