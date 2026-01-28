@@ -2089,6 +2089,32 @@ async function searchMarket200(keyword = null) {
   filteredMarketVideos = [];
   selectedMarketVideo = null;
   
+  // 상세 패널 초기화
+  const detailPanel = document.getElementById('detail-panel-content');
+  if (detailPanel) {
+    detailPanel.innerHTML = `
+      <div class="flex flex-col items-center justify-center h-full text-center p-8 detail-sidebar-empty">
+        <i class="fas fa-mouse-pointer text-6xl text-gray-300 mb-4"></i>
+        <p class="text-gray-500 text-lg font-medium">영상을 선택하세요</p>
+        <p class="text-gray-400 text-sm mt-2">테이블에서 영상을 클릭하면<br/>상세 분석이 표시됩니다</p>
+      </div>
+    `;
+    detailPanel.classList.add('detail-sidebar-empty');
+  }
+  
+  // 테이블 초기화
+  const tbody = document.getElementById('video-table-body');
+  if (tbody) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="9" class="text-center py-8 text-gray-500">
+          <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+          <p>영상을 검색하고 있습니다...</p>
+        </td>
+      </tr>
+    `;
+  }
+  
   // 로딩 표시
   showMarketLoading(true);
   updateResultCount(0);
@@ -3795,10 +3821,10 @@ window.toggleDescription = function() {
   if (!textEl || !btnEl) return;
   
   if (btnEl.textContent.includes('더보기')) {
-    textEl.textContent = window.fullDescription;
+    textEl.innerHTML = window.fullDescription;
     btnEl.textContent = '접기 ▲';
   } else {
-    textEl.textContent = window.shortDescription;
+    textEl.innerHTML = window.shortDescription;
     btnEl.textContent = '더보기 ▼';
   }
 };
@@ -5908,10 +5934,10 @@ window.toggleTrendingDescription = function() {
   if (!textEl || !btnEl) return;
   
   if (btnEl.textContent.includes('더보기')) {
-    textEl.textContent = window.trendingFullDescription;
+    textEl.innerHTML = window.trendingFullDescription;
     btnEl.textContent = '접기 ▲';
   } else {
-    textEl.textContent = window.trendingShortDescription;
+    textEl.innerHTML = window.trendingShortDescription;
     btnEl.textContent = '더보기 ▼';
   }
 };
