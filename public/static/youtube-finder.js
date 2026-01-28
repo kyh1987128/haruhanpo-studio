@@ -2204,7 +2204,18 @@ function applyMarketFilters() {
   const filterPerformance = document.getElementById('filter-performance')?.value || 'all';
   const filterCategory = document.getElementById('filter-category')?.value || 'all';
   const filterCountry = document.getElementById('filter-country')?.value || 'all';
-  const filterMinViews = parseInt(document.getElementById('filter-min-views')?.value || 0);
+  
+  // 조회수 필터 (드롭다운 + 직접 입력)
+  const minViewsDropdown = document.getElementById('filter-min-views')?.value || '';
+  const minViewsCustom = document.getElementById('filter-min-views-custom')?.value || '';
+  let filterMinViews = 0;
+  
+  if (minViewsDropdown === 'custom' && minViewsCustom) {
+    filterMinViews = parseInt(minViewsCustom) || 0;
+  } else if (minViewsDropdown && minViewsDropdown !== '') {
+    filterMinViews = parseInt(minViewsDropdown) || 0;
+  }
+  
   const filterUploadDate = document.getElementById('filter-upload-date')?.value || '';
   
   console.log('📊 [필터 값]', {
@@ -2214,6 +2225,7 @@ function applyMarketFilters() {
     category: filterCategory,
     country: filterCountry,
     minViews: filterMinViews,
+    minViewsSource: minViewsDropdown === 'custom' ? 'custom input' : 'dropdown',
     uploadDate: filterUploadDate
   });
   
@@ -3691,3 +3703,203 @@ loadBookmarks();
 // 전역 함수로 노출
 window.toggleBookmark = toggleBookmark;
 window.toggleBookmarkFilter = toggleBookmarkFilter;
+
+// ================================================
+// Phase 5C: 탭 구조 & 검색 방식 개선
+// ================================================
+
+// 현재 활성 검색 탭
+let activeSearchTab = 'keyword';
+
+// 탭 전환 함수
+function switchSearchTab(tabName) {
+  console.log(`🔄 [탭 전환] ${activeSearchTab} → ${tabName}`);
+  
+  activeSearchTab = tabName;
+  
+  // 모든 탭 버튼 비활성화
+  document.querySelectorAll('.search-tab').forEach(tab => {
+    tab.classList.remove('active');
+  });
+  
+  // 선택된 탭 활성화
+  const selectedTab = document.querySelector(`[data-search-tab="${tabName}"]`);
+  if (selectedTab) {
+    selectedTab.classList.add('active');
+  }
+  
+  // 모든 검색 패널 숨기기
+  document.querySelectorAll('.search-panel').forEach(panel => {
+    panel.style.display = 'none';
+  });
+  
+  // 선택된 패널만 표시
+  const selectedPanel = document.getElementById(`search-panel-${tabName}`);
+  if (selectedPanel) {
+    selectedPanel.style.display = 'block';
+  }
+}
+
+// 탭 클릭 이벤트 등록
+document.querySelectorAll('.search-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const tabName = tab.dataset.searchTab;
+    switchSearchTab(tabName);
+  });
+});
+
+// 검색 방식에 따라 쿼리 변환
+function buildSearchQuery() {
+  const keyword = document.getElementById('market-search-input')?.value.trim() || '';
+  const searchMode = document.querySelector('input[name="search-mode"]:checked')?.value || 'keyword';
+  const excludeKeywords = document.getElementById('exclude-keywords-input')?.value.trim() || '';
+  
+  let query = keyword;
+  
+  // 검색 방식 적용
+  if (searchMode === 'tag' && keyword) {
+    query = `${keyword}`;  // 일반 키워드 + 태그 포함
+  } else if (searchMode === 'tag-only' && keyword) {
+    query = keyword.split(',').map(k => k.trim()).join(' ');  // 태그만
+  }
+  
+  // 제외 키워드 적용 (YouTube API는 - 연산자 지원)
+  if (excludeKeywords) {
+    const excludeList = excludeKeywords.split(',').map(k => `-${k.trim()}`).join(' ');
+    query = `${query} ${excludeList}`;
+  }
+  
+  console.log(`🔍 [검색 쿼리 생성]`, {
+    original: keyword,
+    mode: searchMode,
+    exclude: excludeKeywords,
+    final: query
+  });
+  
+  return query;
+}
+
+// 채널 검색 함수
+async function handleChannelSearch() {
+  const channelInput = document.getElementById('channel-search-input')?.value.trim();
+  
+  if (!channelInput) {
+    alert('채널 ID 또는 URL을 입력해주세요.');
+    return;
+  }
+  
+  console.log(`🔍 [채널 검색] 입력: ${channelInput}`);
+  
+  // 채널 ID 추출 (@채널명 또는 URL)
+  let channelId = channelInput;
+  
+  // @채널명 형식 처리
+  if (channelInput.startsWith('@')) {
+    channelId = channelInput.substring(1);
+  }
+  
+  // URL에서 채널 ID 추출
+  if (channelInput.includes('youtube.com/') || channelInput.includes('youtu.be/')) {
+    const urlMatch = channelInput.match(/youtube\.com\/@([^\/\?]+)|youtube\.com\/channel\/([^\/\?]+)/);
+    if (urlMatch) {
+      channelId = urlMatch[1] || urlMatch[2];
+    }
+  }
+  
+  alert(`채널 검색 기능은 준비 중입니다.\n채널 ID: ${channelId}\n\n키워드 탭에서 채널명을 검색해보세요.`);
+}
+
+// 카테고리 검색 함수
+async function handleCategorySearch() {
+  const categoryId = document.getElementById('category-search-select')?.value;
+  
+  if (!categoryId) {
+    alert('카테고리를 선택해주세요.');
+    return;
+  }
+  
+  console.log(`🔍 [카테고리 검색] ID: ${categoryId}`);
+  
+  // 카테고리 필터 설정
+  document.getElementById('filter-category').value = categoryId;
+  
+  // 키워드 탭으로 전환하고 빈 검색 (카테고리 필터만 적용)
+  switchSearchTab('keyword');
+  document.getElementById('market-search-input').value = '';
+  
+  // 검색 실행 (카테고리 필터가 적용됨)
+  alert('카테고리 검색 기능은 준비 중입니다.\n\n현재는 키워드 탭에서 검색 후 좌측 필터의 카테고리를 선택해주세요.');
+}
+
+// 채널 검색 버튼 이벤트
+const channelSearchBtn = document.getElementById('channel-search-btn');
+if (channelSearchBtn) {
+  channelSearchBtn.addEventListener('click', handleChannelSearch);
+}
+
+// 카테고리 검색 버튼 이벤트
+const categorySearchBtn = document.getElementById('category-search-btn');
+if (categorySearchBtn) {
+  categorySearchBtn.addEventListener('click', handleCategorySearch);
+}
+
+// 조회수 필터 드롭다운 변경 이벤트
+const minViewsDropdown = document.getElementById('filter-min-views');
+const minViewsCustomInput = document.getElementById('filter-min-views-custom');
+
+if (minViewsDropdown) {
+  minViewsDropdown.addEventListener('change', (e) => {
+    const value = e.target.value;
+    console.log(`🔄 [조회수 필터] ${value}`);
+    
+    // "직접 입력" 선택 시 입력 필드 표시
+    if (minViewsCustomInput) {
+      if (value === 'custom') {
+        minViewsCustomInput.style.display = 'block';
+      } else {
+        minViewsCustomInput.style.display = 'none';
+        minViewsCustomInput.value = '';
+      }
+    }
+    
+    // 필터 재적용
+    applyMarketFilters();
+  });
+}
+
+// 직접 입력 필드 디바운스
+if (minViewsCustomInput) {
+  let customViewsDebounce;
+  minViewsCustomInput.addEventListener('input', () => {
+    clearTimeout(customViewsDebounce);
+    customViewsDebounce = setTimeout(() => {
+      console.log(`🔄 [조회수 직접 입력] ${minViewsCustomInput.value}`);
+      applyMarketFilters();
+    }, 500);
+  });
+}
+
+// 기존 searchMarket200 함수 수정 (쿼리 생성 로직 교체)
+// 기존 함수를 덮어쓰지 않고 확장
+const originalSearchMarket200 = window.searchMarket200;
+if (typeof originalSearchMarket200 === 'function') {
+  window.searchMarket200 = function() {
+    // 검색 쿼리 생성 (검색 방식 및 제외 키워드 적용)
+    const enhancedQuery = buildSearchQuery();
+    
+    // 원래 입력 필드에 변환된 쿼리 임시 저장
+    const marketSearchInput = document.getElementById('market-search-input');
+    const originalValue = marketSearchInput.value;
+    
+    if (enhancedQuery !== originalValue) {
+      console.log(`🔄 [쿼리 변환] "${originalValue}" → "${enhancedQuery}"`);
+      marketSearchInput.value = enhancedQuery;
+    }
+    
+    // 원래 함수 호출
+    return originalSearchMarket200.call(this);
+  };
+}
+
+console.log('✅ [Phase 5C] 탭 구조 & 검색 개선 초기화 완료');
+
