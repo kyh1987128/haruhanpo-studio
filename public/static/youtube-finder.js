@@ -2070,47 +2070,7 @@ async function searchMarket200(keyword = null) {
   
   console.log('🔍 [검색 필터]', { order: filterOrder, category: filterCategory, region: filterRegion });
   
-  // ✅ 검색 시작 전 모든 필터 초기화 (사용자 여정 개선)
-  console.log('🔄 [필터 자동 초기화] 검색 시작 전 필터를 기본값으로 리셋');
-  
-  // 조회수 필터 초기화
-  const filterMinViews = document.getElementById('filter-min-views');
-  if (filterMinViews) filterMinViews.value = '';
-  
-  const filterMinViewsCustom = document.getElementById('filter-min-views-custom');
-  if (filterMinViewsCustom) filterMinViewsCustom.value = '';
-  
-  // 영상 길이 필터 초기화
-  const filterDuration = document.getElementById('filter-duration');
-  if (filterDuration) filterDuration.value = 'all';
-  
-  // 업로드 날짜 필터 초기화
-  const filterUploadDate = document.getElementById('filter-upload-date');
-  if (filterUploadDate) filterUploadDate.value = '';
-  
-  // 구독자 구간 필터 초기화
-  const filterSubscriber = document.getElementById('filter-subscriber');
-  if (filterSubscriber) filterSubscriber.value = 'all';
-  
-  // 성과도 필터 초기화
-  const filterPerformance = document.getElementById('filter-performance');
-  if (filterPerformance) filterPerformance.value = 'all';
-  
-  // 카테고리 필터 초기화
-  const filterCategoryEl = document.getElementById('filter-category');
-  if (filterCategoryEl) filterCategoryEl.value = 'all';
-  
-  // 국가 필터 초기화
-  const filterCountryEl = document.getElementById('filter-country');
-  if (filterCountryEl) filterCountryEl.value = 'all';
-  
-  // 숏츠 필터 초기화 (드롭다운)
-  const shortsFilterEl = document.getElementById('shorts-filter');
-  if (shortsFilterEl) shortsFilterEl.value = 'all';
-  
-  console.log('✅ [필터 자동 초기화] 완료 - 모든 필터가 기본값으로 리셋되었습니다');
-  
-  // 초기화
+  // 초기화 (필터는 유지)
   marketVideos = [];
   filteredMarketVideos = [];
   selectedMarketVideo = null;
