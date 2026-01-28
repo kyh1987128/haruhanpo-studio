@@ -2007,3 +2007,668 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+// ========================================
+// Phase 5A: 마켓 탐색 & 분석 (200개 수집)
+// ========================================
+
+// 마켓 탐색 전역 상태
+let marketVideos = [];
+let filteredMarketVideos = [];
+let selectedMarketVideo = null;
+let marketSortColumn = 'views';
+let marketSortOrder = 'desc';
+
+// 성과도 계산 함수
+function calculatePerformance(video) {
+  const views = video.statistics?.viewCount || 0;
+  const subscribers = video.channelInfo?.subscriberCount || 1;
+  
+  // 성과도 = (조회수 / 구독자 수) × 100
+  const performanceRatio = (views / subscribers) * 100;
+  
+  let level = 'low';
+  let badge = '🔵 저조';
+  let badgeClass = 'low';
+  
+  if (performanceRatio >= 300) {
+    level = 'viral';
+    badge = '🔥 떡상';
+    badgeClass = 'viral';
+  } else if (performanceRatio >= 100) {
+    level = 'algorithm';
+    badge = '🟢 알고리즘';
+    badgeClass = 'algorithm';
+  } else if (performanceRatio >= 50) {
+    level = 'normal';
+    badge = '⚪ 일반';
+    badgeClass = 'normal';
+  }
+  
+  return {
+    ratio: performanceRatio.toFixed(1),
+    level,
+    badge,
+    badgeClass
+  };
+}
+
+// 200개 검색 (페이지네이션)
+async function searchMarket200() {
+  const searchInput = document.getElementById('market-search-input');
+  const keyword = searchInput?.value.trim();
+  
+  if (!keyword) {
+    alert('검색 키워드를 입력해주세요.');
+    return;
+  }
+  
+  console.log('🔍 [마켓 탐색] 200개 검색 시작:', keyword);
+  
+  // 초기화
+  marketVideos = [];
+  filteredMarketVideos = [];
+  selectedMarketVideo = null;
+  
+  // 로딩 표시
+  showMarketLoading(true);
+  updateResultCount(0);
+  
+  try {
+    let pageToken = null;
+    let totalCollected = 0;
+    const maxResults = 200;
+    const perPage = 50; // 한 번에 50개씩
+    
+    // 최대 4번 반복 (50 × 4 = 200)
+    for (let i = 0; i < 4; i++) {
+      console.log(`📥 [마켓 탐색] 페이지 ${i + 1}/4 수집 중...`);
+      
+      const response = await fetch('/api/youtube/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('postflow_token')}`
+        },
+        body: JSON.stringify({ 
+          keyword, 
+          maxResults: perPage,
+          pageToken: pageToken
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.error?.message || '검색 실패');
+      }
+      
+      // 영상 추가
+      if (result.data.videos && result.data.videos.length > 0) {
+        marketVideos.push(...result.data.videos);
+        totalCollected += result.data.videos.length;
+        
+        console.log(`✅ [마켓 탐색] ${totalCollected}개 수집 완료`);
+        
+        // 중간 결과 업데이트
+        updateResultCount(totalCollected);
+      }
+      
+      // 다음 페이지 토큰
+      pageToken = result.data.nextPageToken;
+      
+      // 더 이상 결과가 없으면 중단
+      if (!pageToken || !result.data.hasMore) {
+        console.log('ℹ️ [마켓 탐색] 더 이상 결과 없음');
+        break;
+      }
+      
+      // 200개 도달하면 중단
+      if (totalCollected >= maxResults) {
+        console.log('✅ [마켓 탐색] 200개 수집 완료');
+        break;
+      }
+    }
+    
+    // 성과도 계산
+    marketVideos = marketVideos.map(video => ({
+      ...video,
+      performance: calculatePerformance(video)
+    }));
+    
+    console.log('🎯 [마켓 탐색] 최종 수집:', marketVideos.length, '개');
+    
+    // 필터 적용
+    applyMarketFilters();
+    
+  } catch (error) {
+    console.error('❌ [마켓 탐색] 검색 오류:', error);
+    alert(`검색 중 오류가 발생했습니다: ${error.message}`);
+    renderMarketTable([]);
+  } finally {
+    showMarketLoading(false);
+  }
+}
+
+// 필터 적용
+function applyMarketFilters() {
+  console.log('🔍 [마켓 탐색] 필터 적용');
+  
+  // 필터 값 가져오기
+  const filterSub1k = document.getElementById('filter-sub-1k')?.checked ?? true;
+  const filterSub10k = document.getElementById('filter-sub-10k')?.checked ?? true;
+  const filterSub100k = document.getElementById('filter-sub-100k')?.checked ?? true;
+  const filterSub1m = document.getElementById('filter-sub-1m')?.checked ?? true;
+  const filterSub10m = document.getElementById('filter-sub-10m')?.checked ?? true;
+  
+  const filterDurationShort = document.getElementById('filter-duration-short')?.checked ?? true;
+  const filterDurationMedium = document.getElementById('filter-duration-medium')?.checked ?? true;
+  const filterDurationLong = document.getElementById('filter-duration-long')?.checked ?? true;
+  const filterDurationVerylong = document.getElementById('filter-duration-verylong')?.checked ?? true;
+  
+  const filterPerfViral = document.getElementById('filter-perf-viral')?.checked ?? true;
+  const filterPerfAlgorithm = document.getElementById('filter-perf-algorithm')?.checked ?? true;
+  const filterPerfNormal = document.getElementById('filter-perf-normal')?.checked ?? true;
+  const filterPerfLow = document.getElementById('filter-perf-low')?.checked ?? true;
+  
+  const filterMinViews = parseInt(document.getElementById('filter-min-views')?.value || 0);
+  const filterUploadDate = document.getElementById('filter-upload-date')?.value || '';
+  
+  // 필터링
+  filteredMarketVideos = marketVideos.filter(video => {
+    const subscribers = video.channelInfo?.subscriberCount || 0;
+    const views = video.statistics?.viewCount || 0;
+    const duration = parseDuration(video.contentDetails?.duration || '');
+    const publishedAt = new Date(video.snippet?.publishedAt || 0);
+    const performance = video.performance?.level || 'low';
+    
+    // 구독자 구간 필터
+    let subscriberMatch = false;
+    if (filterSub1k && subscribers < 10000) subscriberMatch = true;
+    if (filterSub10k && subscribers >= 10000 && subscribers < 100000) subscriberMatch = true;
+    if (filterSub100k && subscribers >= 100000 && subscribers < 1000000) subscriberMatch = true;
+    if (filterSub1m && subscribers >= 1000000 && subscribers < 10000000) subscriberMatch = true;
+    if (filterSub10m && subscribers >= 10000000) subscriberMatch = true;
+    if (!subscriberMatch) return false;
+    
+    // 영상 길이 필터 (초 단위)
+    let durationMatch = false;
+    if (filterDurationShort && duration < 180) durationMatch = true;
+    if (filterDurationMedium && duration >= 180 && duration < 600) durationMatch = true;
+    if (filterDurationLong && duration >= 600 && duration < 1800) durationMatch = true;
+    if (filterDurationVerylong && duration >= 1800) durationMatch = true;
+    if (!durationMatch) return false;
+    
+    // 성과도 필터
+    let perfMatch = false;
+    if (filterPerfViral && performance === 'viral') perfMatch = true;
+    if (filterPerfAlgorithm && performance === 'algorithm') perfMatch = true;
+    if (filterPerfNormal && performance === 'normal') perfMatch = true;
+    if (filterPerfLow && performance === 'low') perfMatch = true;
+    if (!perfMatch) return false;
+    
+    // 최소 조회수 필터
+    if (views < filterMinViews) return false;
+    
+    // 업로드 날짜 필터
+    if (filterUploadDate) {
+      const now = new Date();
+      let cutoffDate = new Date(0);
+      
+      if (filterUploadDate === 'day') {
+        cutoffDate = new Date(now - 24 * 60 * 60 * 1000);
+      } else if (filterUploadDate === 'week') {
+        cutoffDate = new Date(now - 7 * 24 * 60 * 60 * 1000);
+      } else if (filterUploadDate === 'month') {
+        cutoffDate = new Date(now - 30 * 24 * 60 * 60 * 1000);
+      } else if (filterUploadDate === 'year') {
+        cutoffDate = new Date(now - 365 * 24 * 60 * 60 * 1000);
+      }
+      
+      if (publishedAt < cutoffDate) return false;
+    }
+    
+    return true;
+  });
+  
+  console.log('✅ [마켓 탐색] 필터링 완료:', filteredMarketVideos.length, '개');
+  
+  // 정렬 적용
+  sortMarketVideos();
+}
+
+// 정렬
+function sortMarketVideos() {
+  filteredMarketVideos.sort((a, b) => {
+    let aValue, bValue;
+    
+    switch (marketSortColumn) {
+      case 'views':
+        aValue = a.statistics?.viewCount || 0;
+        bValue = b.statistics?.viewCount || 0;
+        break;
+      case 'performance':
+        aValue = parseFloat(a.performance?.ratio || 0);
+        bValue = parseFloat(b.performance?.ratio || 0);
+        break;
+      case 'subscribers':
+        aValue = a.channelInfo?.subscriberCount || 0;
+        bValue = b.channelInfo?.subscriberCount || 0;
+        break;
+      case 'likeRate':
+        const aLikes = a.statistics?.likeCount || 0;
+        const aViews = a.statistics?.viewCount || 1;
+        const bLikes = b.statistics?.likeCount || 0;
+        const bViews = b.statistics?.viewCount || 1;
+        aValue = (aLikes / aViews) * 100;
+        bValue = (bLikes / bViews) * 100;
+        break;
+      case 'comments':
+        aValue = a.statistics?.commentCount || 0;
+        bValue = b.statistics?.commentCount || 0;
+        break;
+      case 'publishedAt':
+        aValue = new Date(a.snippet?.publishedAt || 0).getTime();
+        bValue = new Date(b.snippet?.publishedAt || 0).getTime();
+        break;
+      default:
+        aValue = a.snippet?.title || '';
+        bValue = b.snippet?.title || '';
+    }
+    
+    if (marketSortOrder === 'asc') {
+      return aValue > bValue ? 1 : -1;
+    } else {
+      return aValue < bValue ? 1 : -1;
+    }
+  });
+  
+  // 테이블 렌더링
+  renderMarketTable(filteredMarketVideos);
+}
+
+// 테이블 렌더링
+function renderMarketTable(videos) {
+  const tbody = document.getElementById('video-table-body');
+  
+  if (!tbody) {
+    console.error('❌ [마켓 탐색] 테이블 body 없음');
+    return;
+  }
+  
+  // 빈 상태
+  if (videos.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="text-center py-12 text-gray-400">
+          <i class="fas fa-inbox text-4xl mb-3"></i>
+          <p class="text-lg">검색 결과가 없습니다</p>
+          <p class="text-sm mt-1">다른 키워드로 검색해보세요</p>
+        </td>
+      </tr>
+    `;
+    updateResultCount(0);
+    return;
+  }
+  
+  // 테이블 렌더링
+  tbody.innerHTML = videos.map(video => {
+    const thumbnail = video.snippet?.thumbnails?.medium?.url || '';
+    const title = video.snippet?.title || '제목 없음';
+    const channelTitle = video.snippet?.channelTitle || '채널 없음';
+    const channelAvatar = video.channelInfo?.thumbnails?.default?.url || '';
+    const views = video.statistics?.viewCount || 0;
+    const subscribers = video.channelInfo?.subscriberCount || 0;
+    const likes = video.statistics?.likeCount || 0;
+    const comments = video.statistics?.commentCount || 0;
+    const publishedAt = video.snippet?.publishedAt || '';
+    const duration = video.contentDetails?.duration || '';
+    const videoId = video.id?.videoId || video.id;
+    
+    const performance = video.performance || {};
+    const likeRate = views > 0 ? ((likes / views) * 100).toFixed(2) : '0.00';
+    
+    return `
+      <tr data-video-id="${videoId}" onclick="selectMarketVideo('${videoId}')" 
+          class="${selectedMarketVideo?.id === videoId ? 'selected' : ''}">
+        <!-- 영상 (썸네일 + 제목 + 채널) -->
+        <td>
+          <div class="video-thumbnail-cell">
+            <div class="video-thumbnail-wrapper">
+              <img src="${thumbnail}" alt="${title}" />
+              <span class="video-duration-badge">${formatDuration(duration)}</span>
+            </div>
+            <div class="video-info">
+              <h3 class="video-title">${escapeHtml(title)}</h3>
+              <div class="video-channel-info">
+                ${channelAvatar ? `<img src="${channelAvatar}" class="channel-avatar" />` : ''}
+                <span>${escapeHtml(channelTitle)}</span>
+              </div>
+            </div>
+          </div>
+        </td>
+        
+        <!-- 조회수 -->
+        <td class="metric-cell">
+          <div class="metric-value">${formatNumber(views)}</div>
+        </td>
+        
+        <!-- 성과도 -->
+        <td class="text-center">
+          <div class="performance-badge ${performance.badgeClass}">
+            ${performance.badge} ${performance.ratio}%
+          </div>
+        </td>
+        
+        <!-- 구독자 -->
+        <td class="metric-cell">
+          <div class="metric-value">${formatNumber(subscribers)}</div>
+        </td>
+        
+        <!-- 좋아요율 -->
+        <td class="metric-cell">
+          <div class="metric-value">${likeRate}%</div>
+        </td>
+        
+        <!-- 댓글 -->
+        <td class="metric-cell">
+          <div class="metric-value">${formatNumber(comments)}</div>
+        </td>
+        
+        <!-- 업로드 -->
+        <td class="text-center text-sm text-gray-600">
+          ${formatDate(publishedAt)}
+        </td>
+        
+        <!-- 길이 -->
+        <td class="text-center text-sm">
+          ${formatDuration(duration)}
+        </td>
+      </tr>
+    `;
+  }).join('');
+  
+  updateResultCount(videos.length);
+}
+
+// 영상 선택
+function selectMarketVideo(videoId) {
+  const video = filteredMarketVideos.find(v => (v.id?.videoId || v.id) === videoId);
+  
+  if (!video) return;
+  
+  selectedMarketVideo = video;
+  
+  // 테이블 행 하이라이트
+  document.querySelectorAll('#video-table-body tr').forEach(tr => {
+    tr.classList.remove('selected');
+  });
+  document.querySelector(`#video-table-body tr[data-video-id="${videoId}"]`)?.classList.add('selected');
+  
+  // 우측 상세 패널 렌더링
+  renderDetailPanel(video);
+}
+
+// 우측 상세 패널 렌더링
+function renderDetailPanel(video) {
+  const detailPanel = document.getElementById('detail-panel-content');
+  
+  if (!detailPanel) return;
+  
+  const videoId = video.id?.videoId || video.id;
+  const title = video.snippet?.title || '제목 없음';
+  const channelTitle = video.snippet?.channelTitle || '';
+  const channelAvatar = video.channelInfo?.thumbnails?.default?.url || '';
+  const subscribers = video.channelInfo?.subscriberCount || 0;
+  const views = video.statistics?.viewCount || 0;
+  const likes = video.statistics?.likeCount || 0;
+  const comments = video.statistics?.commentCount || 0;
+  const description = video.snippet?.description || '';
+  const tags = video.snippet?.tags || [];
+  const performance = video.performance || {};
+  
+  detailPanel.innerHTML = `
+    <div class="p-4">
+      <h2 class="font-bold text-lg mb-4">📊 영상 상세 분석</h2>
+      
+      <!-- YouTube 플레이어 -->
+      <div class="aspect-video mb-4">
+        <iframe
+          src="https://www.youtube.com/embed/${videoId}"
+          class="w-full h-full rounded-lg"
+          allowfullscreen
+        ></iframe>
+      </div>
+      
+      <!-- 제목 -->
+      <h3 class="font-bold text-base mb-2 leading-tight">${escapeHtml(title)}</h3>
+      
+      <!-- 채널 정보 -->
+      <div class="flex items-center gap-2 mb-4 pb-4 border-b">
+        ${channelAvatar ? `<img src="${channelAvatar}" class="w-10 h-10 rounded-full" />` : ''}
+        <div>
+          <div class="font-semibold">${escapeHtml(channelTitle)}</div>
+          <div class="text-sm text-gray-500">구독자 ${formatNumber(subscribers)}</div>
+        </div>
+      </div>
+      
+      <!-- 성과 지표 -->
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <div class="text-xs text-gray-500 mb-1">조회수</div>
+          <div class="font-bold text-lg">${formatNumber(views)}</div>
+        </div>
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <div class="text-xs text-gray-500 mb-1">성과도</div>
+          <div class="font-bold text-lg">${performance.ratio}%</div>
+        </div>
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <div class="text-xs text-gray-500 mb-1">좋아요</div>
+          <div class="font-bold text-lg">${formatNumber(likes)}</div>
+        </div>
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <div class="text-xs text-gray-500 mb-1">댓글</div>
+          <div class="font-bold text-lg">${formatNumber(comments)}</div>
+        </div>
+      </div>
+      
+      <!-- 태그 분석 -->
+      ${tags.length > 0 ? `
+        <div class="mb-4">
+          <h4 class="font-semibold mb-2">🏷️ 태그</h4>
+          <div class="flex flex-wrap gap-2">
+            ${tags.slice(0, 10).map(tag => `
+              <span class="px-2 py-1 bg-gray-100 rounded text-xs cursor-pointer hover:bg-gray-200"
+                    onclick="navigator.clipboard.writeText('${tag}'); alert('복사 완료: ${tag}');">
+                ${escapeHtml(tag)}
+              </span>
+            `).join('')}
+          </div>
+        </div>
+      ` : ''}
+      
+      <!-- 설명 -->
+      <div>
+        <h4 class="font-semibold mb-2">📝 설명</h4>
+        <p class="text-sm text-gray-700 whitespace-pre-wrap line-clamp-6">
+          ${escapeHtml(description.substring(0, 300))}${description.length > 300 ? '...' : ''}
+        </p>
+      </div>
+    </div>
+  `;
+  
+  // 빈 상태 클래스 제거
+  detailPanel.classList.remove('detail-sidebar-empty');
+}
+
+// 유틸리티 함수들
+function parseDuration(duration) {
+  // ISO 8601 duration을 초로 변환 (예: PT1H2M10S)
+  if (!duration) return 0;
+  
+  const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+  if (!match) return 0;
+  
+  const hours = parseInt(match[1]) || 0;
+  const minutes = parseInt(match[2]) || 0;
+  const seconds = parseInt(match[3]) || 0;
+  
+  return hours * 3600 + minutes * 60 + seconds;
+}
+
+function formatDuration(duration) {
+  const seconds = parseDuration(duration);
+  
+  if (seconds === 0) return '0:00';
+  
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  } else {
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+}
+
+function formatDate(dateString) {
+  if (!dateString) return '-';
+  
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return '오늘';
+  if (diffDays === 1) return '어제';
+  if (diffDays < 7) return `${diffDays}일 전`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}주 전`;
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)}개월 전`;
+  return `${Math.floor(diffDays / 365)}년 전`;
+}
+
+function escapeHtml(text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+function updateResultCount(count) {
+  const resultCount = document.getElementById('result-count');
+  if (resultCount) {
+    resultCount.textContent = `총 ${count}개 결과`;
+  }
+}
+
+function showMarketLoading(show) {
+  const tbody = document.getElementById('video-table-body');
+  
+  if (!tbody) return;
+  
+  if (show) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="text-center py-12">
+          <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+          <p class="text-lg mt-4 text-gray-600">200개 영상 수집 중...</p>
+        </td>
+      </tr>
+    `;
+  }
+}
+
+// 컬럼 정렬 이벤트
+function handleColumnSort(column) {
+  if (marketSortColumn === column) {
+    // 같은 컬럼 클릭 시 정렬 순서 토글
+    marketSortOrder = marketSortOrder === 'asc' ? 'desc' : 'asc';
+  } else {
+    // 다른 컬럼 클릭 시 해당 컬럼으로 내림차순
+    marketSortColumn = column;
+    marketSortOrder = 'desc';
+  }
+  
+  // 헤더 스타일 업데이트
+  document.querySelectorAll('.video-table th').forEach(th => {
+    th.classList.remove('sorted-asc', 'sorted-desc');
+  });
+  
+  const th = document.querySelector(`.video-table th[data-sort="${column}"]`);
+  if (th) {
+    th.classList.add(marketSortOrder === 'asc' ? 'sorted-asc' : 'sorted-desc');
+  }
+  
+  // 정렬 및 렌더링
+  sortMarketVideos();
+}
+
+// 이벤트 리스너 등록
+document.addEventListener('DOMContentLoaded', () => {
+  // 마켓 검색 버튼
+  const marketSearchBtn = document.getElementById('market-search-btn');
+  if (marketSearchBtn) {
+    marketSearchBtn.addEventListener('click', searchMarket200);
+  }
+  
+  // 마켓 검색 입력 (엔터키)
+  const marketSearchInput = document.getElementById('market-search-input');
+  if (marketSearchInput) {
+    marketSearchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        searchMarket200();
+      }
+    });
+  }
+  
+  // 필터 적용 버튼
+  const applyFiltersBtn = document.getElementById('apply-filters-btn');
+  if (applyFiltersBtn) {
+    applyFiltersBtn.addEventListener('click', applyMarketFilters);
+  }
+  
+  // 필터 초기화 버튼
+  const resetFiltersBtn = document.getElementById('reset-filters-btn');
+  if (resetFiltersBtn) {
+    resetFiltersBtn.addEventListener('click', () => {
+      // 모든 체크박스 선택
+      document.querySelectorAll('.filter-sidebar input[type="checkbox"]').forEach(cb => {
+        cb.checked = true;
+      });
+      
+      // 입력 필드 초기화
+      const minViewsInput = document.getElementById('filter-min-views');
+      if (minViewsInput) minViewsInput.value = '';
+      
+      const uploadDateSelect = document.getElementById('filter-upload-date');
+      if (uploadDateSelect) uploadDateSelect.value = '';
+      
+      // 필터 재적용
+      applyMarketFilters();
+    });
+  }
+  
+  // 컬럼 정렬 이벤트
+  document.querySelectorAll('.video-table th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const column = th.dataset.sort;
+      if (column) {
+        handleColumnSort(column);
+      }
+    });
+  });
+  
+  // CSV/Excel 다운로드 (미구현)
+  document.getElementById('export-csv-btn')?.addEventListener('click', () => {
+    alert('CSV 다운로드 기능은 곧 제공됩니다.');
+  });
+  
+  document.getElementById('export-excel-btn')?.addEventListener('click', () => {
+    alert('Excel 다운로드 기능은 곧 제공됩니다.');
+  });
+});
