@@ -639,4 +639,256 @@ ${i + 1}. ${v.title}
   }
 })
 
+// ========================================
+// Phase 5C: 채널 영상 검색 API
+// ========================================
+
+app.post('/api/youtube/channel/videos', async (c) => {
+  try {
+    const body = await c.req.json()
+    const { channelId, maxResults = 50, pageToken, order = 'date' } = body
+
+    // 1. 입력 검증
+    if (!channelId || typeof channelId !== 'string') {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'INVALID_INPUT',
+          message: '채널 ID를 입력해주세요.'
+        }
+      }, 400)
+    }
+
+    // 2. YouTube API 키 확인
+    const youtubeApiKey = c.env.YOUTUBE_API_KEY
+    if (!youtubeApiKey) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'API_KEY_MISSING',
+          message: 'YouTube API 키가 설정되지 않았습니다.'
+        }
+      }, 500)
+    }
+
+    // 3. YouTube API 호출 (search.list)
+    const searchParams = new URLSearchParams({
+      part: 'snippet',
+      channelId: channelId,
+      type: 'video',
+      maxResults: maxResults.toString(),
+      order: order, // date, viewCount, rating
+      key: youtubeApiKey
+    })
+
+    if (pageToken) {
+      searchParams.append('pageToken', pageToken)
+    }
+
+    const searchResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/search?${searchParams.toString()}`
+    )
+
+    if (!searchResponse.ok) {
+      throw new Error(`YouTube API error: ${searchResponse.status}`)
+    }
+
+    const searchData = await searchResponse.json()
+    const videoIds = searchData.items?.map((item: any) => item.id.videoId).join(',') || ''
+
+    // 4. 영상 상세 정보 가져오기 (videos.list)
+    let videos = []
+    if (videoIds) {
+      const videosParams = new URLSearchParams({
+        part: 'snippet,statistics,contentDetails',
+        id: videoIds,
+        key: youtubeApiKey
+      })
+
+      const videosResponse = await fetch(
+        `https://www.googleapis.com/youtube/v3/videos?${videosParams.toString()}`
+      )
+
+      if (!videosResponse.ok) {
+        throw new Error(`YouTube API error: ${videosResponse.status}`)
+      }
+
+      const videosData = await videosResponse.json()
+      videos = videosData.items || []
+    }
+
+    // 5. 채널 정보 가져오기 (channels.list)
+    const channelsParams = new URLSearchParams({
+      part: 'snippet,statistics',
+      id: channelId,
+      key: youtubeApiKey
+    })
+
+    const channelsResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/channels?${channelsParams.toString()}`
+    )
+
+    let channelInfo = null
+    if (channelsResponse.ok) {
+      const channelsData = await channelsResponse.json()
+      channelInfo = channelsData.items?.[0] || null
+    }
+
+    // 6. 결과 반환
+    return c.json({
+      success: true,
+      data: {
+        channelId,
+        channelInfo,
+        totalResults: searchData.pageInfo?.totalResults || 0,
+        videos: videos,
+        nextPageToken: searchData.nextPageToken,
+        hasMore: !!searchData.nextPageToken
+      }
+    })
+
+  } catch (error: any) {
+    console.error('Channel videos search error:', error)
+    return c.json<ApiResponse<null>>({
+      success: false,
+      error: {
+        code: 'CHANNEL_VIDEOS_ERROR',
+        message: error.message || '채널 영상 검색 중 오류가 발생했습니다.'
+      }
+    }, 500)
+  }
+})
+
+// ========================================
+// Phase 5C: 카테고리 영상 검색 API
+// ========================================
+
+app.post('/api/youtube/category/videos', async (c) => {
+  try {
+    const body = await c.req.json()
+    const { categoryId, maxResults = 50, pageToken, order = 'viewCount', regionCode = 'KR' } = body
+
+    // 1. 입력 검증
+    if (!categoryId || typeof categoryId !== 'string') {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'INVALID_INPUT',
+          message: '카테고리 ID를 입력해주세요.'
+        }
+      }, 400)
+    }
+
+    // 2. YouTube API 키 확인
+    const youtubeApiKey = c.env.YOUTUBE_API_KEY
+    if (!youtubeApiKey) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'API_KEY_MISSING',
+          message: 'YouTube API 키가 설정되지 않았습니다.'
+        }
+      }, 500)
+    }
+
+    // 3. YouTube API 호출 (search.list with videoCategoryId)
+    const searchParams = new URLSearchParams({
+      part: 'snippet',
+      type: 'video',
+      videoCategoryId: categoryId,
+      maxResults: maxResults.toString(),
+      order: order, // viewCount, date, rating
+      regionCode: regionCode,
+      key: youtubeApiKey
+    })
+
+    if (pageToken) {
+      searchParams.append('pageToken', pageToken)
+    }
+
+    const searchResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/search?${searchParams.toString()}`
+    )
+
+    if (!searchResponse.ok) {
+      throw new Error(`YouTube API error: ${searchResponse.status}`)
+    }
+
+    const searchData = await searchResponse.json()
+    const videoIds = searchData.items?.map((item: any) => item.id.videoId).join(',') || ''
+
+    // 4. 영상 상세 정보 가져오기 (videos.list)
+    let videos = []
+    if (videoIds) {
+      const videosParams = new URLSearchParams({
+        part: 'snippet,statistics,contentDetails',
+        id: videoIds,
+        key: youtubeApiKey
+      })
+
+      const videosResponse = await fetch(
+        `https://www.googleapis.com/youtube/v3/videos?${videosParams.toString()}`
+      )
+
+      if (!videosResponse.ok) {
+        throw new Error(`YouTube API error: ${videosResponse.status}`)
+      }
+
+      const videosData = await videosResponse.json()
+      videos = videosData.items || []
+
+      // 5. 각 영상의 채널 정보 가져오기
+      const channelIds = [...new Set(videos.map((v: any) => v.snippet.channelId))].join(',')
+      
+      if (channelIds) {
+        const channelsParams = new URLSearchParams({
+          part: 'snippet,statistics',
+          id: channelIds,
+          key: youtubeApiKey
+        })
+
+        const channelsResponse = await fetch(
+          `https://www.googleapis.com/youtube/v3/channels?${channelsParams.toString()}`
+        )
+
+        if (channelsResponse.ok) {
+          const channelsData = await channelsResponse.json()
+          const channelMap = new Map(
+            channelsData.items?.map((ch: any) => [ch.id, ch]) || []
+          )
+
+          // 각 영상에 채널 정보 추가
+          videos = videos.map((video: any) => ({
+            ...video,
+            channelInfo: channelMap.get(video.snippet.channelId) || null
+          }))
+        }
+      }
+    }
+
+    // 6. 결과 반환
+    return c.json({
+      success: true,
+      data: {
+        categoryId,
+        regionCode,
+        totalResults: searchData.pageInfo?.totalResults || 0,
+        videos: videos,
+        nextPageToken: searchData.nextPageToken,
+        hasMore: !!searchData.nextPageToken
+      }
+    })
+
+  } catch (error: any) {
+    console.error('Category videos search error:', error)
+    return c.json<ApiResponse<null>>({
+      success: false,
+      error: {
+        code: 'CATEGORY_VIDEOS_ERROR',
+        message: error.message || '카테고리 영상 검색 중 오류가 발생했습니다.'
+      }
+    }, 500)
+  }
+})
+
 export default app

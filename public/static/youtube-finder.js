@@ -3782,6 +3782,7 @@ function buildSearchQuery() {
 // 채널 검색 함수
 async function handleChannelSearch() {
   const channelInput = document.getElementById('channel-search-input')?.value.trim();
+  const btn = document.getElementById('channel-search-btn');
   
   if (!channelInput) {
     alert('채널 ID 또는 URL을 입력해주세요.');
@@ -3806,12 +3807,134 @@ async function handleChannelSearch() {
     }
   }
   
-  alert(`채널 검색 기능은 준비 중입니다.\n채널 ID: ${channelId}\n\n키워드 탭에서 채널명을 검색해보세요.`);
+  try {
+    // 버튼 비활성화 & 로딩 표시
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>채널 분석 중...';
+    }
+    
+    // 초기화
+    marketVideos = [];
+    filteredMarketVideos = [];
+    selectedMarketVideo = null;
+    
+    // 로딩 표시
+    showMarketLoading(true);
+    
+    // 채널 정보 가져오기
+    console.log(`📡 [채널 정보] channelId: ${channelId}`);
+    
+    const channelResponse = await fetch('/api/youtube/channel', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('postflow_token')}`
+      },
+      body: JSON.stringify({ channelIdOrUrl: channelId })
+    });
+    
+    if (!channelResponse.ok) {
+      const errorData = await channelResponse.json();
+      throw new Error(errorData.error?.message || '채널 정보를 가져올 수 없습니다.');
+    }
+    
+    const channelData = await channelResponse.json();
+    const actualChannelId = channelData.data?.id || channelId;
+    
+    console.log(`✅ [채널 정보 수신] ID: ${actualChannelId}`);
+    
+    // 채널 영상 가져오기 (최대 200개, 4페이지)
+    let totalCollected = 0;
+    let pageToken = null;
+    const maxIterations = 4;
+    const perPage = 50;
+    
+    for (let i = 0; i < maxIterations; i++) {
+      console.log(`📡 [채널 영상 수집] 페이지 ${i + 1}/${maxIterations}`);
+      
+      const searchBody = {
+        channelId: actualChannelId,
+        maxResults: perPage,
+        order: 'date'
+      };
+      
+      if (pageToken) {
+        searchBody.pageToken = pageToken;
+      }
+      
+      const response = await fetch('/api/youtube/channel/videos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('postflow_token')}`
+        },
+        body: JSON.stringify(searchBody)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || `채널 영상 검색 실패 (페이지 ${i + 1})`);
+      }
+      
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error?.message || '채널 영상 검색 실패');
+      }
+      
+      const videos = result.data?.videos || [];
+      marketVideos = marketVideos.concat(videos);
+      totalCollected += videos.length;
+      
+      console.log(`✅ [페이지 ${i + 1} 수신] ${videos.length}개 수집, 총 ${totalCollected}개`);
+      
+      // 중간 결과 표시
+      updateResultCount(totalCollected);
+      
+      pageToken = result.data?.nextPageToken;
+      
+      if (!result.data?.hasMore || totalCollected >= 200) {
+        console.log(`⏹️ [수집 종료] 더 이상 결과 없음 또는 200개 도달`);
+        break;
+      }
+    }
+    
+    // 성과도 계산
+    marketVideos = marketVideos.map(video => ({
+      ...video,
+      performance: calculatePerformance(video)
+    }));
+    
+    console.log(`🎉 [채널 검색 완료] 총 ${marketVideos.length}개 영상 수집`);
+    
+    // 필터 적용
+    applyMarketFilters();
+    
+  } catch (error) {
+    console.error('❌ [채널 검색 오류]', error);
+    alert(`채널 검색 오류:\n${error.message}`);
+    
+    // 빈 상태 표시
+    marketVideos = [];
+    renderMarketTable([]);
+    
+  } finally {
+    // 로딩 숨기기
+    showMarketLoading(false);
+    
+    // 버튼 복구
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-search mr-2"></i>채널 검색';
+    }
+  }
 }
 
 // 카테고리 검색 함수
 async function handleCategorySearch() {
   const categoryId = document.getElementById('category-search-select')?.value;
+  const btn = document.getElementById('category-search-btn');
   
   if (!categoryId) {
     alert('카테고리를 선택해주세요.');
@@ -3820,15 +3943,113 @@ async function handleCategorySearch() {
   
   console.log(`🔍 [카테고리 검색] ID: ${categoryId}`);
   
-  // 카테고리 필터 설정
-  document.getElementById('filter-category').value = categoryId;
-  
-  // 키워드 탭으로 전환하고 빈 검색 (카테고리 필터만 적용)
-  switchSearchTab('keyword');
-  document.getElementById('market-search-input').value = '';
-  
-  // 검색 실행 (카테고리 필터가 적용됨)
-  alert('카테고리 검색 기능은 준비 중입니다.\n\n현재는 키워드 탭에서 검색 후 좌측 필터의 카테고리를 선택해주세요.');
+  try {
+    // 버튼 비활성화 & 로딩 표시
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>검색 중...';
+    }
+    
+    // 초기화
+    marketVideos = [];
+    filteredMarketVideos = [];
+    selectedMarketVideo = null;
+    
+    // 로딩 표시
+    showMarketLoading(true);
+    
+    // 국가 필터 가져오기
+    const regionCode = document.getElementById('filter-region')?.value || 'KR';
+    const order = document.getElementById('filter-order')?.value || 'viewCount';
+    
+    console.log(`📡 [카테고리 인기 영상] categoryId: ${categoryId}, region: ${regionCode}`);
+    
+    // 카테고리 영상 가져오기 (최대 200개, 4페이지)
+    let totalCollected = 0;
+    let pageToken = null;
+    const maxIterations = 4;
+    const perPage = 50;
+    
+    for (let i = 0; i < maxIterations; i++) {
+      console.log(`📡 [카테고리 영상 수집] 페이지 ${i + 1}/${maxIterations}`);
+      
+      const searchBody = {
+        categoryId: categoryId,
+        maxResults: perPage,
+        order: order,
+        regionCode: regionCode
+      };
+      
+      if (pageToken) {
+        searchBody.pageToken = pageToken;
+      }
+      
+      const response = await fetch('/api/youtube/category/videos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('postflow_token')}`
+        },
+        body: JSON.stringify(searchBody)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || `카테고리 검색 실패 (페이지 ${i + 1})`);
+      }
+      
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error?.message || '카테고리 검색 실패');
+      }
+      
+      const videos = result.data?.videos || [];
+      marketVideos = marketVideos.concat(videos);
+      totalCollected += videos.length;
+      
+      console.log(`✅ [페이지 ${i + 1} 수신] ${videos.length}개 수집, 총 ${totalCollected}개`);
+      
+      // 중간 결과 표시
+      updateResultCount(totalCollected);
+      
+      pageToken = result.data?.nextPageToken;
+      
+      if (!result.data?.hasMore || totalCollected >= 200) {
+        console.log(`⏹️ [수집 종료] 더 이상 결과 없음 또는 200개 도달`);
+        break;
+      }
+    }
+    
+    // 성과도 계산
+    marketVideos = marketVideos.map(video => ({
+      ...video,
+      performance: calculatePerformance(video)
+    }));
+    
+    console.log(`🎉 [카테고리 검색 완료] 총 ${marketVideos.length}개 영상 수집`);
+    
+    // 필터 적용
+    applyMarketFilters();
+    
+  } catch (error) {
+    console.error('❌ [카테고리 검색 오류]', error);
+    alert(`카테고리 검색 오류:\n${error.message}`);
+    
+    // 빈 상태 표시
+    marketVideos = [];
+    renderMarketTable([]);
+    
+  } finally {
+    // 로딩 숨기기
+    showMarketLoading(false);
+    
+    // 버튼 복구
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-search mr-2"></i>검색';
+    }
+  }
 }
 
 // 채널 검색 버튼 이벤트

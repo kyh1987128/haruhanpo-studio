@@ -772,7 +772,7 @@ export function youtubeAnalyzerTemplate() {
       background: #ffffff;
     }
     
-    /* 반응형 디자인 */
+    /* 반응형 디자인 - 태블릿 (768px 이하) */
     @media (max-width: 768px) {
       .youtube-finder-workspace {
         flex-direction: column;
@@ -788,6 +788,90 @@ export function youtubeAnalyzerTemplate() {
       
       .subnav-text {
         display: none;
+      }
+      
+      /* 검색 탭 */
+      .search-tab {
+        padding: 8px 12px;
+        font-size: 13px;
+      }
+      
+      /* 필터 사이드바 */
+      .filter-sidebar {
+        width: 100%;
+        position: static;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      
+      /* 3단 레이아웃 → 세로 배치 */
+      .three-column-layout {
+        flex-direction: column;
+      }
+      
+      /* 상세 패널 하단으로 */
+      .detail-sidebar {
+        width: 100%;
+        position: static;
+        height: 300px;
+        border-left: none;
+        border-top: 1px solid #e5e7eb;
+      }
+    }
+    
+    /* 반응형 디자인 - 모바일 (480px 이하) */
+    @media (max-width: 480px) {
+      /* 검색 탭 가로 스크롤 */
+      .search-tab {
+        padding: 6px 10px;
+        font-size: 12px;
+        white-space: nowrap;
+      }
+      
+      /* 검색 입력 필드 */
+      #market-search-input,
+      #channel-search-input {
+        font-size: 14px;
+        padding: 10px 12px 10px 40px;
+      }
+      
+      /* 버튼 세로 배치 */
+      .flex.gap-3.mb-3,
+      .flex.gap-2.items-center {
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .flex.gap-3.mb-3 > *,
+      .flex.gap-2.items-center > button {
+        width: 100%;
+      }
+      
+      /* 검색 방식 라디오 버튼 */
+      .flex.items-center.gap-4 {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      
+      /* 테이블 폰트 크기 */
+      .video-table {
+        font-size: 12px;
+      }
+      
+      .video-table th,
+      .video-table td {
+        padding: 8px 4px;
+      }
+      
+      /* 영상 제목 */
+      .video-thumbnail-cell .font-medium {
+        font-size: 13px;
+      }
+      
+      /* 채널명 */
+      .video-thumbnail-cell .text-sm {
+        font-size: 11px;
       }
     }
     
