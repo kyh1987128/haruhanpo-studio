@@ -1692,7 +1692,8 @@ export function youtubeAnalyzerTemplate() {
           <!-- 결과는 JavaScript로 동적 생성 -->
         </div>
 
-      </div>
+      </div> <!-- three-column-layout 닫기 -->
+    </div> <!-- tab-market-explorer 닫기 -->
 
       <!-- 탭 콘텐츠: 채널 분석 -->
       <div id="tab-channel-analysis" class="tab-content hidden">
