@@ -937,27 +937,18 @@ export function youtubeAnalyzerTemplate() {
           <h2 class="font-bold text-lg mb-4">🔍 검색 & 필터</h2>
           
           <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-          <!-- 1. 검색 방식 선택 -->
+          <!-- 1. 검색 방식 선택 (드롭다운) -->
           <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
           <div class="mb-6 pb-6 border-b border-gray-200">
             <h3 class="text-sm font-semibold text-gray-700 mb-3">📍 검색 방식</h3>
-            <div class="flex flex-col gap-2">
-              <label class="flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 transition">
-                <input type="radio" name="search-type" value="keyword" checked class="mr-2">
-                <i class="fas fa-search text-green-600 mr-2"></i>
-                <span class="font-medium text-sm">키워드 검색</span>
-              </label>
-              <label class="flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 transition">
-                <input type="radio" name="search-type" value="channel" class="mr-2">
-                <i class="fas fa-user text-blue-600 mr-2"></i>
-                <span class="font-medium text-sm">채널 ID/URL</span>
-              </label>
-              <label class="flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 transition">
-                <input type="radio" name="search-type" value="category" class="mr-2">
-                <i class="fas fa-th-large text-purple-600 mr-2"></i>
-                <span class="font-medium text-sm">카테고리 검색</span>
-              </label>
-            </div>
+            <select 
+              id="search-type-select" 
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm font-medium"
+            >
+              <option value="keyword">🔍 키워드 검색</option>
+              <option value="channel">👤 채널 ID/URL</option>
+              <option value="category">📂 카테고리 검색</option>
+            </select>
           </div>
           
           <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
@@ -3200,6 +3191,14 @@ export function youtubeAnalyzerTemplate() {
         // 새로운 탭 구조에 맞게 매핑
         if (tab === 'market-explorer') {
           document.getElementById('tab-market-explorer')?.classList.remove('hidden');
+        } else if (tab === 'channel-analysis') {
+          document.getElementById('tab-channel-analysis')?.classList.remove('hidden');
+        } else if (tab === 'content-strategy') {
+          document.getElementById('tab-content-strategy')?.classList.remove('hidden');
+        } else if (tab === 'performance-tracking') {
+          document.getElementById('tab-performance-tracking')?.classList.remove('hidden');
+        } else if (tab === 'advanced-analytics') {
+          document.getElementById('tab-advanced-analytics')?.classList.remove('hidden');
         } else if (tab === 'channel-tracking') {
           // 'channel-tracking' 탭은 기존 'my-channel' ID를 사용
           document.getElementById('tab-my-channel')?.classList.remove('hidden');

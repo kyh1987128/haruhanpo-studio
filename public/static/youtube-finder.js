@@ -2753,22 +2753,19 @@ function handleColumnSort(column) {
 // 이벤트 리스너 등록
 document.addEventListener('DOMContentLoaded', () => {
   // 마켓 검색 버튼
-  // 통합 검색 버튼 (좌측 패널)
-  const unifiedSearchBtn = document.getElementById('unified-search-btn');
-  if (unifiedSearchBtn) {
-    unifiedSearchBtn.addEventListener('click', handleUnifiedSearch);
-  }
-
-  // 검색 방식 라디오 변경 시 입력창 동적 표시
-  document.querySelectorAll('input[name="filter-search-type"]').forEach(radio => {
-    radio.addEventListener('change', (e) => {
+  // 검색 방식 드롭다운 변경 시 입력창 동적 표시
+  const searchTypeSelect = document.getElementById('search-type-select');
+  if (searchTypeSelect) {
+    searchTypeSelect.addEventListener('change', (e) => {
       updateSearchInputVisibility(e.target.value);
     });
-  });
+    // 초기 로딩 시 기본값 적용
+    updateSearchInputVisibility(searchTypeSelect.value);
+  }
 
   const marketSearchBtn = document.getElementById('market-search-btn');
   if (marketSearchBtn) {
-    marketSearchBtn.addEventListener('click', searchMarket200);
+    marketSearchBtn.addEventListener('click', handleUnifiedSearch);
   }
   
   // 마켓 검색 입력 (엔터키)
@@ -3766,24 +3763,23 @@ function switchSearchTab(tabName) {
  * 검색 방식에 따라 입력창 표시/숨김
  */
 function updateSearchInputVisibility(searchType) {
-  const keywordInput = document.getElementById('filter-search-keyword-input');
-  const channelInput = document.getElementById('filter-search-channel-input');
-  const categorySelect = document.getElementById('filter-search-category-select');
-  const excludeInput = document.getElementById('filter-exclude-keywords-input');
-  const searchModeRadios = document.getElementById('filter-search-mode-radios');
+  const keywordContainer = document.getElementById('input-keyword');
+  const channelContainer = document.getElementById('input-channel');
+  const categoryContainer = document.getElementById('input-category');
 
-  if (keywordInput) keywordInput.style.display = searchType === 'keyword' ? 'block' : 'none';
-  if (channelInput) channelInput.style.display = searchType === 'channel' ? 'block' : 'none';
-  if (categorySelect) categorySelect.style.display = searchType === 'category' ? 'block' : 'none';
-  if (excludeInput) excludeInput.style.display = searchType === 'keyword' ? 'block' : 'none';
-  if (searchModeRadios) searchModeRadios.style.display = searchType === 'keyword' ? 'block' : 'none';
+  if (keywordContainer) keywordContainer.style.display = searchType === 'keyword' ? 'block' : 'none';
+  if (channelContainer) channelContainer.style.display = searchType === 'channel' ? 'block' : 'none';
+  if (categoryContainer) categoryContainer.style.display = searchType === 'category' ? 'block' : 'none';
+  
+  console.log(`🔄 [검색 방식 변경] ${searchType} - 입력창 표시 업데이트`);
 }
 
 /**
  * 통합 검색 실행
  */
 async function handleUnifiedSearch() {
-  const searchType = document.querySelector('input[name="filter-search-type"]:checked')?.value || 'keyword';
+  const searchTypeSelect = document.getElementById('search-type-select');
+  const searchType = searchTypeSelect?.value || 'keyword';
   
   console.log(`🔍 [통합 검색] 검색 방식: ${searchType}`);
   
@@ -3800,7 +3796,7 @@ async function handleUnifiedSearch() {
  * 키워드 검색
  */
 async function handleKeywordSearch() {
-  const keywordInput = document.getElementById('filter-search-keyword-input');
+  const keywordInput = document.getElementById('market-search-input');
   const keyword = keywordInput?.value.trim() || '';
   
   if (!keyword) {
@@ -3808,8 +3804,8 @@ async function handleKeywordSearch() {
     return;
   }
   
-  const searchMode = document.querySelector('input[name="filter-search-mode"]:checked')?.value || 'keyword';
-  const excludeKeywords = document.getElementById('filter-exclude-keywords-input')?.value.trim() || '';
+  const searchMode = document.querySelector('input[name="search-mode"]:checked')?.value || 'keyword';
+  const excludeKeywords = document.getElementById('exclude-keywords-input')?.value.trim() || '';
   
   let query = keyword;
   
@@ -3836,7 +3832,7 @@ async function handleKeywordSearch() {
  * 채널 검색
  */
 async function handleChannelSearch() {
-  const channelInput = document.getElementById('filter-search-channel-input');
+  const channelInput = document.getElementById('channel-search-input');
   const channelId = channelInput?.value.trim() || '';
   
   if (!channelId) {
@@ -3846,7 +3842,7 @@ async function handleChannelSearch() {
   
   console.log(`🔍 [채널 검색] Channel ID: ${channelId}`);
   
-  const btn = document.getElementById('unified-search-btn');
+  const btn = document.getElementById('market-search-btn');
   if (btn) {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>검색 중...';
@@ -3885,7 +3881,7 @@ async function handleChannelSearch() {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-search mr-2"></i>검색';
+      btn.innerHTML = '<i class="fas fa-search mr-2"></i>🔍 검색 시작';
     }
   }
 }
@@ -3894,7 +3890,7 @@ async function handleChannelSearch() {
  * 카테고리 검색
  */
 async function handleCategorySearch() {
-  const categorySelect = document.getElementById('filter-search-category-select');
+  const categorySelect = document.getElementById('category-search-select');
   const categoryId = categorySelect?.value || '';
   
   if (!categoryId) {
@@ -3904,7 +3900,7 @@ async function handleCategorySearch() {
   
   console.log(`🔍 [카테고리 검색] Category ID: ${categoryId}`);
   
-  const btn = document.getElementById('unified-search-btn');
+  const btn = document.getElementById('market-search-btn');
   if (btn) {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>검색 중...';
@@ -3943,7 +3939,7 @@ async function handleCategorySearch() {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-search mr-2"></i>검색';
+      btn.innerHTML = '<i class="fas fa-search mr-2"></i>🔍 검색 시작';
     }
   }
 }
