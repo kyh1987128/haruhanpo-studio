@@ -2065,6 +2065,13 @@ async function searchMarket200() {
   
   console.log('🔍 [마켓 탐색] 200개 검색 시작:', keyword);
   
+  // 필터 값 가져오기
+  const filterOrder = document.getElementById('filter-order')?.value || 'relevance';
+  const filterCategory = document.getElementById('filter-category')?.value || '';
+  const filterRegion = document.getElementById('filter-region')?.value || '';
+  
+  console.log('🔍 [검색 필터]', { order: filterOrder, category: filterCategory, region: filterRegion });
+  
   // 초기화
   marketVideos = [];
   filteredMarketVideos = [];
@@ -2084,17 +2091,30 @@ async function searchMarket200() {
     for (let i = 0; i < 4; i++) {
       console.log(`📥 [마켓 탐색] 페이지 ${i + 1}/4 수집 중...`);
       
+      const searchBody = { 
+        keyword, 
+        maxResults: perPage,
+        pageToken: pageToken,
+        order: filterOrder
+      };
+      
+      // 카테고리 필터 추가
+      if (filterCategory) {
+        searchBody.videoCategoryId = filterCategory;
+      }
+      
+      // 국가 필터 추가
+      if (filterRegion) {
+        searchBody.regionCode = filterRegion;
+      }
+      
       const response = await fetch('/api/youtube/search', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('postflow_token')}`
         },
-        body: JSON.stringify({ 
-          keyword, 
-          maxResults: perPage,
-          pageToken: pageToken
-        })
+        body: JSON.stringify(searchBody)
       });
       
       const result = await response.json();
@@ -2154,25 +2174,24 @@ async function searchMarket200() {
 function applyMarketFilters() {
   console.log('🔍 [마켓 탐색] 필터 적용');
   
-  // 필터 값 가져오기
-  const filterSub1k = document.getElementById('filter-sub-1k')?.checked ?? true;
-  const filterSub10k = document.getElementById('filter-sub-10k')?.checked ?? true;
-  const filterSub100k = document.getElementById('filter-sub-100k')?.checked ?? true;
-  const filterSub1m = document.getElementById('filter-sub-1m')?.checked ?? true;
-  const filterSub10m = document.getElementById('filter-sub-10m')?.checked ?? true;
-  
-  const filterDurationShort = document.getElementById('filter-duration-short')?.checked ?? true;
-  const filterDurationMedium = document.getElementById('filter-duration-medium')?.checked ?? true;
-  const filterDurationLong = document.getElementById('filter-duration-long')?.checked ?? true;
-  const filterDurationVerylong = document.getElementById('filter-duration-verylong')?.checked ?? true;
-  
-  const filterPerfViral = document.getElementById('filter-perf-viral')?.checked ?? true;
-  const filterPerfAlgorithm = document.getElementById('filter-perf-algorithm')?.checked ?? true;
-  const filterPerfNormal = document.getElementById('filter-perf-normal')?.checked ?? true;
-  const filterPerfLow = document.getElementById('filter-perf-low')?.checked ?? true;
-  
+  // 드롭다운 필터 값 가져오기
+  const filterSubscriber = document.getElementById('filter-subscriber')?.value || 'all';
+  const filterDuration = document.getElementById('filter-duration')?.value || 'all';
+  const filterPerformance = document.getElementById('filter-performance')?.value || 'all';
+  const filterCategory = document.getElementById('filter-category')?.value || 'all';
+  const filterCountry = document.getElementById('filter-country')?.value || 'all';
   const filterMinViews = parseInt(document.getElementById('filter-min-views')?.value || 0);
   const filterUploadDate = document.getElementById('filter-upload-date')?.value || '';
+  
+  console.log('📊 [필터 값]', {
+    subscriber: filterSubscriber,
+    duration: filterDuration,
+    performance: filterPerformance,
+    category: filterCategory,
+    country: filterCountry,
+    minViews: filterMinViews,
+    uploadDate: filterUploadDate
+  });
   
   // 필터링
   filteredMarketVideos = marketVideos.filter(video => {
@@ -2181,46 +2200,65 @@ function applyMarketFilters() {
     const duration = parseDuration(video.contentDetails?.duration || '');
     const publishedAt = new Date(video.snippet?.publishedAt || 0);
     const performance = video.performance?.level || 'low';
+    const categoryId = video.snippet?.categoryId || '';
+    const defaultLanguage = video.snippet?.defaultLanguage || video.snippet?.defaultAudioLanguage || '';
     
-    // 구독자 구간 필터
-    let subscriberMatch = false;
-    if (filterSub1k && subscribers < 10000) subscriberMatch = true;
-    if (filterSub10k && subscribers >= 10000 && subscribers < 100000) subscriberMatch = true;
-    if (filterSub100k && subscribers >= 100000 && subscribers < 1000000) subscriberMatch = true;
-    if (filterSub1m && subscribers >= 1000000 && subscribers < 10000000) subscriberMatch = true;
-    if (filterSub10m && subscribers >= 10000000) subscriberMatch = true;
-    if (!subscriberMatch) return false;
+    // 구독자 구간 필터 (드롭다운)
+    if (filterSubscriber !== 'all') {
+      let subscriberMatch = false;
+      if (filterSubscriber === '1k' && subscribers < 10000) subscriberMatch = true;
+      if (filterSubscriber === '10k' && subscribers >= 10000 && subscribers < 100000) subscriberMatch = true;
+      if (filterSubscriber === '100k' && subscribers >= 100000 && subscribers < 1000000) subscriberMatch = true;
+      if (filterSubscriber === '1m' && subscribers >= 1000000 && subscribers < 10000000) subscriberMatch = true;
+      if (filterSubscriber === '10m' && subscribers >= 10000000) subscriberMatch = true;
+      if (!subscriberMatch) return false;
+    }
     
-    // 영상 길이 필터 (초 단위)
-    let durationMatch = false;
-    if (filterDurationShort && duration < 180) durationMatch = true;
-    if (filterDurationMedium && duration >= 180 && duration < 600) durationMatch = true;
-    if (filterDurationLong && duration >= 600 && duration < 1800) durationMatch = true;
-    if (filterDurationVerylong && duration >= 1800) durationMatch = true;
-    if (!durationMatch) return false;
+    // 영상 길이 필터 (드롭다운, 초 단위)
+    if (filterDuration !== 'all') {
+      let durationMatch = false;
+      if (filterDuration === 'short' && duration < 180) durationMatch = true;
+      if (filterDuration === 'medium' && duration >= 180 && duration < 600) durationMatch = true;
+      if (filterDuration === 'long' && duration >= 600 && duration < 1800) durationMatch = true;
+      if (filterDuration === 'verylong' && duration >= 1800) durationMatch = true;
+      if (!durationMatch) return false;
+    }
     
-    // 성과도 필터
-    let perfMatch = false;
-    if (filterPerfViral && performance === 'viral') perfMatch = true;
-    if (filterPerfAlgorithm && performance === 'algorithm') perfMatch = true;
-    if (filterPerfNormal && performance === 'normal') perfMatch = true;
-    if (filterPerfLow && performance === 'low') perfMatch = true;
-    if (!perfMatch) return false;
+    // 성과도 필터 (드롭다운)
+    if (filterPerformance !== 'all') {
+      if (filterPerformance !== performance) return false;
+    }
+    
+    // 카테고리 필터 (드롭다운)
+    if (filterCategory !== 'all') {
+      if (filterCategory !== categoryId) return false;
+    }
+    
+    // 국가/언어 필터 (드롭다운)
+    if (filterCountry !== 'all') {
+      if (filterCountry !== defaultLanguage) return false;
+    }
     
     // 최소 조회수 필터
     if (views < filterMinViews) return false;
     
-    // 업로드 날짜 필터
-    if (filterUploadDate) {
+    // 업로드 날짜 필터 (확장)
+    if (filterUploadDate && filterUploadDate !== 'all') {
       const now = new Date();
       let cutoffDate = new Date(0);
       
-      if (filterUploadDate === 'day') {
+      if (filterUploadDate === 'hour') {
+        cutoffDate = new Date(now - 1 * 60 * 60 * 1000);
+      } else if (filterUploadDate === 'day') {
         cutoffDate = new Date(now - 24 * 60 * 60 * 1000);
       } else if (filterUploadDate === 'week') {
         cutoffDate = new Date(now - 7 * 24 * 60 * 60 * 1000);
       } else if (filterUploadDate === 'month') {
         cutoffDate = new Date(now - 30 * 24 * 60 * 60 * 1000);
+      } else if (filterUploadDate === '3month') {
+        cutoffDate = new Date(now - 90 * 24 * 60 * 60 * 1000);
+      } else if (filterUploadDate === '6month') {
+        cutoffDate = new Date(now - 180 * 24 * 60 * 60 * 1000);
       } else if (filterUploadDate === 'year') {
         cutoffDate = new Date(now - 365 * 24 * 60 * 60 * 1000);
       }
@@ -2636,20 +2674,71 @@ document.addEventListener('DOMContentLoaded', () => {
   const resetFiltersBtn = document.getElementById('reset-filters-btn');
   if (resetFiltersBtn) {
     resetFiltersBtn.addEventListener('click', () => {
-      // 모든 체크박스 선택
-      document.querySelectorAll('.filter-sidebar input[type="checkbox"]').forEach(cb => {
-        cb.checked = true;
-      });
+      console.log('🔄 [마켓 탐색] 필터 초기화');
+      
+      // 모든 드롭다운 초기화
+      const filterSubscriber = document.getElementById('filter-subscriber');
+      if (filterSubscriber) filterSubscriber.value = 'all';
+      
+      const filterDuration = document.getElementById('filter-duration');
+      if (filterDuration) filterDuration.value = 'all';
+      
+      const filterPerformance = document.getElementById('filter-performance');
+      if (filterPerformance) filterPerformance.value = 'all';
+      
+      const filterCategory = document.getElementById('filter-category');
+      if (filterCategory) filterCategory.value = 'all';
+      
+      const filterCountry = document.getElementById('filter-country');
+      if (filterCountry) filterCountry.value = 'all';
+      
+      const filterOrder = document.getElementById('filter-order');
+      if (filterOrder) filterOrder.value = 'relevance';
       
       // 입력 필드 초기화
       const minViewsInput = document.getElementById('filter-min-views');
       if (minViewsInput) minViewsInput.value = '';
       
       const uploadDateSelect = document.getElementById('filter-upload-date');
-      if (uploadDateSelect) uploadDateSelect.value = '';
+      if (uploadDateSelect) uploadDateSelect.value = 'all';
+      
+      console.log('✅ [마켓 탐색] 필터 초기화 완료');
       
       // 필터 재적용
       applyMarketFilters();
+    });
+  }
+  
+  // 필터 드롭다운 변경 이벤트
+  const filterDropdowns = [
+    'filter-subscriber',
+    'filter-duration', 
+    'filter-performance',
+    'filter-category',
+    'filter-country',
+    'filter-upload-date'
+  ];
+  
+  filterDropdowns.forEach(id => {
+    const dropdown = document.getElementById(id);
+    if (dropdown) {
+      dropdown.addEventListener('change', () => {
+        console.log(`🔄 [필터 변경] ${id}: ${dropdown.value}`);
+        applyMarketFilters();
+      });
+    }
+  });
+  
+  // 최소 조회수 입력 이벤트
+  const minViewsInput = document.getElementById('filter-min-views');
+  if (minViewsInput) {
+    minViewsInput.addEventListener('input', () => {
+      // 디바운스 처리
+      clearTimeout(minViewsInput.debounceTimer);
+      minViewsInput.debounceTimer = setTimeout(() => {
+        console.log('🔄 [필터 변경] 최소 조회수:', minViewsInput.value);
+        applyMarketFilters();
+      }, 500);
     });
   }
   

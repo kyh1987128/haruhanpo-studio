@@ -598,77 +598,91 @@ export function youtubeAnalyzerTemplate() {
         <div class="p-4">
           <h2 class="font-bold text-lg mb-4">🔍 상세 필터</h2>
           
+          <!-- 검색 정렬 -->
+          <div class="mb-6">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">정렬</h3>
+            <select id="filter-order" class="filter-select">
+              <option value="relevance">관련성순</option>
+              <option value="date">최신순</option>
+              <option value="viewCount">조회수순</option>
+              <option value="rating">평점순</option>
+            </select>
+          </div>
+          
+          <!-- 카테고리 -->
+          <div class="mb-6">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">카테고리</h3>
+            <select id="filter-category" class="filter-select">
+              <option value="">모든 카테고리</option>
+              <option value="1">영화/애니메이션</option>
+              <option value="2">자동차/교통수단</option>
+              <option value="10">음악</option>
+              <option value="15">애완동물/동물</option>
+              <option value="17">스포츠</option>
+              <option value="19">여행/이벤트</option>
+              <option value="20">게임</option>
+              <option value="22">브이로그</option>
+              <option value="23">코미디</option>
+              <option value="24">엔터테인먼트</option>
+              <option value="25">뉴스/정치</option>
+              <option value="26">노하우/스타일</option>
+              <option value="27">교육</option>
+              <option value="28">과학기술</option>
+            </select>
+          </div>
+          
+          <!-- 국가 -->
+          <div class="mb-6">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">국가</h3>
+            <select id="filter-region" class="filter-select">
+              <option value="">전 세계</option>
+              <option value="KR">한국</option>
+              <option value="US">미국</option>
+              <option value="JP">일본</option>
+              <option value="GB">영국</option>
+              <option value="IN">인도</option>
+              <option value="DE">독일</option>
+              <option value="FR">프랑스</option>
+              <option value="CA">캐나다</option>
+              <option value="AU">호주</option>
+            </select>
+          </div>
+          
           <!-- 구독자 구간 -->
           <div class="mb-6">
             <h3 class="text-sm font-semibold text-gray-700 mb-3">구독자 구간</h3>
-            <div class="space-y-2">
-              <label class="checkbox-label">
-                <input type="checkbox" id="filter-sub-1k" checked />
-                <span>1만 미만</span>
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" id="filter-sub-10k" checked />
-                <span>1만-10만</span>
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" id="filter-sub-100k" checked />
-                <span>10만-100만</span>
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" id="filter-sub-1m" checked />
-                <span>100만-1000만</span>
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" id="filter-sub-10m" checked />
-                <span>1000만 이상</span>
-              </label>
-            </div>
+            <select id="filter-subscribers" class="filter-select">
+              <option value="">전체</option>
+              <option value="0-10000">1만 미만</option>
+              <option value="10000-100000">1만-10만</option>
+              <option value="100000-1000000">10만-100만</option>
+              <option value="1000000-10000000">100만-1000만</option>
+              <option value="10000000+">1000만 이상</option>
+            </select>
           </div>
           
           <!-- 영상 길이 -->
           <div class="mb-6">
             <h3 class="text-sm font-semibold text-gray-700 mb-3">영상 길이</h3>
-            <div class="space-y-2">
-              <label class="checkbox-label">
-                <input type="checkbox" id="filter-duration-short" checked />
-                <span>3분 이하</span>
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" id="filter-duration-medium" checked />
-                <span>3-10분</span>
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" id="filter-duration-long" checked />
-                <span>10-30분</span>
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" id="filter-duration-verylong" checked />
-                <span>30분 이상</span>
-              </label>
-            </div>
+            <select id="filter-duration" class="filter-select">
+              <option value="">전체</option>
+              <option value="short">3분 이하</option>
+              <option value="medium">3-10분</option>
+              <option value="long">10-30분</option>
+              <option value="verylong">30분 이상</option>
+            </select>
           </div>
           
           <!-- 성과도 등급 -->
           <div class="mb-6">
             <h3 class="text-sm font-semibold text-gray-700 mb-3">성과도</h3>
-            <div class="space-y-2">
-              <label class="checkbox-label">
-                <input type="checkbox" id="filter-perf-viral" checked />
-                <span>🔥 떡상 중 (300%+)</span>
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" id="filter-perf-algorithm" checked />
-                <span>🟢 알고리즘 픽 (100-300%)</span>
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" id="filter-perf-normal" checked />
-                <span>⚪ 일반 (50-100%)</span>
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" id="filter-perf-low" checked />
-                <span>🔵 저조 (50% 미만)</span>
-              </label>
-            </div>
+            <select id="filter-performance" class="filter-select">
+              <option value="">전체</option>
+              <option value="viral">🔥 떡상 중 (300%+)</option>
+              <option value="algorithm">🟢 알고리즘 픽 (100-300%)</option>
+              <option value="normal">⚪ 일반 (50-100%)</option>
+              <option value="low">🔵 저조 (50% 미만)</option>
+            </select>
           </div>
           
           <!-- 조회수 범위 -->
@@ -682,15 +696,19 @@ export function youtubeAnalyzerTemplate() {
             />
           </div>
           
-          <!-- 업로드 날짜 -->
+          <!-- 업로드 기간 -->
           <div class="mb-6">
             <h3 class="text-sm font-semibold text-gray-700 mb-3">업로드 기간</h3>
             <select id="filter-upload-date" class="filter-select">
               <option value="">전체</option>
-              <option value="day">오늘</option>
+              <option value="hour">1시간 이내</option>
+              <option value="today">오늘</option>
               <option value="week">이번 주</option>
               <option value="month">이번 달</option>
+              <option value="3months">최근 3개월</option>
+              <option value="6months">최근 6개월</option>
               <option value="year">올해</option>
+              <option value="2years">최근 2년</option>
             </select>
           </div>
           
