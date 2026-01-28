@@ -2753,6 +2753,19 @@ function handleColumnSort(column) {
 // 이벤트 리스너 등록
 document.addEventListener('DOMContentLoaded', () => {
   // 마켓 검색 버튼
+  // 통합 검색 버튼 (좌측 패널)
+  const unifiedSearchBtn = document.getElementById('unified-search-btn');
+  if (unifiedSearchBtn) {
+    unifiedSearchBtn.addEventListener('click', handleUnifiedSearch);
+  }
+
+  // 검색 방식 라디오 변경 시 입력창 동적 표시
+  document.querySelectorAll('input[name="filter-search-type"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      updateSearchInputVisibility(e.target.value);
+    });
+  });
+
   const marketSearchBtn = document.getElementById('market-search-btn');
   if (marketSearchBtn) {
     marketSearchBtn.addEventListener('click', searchMarket200);
@@ -2895,6 +2908,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('bookmark-filter-btn')?.addEventListener('click', () => {
     toggleBookmarkFilter();
   });
+
+  // 초기 로딩 시 검색 입력창 상태 설정
+  const initialSearchType = document.querySelector('input[name="filter-search-type"]:checked')?.value || 'keyword';
+  updateSearchInputVisibility(initialSearchType);
 });
 
 // ========================================
@@ -3741,12 +3758,197 @@ function switchSearchTab(tabName) {
 }
 
 // 탭 클릭 이벤트 등록
-document.querySelectorAll('.search-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    const tabName = tab.dataset.searchTab;
-    switchSearchTab(tabName);
-  });
-});
+// ========================================
+// 통합 검색 함수 (좌측 패널)
+// ========================================
+
+/**
+ * 검색 방식에 따라 입력창 표시/숨김
+ */
+function updateSearchInputVisibility(searchType) {
+  const keywordInput = document.getElementById('filter-search-keyword-input');
+  const channelInput = document.getElementById('filter-search-channel-input');
+  const categorySelect = document.getElementById('filter-search-category-select');
+  const excludeInput = document.getElementById('filter-exclude-keywords-input');
+  const searchModeRadios = document.getElementById('filter-search-mode-radios');
+
+  if (keywordInput) keywordInput.style.display = searchType === 'keyword' ? 'block' : 'none';
+  if (channelInput) channelInput.style.display = searchType === 'channel' ? 'block' : 'none';
+  if (categorySelect) categorySelect.style.display = searchType === 'category' ? 'block' : 'none';
+  if (excludeInput) excludeInput.style.display = searchType === 'keyword' ? 'block' : 'none';
+  if (searchModeRadios) searchModeRadios.style.display = searchType === 'keyword' ? 'block' : 'none';
+}
+
+/**
+ * 통합 검색 실행
+ */
+async function handleUnifiedSearch() {
+  const searchType = document.querySelector('input[name="filter-search-type"]:checked')?.value || 'keyword';
+  
+  console.log(`🔍 [통합 검색] 검색 방식: ${searchType}`);
+  
+  if (searchType === 'keyword') {
+    await handleKeywordSearch();
+  } else if (searchType === 'channel') {
+    await handleChannelSearch();
+  } else if (searchType === 'category') {
+    await handleCategorySearch();
+  }
+}
+
+/**
+ * 키워드 검색
+ */
+async function handleKeywordSearch() {
+  const keywordInput = document.getElementById('filter-search-keyword-input');
+  const keyword = keywordInput?.value.trim() || '';
+  
+  if (!keyword) {
+    alert('⚠️ 키워드를 입력해주세요.');
+    return;
+  }
+  
+  const searchMode = document.querySelector('input[name="filter-search-mode"]:checked')?.value || 'keyword';
+  const excludeKeywords = document.getElementById('filter-exclude-keywords-input')?.value.trim() || '';
+  
+  let query = keyword;
+  
+  // 검색 방식 적용
+  if (searchMode === 'tag' && keyword) {
+    query = `${keyword}`;  // 태그 포함
+  } else if (searchMode === 'tag-only' && keyword) {
+    query = keyword.split(',').map(k => k.trim()).join(' ');  // 태그만
+  }
+  
+  // 제외 키워드 적용
+  if (excludeKeywords) {
+    const excludeList = excludeKeywords.split(',').map(k => `-${k.trim()}`).join(' ');
+    query = `${query} ${excludeList}`;
+  }
+  
+  console.log(`🔍 [키워드 검색] Query: ${query}`);
+  
+  // searchMarket200 함수 호출 (기존 검색 로직)
+  await searchMarket200();
+}
+
+/**
+ * 채널 검색
+ */
+async function handleChannelSearch() {
+  const channelInput = document.getElementById('filter-search-channel-input');
+  const channelId = channelInput?.value.trim() || '';
+  
+  if (!channelId) {
+    alert('⚠️ 채널 ID 또는 URL을 입력해주세요.');
+    return;
+  }
+  
+  console.log(`🔍 [채널 검색] Channel ID: ${channelId}`);
+  
+  const btn = document.getElementById('unified-search-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>검색 중...';
+  }
+  
+  try {
+    const response = await fetch('/api/youtube/channel/videos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channelId })
+    });
+    
+    if (!response.ok) {
+      throw new Error('채널 영상 검색 실패');
+    }
+    
+    const data = await response.json();
+    console.log(`✅ [채널 검색] 결과: ${data.videos?.length || 0}개 영상`);
+    
+    // 결과 표시
+    if (data.videos && data.videos.length > 0) {
+      currentVideos = data.videos;
+      filteredVideos = [...currentVideos];
+      renderMarketTable();
+      
+      const resultCount = document.getElementById('result-count');
+      if (resultCount) {
+        resultCount.textContent = `총 ${data.videos.length}개 결과`;
+      }
+    } else {
+      alert('검색 결과가 없습니다.');
+    }
+  } catch (error) {
+    console.error('❌ [채널 검색 오류]', error);
+    alert('채널 검색 중 오류가 발생했습니다.');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-search mr-2"></i>검색';
+    }
+  }
+}
+
+/**
+ * 카테고리 검색
+ */
+async function handleCategorySearch() {
+  const categorySelect = document.getElementById('filter-search-category-select');
+  const categoryId = categorySelect?.value || '';
+  
+  if (!categoryId) {
+    alert('⚠️ 카테고리를 선택해주세요.');
+    return;
+  }
+  
+  console.log(`🔍 [카테고리 검색] Category ID: ${categoryId}`);
+  
+  const btn = document.getElementById('unified-search-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>검색 중...';
+  }
+  
+  try {
+    const response = await fetch('/api/youtube/category/videos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ categoryId })
+    });
+    
+    if (!response.ok) {
+      throw new Error('카테고리 영상 검색 실패');
+    }
+    
+    const data = await response.json();
+    console.log(`✅ [카테고리 검색] 결과: ${data.videos?.length || 0}개 영상`);
+    
+    // 결과 표시
+    if (data.videos && data.videos.length > 0) {
+      currentVideos = data.videos;
+      filteredVideos = [...currentVideos];
+      renderMarketTable();
+      
+      const resultCount = document.getElementById('result-count');
+      if (resultCount) {
+        resultCount.textContent = `총 ${data.videos.length}개 결과`;
+      }
+    } else {
+      alert('검색 결과가 없습니다.');
+    }
+  } catch (error) {
+    console.error('❌ [카테고리 검색 오류]', error);
+    alert('카테고리 검색 중 오류가 발생했습니다.');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-search mr-2"></i>검색';
+    }
+  }
+}
+
+// 검색 탭 전환 로직 제거 (좌측 패널에서 라디오로 변경)
 
 // 검색 방식에 따라 쿼리 변환
 function buildSearchQuery() {

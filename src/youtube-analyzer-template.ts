@@ -934,24 +934,97 @@ export function youtubeAnalyzerTemplate() {
       <!-- 좌측 필터 사이드바 -->
       <aside class="filter-sidebar">
         <div class="p-4">
-          <h2 class="font-bold text-lg mb-4">🔍 상세 필터</h2>
+          <h2 class="font-bold text-lg mb-4">🔍 검색 & 필터</h2>
           
-          <!-- 검색 정렬 -->
-          <div class="mb-6">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">정렬</h3>
-            <select id="filter-order" class="filter-select">
-              <option value="relevance">기본 (YouTube 추천)</option>
-              <option value="date">최신순</option>
-              <option value="viewCount">조회수순</option>
-              <option value="rating">평점순</option>
-            </select>
+          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+          <!-- 1. 검색 방식 선택 -->
+          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+          <div class="mb-6 pb-6 border-b border-gray-200">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">📍 검색 방식</h3>
+            <div class="flex flex-col gap-2">
+              <label class="flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 transition">
+                <input type="radio" name="search-type" value="keyword" checked class="mr-2">
+                <i class="fas fa-search text-green-600 mr-2"></i>
+                <span class="font-medium text-sm">키워드 검색</span>
+              </label>
+              <label class="flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 transition">
+                <input type="radio" name="search-type" value="channel" class="mr-2">
+                <i class="fas fa-user text-blue-600 mr-2"></i>
+                <span class="font-medium text-sm">채널 ID/URL</span>
+              </label>
+              <label class="flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 transition">
+                <input type="radio" name="search-type" value="category" class="mr-2">
+                <i class="fas fa-th-large text-purple-600 mr-2"></i>
+                <span class="font-medium text-sm">카테고리 검색</span>
+              </label>
+            </div>
           </div>
           
-          <!-- 카테고리 -->
-          <div class="mb-6">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">카테고리</h3>
-            <select id="filter-category" class="filter-select">
-              <option value="">모든 카테고리</option>
+          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+          <!-- 2. 입력 필드 (동적 변경) -->
+          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+          
+          <!-- 2-1. 키워드 검색 입력 -->
+          <div id="input-keyword" class="mb-6 pb-6 border-b border-gray-200">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">📝 키워드 입력</h3>
+            <input
+              type="text"
+              id="market-search-input"
+              placeholder="예: 게임 실황, 브이로그, 요리"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+            />
+            
+            <!-- 검색 모드 -->
+            <div class="mt-3">
+              <label class="text-xs font-semibold text-gray-600 mb-2 block">검색 모드:</label>
+              <div class="flex flex-col gap-1.5">
+                <label class="flex items-center cursor-pointer text-sm">
+                  <input type="radio" name="search-mode" value="keyword" checked class="mr-2">
+                  <span>일반 키워드</span>
+                </label>
+                <label class="flex items-center cursor-pointer text-sm">
+                  <input type="radio" name="search-mode" value="tag" class="mr-2">
+                  <span>태그 포함</span>
+                </label>
+                <label class="flex items-center cursor-pointer text-sm">
+                  <input type="radio" name="search-mode" value="tag-only" class="mr-2">
+                  <span>태그만</span>
+                </label>
+              </div>
+            </div>
+            
+            <!-- 제외 키워드 -->
+            <div class="mt-3">
+              <label class="text-xs font-semibold text-gray-600 mb-2 block">❌ 제외 키워드 (쉼표 구분):</label>
+              <input
+                type="text"
+                id="exclude-keywords-input"
+                placeholder="예: 광고, 협찬, 뽑기"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500"
+              />
+            </div>
+          </div>
+          
+          <!-- 2-2. 채널 검색 입력 -->
+          <div id="input-channel" class="mb-6 pb-6 border-b border-gray-200" style="display: none;">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">📝 채널 ID 또는 URL</h3>
+            <input
+              type="text"
+              id="channel-search-input"
+              placeholder="UC... 또는 youtube.com/channel/..."
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            />
+            <p class="text-xs text-gray-500 mt-2">💡 해당 채널의 모든 영상을 분석합니다 (최대 200개)</p>
+          </div>
+          
+          <!-- 2-3. 카테고리 검색 입력 -->
+          <div id="input-category" class="mb-6 pb-6 border-b border-gray-200" style="display: none;">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">📝 카테고리 선택</h3>
+            <select
+              id="category-search-select"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+            >
+              <option value="">전체 카테고리</option>
               <option value="1">영화/애니메이션</option>
               <option value="2">자동차/교통수단</option>
               <option value="10">음악</option>
@@ -969,9 +1042,72 @@ export function youtubeAnalyzerTemplate() {
             </select>
           </div>
           
-          <!-- 국가 -->
+          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+          <!-- 3. 공통 필터 -->
+          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+          
+          <!-- 검색 정렬 -->
           <div class="mb-6">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">국가</h3>
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">📈 정렬 방식</h3>
+            <select id="filter-order" class="filter-select">
+              <option value="relevance">YouTube 추천</option>
+              <option value="date">최신순</option>
+              <option value="viewCount">조회수순</option>
+              <option value="rating">평점순</option>
+            </select>
+          </div>
+          
+          <!-- 성과도 레벨 (체크박스로 변경) -->
+          <div class="mb-6">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">📊 성과도 레벨</h3>
+            <div class="flex flex-col gap-2">
+              <label class="flex items-center cursor-pointer text-sm">
+                <input type="checkbox" class="performance-checkbox mr-2" value="viral" checked>
+                <span>🔥 떡상 중 (300%+)</span>
+              </label>
+              <label class="flex items-center cursor-pointer text-sm">
+                <input type="checkbox" class="performance-checkbox mr-2" value="algorithm" checked>
+                <span>🟢 알고리즘 픽 (100-300%)</span>
+              </label>
+              <label class="flex items-center cursor-pointer text-sm">
+                <input type="checkbox" class="performance-checkbox mr-2" value="normal" checked>
+                <span>⚪ 일반 (50-100%)</span>
+              </label>
+              <label class="flex items-center cursor-pointer text-sm">
+                <input type="checkbox" class="performance-checkbox mr-2" value="low">
+                <span>🔵 저조 (50% 미만)</span>
+              </label>
+            </div>
+          </div>
+          
+          <!-- 최소 조회수 -->
+          <div class="mb-6">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">🔢 최소 조회수</h3>
+            <select id="filter-min-views" class="filter-select">
+              <option value="">제한 없음</option>
+              <option value="1000">1천+ 조회수</option>
+              <option value="10000">1만+ 조회수</option>
+              <option value="100000">10만+ 조회수</option>
+              <option value="1000000">100만+ 조회수</option>
+              <option value="10000000">1000만+ 조회수</option>
+            </select>
+          </div>
+          
+          <!-- 조회수 기간 -->
+          <div class="mb-6">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">📅 조회수 기간</h3>
+            <select id="filter-upload-date" class="filter-select">
+              <option value="">전체</option>
+              <option value="today">1일</option>
+              <option value="week">1주일</option>
+              <option value="month">1개월</option>
+              <option value="year">1년</option>
+            </select>
+          </div>
+          
+          <!-- 글로벌 지역 -->
+          <div class="mb-6">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">🌍 글로벌 지역</h3>
             <select id="filter-region" class="filter-select">
               <option value="">전 세계</option>
               <option value="KR">한국</option>
@@ -988,7 +1124,7 @@ export function youtubeAnalyzerTemplate() {
           
           <!-- 구독자 구간 -->
           <div class="mb-6">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">구독자 구간</h3>
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">👥 구독자 구간</h3>
             <select id="filter-subscribers" class="filter-select">
               <option value="">전체</option>
               <option value="0-10000">1만 미만</option>
@@ -1001,7 +1137,7 @@ export function youtubeAnalyzerTemplate() {
           
           <!-- 영상 길이 -->
           <div class="mb-6">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">영상 길이</h3>
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">⏱️ 영상 길이</h3>
             <select id="filter-duration" class="filter-select">
               <option value="">전체</option>
               <option value="short">3분 이하</option>
@@ -1011,62 +1147,32 @@ export function youtubeAnalyzerTemplate() {
             </select>
           </div>
           
-          <!-- 성과도 등급 -->
+          <!-- 결과 개수 -->
           <div class="mb-6">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">성과도</h3>
-            <select id="filter-performance" class="filter-select">
-              <option value="">전체</option>
-              <option value="viral">🔥 떡상 중 (300%+)</option>
-              <option value="algorithm">🟢 알고리즘 픽 (100-300%)</option>
-              <option value="normal">⚪ 일반 (50-100%)</option>
-              <option value="low">🔵 저조 (50% 미만)</option>
-            </select>
-          </div>
-          
-          <!-- 조회수 범위 -->
-          <div class="mb-6">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">최소 조회수</h3>
-            <select id="filter-min-views" class="filter-select">
-              <option value="">제한 없음</option>
-              <option value="1000">1천+ 조회수</option>
-              <option value="10000">1만+ 조회수</option>
-              <option value="100000">10만+ 조회수</option>
-              <option value="1000000">100만+ 조회수</option>
-              <option value="10000000">1000만+ 조회수</option>
-              <option value="custom">직접 입력</option>
-            </select>
-            <input 
-              type="number" 
-              id="filter-min-views-custom"
-              placeholder="직접 입력 (예: 50000)"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mt-2"
-              style="display: none;"
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">📋 결과 개수</h3>
+            <input
+              type="number"
+              id="filter-max-results"
+              placeholder="최대 200개"
+              value="50"
+              min="1"
+              max="200"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500"
             />
+            <p class="text-xs text-gray-500 mt-1">💡 1~200 사이로 입력하세요</p>
           </div>
           
-          <!-- 업로드 기간 -->
-          <div class="mb-6">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">업로드 기간</h3>
-            <select id="filter-upload-date" class="filter-select">
-              <option value="">전체</option>
-              <option value="hour">1시간 이내</option>
-              <option value="today">오늘</option>
-              <option value="week">이번 주</option>
-              <option value="month">이번 달</option>
-              <option value="3months">최근 3개월</option>
-              <option value="6months">최근 6개월</option>
-              <option value="year">올해</option>
-              <option value="2years">최근 2년</option>
-            </select>
-          </div>
-          
-          <!-- 필터 적용 버튼 -->
-          <div class="mt-6">
-            <button id="apply-filters-btn" class="btn-apply w-full">
-              필터 적용
+          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+          <!-- 4. 검색 버튼 -->
+          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+          <div class="mt-6 pt-6 border-t border-gray-200">
+            <button id="market-search-btn" class="w-full px-6 py-4 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition text-base">
+              <i class="fas fa-search mr-2"></i>
+              🔍 검색 시작
             </button>
-            <button id="reset-filters-btn" class="btn-reset w-full mt-2">
-              초기화
+            <button id="reset-filters-btn" class="w-full px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium rounded-lg mt-2 transition text-sm">
+              <i class="fas fa-redo mr-2"></i>
+              🔄 필터 초기화
             </button>
           </div>
         </div>
@@ -1074,138 +1180,8 @@ export function youtubeAnalyzerTemplate() {
       
       <!-- 중앙 테이블 영역 -->
       <main class="main-table-area">
-        <!-- 검색 바 -->
+        <!-- 검색 결과 헤더 -->
         <div class="p-4 bg-white border-b">
-          <!-- 검색 탭 구조 -->
-          <div class="flex gap-2 mb-4 border-b">
-            <button class="search-tab active" data-search-tab="keyword">
-              <i class="fas fa-search mr-1"></i>
-              키워드 검색
-            </button>
-            <button class="search-tab" data-search-tab="channel">
-              <i class="fas fa-user mr-1"></i>
-              채널 검색
-            </button>
-            <button class="search-tab" data-search-tab="category">
-              <i class="fas fa-th-large mr-1"></i>
-              카테고리 검색
-            </button>
-          </div>
-          
-          <!-- 키워드 검색 패널 -->
-          <div id="search-panel-keyword" class="search-panel active">
-            <div class="mb-3">
-              <div class="flex gap-3 mb-2">
-                <div class="flex-1 relative">
-                  <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
-                    <i class="fas fa-search"></i>
-                  </span>
-                  <input
-                    type="text"
-                    id="market-search-input"
-                    placeholder="키워드 입력 (최대 200개 결과)"
-                    class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
-                </div>
-                <button
-                  id="market-search-btn"
-                  class="px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg"
-                  style="background: #00B87D;"
-                >
-                  <i class="fas fa-search mr-2"></i>
-                  검색
-                </button>
-              </div>
-              
-              <!-- 검색 방식 선택 -->
-              <div class="flex items-center gap-4 text-sm">
-                <span class="text-gray-600 font-medium">검색 방식:</span>
-                <label class="flex items-center cursor-pointer">
-                  <input type="radio" name="search-mode" value="keyword" checked class="mr-1.5">
-                  <span>일반 키워드</span>
-                </label>
-                <label class="flex items-center cursor-pointer">
-                  <input type="radio" name="search-mode" value="tag" class="mr-1.5">
-                  <span>태그 포함</span>
-                </label>
-                <label class="flex items-center cursor-pointer">
-                  <input type="radio" name="search-mode" value="tag-only" class="mr-1.5">
-                  <span>태그만</span>
-                </label>
-              </div>
-              
-              <!-- 제외 키워드 -->
-              <div class="mt-2">
-                <input
-                  type="text"
-                  id="exclude-keywords-input"
-                  placeholder="제외할 키워드 (쉼표로 구분, 예: 광고, 협찬)"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-            </div>
-          </div>
-          
-          <!-- 채널 검색 패널 -->
-          <div id="search-panel-channel" class="search-panel" style="display: none;">
-            <div class="flex gap-3 mb-3">
-              <div class="flex-1 relative">
-                <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
-                  <i class="fas fa-user"></i>
-                </span>
-                <input
-                  type="text"
-                  id="channel-search-input"
-                  placeholder="채널 ID 또는 채널 URL 입력 (예: @채널명 또는 https://youtube.com/@채널명)"
-                  class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-              <button
-                id="channel-search-btn"
-                class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg"
-              >
-                <i class="fas fa-search mr-2"></i>
-                채널 검색
-              </button>
-            </div>
-            <p class="text-xs text-gray-500 ml-1">💡 해당 채널의 모든 영상을 분석합니다 (최대 200개)</p>
-          </div>
-          
-          <!-- 카테고리 검색 패널 -->
-          <div id="search-panel-category" class="search-panel" style="display: none;">
-            <div class="flex gap-3 mb-3">
-              <select
-                id="category-search-select"
-                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-              >
-                <option value="">카테고리 선택</option>
-                <option value="10">음악</option>
-                <option value="20">게임</option>
-                <option value="22">브이로그</option>
-                <option value="23">코미디</option>
-                <option value="24">엔터테인먼트</option>
-                <option value="25">뉴스/정치</option>
-                <option value="26">노하우/스타일</option>
-                <option value="27">교육</option>
-                <option value="28">과학기술</option>
-                <option value="17">스포츠</option>
-                <option value="1">영화/애니메이션</option>
-                <option value="2">자동차/교통수단</option>
-                <option value="15">애완동물/동물</option>
-                <option value="19">여행/이벤트</option>
-              </select>
-              <button
-                id="category-search-btn"
-                class="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg"
-              >
-                <i class="fas fa-search mr-2"></i>
-                검색
-              </button>
-            </div>
-            <p class="text-xs text-gray-500 ml-1">💡 선택한 카테고리의 인기 영상을 분석합니다 (최대 200개)</p>
-          </div>
-          
-          <!-- 액션 버튼 -->
           <div class="flex gap-2 items-center flex-wrap">
             <button 
               id="compare-videos-btn" 
