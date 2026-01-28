@@ -4809,3 +4809,160 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('✅ [Phase 6C/D] 영상 추천 & 성과 시뮬레이터 초기화 완료');
 });
 
+// ========================================
+// Phase 6E/F/G: 영상 상세 분석 + 채널 성장 + A/B 테스트
+// ========================================
+
+// 영상 상세 분석
+async function deepAnalyzeVideo() {
+  const url = document.getElementById('deep-analysis-url').value.trim();
+  if (!url) {
+    alert('⚠️ 영상 URL을 입력해주세요');
+    return;
+  }
+  
+  document.getElementById('deep-analysis-results').classList.add('hidden');
+  document.getElementById('deep-analysis-loading').classList.remove('hidden');
+  
+  try {
+    const response = await fetch('/api/youtube/deep-analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ videoUrl: url })
+    });
+    
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error?.message);
+    
+    const { analysis } = result.data;
+    document.getElementById('swot-strengths').textContent = analysis.strengths?.join(', ') || '-';
+    document.getElementById('swot-weaknesses').textContent = analysis.weaknesses?.join(', ') || '-';
+    document.getElementById('swot-opportunities').textContent = analysis.opportunities?.join(', ') || '-';
+    document.getElementById('swot-threats').textContent = analysis.threats?.join(', ') || '-';
+    document.getElementById('title-analysis').innerHTML = `<p>점수: ${analysis.titleAnalysis?.score}/100</p><p>${analysis.titleAnalysis?.feedback}</p>`;
+    
+    document.getElementById('deep-analysis-loading').classList.add('hidden');
+    document.getElementById('deep-analysis-results').classList.remove('hidden');
+  } catch (error) {
+    console.error('Deep analysis error:', error);
+    document.getElementById('deep-analysis-loading').classList.add('hidden');
+    alert(`분석 실패: ${error.message}`);
+  }
+}
+
+// 채널 성장 추적
+async function trackChannelGrowth() {
+  const url = document.getElementById('growth-channel-url').value.trim();
+  const period = parseInt(document.getElementById('growth-period').value);
+  
+  if (!url) {
+    alert('⚠️ 채널 URL을 입력해주세요');
+    return;
+  }
+  
+  document.getElementById('growth-results').classList.add('hidden');
+  document.getElementById('growth-loading').classList.remove('hidden');
+  
+  try {
+    const response = await fetch('/api/youtube/channel-growth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channelUrl: url, period })
+    });
+    
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error?.message);
+    
+    const { timeline } = result.data;
+    const ctx = document.getElementById('growth-chart').getContext('2d');
+    
+    if (window.growthChart) window.growthChart.destroy();
+    
+    window.growthChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: timeline.map(d => d.date),
+        datasets: [{
+          label: '누적 조회수',
+          data: timeline.map(d => d.cumulativeViews),
+          borderColor: 'rgba(34, 197, 94, 1)',
+          backgroundColor: 'rgba(34, 197, 94, 0.1)',
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true
+      }
+    });
+    
+    document.getElementById('growth-loading').classList.add('hidden');
+    document.getElementById('growth-results').classList.remove('hidden');
+  } catch (error) {
+    console.error('Growth tracking error:', error);
+    document.getElementById('growth-loading').classList.add('hidden');
+    alert(`추적 실패: ${error.message}`);
+  }
+}
+
+// A/B 테스트
+async function runABTest() {
+  const titleA = document.getElementById('ab-title-a').value.trim();
+  const titleB = document.getElementById('ab-title-b').value.trim();
+  
+  if (!titleA || !titleB) {
+    alert('⚠️ 두 변형 모두 입력해주세요');
+    return;
+  }
+  
+  document.getElementById('ab-test-results').classList.add('hidden');
+  document.getElementById('ab-test-loading').classList.remove('hidden');
+  
+  try {
+    const response = await fetch('/api/youtube/ab-test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        variantA: { title: titleA },
+        variantB: { title: titleB },
+        channelStats: { subscriberCount: 10000, avgCTR: 5 }
+      })
+    });
+    
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error?.message);
+    
+    const { variantA, variantB, result: testResult } = result.data;
+    
+    document.getElementById('ab-result-a').innerHTML = `
+      <p>제목 점수: ${variantA.scores.title}/100</p>
+      <p>예상 CTR: ${variantA.predictedCTR}%</p>
+      <p>예상 조회수: ${variantA.predictedViews.toLocaleString()}</p>
+    `;
+    
+    document.getElementById('ab-result-b').innerHTML = `
+      <p>제목 점수: ${variantB.scores.title}/100</p>
+      <p>예상 CTR: ${variantB.predictedCTR}%</p>
+      <p>예상 조회수: ${variantB.predictedViews.toLocaleString()}</p>
+    `;
+    
+    document.getElementById('ab-winner').textContent = testResult.recommendation;
+    
+    document.getElementById('ab-test-loading').classList.add('hidden');
+    document.getElementById('ab-test-results').classList.remove('hidden');
+  } catch (error) {
+    console.error('A/B test error:', error);
+    document.getElementById('ab-test-loading').classList.add('hidden');
+    alert(`테스트 실패: ${error.message}`);
+  }
+}
+
+// 이벤트 리스너
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('deep-analysis-btn')?.addEventListener('click', deepAnalyzeVideo);
+  document.getElementById('growth-track-btn')?.addEventListener('click', trackChannelGrowth);
+  document.getElementById('ab-test-btn')?.addEventListener('click', runABTest);
+  
+  console.log('✅ [Phase 6E/F/G] 상세분석 + 성장추적 + A/B테스트 초기화 완료');
+});
+

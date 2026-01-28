@@ -1921,38 +1921,56 @@ export function youtubeAnalyzerTemplate() {
             <p class="text-gray-600">AI 기반 경쟁사 비교 분석과 트렌드 예측으로 데이터 기반 의사결정을 지원합니다</p>
           </div>
 
-          <!-- 탭 네비게이션 (서브 탭) - 5개로 확장 -->
+          <!-- 탭 네비게이션 (서브 탭) - 8개로 확장 -->
           <div class="bg-white rounded-xl shadow-sm border mb-6">
             <div class="flex border-b overflow-x-auto">
               <button 
-                class="advanced-subtab flex-1 px-6 py-4 font-semibold transition border-b-2 border-purple-500 text-purple-600 whitespace-nowrap" 
+                class="advanced-subtab flex-1 px-4 py-4 font-semibold transition border-b-2 border-purple-500 text-purple-600 whitespace-nowrap text-sm" 
                 data-subtab="competitor"
               >
-                <i class="fas fa-users mr-2"></i>경쟁사 비교
+                <i class="fas fa-users mr-1"></i>경쟁사
               </button>
               <button 
-                class="advanced-subtab flex-1 px-6 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300 whitespace-nowrap" 
+                class="advanced-subtab flex-1 px-4 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300 whitespace-nowrap text-sm" 
                 data-subtab="prediction"
               >
-                <i class="fas fa-chart-line mr-2"></i>트렌드 예측
+                <i class="fas fa-chart-line mr-1"></i>트렌드
               </button>
               <button 
-                class="advanced-subtab flex-1 px-6 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300 whitespace-nowrap" 
+                class="advanced-subtab flex-1 px-4 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300 whitespace-nowrap text-sm" 
                 data-subtab="recommendation"
               >
-                <i class="fas fa-star mr-2"></i>영상 추천
+                <i class="fas fa-star mr-1"></i>추천
               </button>
               <button 
-                class="advanced-subtab flex-1 px-6 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300 whitespace-nowrap" 
+                class="advanced-subtab flex-1 px-4 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300 whitespace-nowrap text-sm" 
                 data-subtab="simulator"
               >
-                <i class="fas fa-calculator mr-2"></i>성과 시뮬레이터
+                <i class="fas fa-calculator mr-1"></i>시뮬레이터
               </button>
               <button 
-                class="advanced-subtab flex-1 px-6 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300 whitespace-nowrap" 
+                class="advanced-subtab flex-1 px-4 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300 whitespace-nowrap text-sm" 
+                data-subtab="deep-analysis"
+              >
+                <i class="fas fa-microscope mr-1"></i>상세분석
+              </button>
+              <button 
+                class="advanced-subtab flex-1 px-4 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300 whitespace-nowrap text-sm" 
+                data-subtab="growth"
+              >
+                <i class="fas fa-chart-area mr-1"></i>성장추적
+              </button>
+              <button 
+                class="advanced-subtab flex-1 px-4 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300 whitespace-nowrap text-sm" 
+                data-subtab="ab-test"
+              >
+                <i class="fas fa-flask mr-1"></i>A/B테스트
+              </button>
+              <button 
+                class="advanced-subtab flex-1 px-4 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300 whitespace-nowrap text-sm" 
                 data-subtab="dashboard"
               >
-                <i class="fas fa-tachometer-alt mr-2"></i>대시보드
+                <i class="fas fa-tachometer-alt mr-1"></i>대시보드
               </button>
             </div>
           </div>
@@ -2523,6 +2541,152 @@ export function youtubeAnalyzerTemplate() {
                   <p class="text-sm text-gray-600">채널 성과를 예측하고 있습니다</p>
                   <p class="text-xs text-gray-500 mt-2">1-2초 소요됩니다</p>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 영상 상세 분석 콘텐츠 -->
+          <div id="subtab-deep-analysis" class="advanced-subtab-content hidden">
+            <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+              <h3 class="text-lg font-bold text-gray-800 mb-4">
+                <i class="fas fa-microscope mr-2 text-blue-500"></i>
+                영상 URL 입력
+              </h3>
+              <div class="flex gap-3">
+                <input 
+                  type="text" 
+                  id="deep-analysis-url"
+                  placeholder="https://youtube.com/watch?v=..."
+                  class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button 
+                  id="deep-analysis-btn"
+                  class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
+                >
+                  <i class="fas fa-search mr-2"></i>분석 시작
+                </button>
+              </div>
+            </div>
+            <div id="deep-analysis-results" class="hidden">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white rounded-xl shadow-sm border p-6">
+                  <h4 class="font-semibold text-gray-700 mb-4">SWOT 분석</h4>
+                  <div class="space-y-3">
+                    <div><strong>강점:</strong> <span id="swot-strengths">-</span></div>
+                    <div><strong>약점:</strong> <span id="swot-weaknesses">-</span></div>
+                    <div><strong>기회:</strong> <span id="swot-opportunities">-</span></div>
+                    <div><strong>위협:</strong> <span id="swot-threats">-</span></div>
+                  </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border p-6">
+                  <h4 class="font-semibold text-gray-700 mb-4">제목 분석</h4>
+                  <div id="title-analysis">-</div>
+                </div>
+              </div>
+            </div>
+            <div id="deep-analysis-loading" class="hidden bg-white rounded-xl shadow-sm border p-8">
+              <div class="flex flex-col items-center justify-center space-y-4">
+                <div class="loading-spinner"></div>
+                <p class="text-lg font-semibold text-gray-900">AI 분석 중...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 채널 성장 추적 콘텐츠 -->
+          <div id="subtab-growth" class="advanced-subtab-content hidden">
+            <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+              <h3 class="text-lg font-bold text-gray-800 mb-4">
+                <i class="fas fa-chart-area mr-2 text-green-500"></i>
+                채널 URL 입력
+              </h3>
+              <div class="flex gap-3">
+                <input 
+                  type="text" 
+                  id="growth-channel-url"
+                  placeholder="@channelname 또는 채널 URL"
+                  class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+                <select id="growth-period" class="px-4 py-3 border border-gray-300 rounded-lg">
+                  <option value="7">최근 7일</option>
+                  <option value="30" selected>최근 30일</option>
+                  <option value="90">최근 90일</option>
+                </select>
+                <button 
+                  id="growth-track-btn"
+                  class="px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition"
+                >
+                  <i class="fas fa-play mr-2"></i>추적 시작
+                </button>
+              </div>
+            </div>
+            <div id="growth-results" class="hidden">
+              <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                <h4 class="font-semibold text-gray-700 mb-4">성장 추이</h4>
+                <canvas id="growth-chart"></canvas>
+              </div>
+            </div>
+            <div id="growth-loading" class="hidden bg-white rounded-xl shadow-sm border p-8">
+              <div class="flex flex-col items-center justify-center space-y-4">
+                <div class="loading-spinner"></div>
+                <p class="text-lg font-semibold text-gray-900">데이터 수집 중...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- A/B 테스트 시뮬레이터 콘텐츠 -->
+          <div id="subtab-ab-test" class="advanced-subtab-content hidden">
+            <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+              <h3 class="text-lg font-bold text-gray-800 mb-4">
+                <i class="fas fa-flask mr-2 text-purple-500"></i>
+                A/B 테스트 설정
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">변형 A 제목</label>
+                  <input 
+                    type="text" 
+                    id="ab-title-a"
+                    placeholder="리액트 완벽 가이드 2024"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">변형 B 제목</label>
+                  <input 
+                    type="text" 
+                    id="ab-title-b"
+                    placeholder="리액트 완전정복 초급부터 고급까지"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                  />
+                </div>
+              </div>
+              <button 
+                id="ab-test-btn"
+                class="mt-6 w-full px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition"
+              >
+                <i class="fas fa-play mr-2"></i>A/B 테스트 실행
+              </button>
+            </div>
+            <div id="ab-test-results" class="hidden">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-xl shadow-sm border p-6">
+                  <h4 class="font-semibold text-gray-700 mb-4">변형 A</h4>
+                  <div id="ab-result-a">-</div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border p-6">
+                  <h4 class="font-semibold text-gray-700 mb-4">변형 B</h4>
+                  <div id="ab-result-b">-</div>
+                </div>
+              </div>
+              <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 mt-6">
+                <h4 class="font-bold text-gray-900 mb-2">🏆 테스트 결과</h4>
+                <p id="ab-winner" class="text-lg">-</p>
+              </div>
+            </div>
+            <div id="ab-test-loading" class="hidden bg-white rounded-xl shadow-sm border p-8">
+              <div class="flex flex-col items-center justify-center space-y-4">
+                <div class="loading-spinner"></div>
+                <p class="text-lg font-semibold text-gray-900">시뮬레이션 실행 중...</p>
               </div>
             </div>
           </div>

@@ -1531,4 +1531,551 @@ app.post('/api/youtube/simulate', async (c) => {
   }
 })
 
+// ========================================
+// Phase 6E: 영상 상세 분석 (딥다이브)
+// ========================================
+app.post('/api/youtube/deep-analyze', async (c) => {
+  try {
+    const { videoId, videoUrl } = await c.req.json()
+    
+    // YouTube API 키 확인
+    const youtubeApiKey = c.env?.YOUTUBE_API_KEY
+    if (!youtubeApiKey) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'API_KEY_MISSING',
+          message: 'YouTube API 키가 설정되지 않았습니다.'
+        }
+      }, 500)
+    }
+    
+    // OpenAI API 키 확인
+    const openaiApiKey = c.env?.OPENAI_API_KEY
+    if (!openaiApiKey) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'API_KEY_MISSING',
+          message: 'OpenAI API 키가 설정되지 않았습니다.'
+        }
+      }, 500)
+    }
+    
+    // videoId 추출
+    let extractedVideoId = videoId
+    if (videoUrl && !videoId) {
+      const urlMatch = videoUrl.match(/(?:v=|\/)([\w-]{11})/)
+      if (urlMatch) {
+        extractedVideoId = urlMatch[1]
+      }
+    }
+    
+    if (!extractedVideoId) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'INVALID_INPUT',
+          message: '영상 ID 또는 URL이 필요합니다.'
+        }
+      }, 400)
+    }
+    
+    // 1. YouTube API로 영상 정보 가져오기
+    const videoResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${extractedVideoId}&key=${youtubeApiKey}`
+    )
+    
+    if (!videoResponse.ok) {
+      throw new Error('YouTube API 호출 실패')
+    }
+    
+    const videoData = await videoResponse.json()
+    if (!videoData.items || videoData.items.length === 0) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'VIDEO_NOT_FOUND',
+          message: '영상을 찾을 수 없습니다.'
+        }
+      }, 404)
+    }
+    
+    const video = videoData.items[0]
+    const { snippet, statistics, contentDetails } = video
+    
+    // 2. 채널 정보 가져오기
+    const channelResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${snippet.channelId}&key=${youtubeApiKey}`
+    )
+    
+    const channelData = await channelResponse.json()
+    const channel = channelData.items?.[0]
+    
+    // 3. 성과도 계산
+    const viewCount = parseInt(statistics.viewCount || 0)
+    const subscriberCount = parseInt(channel?.statistics?.subscriberCount || 0)
+    const performance = subscriberCount > 0 ? (viewCount / subscriberCount) * 100 : 0
+    
+    let performanceLevel = 'normal'
+    if (performance >= 300) performanceLevel = 'viral'
+    else if (performance >= 100) performanceLevel = 'algorithm'
+    else if (performance < 50) performanceLevel = 'low'
+    
+    // 4. GPT-4 분석 요청
+    const analysisPrompt = `다음 YouTube 영상을 전문적으로 분석해주세요:
+
+제목: ${snippet.title}
+채널: ${snippet.channelTitle}
+조회수: ${statistics.viewCount}
+좋아요: ${statistics.likeCount}
+댓글: ${statistics.commentCount}
+구독자: ${subscriberCount}
+성과도: ${performance.toFixed(2)}% (${performanceLevel})
+설명: ${snippet.description.substring(0, 500)}
+
+다음 항목을 JSON 형식으로 분석해주세요:
+{
+  "strengths": ["강점 1", "강점 2", "강점 3"],
+  "weaknesses": ["약점 1", "약점 2"],
+  "opportunities": ["기회 1", "기회 2", "기회 3"],
+  "threats": ["위협 1", "위협 2"],
+  "titleAnalysis": {
+    "score": 85,
+    "feedback": "제목 분석 피드백"
+  },
+  "thumbnailSuggestions": ["제안 1", "제안 2"],
+  "contentStrategy": "콘텐츠 전략 제안",
+  "targetAudience": "타겟 오디언스 분석",
+  "engagementTips": ["팁 1", "팁 2", "팁 3"]
+}`
+
+    const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openaiApiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: '당신은 YouTube 콘텐츠 전략 전문가입니다. SWOT 분석과 실행 가능한 인사이트를 제공합니다.'
+          },
+          {
+            role: 'user',
+            content: analysisPrompt
+          }
+        ],
+        temperature: 0.7,
+        response_format: { type: 'json_object' }
+      })
+    })
+    
+    if (!aiResponse.ok) {
+      throw new Error('OpenAI API 호출 실패')
+    }
+    
+    const aiResult = await aiResponse.json()
+    const analysis = JSON.parse(aiResult.choices[0].message.content)
+    
+    // 5. 결과 반환
+    return c.json({
+      success: true,
+      data: {
+        video: {
+          id: extractedVideoId,
+          title: snippet.title,
+          description: snippet.description,
+          thumbnail: snippet.thumbnails.high.url,
+          channelTitle: snippet.channelTitle,
+          channelId: snippet.channelId,
+          publishedAt: snippet.publishedAt,
+          duration: contentDetails.duration
+        },
+        statistics: {
+          viewCount: parseInt(statistics.viewCount || 0),
+          likeCount: parseInt(statistics.likeCount || 0),
+          commentCount: parseInt(statistics.commentCount || 0),
+          subscriberCount
+        },
+        performance: {
+          score: parseFloat(performance.toFixed(2)),
+          level: performanceLevel,
+          likeRate: parseFloat(((parseInt(statistics.likeCount || 0) / viewCount) * 100).toFixed(2))
+        },
+        analysis
+      }
+    })
+    
+  } catch (error: any) {
+    console.error('Deep analysis error:', error)
+    return c.json<ApiResponse<null>>({
+      success: false,
+      error: {
+        code: 'ANALYSIS_ERROR',
+        message: error.message || '분석 중 오류가 발생했습니다.'
+      }
+    }, 500)
+  }
+})
+
+// ========================================
+// Phase 6F: 채널 성장 추적
+// ========================================
+app.post('/api/youtube/channel-growth', async (c) => {
+  try {
+    const { channelId, channelUrl, period = 30 } = await c.req.json()
+    
+    // YouTube API 키 확인
+    const youtubeApiKey = c.env?.YOUTUBE_API_KEY
+    if (!youtubeApiKey) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'API_KEY_MISSING',
+          message: 'YouTube API 키가 설정되지 않았습니다.'
+        }
+      }, 500)
+    }
+    
+    // channelId 추출
+    let extractedChannelId = channelId
+    if (channelUrl && !channelId) {
+      const urlMatch = channelUrl.match(/(?:channel\/|@)([\w-]+)/)
+      if (urlMatch) {
+        extractedChannelId = urlMatch[1]
+      }
+    }
+    
+    if (!extractedChannelId) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'INVALID_INPUT',
+          message: '채널 ID 또는 URL이 필요합니다.'
+        }
+      }, 400)
+    }
+    
+    // 1. 채널 정보 가져오기
+    const channelResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,brandingSettings&id=${extractedChannelId}&key=${youtubeApiKey}`
+    )
+    
+    if (!channelResponse.ok) {
+      throw new Error('YouTube API 호출 실패')
+    }
+    
+    const channelData = await channelResponse.json()
+    if (!channelData.items || channelData.items.length === 0) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'CHANNEL_NOT_FOUND',
+          message: '채널을 찾을 수 없습니다.'
+        }
+      }, 404)
+    }
+    
+    const channel = channelData.items[0]
+    
+    // 2. 최근 영상 가져오기 (최대 50개)
+    const videosResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${extractedChannelId}&order=date&type=video&maxResults=50&key=${youtubeApiKey}`
+    )
+    
+    const videosData = await videosResponse.json()
+    const videoIds = videosData.items?.map((item: any) => item.id.videoId).join(',') || ''
+    
+    // 3. 영상 상세 정보 가져오기
+    let videos = []
+    if (videoIds) {
+      const videoDetailsResponse = await fetch(
+        `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&id=${videoIds}&key=${youtubeApiKey}`
+      )
+      const videoDetailsData = await videoDetailsResponse.json()
+      videos = videoDetailsData.items || []
+    }
+    
+    // 4. 기간별 데이터 집계 (최근 N일)
+    const now = new Date()
+    const periodDays = Math.min(period, 365)  // 최대 1년
+    const timeline = Array(periodDays).fill(null).map((_, idx) => {
+      const date = new Date(now)
+      date.setDate(date.getDate() - (periodDays - 1 - idx))
+      return {
+        date: date.toISOString().split('T')[0],
+        uploads: 0,
+        views: 0,
+        likes: 0,
+        comments: 0
+      }
+    })
+    
+    // 5. 영상을 날짜별로 분류
+    videos.forEach((video: any) => {
+      const publishDate = new Date(video.snippet.publishedAt)
+      const daysDiff = Math.floor((now.getTime() - publishDate.getTime()) / (1000 * 60 * 60 * 24))
+      
+      if (daysDiff >= 0 && daysDiff < periodDays) {
+        const idx = periodDays - 1 - daysDiff
+        timeline[idx].uploads++
+        timeline[idx].views += parseInt(video.statistics.viewCount || 0)
+        timeline[idx].likes += parseInt(video.statistics.likeCount || 0)
+        timeline[idx].comments += parseInt(video.statistics.commentCount || 0)
+      }
+    })
+    
+    // 6. 누적 데이터 계산
+    let cumulativeUploads = 0
+    let cumulativeViews = 0
+    const cumulativeTimeline = timeline.map(day => {
+      cumulativeUploads += day.uploads
+      cumulativeViews += day.views
+      return {
+        ...day,
+        cumulativeUploads,
+        cumulativeViews
+      }
+    })
+    
+    // 7. 성장 지표 계산
+    const firstWeekViews = timeline.slice(0, 7).reduce((sum, day) => sum + day.views, 0)
+    const lastWeekViews = timeline.slice(-7).reduce((sum, day) => sum + day.views, 0)
+    const viewsGrowth = firstWeekViews > 0 ? ((lastWeekViews - firstWeekViews) / firstWeekViews) * 100 : 0
+    
+    const avgUploadsPerWeek = timeline.reduce((sum, day) => sum + day.uploads, 0) / (periodDays / 7)
+    const avgViewsPerVideo = videos.length > 0 
+      ? videos.reduce((sum: number, v: any) => sum + parseInt(v.statistics.viewCount || 0), 0) / videos.length
+      : 0
+    
+    // 8. 결과 반환
+    return c.json({
+      success: true,
+      data: {
+        channel: {
+          id: channel.id,
+          title: channel.snippet.title,
+          description: channel.snippet.description,
+          thumbnail: channel.snippet.thumbnails.high.url,
+          subscriberCount: parseInt(channel.statistics.subscriberCount || 0),
+          videoCount: parseInt(channel.statistics.videoCount || 0),
+          viewCount: parseInt(channel.statistics.viewCount || 0)
+        },
+        timeline: cumulativeTimeline,
+        metrics: {
+          period: periodDays,
+          totalUploads: videos.length,
+          avgUploadsPerWeek: parseFloat(avgUploadsPerWeek.toFixed(2)),
+          avgViewsPerVideo: Math.round(avgViewsPerVideo),
+          viewsGrowth: parseFloat(viewsGrowth.toFixed(2)),
+          firstWeekViews,
+          lastWeekViews
+        },
+        recentVideos: videos.slice(0, 10).map((v: any) => ({
+          id: v.id,
+          title: v.snippet.title,
+          thumbnail: v.snippet.thumbnails.medium.url,
+          viewCount: parseInt(v.statistics.viewCount || 0),
+          likeCount: parseInt(v.statistics.likeCount || 0),
+          publishedAt: v.snippet.publishedAt
+        }))
+      }
+    })
+    
+  } catch (error: any) {
+    console.error('Channel growth error:', error)
+    return c.json<ApiResponse<null>>({
+      success: false,
+      error: {
+        code: 'GROWTH_TRACKING_ERROR',
+        message: error.message || '성장 추적 중 오류가 발생했습니다.'
+      }
+    }, 500)
+  }
+})
+
+// ========================================
+// Phase 6G: A/B 테스트 시뮬레이터
+// ========================================
+app.post('/api/youtube/ab-test', async (c) => {
+  try {
+    const { variantA, variantB, channelStats } = await c.req.json()
+    
+    // 입력 검증
+    if (!variantA || !variantB) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'INVALID_INPUT',
+          message: 'A/B 테스트 변형이 필요합니다.'
+        }
+      }, 400)
+    }
+    
+    // OpenAI API 키 확인
+    const openaiApiKey = c.env?.OPENAI_API_KEY
+    
+    // ========================================
+    // A/B 테스트 시뮬레이션 알고리즘
+    // ========================================
+    
+    // 1. 제목 점수 계산 함수
+    function calculateTitleScore(title: string): number {
+      let score = 50  // 기본 점수
+      
+      // 길이 (40-70자가 최적)
+      const length = title.length
+      if (length >= 40 && length <= 70) score += 15
+      else if (length >= 30 && length <= 80) score += 10
+      else if (length < 20 || length > 100) score -= 10
+      
+      // 숫자 포함 (클릭률 향상)
+      if (/\d+/.test(title)) score += 10
+      
+      // 특수문자/이모지 (주의 끌기)
+      if (/[!?💥🔥⚡✨]/.test(title)) score += 5
+      
+      // 부정적 키워드 (호기심 유발)
+      if (/(실패|망했|최악|주의|위험)/.test(title)) score += 8
+      
+      // 긍정적 키워드 (감정 자극)
+      if (/(완벽|최고|꿀팁|필수|추천)/.test(title)) score += 8
+      
+      // 대괄호/괄호 사용 (구조화)
+      if (/[\[\(]/.test(title)) score += 5
+      
+      return Math.min(Math.max(score, 0), 100)
+    }
+    
+    // 2. 썸네일 점수 계산 함수 (간단한 휴리스틱)
+    function calculateThumbnailScore(thumbnail: any): number {
+      let score = 50
+      
+      if (thumbnail.hasFace) score += 15
+      if (thumbnail.hasText) score += 10
+      if (thumbnail.isHighContrast) score += 10
+      if (thumbnail.usesBrightColors) score += 8
+      if (thumbnail.hasArrow) score += 5
+      
+      return Math.min(Math.max(score, 0), 100)
+    }
+    
+    // 3. 변형 A 점수
+    const scoreA = {
+      title: calculateTitleScore(variantA.title),
+      thumbnail: calculateThumbnailScore(variantA.thumbnail || {}),
+      overall: 0
+    }
+    scoreA.overall = (scoreA.title * 0.6 + scoreA.thumbnail * 0.4)
+    
+    // 4. 변형 B 점수
+    const scoreB = {
+      title: calculateTitleScore(variantB.title),
+      thumbnail: calculateThumbnailScore(variantB.thumbnail || {}),
+      overall: 0
+    }
+    scoreB.overall = (scoreB.title * 0.6 + scoreB.thumbnail * 0.4)
+    
+    // 5. 클릭률(CTR) 예측
+    const baseCTR = channelStats?.avgCTR || 5  // 기본 5%
+    const ctrA = baseCTR * (scoreA.overall / 50)
+    const ctrB = baseCTR * (scoreB.overall / 50)
+    
+    // 6. 조회수 예측 (구독자 기반)
+    const subscribers = channelStats?.subscriberCount || 10000
+    const impressions = subscribers * 10  // 노출수 = 구독자 × 10
+    
+    const viewsA = Math.round(impressions * (ctrA / 100))
+    const viewsB = Math.round(impressions * (ctrB / 100))
+    
+    // 7. 승자 결정
+    const winner = scoreA.overall > scoreB.overall ? 'A' : 'B'
+    const improvement = Math.abs(scoreA.overall - scoreB.overall)
+    
+    // 8. AI 분석 (OpenAI 사용 가능 시)
+    let aiInsights = null
+    if (openaiApiKey) {
+      try {
+        const aiPrompt = `다음 두 YouTube 제목을 비교 분석해주세요:
+
+변형 A: "${variantA.title}"
+변형 B: "${variantB.title}"
+
+JSON 형식으로 다음을 제공해주세요:
+{
+  "comparison": "비교 분석 (100자)",
+  "winner": "A" 또는 "B",
+  "reason": "승자 선정 이유 (150자)",
+  "improvements": ["개선 제안 1", "개선 제안 2"]
+}`
+
+        const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${openaiApiKey}`
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              { role: 'system', content: 'YouTube 제목 최적화 전문가입니다.' },
+              { role: 'user', content: aiPrompt }
+            ],
+            temperature: 0.7,
+            response_format: { type: 'json_object' }
+          })
+        })
+        
+        if (aiResponse.ok) {
+          const aiResult = await aiResponse.json()
+          aiInsights = JSON.parse(aiResult.choices[0].message.content)
+        }
+      } catch (error) {
+        console.error('AI insights error:', error)
+      }
+    }
+    
+    // 9. 결과 반환
+    return c.json({
+      success: true,
+      data: {
+        variantA: {
+          ...variantA,
+          scores: scoreA,
+          predictedCTR: parseFloat(ctrA.toFixed(2)),
+          predictedViews: viewsA
+        },
+        variantB: {
+          ...variantB,
+          scores: scoreB,
+          predictedCTR: parseFloat(ctrB.toFixed(2)),
+          predictedViews: viewsB
+        },
+        result: {
+          winner,
+          improvement: parseFloat(improvement.toFixed(2)),
+          confidenceLevel: improvement > 20 ? 'high' : improvement > 10 ? 'medium' : 'low',
+          recommendation: winner === 'A' 
+            ? `변형 A가 ${improvement.toFixed(1)}% 더 우수합니다`
+            : `변형 B가 ${improvement.toFixed(1)}% 더 우수합니다`
+        },
+        aiInsights
+      }
+    })
+    
+  } catch (error: any) {
+    console.error('A/B test error:', error)
+    return c.json<ApiResponse<null>>({
+      success: false,
+      error: {
+        code: 'AB_TEST_ERROR',
+        message: error.message || 'A/B 테스트 중 오류가 발생했습니다.'
+      }
+    }, 500)
+  }
+})
+
 export default app
