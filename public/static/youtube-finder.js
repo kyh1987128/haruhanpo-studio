@@ -3194,19 +3194,34 @@ function downloadFile(blob, filename) {
  * 비교 영상 토글
  */
 function toggleCompareVideo(videoId) {
-  const video = filteredMarketVideos.find(v => (v.id?.videoId || v.id) === videoId);
+  console.log('🔍 [비교 디버깅] toggleCompareVideo 호출:', videoId);
+  console.log('🔍 [비교 디버깅] filteredMarketVideos 개수:', filteredMarketVideos?.length || 0);
+  
+  const video = filteredMarketVideos.find(v => {
+    const vId = v.id?.videoId || v.videoId || v.id;
+    console.log('🔍 [비교 디버깅] 비디오 ID 비교:', vId, '===', videoId, '?', vId === videoId);
+    return vId === videoId;
+  });
   
   if (!video) {
     console.error('❌ [비교] 영상을 찾을 수 없음:', videoId);
+    console.error('❌ [비교] filteredMarketVideos:', filteredMarketVideos?.map(v => ({
+      id: v.id,
+      videoId: v.videoId,
+      title: v.title || v.snippet?.title
+    })));
     return;
   }
   
-  const index = selectedCompareVideos.findIndex(v => (v.id?.videoId || v.id) === videoId);
+  const index = selectedCompareVideos.findIndex(v => {
+    const vId = v.id?.videoId || v.videoId || v.id;
+    return vId === videoId;
+  });
   
   if (index >= 0) {
     // 선택 해제
     selectedCompareVideos.splice(index, 1);
-    console.log('✅ [비교] 선택 해제:', videoId);
+    console.log('✅ [비교] 선택 해제:', videoId, '| 현재 선택:', selectedCompareVideos.length, '개');
   } else {
     // 선택 추가 (최대 3개)
     if (selectedCompareVideos.length >= 3) {
@@ -3217,25 +3232,35 @@ function toggleCompareVideo(videoId) {
       return;
     }
     selectedCompareVideos.push(video);
-    console.log('✅ [비교] 선택 추가:', videoId);
+    console.log('✅ [비교] 선택 추가:', videoId, '| 현재 선택:', selectedCompareVideos.length, '개');
   }
   
+  console.log('🔍 [비교 디버깅] updateCompareButton 호출 전');
   updateCompareButton();
+  console.log('🔍 [비교 디버깅] updateCompareButton 호출 후');
 }
 
 /**
  * 비교 버튼 업데이트
  */
 function updateCompareButton() {
+  console.log('🔍 [비교 디버깅] updateCompareButton 호출, 선택된 영상:', selectedCompareVideos.length, '개');
+  
   const btn = document.getElementById('compare-videos-btn');
   const countSpan = document.getElementById('selected-count');
   
+  console.log('🔍 [비교 디버깅] 버튼 요소:', btn ? '존재' : '없음');
+  console.log('🔍 [비교 디버깅] 카운트 요소:', countSpan ? '존재' : '없음');
+  
   if (countSpan) {
     countSpan.textContent = selectedCompareVideos.length;
+    console.log('✅ [비교 디버깅] 카운트 업데이트:', selectedCompareVideos.length);
   }
   
   if (btn) {
-    btn.disabled = selectedCompareVideos.length < 2;
+    const shouldDisable = selectedCompareVideos.length < 2;
+    btn.disabled = shouldDisable;
+    console.log('✅ [비교 디버깅] 버튼 상태:', shouldDisable ? '비활성화' : '활성화', '| 선택:', selectedCompareVideos.length, '개');
   }
 }
 
