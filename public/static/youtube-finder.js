@@ -950,20 +950,6 @@ async function handleAnalyzeSingleVideo(videoId) {
   await handleAnalyzeSelected();
 }
 
-// 숫자 포맷팅 헬퍼
-function formatNumber(num) {
-  if (num >= 10000000) {
-    return (num / 10000000).toFixed(1) + '천만';
-  } else if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + '백만';
-  } else if (num >= 10000) {
-    return (num / 10000).toFixed(1) + '만';
-  } else if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K';
-  }
-  return num.toLocaleString();
-}
-
 // ========================================
 // Phase 3: 채널 분석
 // ========================================
