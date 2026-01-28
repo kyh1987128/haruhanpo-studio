@@ -9,4 +9,12 @@
   "vars": {
     "ENVIRONMENT": "production"
   }
+  // 환경 변수는 Cloudflare Pages Dashboard에서 설정:
+  // - YOUTUBE_API_KEY
+  // - OPENAI_API_KEY
+  // - SUPABASE_URL
+  // - SUPABASE_SERVICE_ROLE_KEY
+  // 
+  // 주의: 환경 변수는 wrangler.jsonc에 직접 작성하지 말고
+  // Cloudflare Dashboard > Pages > Settings > Environment variables에서 설정
 }
