@@ -4124,3 +4124,414 @@ if (typeof originalSearchMarket200 === 'function') {
 
 console.log('✅ [Phase 5C] 탭 구조 & 검색 개선 초기화 완료');
 
+// ========================================
+// Phase 6: 고급 분석 기능
+// ========================================
+
+// 고급 분석 서브탭 전환
+document.addEventListener('DOMContentLoaded', () => {
+  const advancedSubtabs = document.querySelectorAll('.advanced-subtab');
+  advancedSubtabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const subtab = tab.dataset.subtab;
+      
+      // 탭 활성화 스타일
+      advancedSubtabs.forEach(t => {
+        t.classList.remove('border-purple-500', 'text-purple-600');
+        t.classList.add('border-transparent', 'text-gray-600');
+      });
+      tab.classList.remove('border-transparent', 'text-gray-600');
+      tab.classList.add('border-purple-500', 'text-purple-600');
+      
+      // 콘텐츠 전환
+      document.querySelectorAll('.advanced-subtab-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+      document.getElementById(`subtab-${subtab}`).classList.remove('hidden');
+      
+      console.log(`🔄 [고급 분석] ${subtab} 탭 활성화`);
+    });
+  });
+});
+
+// 경쟁사 비교 분석 함수
+async function compareCompetitors() {
+  const inputs = document.querySelectorAll('.competitor-channel-input');
+  const channelIds = Array.from(inputs)
+    .map(input => input.value.trim())
+    .filter(val => val !== '');
+  
+  if (channelIds.length < 2) {
+    alert('⚠️ 최소 2개 이상의 채널을 입력해주세요');
+    return;
+  }
+  
+  if (channelIds.length > 5) {
+    alert('⚠️ 최대 5개까지 비교 가능합니다');
+    return;
+  }
+  
+  // 로딩 표시
+  document.getElementById('competitor-results').classList.add('hidden');
+  document.getElementById('competitor-loading').classList.remove('hidden');
+  
+  try {
+    console.log(`🔍 [경쟁사 비교] ${channelIds.length}개 채널 분석 시작...`);
+    
+    const response = await fetch('/api/youtube/competitor/compare', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channelIds })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API 오류: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+      throw new Error(result.error?.message || '알 수 없는 오류');
+    }
+    
+    console.log('✅ [경쟁사 비교] 분석 완료', result.data);
+    
+    // 결과 렌더링
+    renderCompetitorResults(result.data);
+    
+    // 로딩 숨기고 결과 표시
+    document.getElementById('competitor-loading').classList.add('hidden');
+    document.getElementById('competitor-results').classList.remove('hidden');
+    
+  } catch (error) {
+    console.error('❌ [경쟁사 비교] 오류:', error);
+    document.getElementById('competitor-loading').classList.add('hidden');
+    alert(`❌ 경쟁사 분석 실패: ${error.message}`);
+  }
+}
+
+// 경쟁사 비교 결과 렌더링
+function renderCompetitorResults(data) {
+  const { channels, rankings } = data;
+  
+  // 레이더 차트 생성
+  const radarCtx = document.getElementById('competitor-radar-chart').getContext('2d');
+  
+  // 기존 차트 제거
+  if (window.competitorRadarChart) {
+    window.competitorRadarChart.destroy();
+  }
+  
+  const datasets = channels.map((channel, idx) => {
+    const colors = [
+      'rgba(147, 51, 234, 0.6)',  // purple
+      'rgba(59, 130, 246, 0.6)',  // blue
+      'rgba(16, 185, 129, 0.6)',  // green
+      'rgba(245, 158, 11, 0.6)',  // yellow
+      'rgba(239, 68, 68, 0.6)'    // red
+    ];
+    
+    return {
+      label: channel.channelInfo.title,
+      data: [
+        Math.min(channel.metrics.avgViews / 100000, 100),  // 정규화
+        channel.metrics.avgPerformance,
+        Math.min(channel.metrics.avgLikeRate * 10, 100),
+        Math.min(channel.metrics.avgComments / 100, 100),
+        Math.min(channel.metrics.uploadFrequency, 100),
+        Math.min(channel.channelInfo.subscriberCount / 100000, 100)
+      ],
+      backgroundColor: colors[idx],
+      borderColor: colors[idx].replace('0.6', '1'),
+      borderWidth: 2
+    };
+  });
+  
+  window.competitorRadarChart = new Chart(radarCtx, {
+    type: 'radar',
+    data: {
+      labels: ['평균 조회수', '평균 성과도', '평균 좋아요율', '평균 댓글', '업로드 빈도', '구독자'],
+      datasets: datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        r: {
+          beginAtZero: true,
+          max: 100
+        }
+      }
+    }
+  });
+  
+  // 테이블 렌더링
+  const tbody = document.getElementById('competitor-table-body');
+  tbody.innerHTML = channels.map((channel, idx) => {
+    const { channelInfo, metrics } = channel;
+    return `
+      <tr class="${idx % 2 === 0 ? 'bg-gray-50' : ''}">
+        <td class="px-4 py-3 font-semibold text-gray-900">${channelInfo.title}</td>
+        <td class="px-4 py-3 text-right">${channelInfo.subscriberCount.toLocaleString()}</td>
+        <td class="px-4 py-3 text-right">${metrics.avgViews.toLocaleString()}</td>
+        <td class="px-4 py-3 text-right">${metrics.avgPerformance.toFixed(1)}%</td>
+        <td class="px-4 py-3 text-right">${metrics.avgLikeRate.toFixed(2)}%</td>
+        <td class="px-4 py-3 text-right">${metrics.avgComments.toLocaleString()}</td>
+        <td class="px-4 py-3 text-right">${metrics.uploadFrequency.toFixed(1)}</td>
+      </tr>
+    `;
+  }).join('');
+  
+  // 랭킹 카드 업데이트
+  const topViews = channels.find(c => c.channelId === rankings.topByViews);
+  const topPerf = channels.find(c => c.channelId === rankings.topByPerformance);
+  const topFreq = channels.find(c => c.channelId === rankings.topByFrequency);
+  
+  document.getElementById('rank-views').textContent = topViews?.channelInfo.title || '-';
+  document.getElementById('rank-performance').textContent = topPerf?.channelInfo.title || '-';
+  document.getElementById('rank-frequency').textContent = topFreq?.channelInfo.title || '-';
+}
+
+// 트렌드 예측 함수
+async function predictTrend() {
+  const videoUrl = document.getElementById('prediction-video-url').value.trim();
+  
+  if (!videoUrl) {
+    alert('⚠️ 영상 URL을 입력해주세요');
+    return;
+  }
+  
+  // 로딩 표시
+  document.getElementById('prediction-results').classList.add('hidden');
+  document.getElementById('prediction-loading').classList.remove('hidden');
+  
+  try {
+    console.log(`🔮 [트렌드 예측] ${videoUrl} 분석 시작...`);
+    
+    const response = await fetch('/api/youtube/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ videoUrl })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API 오류: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+      throw new Error(result.error?.message || '알 수 없는 오류');
+    }
+    
+    console.log('✅ [트렌드 예측] 분석 완료', result.data);
+    
+    // 결과 렌더링
+    renderPredictionResults(result.data);
+    
+    // 로딩 숨기고 결과 표시
+    document.getElementById('prediction-loading').classList.add('hidden');
+    document.getElementById('prediction-results').classList.remove('hidden');
+    
+  } catch (error) {
+    console.error('❌ [트렌드 예측] 오류:', error);
+    document.getElementById('prediction-loading').classList.add('hidden');
+    alert(`❌ 트렌드 예측 실패: ${error.message}`);
+  }
+}
+
+// 트렌드 예측 결과 렌더링
+function renderPredictionResults(data) {
+  const { predictions, performance, recommendations } = data;
+  
+  // 예측 조회수 표시
+  document.getElementById('predict-24h').textContent = predictions.views24h.toLocaleString();
+  document.getElementById('predict-7d').textContent = predictions.views7d.toLocaleString();
+  document.getElementById('predict-final').textContent = predictions.finalViews.toLocaleString();
+  
+  // 성과도 표시
+  const perfBadge = document.getElementById('predict-performance-badge');
+  perfBadge.className = `badge badge-${performance.level}`;
+  perfBadge.textContent = performance.level.toUpperCase();
+  
+  document.getElementById('predict-performance-text').textContent = performance.description;
+  document.getElementById('predict-confidence').textContent = performance.confidence;
+  
+  // AI 추천사항 표시
+  document.getElementById('recommend-timing').textContent = recommendations.bestTiming;
+  
+  // 키워드 배지 렌더링
+  const keywordsContainer = document.getElementById('recommend-keywords');
+  keywordsContainer.innerHTML = recommendations.topKeywords.map(kw => 
+    `<span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">${kw}</span>`
+  ).join('');
+  
+  document.getElementById('recommend-duration').textContent = recommendations.optimalDuration;
+  document.getElementById('recommend-thumbnail').textContent = recommendations.thumbnailAdvice;
+}
+
+// 대시보드 차트 초기화 (시장 데이터 기반)
+function initializeDashboard() {
+  // marketVideos 데이터가 없으면 빈 상태 표시
+  if (!window.marketVideos || window.marketVideos.length === 0) {
+    document.getElementById('dashboard-empty').classList.remove('hidden');
+    return;
+  }
+  
+  document.getElementById('dashboard-empty').classList.add('hidden');
+  
+  const videos = window.marketVideos;
+  
+  // 1. 조회수 분포 히스토그램
+  const viewsCtx = document.getElementById('dashboard-views-chart').getContext('2d');
+  const viewsBuckets = [
+    { label: '1천-1만', count: 0 },
+    { label: '1만-10만', count: 0 },
+    { label: '10만-100만', count: 0 },
+    { label: '100만-1000만', count: 0 },
+    { label: '1000만+', count: 0 }
+  ];
+  
+  videos.forEach(v => {
+    const views = v.statistics.viewCount;
+    if (views < 10000) viewsBuckets[0].count++;
+    else if (views < 100000) viewsBuckets[1].count++;
+    else if (views < 1000000) viewsBuckets[2].count++;
+    else if (views < 10000000) viewsBuckets[3].count++;
+    else viewsBuckets[4].count++;
+  });
+  
+  new Chart(viewsCtx, {
+    type: 'bar',
+    data: {
+      labels: viewsBuckets.map(b => b.label),
+      datasets: [{
+        label: '영상 수',
+        data: viewsBuckets.map(b => b.count),
+        backgroundColor: 'rgba(59, 130, 246, 0.6)',
+        borderColor: 'rgba(59, 130, 246, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+  
+  // 2. 성과도 파이 차트
+  const perfCtx = document.getElementById('dashboard-performance-chart').getContext('2d');
+  const perfCounts = { viral: 0, algorithm: 0, normal: 0, low: 0 };
+  
+  videos.forEach(v => {
+    const level = v.performance?.level || 'normal';
+    perfCounts[level]++;
+  });
+  
+  new Chart(perfCtx, {
+    type: 'pie',
+    data: {
+      labels: ['Viral (300%+)', 'Algorithm (100-300%)', 'Normal (50-100%)', 'Low (<50%)'],
+      datasets: [{
+        data: [perfCounts.viral, perfCounts.algorithm, perfCounts.normal, perfCounts.low],
+        backgroundColor: [
+          'rgba(239, 68, 68, 0.6)',
+          'rgba(34, 197, 94, 0.6)',
+          'rgba(59, 130, 246, 0.6)',
+          'rgba(156, 163, 175, 0.6)'
+        ]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true
+    }
+  });
+  
+  // 3. 시계열 라인 차트 (최근 30일 업로드 추이)
+  const timelineCtx = document.getElementById('dashboard-timeline-chart').getContext('2d');
+  const last30Days = Array(30).fill(0);
+  const now = new Date();
+  
+  videos.forEach(v => {
+    const publishDate = new Date(v.snippet.publishedAt);
+    const daysDiff = Math.floor((now - publishDate) / (1000 * 60 * 60 * 24));
+    if (daysDiff >= 0 && daysDiff < 30) {
+      last30Days[29 - daysDiff]++;
+    }
+  });
+  
+  new Chart(timelineCtx, {
+    type: 'line',
+    data: {
+      labels: last30Days.map((_, i) => `${i + 1}일 전`),
+      datasets: [{
+        label: '업로드 영상 수',
+        data: last30Days,
+        borderColor: 'rgba(34, 197, 94, 1)',
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+  
+  // 4. TOP 10 리더보드
+  const leaderboard = document.getElementById('dashboard-leaderboard');
+  const sortedVideos = [...videos]
+    .filter(v => v.performance?.score)
+    .sort((a, b) => b.performance.score - a.performance.score)
+    .slice(0, 10);
+  
+  leaderboard.innerHTML = sortedVideos.map((v, idx) => {
+    const medal = idx < 3 ? ['🥇', '🥈', '🥉'][idx] : `${idx + 1}.`;
+    return `
+      <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+        <div class="text-2xl font-bold w-8">${medal}</div>
+        <img src="${v.snippet.thumbnails.default.url}" class="w-16 h-9 rounded object-cover" />
+        <div class="flex-1">
+          <p class="font-semibold text-gray-900 line-clamp-1">${v.snippet.title}</p>
+          <p class="text-sm text-gray-600">${v.statistics.viewCount.toLocaleString()} 조회수</p>
+        </div>
+        <div class="badge badge-${v.performance.level}">${v.performance.level}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// 이벤트 리스너 등록
+document.addEventListener('DOMContentLoaded', () => {
+  // 경쟁사 비교 버튼
+  const compareBtn = document.getElementById('compare-channels-btn');
+  if (compareBtn) {
+    compareBtn.addEventListener('click', compareCompetitors);
+  }
+  
+  // 트렌드 예측 버튼
+  const predictBtn = document.getElementById('predict-btn');
+  if (predictBtn) {
+    predictBtn.addEventListener('click', predictTrend);
+  }
+  
+  // 대시보드 탭 클릭 시 차트 초기화
+  document.querySelector('.advanced-subtab[data-subtab="dashboard"]')?.addEventListener('click', () => {
+    setTimeout(initializeDashboard, 300);  // 탭 전환 후 초기화
+  });
+  
+  console.log('✅ [Phase 6] 고급 분석 기능 초기화 완료');
+});
+

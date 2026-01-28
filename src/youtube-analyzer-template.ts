@@ -901,13 +901,18 @@ export function youtubeAnalyzerTemplate() {
   ${header}
 
   <!-- ========================================
-       Phase 5A: 2-Tab 네비게이션 
+       Phase 6: 3-Tab 네비게이션 (고급 분석 추가)
        ======================================== -->
   <nav class="youtube-finder-subnav">
     <div class="subnav-container">
       <div class="subnav-item active" data-tab="market-explorer">
         <span class="subnav-icon">🔍</span>
         <span class="subnav-text">마켓 탐색 & 분석</span>
+      </div>
+      
+      <div class="subnav-item" data-tab="advanced-analytics">
+        <span class="subnav-icon">🚀</span>
+        <span class="subnav-text">고급 분석</span>
       </div>
       
       <div class="subnav-item" data-tab="channel-tracking">
@@ -1898,6 +1903,355 @@ export function youtubeAnalyzerTemplate() {
           <i class="fas fa-chart-line text-6xl text-gray-300 mb-4"></i>
           <h2 class="text-2xl font-bold text-gray-700 mb-2">성과 추적</h2>
           <p class="text-gray-500">Phase 2에서 구현 예정입니다</p>
+        </div>
+      </div>
+
+      <!-- ========================================
+           Phase 6: 고급 분석 탭 (경쟁사 비교 + 트렌드 예측 + 대시보드)
+           ======================================== -->
+      <div id="tab-advanced-analytics" class="tab-content hidden">
+        <div class="youtube-finder-main p-6">
+          
+          <!-- 섹션 헤더 -->
+          <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-8 mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">
+              <i class="fas fa-rocket text-purple-500 mr-3"></i>
+              고급 분석 & 인사이트
+            </h1>
+            <p class="text-gray-600">AI 기반 경쟁사 비교 분석과 트렌드 예측으로 데이터 기반 의사결정을 지원합니다</p>
+          </div>
+
+          <!-- 탭 네비게이션 (서브 탭) -->
+          <div class="bg-white rounded-xl shadow-sm border mb-6">
+            <div class="flex border-b">
+              <button 
+                class="advanced-subtab flex-1 px-6 py-4 font-semibold transition border-b-2 border-purple-500 text-purple-600" 
+                data-subtab="competitor"
+              >
+                <i class="fas fa-users mr-2"></i>경쟁사 비교 분석
+              </button>
+              <button 
+                class="advanced-subtab flex-1 px-6 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300" 
+                data-subtab="prediction"
+              >
+                <i class="fas fa-chart-line mr-2"></i>트렌드 예측 AI
+              </button>
+              <button 
+                class="advanced-subtab flex-1 px-6 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300" 
+                data-subtab="dashboard"
+              >
+                <i class="fas fa-tachometer-alt mr-2"></i>대시보드
+              </button>
+            </div>
+          </div>
+
+          <!-- 경쟁사 비교 분석 콘텐츠 -->
+          <div id="subtab-competitor" class="advanced-subtab-content">
+            <!-- 채널 입력 영역 -->
+            <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+              <h3 class="text-lg font-bold text-gray-800 mb-4">
+                <i class="fas fa-users mr-2 text-purple-500"></i>
+                비교할 채널 입력 (최대 5개)
+              </h3>
+              <div class="space-y-3">
+                <div class="flex gap-3" id="competitor-input-1">
+                  <input 
+                    type="text" 
+                    placeholder="채널 1: @channelname 또는 채널 ID 입력"
+                    class="competitor-channel-input flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div class="flex gap-3" id="competitor-input-2">
+                  <input 
+                    type="text" 
+                    placeholder="채널 2: @channelname 또는 채널 ID 입력"
+                    class="competitor-channel-input flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div class="flex gap-3" id="competitor-input-3">
+                  <input 
+                    type="text" 
+                    placeholder="채널 3: @channelname 또는 채널 ID 입력 (선택)"
+                    class="competitor-channel-input flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div class="flex gap-3" id="competitor-input-4">
+                  <input 
+                    type="text" 
+                    placeholder="채널 4: @channelname 또는 채널 ID 입력 (선택)"
+                    class="competitor-channel-input flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div class="flex gap-3" id="competitor-input-5">
+                  <input 
+                    type="text" 
+                    placeholder="채널 5: @channelname 또는 채널 ID 입력 (선택)"
+                    class="competitor-channel-input flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+              </div>
+              <button 
+                id="compare-channels-btn"
+                class="mt-4 w-full px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition flex items-center justify-center gap-2"
+              >
+                <i class="fas fa-chart-bar"></i>
+                <span>채널 비교 분석 시작</span>
+              </button>
+            </div>
+
+            <!-- 비교 결과 영역 -->
+            <div id="competitor-results" class="hidden">
+              <!-- 레이더 차트 -->
+              <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">
+                  <i class="fas fa-radar mr-2 text-purple-500"></i>
+                  종합 지표 비교
+                </h3>
+                <div class="flex justify-center">
+                  <canvas id="competitor-radar-chart" width="400" height="400"></canvas>
+                </div>
+              </div>
+
+              <!-- 상세 지표 테이블 -->
+              <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">
+                  <i class="fas fa-table mr-2 text-purple-500"></i>
+                  상세 지표 비교표
+                </h3>
+                <div class="overflow-x-auto">
+                  <table id="competitor-table" class="w-full text-left border-collapse">
+                    <thead>
+                      <tr class="bg-gray-50 border-b">
+                        <th class="px-4 py-3 font-semibold text-gray-700">채널명</th>
+                        <th class="px-4 py-3 font-semibold text-gray-700 text-right">구독자</th>
+                        <th class="px-4 py-3 font-semibold text-gray-700 text-right">평균 조회수</th>
+                        <th class="px-4 py-3 font-semibold text-gray-700 text-right">평균 성과도</th>
+                        <th class="px-4 py-3 font-semibold text-gray-700 text-right">평균 좋아요율</th>
+                        <th class="px-4 py-3 font-semibold text-gray-700 text-right">평균 댓글</th>
+                        <th class="px-4 py-3 font-semibold text-gray-700 text-right">업로드 빈도</th>
+                      </tr>
+                    </thead>
+                    <tbody id="competitor-table-body">
+                      <!-- JavaScript로 동적 생성 -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- 랭킹 카드 -->
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="bg-white rounded-xl shadow-sm border p-4">
+                  <div class="flex items-center gap-3 mb-2">
+                    <i class="fas fa-trophy text-yellow-500 text-2xl"></i>
+                    <h4 class="font-semibold text-gray-700">조회수 1위</h4>
+                  </div>
+                  <p id="rank-views" class="text-lg font-bold text-gray-900">-</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border p-4">
+                  <div class="flex items-center gap-3 mb-2">
+                    <i class="fas fa-fire text-red-500 text-2xl"></i>
+                    <h4 class="font-semibold text-gray-700">성과도 1위</h4>
+                  </div>
+                  <p id="rank-performance" class="text-lg font-bold text-gray-900">-</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border p-4">
+                  <div class="flex items-center gap-3 mb-2">
+                    <i class="fas fa-rocket text-blue-500 text-2xl"></i>
+                    <h4 class="font-semibold text-gray-700">업로드 빈도 1위</h4>
+                  </div>
+                  <p id="rank-frequency" class="text-lg font-bold text-gray-900">-</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 로딩 상태 -->
+            <div id="competitor-loading" class="hidden bg-white rounded-xl shadow-sm border p-8">
+              <div class="flex flex-col items-center justify-center space-y-4">
+                <div class="loading-spinner"></div>
+                <div class="text-center">
+                  <p class="text-lg font-semibold text-gray-900 mb-2">경쟁사 분석 중...</p>
+                  <p class="text-sm text-gray-600">각 채널의 최근 50개 영상을 분석하고 있습니다</p>
+                  <p class="text-xs text-gray-500 mt-2">최대 10초 소요됩니다</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 트렌드 예측 AI 콘텐츠 -->
+          <div id="subtab-prediction" class="advanced-subtab-content hidden">
+            <!-- 영상 URL 입력 -->
+            <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+              <h3 class="text-lg font-bold text-gray-800 mb-4">
+                <i class="fas fa-link mr-2 text-blue-500"></i>
+                분석할 영상 URL 입력
+              </h3>
+              <div class="flex gap-3">
+                <input 
+                  type="text" 
+                  id="prediction-video-url"
+                  placeholder="https://youtube.com/watch?v=... 형식의 영상 URL 입력"
+                  class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button 
+                  id="predict-btn"
+                  class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition flex items-center gap-2"
+                >
+                  <i class="fas fa-magic"></i>
+                  <span>AI 예측 시작</span>
+                </button>
+              </div>
+              <p class="text-xs text-gray-500 mt-2">
+                <i class="fas fa-info-circle mr-1"></i>
+                업로드된 지 24시간 이상 경과한 영상의 성과를 AI가 예측합니다
+              </p>
+            </div>
+
+            <!-- 예측 결과 -->
+            <div id="prediction-results" class="hidden">
+              <!-- 예측 카드 그리드 -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white rounded-xl shadow-sm border p-6">
+                  <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-semibold text-gray-700">24시간 후 예측</h4>
+                    <i class="fas fa-clock text-blue-500"></i>
+                  </div>
+                  <p id="predict-24h" class="text-2xl font-bold text-blue-600">-</p>
+                  <p class="text-sm text-gray-500 mt-1">예상 조회수</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border p-6">
+                  <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-semibold text-gray-700">7일 후 예측</h4>
+                    <i class="fas fa-calendar-week text-green-500"></i>
+                  </div>
+                  <p id="predict-7d" class="text-2xl font-bold text-green-600">-</p>
+                  <p class="text-sm text-gray-500 mt-1">예상 조회수</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border p-6">
+                  <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-semibold text-gray-700">최종 예측</h4>
+                    <i class="fas fa-flag-checkered text-purple-500"></i>
+                  </div>
+                  <p id="predict-final" class="text-2xl font-bold text-purple-600">-</p>
+                  <p class="text-sm text-gray-500 mt-1">최종 예상 조회수</p>
+                </div>
+              </div>
+
+              <!-- 성과도 예측 -->
+              <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                <h4 class="font-semibold text-gray-700 mb-4">
+                  <i class="fas fa-chart-pie mr-2 text-purple-500"></i>
+                  예상 성과도
+                </h4>
+                <div class="flex items-center gap-4">
+                  <div id="predict-performance-badge" class="badge badge-viral">-</div>
+                  <div class="flex-1">
+                    <p id="predict-performance-text" class="text-gray-700">-</p>
+                    <p class="text-sm text-gray-500 mt-1">신뢰도: <span id="predict-confidence" class="font-semibold">-</span>%</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- AI 추천사항 -->
+              <div class="bg-white rounded-xl shadow-sm border p-6">
+                <h4 class="font-semibold text-gray-700 mb-4">
+                  <i class="fas fa-lightbulb mr-2 text-yellow-500"></i>
+                  AI 추천사항
+                </h4>
+                <div class="space-y-4">
+                  <div>
+                    <h5 class="font-semibold text-gray-700 mb-2">
+                      <i class="fas fa-calendar-alt mr-2 text-blue-500"></i>최적 업로드 시간
+                    </h5>
+                    <p id="recommend-timing" class="text-gray-600">-</p>
+                  </div>
+                  <div>
+                    <h5 class="font-semibold text-gray-700 mb-2">
+                      <i class="fas fa-tags mr-2 text-green-500"></i>추천 키워드 TOP 10
+                    </h5>
+                    <div id="recommend-keywords" class="flex flex-wrap gap-2">
+                      <!-- JavaScript로 동적 생성 -->
+                    </div>
+                  </div>
+                  <div>
+                    <h5 class="font-semibold text-gray-700 mb-2">
+                      <i class="fas fa-video mr-2 text-purple-500"></i>권장 영상 길이
+                    </h5>
+                    <p id="recommend-duration" class="text-gray-600">-</p>
+                  </div>
+                  <div>
+                    <h5 class="font-semibold text-gray-700 mb-2">
+                      <i class="fas fa-image mr-2 text-red-500"></i>썸네일 개선 제안
+                    </h5>
+                    <p id="recommend-thumbnail" class="text-gray-600">-</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 로딩 상태 -->
+            <div id="prediction-loading" class="hidden bg-white rounded-xl shadow-sm border p-8">
+              <div class="flex flex-col items-center justify-center space-y-4">
+                <div class="loading-spinner"></div>
+                <div class="text-center">
+                  <p class="text-lg font-semibold text-gray-900 mb-2">AI 예측 분석 중...</p>
+                  <p class="text-sm text-gray-600">GPT-4를 활용하여 성과를 예측하고 있습니다</p>
+                  <p class="text-xs text-gray-500 mt-2">최대 10초 소요됩니다</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 대시보드 콘텐츠 -->
+          <div id="subtab-dashboard" class="advanced-subtab-content hidden">
+            <!-- 차트 그리드 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <!-- 조회수 분포 히스토그램 -->
+              <div class="bg-white rounded-xl shadow-sm border p-6">
+                <h4 class="font-semibold text-gray-700 mb-4">
+                  <i class="fas fa-chart-bar mr-2 text-blue-500"></i>
+                  조회수 분포
+                </h4>
+                <canvas id="dashboard-views-chart"></canvas>
+              </div>
+
+              <!-- 성과도 파이 차트 -->
+              <div class="bg-white rounded-xl shadow-sm border p-6">
+                <h4 class="font-semibold text-gray-700 mb-4">
+                  <i class="fas fa-chart-pie mr-2 text-purple-500"></i>
+                  성과도 분포
+                </h4>
+                <canvas id="dashboard-performance-chart"></canvas>
+              </div>
+
+              <!-- 시계열 라인 차트 -->
+              <div class="bg-white rounded-xl shadow-sm border p-6 lg:col-span-2">
+                <h4 class="font-semibold text-gray-700 mb-4">
+                  <i class="fas fa-chart-line mr-2 text-green-500"></i>
+                  업로드 추이 (최근 30일)
+                </h4>
+                <canvas id="dashboard-timeline-chart"></canvas>
+              </div>
+            </div>
+
+            <!-- TOP 10 리더보드 -->
+            <div class="bg-white rounded-xl shadow-sm border p-6">
+              <h4 class="font-semibold text-gray-700 mb-4">
+                <i class="fas fa-trophy mr-2 text-yellow-500"></i>
+                성과 리더보드 TOP 10
+              </h4>
+              <div class="space-y-2" id="dashboard-leaderboard">
+                <!-- JavaScript로 동적 생성 -->
+              </div>
+            </div>
+
+            <!-- 빈 상태 -->
+            <div id="dashboard-empty" class="text-center py-12">
+              <i class="fas fa-chart-line text-6xl text-gray-300 mb-4"></i>
+              <h3 class="text-xl font-bold text-gray-700 mb-2">데이터 없음</h3>
+              <p class="text-gray-500">먼저 "마켓 탐색 & 분석" 탭에서 영상을 검색하세요</p>
+            </div>
+          </div>
+
         </div>
       </div>
 
