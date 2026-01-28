@@ -989,8 +989,7 @@ async function handleChannelAnalysis() {
     const response = await fetch('/api/youtube/channel', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('postflow_token')}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ channelIdOrUrl })
     });
@@ -2122,8 +2121,7 @@ async function searchMarket200(keyword = null) {
       const response = await fetch('/api/youtube/search', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('postflow_token')}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(searchBody)
       });
@@ -4029,8 +4027,7 @@ async function handleChannelSearch() {
     const channelResponse = await fetch('/api/youtube/channel', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('postflow_token')}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ channelIdOrUrl: channelId })
     });
