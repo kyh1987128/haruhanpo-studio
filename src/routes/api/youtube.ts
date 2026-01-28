@@ -28,8 +28,12 @@ app.use('/api/youtube/*', cors({
   credentials: true
 }))
 
-// 인증 미들웨어 적용 (모든 YouTube API는 로그인 필요)
-app.use('/api/youtube/*', authMiddleware)
+// 인증 미들웨어 적용 (일부 API만 로그인 필요)
+// 검색, 채널 정보 조회 등은 인증 불필요 (서비스 제공자의 YouTube API 키 사용)
+// 분석 API는 인증 필요 (사용자별 크레딧 차감)
+app.use('/api/youtube/analyze', authMiddleware)
+app.use('/api/youtube/history*', authMiddleware)
+app.use('/api/youtube/stats', authMiddleware)
 
 // YouTube 영상 분석 API
 app.post('/api/youtube/analyze', async (c) => {
