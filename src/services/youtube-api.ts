@@ -10,6 +10,122 @@ export class YouTubeAPIError extends Error {
   }
 }
 
+// ========================================
+// 🌐 AI 자동 번역 (GPT-4o-mini)
+// ========================================
+
+const REGION_LANGUAGE_MAP: Record<string, string> = {
+  // 아시아
+  'KR': 'ko',  // 한국어
+  'JP': 'ja',  // 일본어
+  'CN': 'zh',  // 중국어 (간체)
+  'TW': 'zh-TW',  // 중국어 (번체)
+  'IN': 'hi',  // 힌디어
+  'ID': 'id',  // 인도네시아어
+  'TH': 'th',  // 태국어
+  'VN': 'vi',  // 베트남어
+  
+  // 유럽
+  'GB': 'en',  // 영어
+  'US': 'en',  // 영어
+  'FR': 'fr',  // 프랑스어
+  'DE': 'de',  // 독일어
+  'ES': 'es',  // 스페인어
+  'IT': 'it',  // 이탈리아어
+  'RU': 'ru',  // 러시아어
+  
+  // 기타
+  'BR': 'pt',  // 포르투갈어
+  'MX': 'es',  // 스페인어
+  'AR': 'ar',  // 아랍어
+  'TR': 'tr',  // 터키어
+}
+
+const LANGUAGE_NAMES: Record<string, string> = {
+  'ko': '한국어',
+  'ja': '일본어',
+  'en': '영어',
+  'zh': '중국어',
+  'hi': '힌디어',
+  'id': '인도네시아어',
+  'th': '태국어',
+  'vi': '베트남어',
+  'fr': '프랑스어',
+  'de': '독일어',
+  'es': '스페인어',
+  'it': '이탈리아어',
+  'ru': '러시아어',
+  'pt': '포르투갈어',
+  'ar': '아랍어',
+  'tr': '터키어'
+}
+
+export async function translateKeyword(
+  keyword: string,
+  regionCode: string,
+  openaiApiKey?: string
+): Promise<string> {
+  // 전세계 선택 시 번역 안 함
+  if (!regionCode || regionCode === 'all') {
+    return keyword
+  }
+  
+  // 지역 → 언어 매핑
+  const targetLang = REGION_LANGUAGE_MAP[regionCode]
+  if (!targetLang) {
+    console.warn(`⚠️ [번역] 지원하지 않는 지역: ${regionCode}`)
+    return keyword
+  }
+  
+  // OpenAI API 키가 없으면 번역 스킵
+  if (!openaiApiKey) {
+    console.warn('⚠️ [번역] OpenAI API 키 없음 - 번역 스킵')
+    return keyword
+  }
+  
+  try {
+    console.log(`🌐 [번역 시작] "${keyword}" → ${LANGUAGE_NAMES[targetLang] || targetLang}`)
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `당신은 YouTube 검색 키워드 번역 전문가입니다. 사용자가 입력한 키워드를 ${LANGUAGE_NAMES[targetLang] || targetLang}로 자연스럽게 번역하세요. 번역된 단어만 출력하고 설명은 하지 마세요.`
+          },
+          {
+            role: 'user',
+            content: keyword
+          }
+        ],
+        max_tokens: 20,
+        temperature: 0.3
+      })
+    })
+    
+    if (!response.ok) {
+      console.error('❌ [번역] OpenAI API 오류:', response.statusText)
+      return keyword
+    }
+    
+    const data = await response.json()
+    const translated = data.choices[0].message.content.trim()
+    
+    console.log(`✅ [번역 완료] "${keyword}" → "${translated}"`)
+    return translated
+    
+  } catch (error) {
+    console.error('❌ [번역] 오류:', error)
+    return keyword  // 번역 실패 시 원본 반환
+  }
+}
+
 export async function getVideoInfo(
   videoId: string,
   apiKey: string
@@ -107,6 +223,9 @@ export interface YouTubeSearchResult {
   publishedAt: string
   views: number
   likes: number
+  comments: number  // ✅ 댓글 수 추가
+  description: string  // ✅ 설명 추가
+  duration: string  // ✅ 영상 길이 추가
   subscriberCount: number
   videoCount: number
   performance: 'Great' | 'Good' | 'Normal'
@@ -181,8 +300,8 @@ export async function searchYouTubeVideos(
   // 2. 비디오 ID 목록 추출
   const videoIds = searchData.items.map(item => item.id.videoId).join(',')
   
-  // 3. 비디오 상세 정보 조회 (조회수, 좋아요 등)
-  const videoUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoIds}&key=${apiKey}&part=snippet,statistics`
+  // 3. 비디오 상세 정보 조회 (조회수, 좋아요, 댓글 수, 설명, 영상 길이 등)
+  const videoUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoIds}&key=${apiKey}&part=snippet,statistics,contentDetails`
   const videoResponse = await fetch(videoUrl)
   
   if (!videoResponse.ok) {
@@ -215,6 +334,7 @@ export async function searchYouTubeVideos(
   const results: YouTubeSearchResult[] = videoData.items.map(video => {
     const views = parseInt(video.statistics.viewCount || '0')
     const likes = parseInt(video.statistics.likeCount || '0')
+    const comments = parseInt(video.statistics.commentCount || '0')  // ✅ 댓글 수
     const channelInfo = channelMap.get(video.snippet.channelId) || { subscriberCount: 0, videoCount: 0 }
     
     // 성과도 계산 (조회수 기준)
@@ -237,6 +357,9 @@ export async function searchYouTubeVideos(
       publishedAt: video.snippet.publishedAt,
       views,
       likes,
+      comments,  // ✅ 댓글 수 추가
+      description: video.snippet.description || '',  // ✅ 설명 추가
+      duration: video.contentDetails?.duration || '',  // ✅ 영상 길이 추가
       subscriberCount: channelInfo.subscriberCount,
       videoCount: channelInfo.videoCount,
       performance,

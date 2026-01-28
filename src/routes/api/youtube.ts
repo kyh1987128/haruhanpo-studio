@@ -396,12 +396,12 @@ app.get('/api/youtube/cache/stats', adminMiddleware, async (c) => {
 })
 
 // ========================================
-// Phase 2: YouTube 검색 API
+// Phase 2: YouTube 검색 API (AI 자동 번역 적용)
 // ========================================
 app.post('/api/youtube/search', async (c) => {
   try {
     const body = await c.req.json()
-    const { keyword, maxResults = 20, pageToken } = body
+    let { keyword, maxResults = 20, pageToken, regionCode } = body
 
     // 1. 입력 검증
     if (!keyword || typeof keyword !== 'string') {
@@ -426,15 +426,23 @@ app.post('/api/youtube/search', async (c) => {
       }, 500)
     }
 
-    // 3. 검색 실행
+    // 🌐 3. AI 자동 번역 (regionCode가 있으면 번역)
+    const originalKeyword = keyword
+    if (regionCode && regionCode !== 'all') {
+      const { translateKeyword } = await import('../../services/youtube-api')
+      keyword = await translateKeyword(keyword, regionCode, c.env.OPENAI_API_KEY)
+    }
+
+    // 4. 검색 실행
     const { searchYouTubeVideos } = await import('../../services/youtube-api')
     const result = await searchYouTubeVideos(keyword, youtubeApiKey, maxResults, pageToken)
 
-    // 4. 결과 반환
+    // 5. 결과 반환
     return c.json({
       success: true,
       data: {
         keyword,
+        originalKeyword: originalKeyword !== keyword ? originalKeyword : undefined,  // 번역된 경우만 원본 포함
         totalResults: result.totalResults,
         videos: result.videos,
         nextPageToken: result.nextPageToken,

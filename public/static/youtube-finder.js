@@ -2134,6 +2134,12 @@ async function searchMarket200(keyword = null) {
         throw new Error(result.error?.message || '검색 실패');
       }
       
+      // 🌐 번역 완료 메시지 표시
+      if (result.data.originalKeyword && result.data.originalKeyword !== result.data.keyword) {
+        console.log(`🌐 [번역 완료] "${result.data.originalKeyword}" → "${result.data.keyword}"`);
+        // TODO: 토스트 메시지 표시 가능
+      }
+      
       // 영상 추가
       if (result.data.videos && result.data.videos.length > 0) {
         marketVideos.push(...result.data.videos);
