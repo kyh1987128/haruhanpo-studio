@@ -217,6 +217,13 @@ async function loadHistory() {
       }
     });
     
+    // ✅ Content-Type 체크 (HTML 응답 필터링)
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.warn('⚠️ [히스토리] JSON이 아닌 응답을 받았습니다. API 인증 실패 가능성이 있습니다.');
+      throw new Error('Invalid response format');
+    }
+    
     const result = await response.json();
     
     if (result.success && result.data.items.length > 0) {
@@ -231,6 +238,17 @@ async function loadHistory() {
     }
   } catch (error) {
     console.error('히스토리 로드 오류:', error);
+    // ✅ 에러 발생 시 UI에 빈 상태 표시 (에러 무시)
+    const historyList = document.getElementById('history-list');
+    if (historyList) {
+      historyList.innerHTML = `
+        <div class="text-center py-8 text-gray-400">
+          <i class="fas fa-exclamation-circle text-4xl mb-2"></i>
+          <p class="text-sm">히스토리를 불러올 수 없습니다.</p>
+          <p class="text-xs mt-1">나중에 다시 시도해주세요.</p>
+        </div>
+      `;
+    }
   }
 }
 

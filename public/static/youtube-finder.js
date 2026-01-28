@@ -2084,6 +2084,46 @@ async function searchMarket200(keyword = null) {
   
   console.log('🔍 [검색 필터]', { order: filterOrder, category: filterCategory, region: filterRegion });
   
+  // ✅ 검색 시작 전 모든 필터 초기화 (사용자 여정 개선)
+  console.log('🔄 [필터 자동 초기화] 검색 시작 전 필터를 기본값으로 리셋');
+  
+  // 조회수 필터 초기화
+  const filterMinViews = document.getElementById('filter-min-views');
+  if (filterMinViews) filterMinViews.value = '';
+  
+  const filterMinViewsCustom = document.getElementById('filter-min-views-custom');
+  if (filterMinViewsCustom) filterMinViewsCustom.value = '';
+  
+  // 영상 길이 필터 초기화
+  const filterDuration = document.getElementById('filter-duration');
+  if (filterDuration) filterDuration.value = 'all';
+  
+  // 업로드 날짜 필터 초기화
+  const filterUploadDate = document.getElementById('filter-upload-date');
+  if (filterUploadDate) filterUploadDate.value = '';
+  
+  // 구독자 구간 필터 초기화
+  const filterSubscriber = document.getElementById('filter-subscriber');
+  if (filterSubscriber) filterSubscriber.value = 'all';
+  
+  // 성과도 필터 초기화
+  const filterPerformance = document.getElementById('filter-performance');
+  if (filterPerformance) filterPerformance.value = 'all';
+  
+  // 카테고리 필터 초기화
+  const filterCategoryEl = document.getElementById('filter-category');
+  if (filterCategoryEl) filterCategoryEl.value = 'all';
+  
+  // 국가 필터 초기화
+  const filterCountryEl = document.getElementById('filter-country');
+  if (filterCountryEl) filterCountryEl.value = 'all';
+  
+  // 숏츠 필터 초기화
+  const shortsAll = document.querySelector('input[name="shorts-filter"][value="all"]');
+  if (shortsAll) shortsAll.checked = true;
+  
+  console.log('✅ [필터 자동 초기화] 완료 - 모든 필터가 기본값으로 리셋되었습니다');
+  
   // 초기화
   marketVideos = [];
   filteredMarketVideos = [];
@@ -2200,6 +2240,12 @@ async function searchMarket200(keyword = null) {
     }));
     
     console.log('🎯 [마켓 탐색] 최종 수집:', marketVideos.length, '개');
+    
+    // ⚠️ 수집 결과가 예상보다 적을 때 사용자에게 알림
+    if (marketVideos.length < 50) {
+      console.warn(`⚠️ [마켓 탐색] 예상보다 적은 결과: ${marketVideos.length}개`);
+      console.warn('💡 가능한 원인: 1) 해당 지역/언어의 영상이 적음 2) YouTube API 할당량 부족 3) 검색 조건이 너무 엄격함');
+    }
     
     // 필터 적용
     applyMarketFilters();
@@ -2721,7 +2767,6 @@ function renderDetailPanel(video) {
             <script>
               window.fullDescription = \`${description.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`;
               window.shortDescription = \`${description.substring(0, 300).replace(/`/g, '\\`').replace(/\$/g, '\\$')}...\`;
-            </script>
             </script>
           ` : ''}
         </div>
@@ -6014,17 +6059,33 @@ async function generateVideoSummary(videoId) {
     
     // 결과 표시
     const contentEl = document.getElementById('summary-content');
+    
+    // 안전한 이스케이프 처리
+    const escapedSummary = result.summary
+      .replace(/\\/g, '\\\\')
+      .replace(/`/g, '\\`')
+      .replace(/'/g, "\\'")
+      .replace(/"/g, '&quot;')
+      .replace(/\n/g, '\\n');
+    
+    const safeHtmlSummary = result.summary
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+    
     contentEl.innerHTML = `
       <div class="text-left">
         <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
           <p class="text-sm text-blue-700">✅ 크레딧 1개가 차감되었습니다. (잔여: ${result.remainingCredit})</p>
         </div>
         <div class="prose max-w-none">
-          <div class="whitespace-pre-wrap text-gray-800">${result.summary}</div>
+          <div class="whitespace-pre-wrap text-gray-800">${safeHtmlSummary}</div>
         </div>
         <div class="mt-6 flex gap-2">
           <button 
-            onclick="navigator.clipboard.writeText(\`${result.summary.replace(/`/g, '\\`')}\`); alert('복사 완료!');"
+            onclick="navigator.clipboard.writeText('${escapedSummary}'); alert('복사 완료!');"
             class="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
           >
             <i class="fas fa-copy mr-2"></i>요약 복사
@@ -6120,23 +6181,39 @@ async function generateVideoScript(videoId) {
     
     // 결과 표시
     const contentEl = document.getElementById('script-content');
+    
+    // 안전한 이스케이프 처리
+    const escapedTranscript = result.transcript
+      .replace(/\\/g, '\\\\')
+      .replace(/`/g, '\\`')
+      .replace(/'/g, "\\'")
+      .replace(/"/g, '&quot;')
+      .replace(/\n/g, '\\n');
+    
+    const safeHtmlTranscript = result.transcript
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+    
     contentEl.innerHTML = `
       <div class="text-left">
         <div class="bg-purple-50 border-l-4 border-purple-500 p-4 mb-4">
           <p class="text-sm text-purple-700">✅ 크레딧 1개가 차감되었습니다. (잔여: ${result.remainingCredit})</p>
         </div>
         <div class="prose max-w-none">
-          <div class="whitespace-pre-wrap text-gray-800 font-mono text-sm">${result.transcript}</div>
+          <div class="whitespace-pre-wrap text-gray-800 font-mono text-sm">${safeHtmlTranscript}</div>
         </div>
         <div class="mt-6 flex gap-2">
           <button 
-            onclick="navigator.clipboard.writeText(\`${result.transcript.replace(/`/g, '\\`')}\`); alert('복사 완료!');"
+            onclick="navigator.clipboard.writeText('${escapedTranscript}'); alert('복사 완료!');"
             class="flex-1 bg-purple-500 text-white py-2 px-4 rounded-lg hover:bg-purple-600 transition-colors"
           >
             <i class="fas fa-copy mr-2"></i>스크립트 복사
           </button>
           <button 
-            onclick="downloadFile('script.txt', \`${result.transcript.replace(/`/g, '\\`')}\`)"
+            onclick="downloadFile('script.txt', '${escapedTranscript}')"
             class="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors"
           >
             <i class="fas fa-download mr-2"></i>다운로드
