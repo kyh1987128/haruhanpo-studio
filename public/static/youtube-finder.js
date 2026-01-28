@@ -2104,9 +2104,9 @@ async function searchMarket200(keyword = null) {
   const filterCountryEl = document.getElementById('filter-country');
   if (filterCountryEl) filterCountryEl.value = 'all';
   
-  // 숏츠 필터 초기화
-  const shortsAll = document.querySelector('input[name="shorts-filter"][value="all"]');
-  if (shortsAll) shortsAll.checked = true;
+  // 숏츠 필터 초기화 (드롭다운)
+  const shortsFilterEl = document.getElementById('shorts-filter');
+  if (shortsFilterEl) shortsFilterEl.value = 'all';
   
   console.log('✅ [필터 자동 초기화] 완료 - 모든 필터가 기본값으로 리셋되었습니다');
   
@@ -2284,7 +2284,7 @@ function applyMarketFilters() {
   }
   
   const filterUploadDate = document.getElementById('filter-upload-date')?.value || '';
-  const filterShortsMode = document.querySelector('input[name="shorts-filter"]:checked')?.value || 'all'; // 🎬 숏츠 필터
+  const filterShortsMode = document.getElementById('shorts-filter')?.value || 'all'; // 🎬 숏츠 필터 (드롭다운)
   
   console.log('📊 [필터 값]', {
     subscriber: filterSubscriber,

@@ -1146,36 +1146,24 @@ export function youtubeAnalyzerTemplate() {
           <!-- 숏츠 필터 (신규) -->
           <div class="mb-6">
             <h3 class="text-sm font-semibold text-gray-700 mb-3">🎬 숏츠 필터</h3>
-            <div class="flex gap-2">
-              <label class="flex items-center gap-2 flex-1 cursor-pointer">
-                <input type="radio" name="shorts-filter" value="all" checked class="w-4 h-4 text-green-600">
-                <span class="text-sm text-gray-700">전체</span>
-              </label>
-              <label class="flex items-center gap-2 flex-1 cursor-pointer">
-                <input type="radio" name="shorts-filter" value="shorts" class="w-4 h-4 text-green-600">
-                <span class="text-sm text-gray-700">숏츠만</span>
-              </label>
-              <label class="flex items-center gap-2 flex-1 cursor-pointer">
-                <input type="radio" name="shorts-filter" value="no-shorts" class="w-4 h-4 text-green-600">
-                <span class="text-sm text-gray-700">숏츠 제외</span>
-              </label>
-            </div>
+            <select id="shorts-filter" class="filter-select">
+              <option value="all">전체</option>
+              <option value="shorts">숏츠만</option>
+              <option value="no-shorts">숏츠 제외</option>
+            </select>
             <p class="text-xs text-gray-500 mt-2">💡 숏츠: 60초 이하 영상</p>
           </div>
           
           <!-- 결과 개수 -->
           <div class="mb-6">
             <h3 class="text-sm font-semibold text-gray-700 mb-3">📋 결과 개수</h3>
-            <input
-              type="number"
-              id="filter-max-results"
-              placeholder="최대 200개"
-              value="50"
-              min="1"
-              max="200"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500"
-            />
-            <p class="text-xs text-gray-500 mt-1">💡 1~200 사이로 입력하세요</p>
+            <select id="filter-max-results" class="filter-select">
+              <option value="50">50개</option>
+              <option value="100">100개</option>
+              <option value="150">150개</option>
+              <option value="200">200개</option>
+            </select>
+            <p class="text-xs text-gray-500 mt-1">💡 최대 200개까지 검색 가능</p>
           </div>
           
           <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
