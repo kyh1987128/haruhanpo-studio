@@ -2326,7 +2326,7 @@ function applyMarketFilters() {
     
     // 북마크 필터
     if (showBookmarksOnly) {
-      const videoId = video.id?.videoId || video.id;
+      const videoId = (typeof video.id === 'string' ? video.id : video.id?.videoId) || video.videoId;
       if (!bookmarkedVideos.includes(videoId)) return false;
     }
     
@@ -2646,6 +2646,22 @@ function renderDetailPanel(video) {
         </div>
       </div>
       
+      <!-- AI 분석 버튼 -->
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <button 
+          onclick="generateVideoSummary('${videoId}')"
+          class="bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium text-sm"
+        >
+          <i class="fas fa-sparkles mr-1"></i>영상 요약 (1크레딧)
+        </button>
+        <button 
+          onclick="generateVideoScript('${videoId}')"
+          class="bg-gradient-to-r from-purple-500 to-purple-600 text-white py-2 px-4 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all font-medium text-sm"
+        >
+          <i class="fas fa-file-alt mr-1"></i>스크립트 생성 (1크레딧)
+        </button>
+      </div>
+      
       <!-- 태그 분석 -->
       ${tags.length > 0 ? `
         <div class="mb-4">
@@ -2677,8 +2693,9 @@ function renderDetailPanel(video) {
               더보기 ▼
             </button>
             <script>
-              window.fullDescription = ${JSON.stringify(escapeHtml(description))};
-              window.shortDescription = ${JSON.stringify(escapeHtml(description.substring(0, 300)) + '...')};
+              window.fullDescription = \`${description.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`;
+              window.shortDescription = \`${description.substring(0, 300).replace(/`/g, '\\`').replace(/\$/g, '\\$')}...\`;
+            </script>
             </script>
           ` : ''}
         </div>
@@ -2988,6 +3005,56 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('bookmark-filter-btn')?.addEventListener('click', () => {
     toggleBookmarkFilter();
   });
+  
+  // 전체 선택/해제
+  document.getElementById('select-all-videos')?.addEventListener('change', (e) => {
+    const isChecked = e.target.checked;
+    const checkboxes = document.querySelectorAll('.video-compare-checkbox');
+    
+    console.log('🔍 [전체 선택] 체크:', isChecked, '| 체크박스 개수:', checkboxes.length);
+    
+    // 먼저 selectedCompareVideos 초기화
+    if (!isChecked) {
+      selectedCompareVideos = [];
+    }
+    
+    checkboxes.forEach((checkbox, index) => {
+      const videoId = checkbox.dataset.videoId;
+      
+      if (isChecked) {
+        // 최대 3개까지만 선택
+        if (index < 3) {
+          checkbox.checked = true;
+          // 중복 체크
+          const exists = selectedCompareVideos.some(v => {
+            const vId = (typeof v.id === 'string' ? v.id : v.id?.videoId) || v.videoId || String(v.id);
+            return String(vId) === String(videoId);
+          });
+          if (!exists) {
+            const video = filteredMarketVideos.find(v => {
+              const vId = (typeof v.id === 'string' ? v.id : v.id?.videoId) || v.videoId || String(v.id);
+              return String(vId) === String(videoId);
+            });
+            if (video && selectedCompareVideos.length < 3) {
+              selectedCompareVideos.push(video);
+            }
+          }
+        } else {
+          checkbox.checked = false;
+        }
+      } else {
+        checkbox.checked = false;
+      }
+    });
+    
+    console.log('✅ [전체 선택] 최종 선택:', selectedCompareVideos.length, '개');
+    updateCompareButton();
+    
+    if (isChecked && checkboxes.length > 3) {
+      alert('최대 3개까지만 선택할 수 있습니다.');
+      e.target.checked = false;
+    }
+  });
 
   // 초기 로딩 시 검색 입력창 상태 설정
   const initialSearchType = document.querySelector('input[name="filter-search-type"]:checked')?.value || 'keyword';
@@ -3224,10 +3291,15 @@ function toggleCompareVideo(videoId) {
   console.log('🔍 [비교 디버깅] toggleCompareVideo 호출:', videoId);
   console.log('🔍 [비교 디버깅] filteredMarketVideos 개수:', filteredMarketVideos?.length || 0);
   
+  // videoId 정규화 (문자열로 변환)
+  const normalizedVideoId = String(videoId);
+  
   const video = filteredMarketVideos.find(v => {
-    const vId = v.id?.videoId || v.videoId || v.id;
-    console.log('🔍 [비교 디버깅] 비디오 ID 비교:', vId, '===', videoId, '?', vId === videoId);
-    return vId === videoId;
+    // 다양한 videoId 추출 방식 시도
+    const vId = (typeof v.id === 'string' ? v.id : v.id?.videoId) || v.videoId || String(v.id);
+    const normalizedVId = String(vId);
+    console.log('🔍 [비교 디버깅] 비디오 ID 비교:', normalizedVId, '===', normalizedVideoId, '?', normalizedVId === normalizedVideoId);
+    return normalizedVId === normalizedVideoId;
   });
   
   if (!video) {
@@ -3241,8 +3313,9 @@ function toggleCompareVideo(videoId) {
   }
   
   const index = selectedCompareVideos.findIndex(v => {
-    const vId = v.id?.videoId || v.videoId || v.id;
-    return vId === videoId;
+    const vId = (typeof v.id === 'string' ? v.id : v.id?.videoId) || v.videoId || String(v.id);
+    const normalizedVId = String(vId);
+    return normalizedVId === normalizedVideoId;
   });
   
   if (index >= 0) {
@@ -3722,10 +3795,10 @@ window.toggleDescription = function() {
   if (!textEl || !btnEl) return;
   
   if (btnEl.textContent.includes('더보기')) {
-    textEl.innerHTML = window.fullDescription;
+    textEl.textContent = window.fullDescription;
     btnEl.textContent = '접기 ▲';
   } else {
-    textEl.innerHTML = window.shortDescription;
+    textEl.textContent = window.shortDescription;
     btnEl.textContent = '더보기 ▼';
   }
 };
@@ -3818,6 +3891,10 @@ function updateBookmarkCount() {
 function toggleBookmarkFilter() {
   showBookmarksOnly = !showBookmarksOnly;
   
+  console.log('🔄 [북마크 필터]', showBookmarksOnly ? '활성화' : '비활성화');
+  console.log('📚 [북마크 필터] 현재 북마크:', bookmarkedVideos.length, '개');
+  console.log('📊 [북마크 필터] 현재 영상:', marketVideos.length, '개');
+  
   const btn = document.getElementById('bookmark-filter-btn');
   if (btn) {
     if (showBookmarksOnly) {
@@ -3828,8 +3905,6 @@ function toggleBookmarkFilter() {
       btn.innerHTML = '<i class="far fa-star text-yellow-500 mr-1"></i>북마크만 보기 (<span id="bookmark-count">' + bookmarkedVideos.length + '</span>)';
     }
   }
-  
-  console.log('🔄 [북마크 필터]', showBookmarksOnly ? '활성화' : '비활성화');
   
   // 필터 재적용
   applyMarketFilters();
@@ -5765,6 +5840,22 @@ function renderTrendingDetailPanel(video) {
         </div>
       </div>
       
+      <!-- AI 분석 버튼 -->
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <button 
+          onclick="generateVideoSummary('${videoId}')"
+          class="bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium text-sm"
+        >
+          <i class="fas fa-sparkles mr-1"></i>영상 요약 (1크레딧)
+        </button>
+        <button 
+          onclick="generateVideoScript('${videoId}')"
+          class="bg-gradient-to-r from-purple-500 to-purple-600 text-white py-2 px-4 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all font-medium text-sm"
+        >
+          <i class="fas fa-file-alt mr-1"></i>스크립트 생성 (1크레딧)
+        </button>
+      </div>
+      
       <!-- 게시 정보 -->
       <div class="mb-4 text-sm text-gray-600">
         <p>📅 게시일: ${publishedAt ? formatDate(new Date(publishedAt)) : '정보 없음'}</p>
@@ -5788,8 +5879,8 @@ function renderTrendingDetailPanel(video) {
                 더보기 ▼
               </button>
               <script>
-                window.trendingFullDescription = ${JSON.stringify(escapeHtml(description))};
-                window.trendingShortDescription = ${JSON.stringify(escapeHtml(description.substring(0, 200)) + '...')};
+                window.trendingFullDescription = \`${description.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`;
+                window.trendingShortDescription = \`${description.substring(0, 200).replace(/`/g, '\\`').replace(/\$/g, '\\$')}...\`;
               </script>
             ` : ''}
           </div>
@@ -5817,10 +5908,10 @@ window.toggleTrendingDescription = function() {
   if (!textEl || !btnEl) return;
   
   if (btnEl.textContent.includes('더보기')) {
-    textEl.innerHTML = window.trendingFullDescription;
+    textEl.textContent = window.trendingFullDescription;
     btnEl.textContent = '접기 ▲';
   } else {
-    textEl.innerHTML = window.trendingShortDescription;
+    textEl.textContent = window.trendingShortDescription;
     btnEl.textContent = '더보기 ▼';
   }
 };
@@ -5841,4 +5932,230 @@ document.addEventListener('DOMContentLoaded', () => {
   
   console.log('✅ [Phase 6E/F/G + Phase 7 + Trending] 상세분석 + 성장추적 + A/B테스트 + PDF 보고서 + 인기 영상 초기화 완료');
 });
+
+// ================================================
+// Phase 8: AI 영상 요약 & 스크립트 생성
+// ================================================
+
+async function generateVideoSummary(videoId) {
+  console.log('🎬 [영상 요약] 시작:', videoId);
+  
+  // 크레딧 확인
+  if (!window.currentUser || window.currentUser.credit < 1) {
+    alert('❌ 크레딧이 부족합니다.\n\n영상 요약은 1크레딧이 필요합니다.\n크레딧을 충전해주세요.');
+    return;
+  }
+  
+  try {
+    // 로딩 표시
+    const modal = document.createElement('div');
+    modal.id = 'summary-modal';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    modal.innerHTML = `
+      <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold">🎬 영상 요약</h3>
+            <button onclick="document.getElementById('summary-modal').remove()" class="text-gray-500 hover:text-gray-700">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div id="summary-content" class="text-center py-12">
+            <i class="fas fa-spinner fa-spin text-4xl text-blue-500 mb-4"></i>
+            <p class="text-gray-600">AI가 영상을 분석하고 있습니다...</p>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // API 호출
+    const token = localStorage.getItem('postflow_token');
+    const response = await fetch('/api/youtube/summarize', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ videoId })
+    });
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+      throw new Error(result.error || '요약 생성 실패');
+    }
+    
+    // 결과 표시
+    const contentEl = document.getElementById('summary-content');
+    contentEl.innerHTML = `
+      <div class="text-left">
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
+          <p class="text-sm text-blue-700">✅ 크레딧 1개가 차감되었습니다. (잔여: ${result.remainingCredit})</p>
+        </div>
+        <div class="prose max-w-none">
+          <div class="whitespace-pre-wrap text-gray-800">${result.summary}</div>
+        </div>
+        <div class="mt-6 flex gap-2">
+          <button 
+            onclick="navigator.clipboard.writeText(\`${result.summary.replace(/`/g, '\\`')}\`); alert('복사 완료!');"
+            class="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            <i class="fas fa-copy mr-2"></i>요약 복사
+          </button>
+          <button 
+            onclick="document.getElementById('summary-modal').remove()"
+            class="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
+          >
+            닫기
+          </button>
+        </div>
+      </div>
+    `;
+    
+    // 크레딧 업데이트
+    if (window.currentUser) {
+      window.currentUser.credit = result.remainingCredit;
+      updateCreditDisplay();
+    }
+    
+    console.log('✅ [영상 요약] 완료');
+  } catch (error) {
+    console.error('❌ [영상 요약] 실패:', error);
+    const contentEl = document.getElementById('summary-content');
+    if (contentEl) {
+      contentEl.innerHTML = `
+        <div class="text-red-600">
+          <i class="fas fa-exclamation-triangle text-4xl mb-4"></i>
+          <p class="font-bold">요약 생성 실패</p>
+          <p class="text-sm mt-2">${error.message}</p>
+          <button 
+            onclick="document.getElementById('summary-modal').remove()"
+            class="mt-4 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
+          >
+            닫기
+          </button>
+        </div>
+      `;
+    } else {
+      alert('요약 생성 실패: ' + error.message);
+    }
+  }
+}
+
+async function generateVideoScript(videoId) {
+  console.log('📝 [스크립트 생성] 시작:', videoId);
+  
+  // 크레딧 확인
+  if (!window.currentUser || window.currentUser.credit < 1) {
+    alert('❌ 크레딧이 부족합니다.\n\n스크립트 생성은 1크레딧이 필요합니다.\n크레딧을 충전해주세요.');
+    return;
+  }
+  
+  try {
+    // 로딩 표시
+    const modal = document.createElement('div');
+    modal.id = 'script-modal';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    modal.innerHTML = `
+      <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold">📝 영상 스크립트</h3>
+            <button onclick="document.getElementById('script-modal').remove()" class="text-gray-500 hover:text-gray-700">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div id="script-content" class="text-center py-12">
+            <i class="fas fa-spinner fa-spin text-4xl text-purple-500 mb-4"></i>
+            <p class="text-gray-600">AI가 스크립트를 생성하고 있습니다...</p>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // API 호출
+    const token = localStorage.getItem('postflow_token');
+    const response = await fetch('/api/youtube/transcript', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ videoId })
+    });
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+      throw new Error(result.error || '스크립트 생성 실패');
+    }
+    
+    // 결과 표시
+    const contentEl = document.getElementById('script-content');
+    contentEl.innerHTML = `
+      <div class="text-left">
+        <div class="bg-purple-50 border-l-4 border-purple-500 p-4 mb-4">
+          <p class="text-sm text-purple-700">✅ 크레딧 1개가 차감되었습니다. (잔여: ${result.remainingCredit})</p>
+        </div>
+        <div class="prose max-w-none">
+          <div class="whitespace-pre-wrap text-gray-800 font-mono text-sm">${result.transcript}</div>
+        </div>
+        <div class="mt-6 flex gap-2">
+          <button 
+            onclick="navigator.clipboard.writeText(\`${result.transcript.replace(/`/g, '\\`')}\`); alert('복사 완료!');"
+            class="flex-1 bg-purple-500 text-white py-2 px-4 rounded-lg hover:bg-purple-600 transition-colors"
+          >
+            <i class="fas fa-copy mr-2"></i>스크립트 복사
+          </button>
+          <button 
+            onclick="downloadFile('script.txt', \`${result.transcript.replace(/`/g, '\\`')}\`)"
+            class="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors"
+          >
+            <i class="fas fa-download mr-2"></i>다운로드
+          </button>
+          <button 
+            onclick="document.getElementById('script-modal').remove()"
+            class="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
+          >
+            닫기
+          </button>
+        </div>
+      </div>
+    `;
+    
+    // 크레딧 업데이트
+    if (window.currentUser) {
+      window.currentUser.credit = result.remainingCredit;
+      updateCreditDisplay();
+    }
+    
+    console.log('✅ [스크립트 생성] 완료');
+  } catch (error) {
+    console.error('❌ [스크립트 생성] 실패:', error);
+    const contentEl = document.getElementById('script-content');
+    if (contentEl) {
+      contentEl.innerHTML = `
+        <div class="text-red-600">
+          <i class="fas fa-exclamation-triangle text-4xl mb-4"></i>
+          <p class="font-bold">스크립트 생성 실패</p>
+          <p class="text-sm mt-2">${error.message}</p>
+          <button 
+            onclick="document.getElementById('script-modal').remove()"
+            class="mt-4 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300"
+          >
+            닫기
+          </button>
+        </div>
+      `;
+    } else {
+      alert('스크립트 생성 실패: ' + error.message);
+    }
+  }
+}
+
+// 전역 함수 노출
+window.generateVideoSummary = generateVideoSummary;
+window.generateVideoScript = generateVideoScript;
 

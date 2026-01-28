@@ -2282,4 +2282,216 @@ app.post('/api/youtube/report/generate', async (c) => {
   }
 })
 
+// ================================================
+// Phase 8: AI 영상 요약 & 스크립트 생성
+// ================================================
+
+// POST /api/youtube/summarize - 영상 요약 생성 (1크레딧)
+youtubeRouter.post('/summarize', authMiddleware, async (c) => {
+  try {
+    const user = c.get('user')
+    const { videoId } = await c.req.json()
+    
+    // 입력 검증
+    if (!videoId) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'INVALID_INPUT',
+          message: 'videoId는 필수입니다.'
+        }
+      }, 400)
+    }
+    
+    // 크레딧 확인
+    if (user.credit < 1) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'INSUFFICIENT_CREDIT',
+          message: '크레딧이 부족합니다.'
+        }
+      }, 403)
+    }
+    
+    // YouTube 영상 정보 가져오기
+    const videoInfo = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${c.env.YOUTUBE_API_KEY}`
+    )
+    const videoData = await videoInfo.json()
+    
+    if (!videoData.items || videoData.items.length === 0) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'VIDEO_NOT_FOUND',
+          message: '영상을 찾을 수 없습니다.'
+        }
+      }, 404)
+    }
+    
+    const video = videoData.items[0]
+    const title = video.snippet.title
+    const description = video.snippet.description
+    
+    // GPT-4로 요약 생성
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${c.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: '당신은 YouTube 영상을 분석하는 전문가입니다. 영상의 제목과 설명을 바탕으로 핵심 내용을 간결하고 명확하게 요약해주세요.'
+          },
+          {
+            role: 'user',
+            content: `다음 YouTube 영상을 요약해주세요:\n\n제목: ${title}\n\n설명: ${description}\n\n요약 형식:\n1. 핵심 주제 (1-2문장)\n2. 주요 내용 (3-5개 불릿 포인트)\n3. 대상 시청자 (1문장)\n4. 시청 추천도 (1문장)`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000
+      })
+    })
+    
+    if (!openaiResponse.ok) {
+      throw new Error('OpenAI API 호출 실패')
+    }
+    
+    const openaiData = await openaiResponse.json()
+    const summary = openaiData.choices[0].message.content
+    
+    // 크레딧 차감 (DB 연동 필요 시 여기서 처리)
+    const remainingCredit = user.credit - 1
+    
+    return c.json<ApiResponse<any>>({
+      success: true,
+      data: {
+        summary,
+        videoId,
+        title,
+        remainingCredit
+      }
+    })
+    
+  } catch (error: any) {
+    console.error('Summarize error:', error)
+    return c.json<ApiResponse<null>>({
+      success: false,
+      error: {
+        code: 'SUMMARIZE_ERROR',
+        message: error.message || '요약 생성 중 오류가 발생했습니다.'
+      }
+    }, 500)
+  }
+})
+
+// POST /api/youtube/transcript - 영상 스크립트 생성 (1크레딧)
+youtubeRouter.post('/transcript', authMiddleware, async (c) => {
+  try {
+    const user = c.get('user')
+    const { videoId } = await c.req.json()
+    
+    // 입력 검증
+    if (!videoId) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'INVALID_INPUT',
+          message: 'videoId는 필수입니다.'
+        }
+      }, 400)
+    }
+    
+    // 크레딧 확인
+    if (user.credit < 1) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'INSUFFICIENT_CREDIT',
+          message: '크레딧이 부족합니다.'
+        }
+      }, 403)
+    }
+    
+    // YouTube 영상 정보 가져오기
+    const videoInfo = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${c.env.YOUTUBE_API_KEY}`
+    )
+    const videoData = await videoInfo.json()
+    
+    if (!videoData.items || videoData.items.length === 0) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'VIDEO_NOT_FOUND',
+          message: '영상을 찾을 수 없습니다.'
+        }
+      }, 404)
+    }
+    
+    const video = videoData.items[0]
+    const title = video.snippet.title
+    const description = video.snippet.description
+    
+    // GPT-4로 스크립트 생성
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${c.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: '당신은 YouTube 영상 스크립트 작성 전문가입니다. 영상의 제목과 설명을 바탕으로 전체 스크립트를 생성해주세요.'
+          },
+          {
+            role: 'user',
+            content: `다음 YouTube 영상의 전체 스크립트를 작성해주세요:\n\n제목: ${title}\n\n설명: ${description}\n\n스크립트 형식:\n[00:00] 인트로\n- 인사말\n- 영상 주제 소개\n\n[00:30] 본론 1\n- 핵심 포인트 설명\n\n[01:00] 본론 2\n- 추가 설명 및 예시\n\n[02:00] 결론\n- 요약 및 마무리\n\n각 섹션에 대해 구체적인 대사를 작성해주세요.`
+          }
+        ],
+        temperature: 0.8,
+        max_tokens: 2000
+      })
+    })
+    
+    if (!openaiResponse.ok) {
+      throw new Error('OpenAI API 호출 실패')
+    }
+    
+    const openaiData = await openaiResponse.json()
+    const transcript = openaiData.choices[0].message.content
+    
+    // 크레딧 차감 (DB 연동 필요 시 여기서 처리)
+    const remainingCredit = user.credit - 1
+    
+    return c.json<ApiResponse<any>>({
+      success: true,
+      data: {
+        transcript,
+        videoId,
+        title,
+        remainingCredit
+      }
+    })
+    
+  } catch (error: any) {
+    console.error('Transcript error:', error)
+    return c.json<ApiResponse<null>>({
+      success: false,
+      error: {
+        code: 'TRANSCRIPT_ERROR',
+        message: error.message || '스크립트 생성 중 오류가 발생했습니다.'
+      }
+    }, 500)
+  }
+})
+
 export default app
