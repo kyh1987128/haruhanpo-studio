@@ -2226,6 +2226,7 @@ function applyMarketFilters() {
   }
   
   const filterUploadDate = document.getElementById('filter-upload-date')?.value || '';
+  const filterShortsMode = document.querySelector('input[name="shorts-filter"]:checked')?.value || 'all'; // 🎬 숏츠 필터
   
   console.log('📊 [필터 값]', {
     subscriber: filterSubscriber,
@@ -2235,7 +2236,8 @@ function applyMarketFilters() {
     country: filterCountry,
     minViews: filterMinViews,
     minViewsSource: minViewsDropdown === 'custom' ? 'custom input' : 'dropdown',
-    uploadDate: filterUploadDate
+    uploadDate: filterUploadDate,
+    shortsMode: filterShortsMode
   });
   
   // 필터링
@@ -2287,6 +2289,16 @@ function applyMarketFilters() {
     
     // 최소 조회수 필터
     if (views < filterMinViews) return false;
+    
+    // 🎬 숏츠 필터 (60초 기준)
+    if (filterShortsMode === 'shorts') {
+      // 숏츠만 보기 (60초 이하)
+      if (duration > 60) return false;
+    } else if (filterShortsMode === 'no-shorts') {
+      // 숏츠 제외 (60초 초과)
+      if (duration <= 60) return false;
+    }
+    // 'all'인 경우 필터링 안 함
     
     // 업로드 날짜 필터 (확장)
     if (filterUploadDate && filterUploadDate !== 'all') {
@@ -2652,9 +2664,24 @@ function renderDetailPanel(video) {
       <!-- 설명 -->
       <div>
         <h4 class="font-semibold mb-2">📝 설명</h4>
-        <p class="text-sm text-gray-700 whitespace-pre-wrap line-clamp-6">
-          ${escapeHtml(description.substring(0, 300))}${description.length > 300 ? '...' : ''}
-        </p>
+        <div id="description-content">
+          <p class="text-sm text-gray-700 whitespace-pre-wrap" id="description-text">
+            ${escapeHtml(description.substring(0, 300))}${description.length > 300 ? '...' : ''}
+          </p>
+          ${description.length > 300 ? `
+            <button 
+              onclick="toggleDescription()"
+              id="description-toggle-btn"
+              class="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+              더보기 ▼
+            </button>
+            <script>
+              window.fullDescription = ${JSON.stringify(escapeHtml(description))};
+              window.shortDescription = ${JSON.stringify(escapeHtml(description.substring(0, 300)) + '...')};
+            </script>
+          ` : ''}
+        </div>
       </div>
     </div>
   `;
@@ -3686,6 +3713,22 @@ window.toggleCompareVideo = toggleCompareVideo;
 window.openCompareModal = openCompareModal;
 window.closeCompareModal = closeCompareModal;
 window.generateCompareAIAnalysis = generateCompareAIAnalysis;
+
+// 설명 더보기/접기
+window.toggleDescription = function() {
+  const textEl = document.getElementById('description-text');
+  const btnEl = document.getElementById('description-toggle-btn');
+  
+  if (!textEl || !btnEl) return;
+  
+  if (btnEl.textContent.includes('더보기')) {
+    textEl.innerHTML = window.fullDescription;
+    btnEl.textContent = '접기 ▲';
+  } else {
+    textEl.innerHTML = window.shortDescription;
+    btnEl.textContent = '더보기 ▼';
+  }
+};
 
 // ========================================
 // 북마크 기능
@@ -5614,7 +5657,7 @@ function renderTrendingTable(videos) {
     const formattedDuration = duration ? formatDuration(duration) : '정보 없음';
 
     return `
-      <tr class="border-b hover:bg-gray-50 cursor-pointer" onclick="window.open('https://www.youtube.com/watch?v=${videoId}', '_blank')">
+      <tr class="border-b hover:bg-gray-50 cursor-pointer" onclick="selectTrendingVideo('${videoId}')">
         <td class="px-4 py-3 text-center font-bold text-lg" style="color: #FF6B6B;">${index + 1}</td>
         <td class="px-4 py-3">
           <div class="flex items-center gap-3">
@@ -5637,6 +5680,150 @@ function renderTrendingTable(videos) {
     `;
   }).join('');
 }
+
+/**
+ * 인기 영상 선택 및 상세 패널 표시
+ */
+function selectTrendingVideo(videoId) {
+  const video = trendingVideos.find(v => {
+    const vId = v.id?.videoId || v.videoId || v.id;
+    return vId === videoId;
+  });
+  
+  if (!video) {
+    console.error('❌ [인기 영상] 영상을 찾을 수 없음:', videoId);
+    return;
+  }
+  
+  renderTrendingDetailPanel(video);
+}
+
+/**
+ * 인기 영상 상세 패널 렌더링
+ */
+function renderTrendingDetailPanel(video) {
+  const detailPanel = document.getElementById('trending-detail-panel');
+  
+  if (!detailPanel) return;
+  
+  // 범용 데이터 접근
+  const videoId = video.id?.videoId || video.videoId || video.id;
+  const title = video.snippet?.title || video.title || '제목 없음';
+  const channelTitle = video.snippet?.channelTitle || video.channel || '';
+  const subscribers = parseInt(video.channelInfo?.subscriberCount ?? video.subscriberCount ?? 0);
+  const views = parseInt(video.statistics?.viewCount ?? video.views ?? 0);
+  const likes = parseInt(video.statistics?.likeCount ?? video.likes ?? 0);
+  const comments = parseInt(video.statistics?.commentCount ?? video.comments ?? 0);
+  const description = video.snippet?.description || video.description || '';
+  const publishedAt = video.snippet?.publishedAt || video.publishedAt || '';
+  const duration = video.contentDetails?.duration || video.duration || '';
+  const performance = video.performance || 'Normal';
+  
+  detailPanel.innerHTML = `
+    <div class="p-4">
+      <h2 class="font-bold text-lg mb-4">🔥 인기 영상 상세</h2>
+      
+      <!-- YouTube 플레이어 -->
+      <div class="aspect-video mb-4 rounded-lg overflow-hidden">
+        <iframe
+          src="https://www.youtube.com/embed/${videoId}"
+          class="w-full h-full"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+        ></iframe>
+      </div>
+      
+      <!-- 제목 -->
+      <h3 class="font-bold text-base mb-2">${escapeHtml(title)}</h3>
+      
+      <!-- 채널 정보 -->
+      <div class="flex items-center gap-2 mb-4 pb-4 border-b">
+        <div class="flex-1">
+          <p class="font-medium text-sm">${escapeHtml(channelTitle)}</p>
+          <p class="text-xs text-gray-500">구독자 ${formatNumber(subscribers)}명</p>
+        </div>
+      </div>
+      
+      <!-- 성과 지표 -->
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div class="bg-blue-50 p-3 rounded-lg">
+          <div class="text-xs text-gray-600 mb-1">조회수</div>
+          <div class="font-bold text-lg text-blue-600">${formatNumber(views)}</div>
+        </div>
+        <div class="bg-green-50 p-3 rounded-lg">
+          <div class="text-xs text-gray-600 mb-1">좋아요</div>
+          <div class="font-bold text-lg text-green-600">${formatNumber(likes)}</div>
+        </div>
+        <div class="bg-purple-50 p-3 rounded-lg">
+          <div class="text-xs text-gray-600 mb-1">댓글</div>
+          <div class="font-bold text-lg text-purple-600">${formatNumber(comments)}</div>
+        </div>
+        <div class="bg-orange-50 p-3 rounded-lg">
+          <div class="text-xs text-gray-600 mb-1">성과도</div>
+          <div class="font-bold text-lg text-orange-600">${performance}</div>
+        </div>
+      </div>
+      
+      <!-- 게시 정보 -->
+      <div class="mb-4 text-sm text-gray-600">
+        <p>📅 게시일: ${publishedAt ? formatDate(new Date(publishedAt)) : '정보 없음'}</p>
+        <p>⏱️ 길이: ${duration ? formatDuration(duration) : '정보 없음'}</p>
+      </div>
+      
+      <!-- 설명 -->
+      ${description ? `
+        <div>
+          <h4 class="font-semibold mb-2 text-sm">📝 설명</h4>
+          <div id="trending-description-content">
+            <p class="text-xs text-gray-700 whitespace-pre-wrap" id="trending-description-text">
+              ${escapeHtml(description.substring(0, 200))}${description.length > 200 ? '...' : ''}
+            </p>
+            ${description.length > 200 ? `
+              <button 
+                onclick="toggleTrendingDescription()"
+                id="trending-description-toggle-btn"
+                class="mt-2 text-xs text-blue-600 hover:text-blue-800 font-medium"
+              >
+                더보기 ▼
+              </button>
+              <script>
+                window.trendingFullDescription = ${JSON.stringify(escapeHtml(description))};
+                window.trendingShortDescription = ${JSON.stringify(escapeHtml(description.substring(0, 200)) + '...')};
+              </script>
+            ` : ''}
+          </div>
+        </div>
+      ` : ''}
+      
+      <!-- YouTube에서 보기 버튼 -->
+      <button 
+        onclick="window.open('https://www.youtube.com/watch?v=${videoId}', '_blank')"
+        class="mt-4 w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium"
+      >
+        <i class="fab fa-youtube mr-2"></i>
+        YouTube에서 보기
+      </button>
+    </div>
+  `;
+}
+
+// 전역 함수로 노출
+window.selectTrendingVideo = selectTrendingVideo;
+window.toggleTrendingDescription = function() {
+  const textEl = document.getElementById('trending-description-text');
+  const btnEl = document.getElementById('trending-description-toggle-btn');
+  
+  if (!textEl || !btnEl) return;
+  
+  if (btnEl.textContent.includes('더보기')) {
+    textEl.innerHTML = window.trendingFullDescription;
+    btnEl.textContent = '접기 ▲';
+  } else {
+    textEl.innerHTML = window.trendingShortDescription;
+    btnEl.textContent = '더보기 ▼';
+  }
+};
 
 // 이벤트 리스너
 document.addEventListener('DOMContentLoaded', () => {

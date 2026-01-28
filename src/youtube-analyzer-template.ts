@@ -1143,6 +1143,26 @@ export function youtubeAnalyzerTemplate() {
             </select>
           </div>
           
+          <!-- 숏츠 필터 (신규) -->
+          <div class="mb-6">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">🎬 숏츠 필터</h3>
+            <div class="flex gap-2">
+              <label class="flex items-center gap-2 flex-1 cursor-pointer">
+                <input type="radio" name="shorts-filter" value="all" checked class="w-4 h-4 text-green-600">
+                <span class="text-sm text-gray-700">전체</span>
+              </label>
+              <label class="flex items-center gap-2 flex-1 cursor-pointer">
+                <input type="radio" name="shorts-filter" value="shorts" class="w-4 h-4 text-green-600">
+                <span class="text-sm text-gray-700">숏츠만</span>
+              </label>
+              <label class="flex items-center gap-2 flex-1 cursor-pointer">
+                <input type="radio" name="shorts-filter" value="no-shorts" class="w-4 h-4 text-green-600">
+                <span class="text-sm text-gray-700">숏츠 제외</span>
+              </label>
+            </div>
+            <p class="text-xs text-gray-500 mt-2">💡 숏츠: 60초 이하 영상</p>
+          </div>
+          
           <!-- 결과 개수 -->
           <div class="mb-6">
             <h3 class="text-sm font-semibold text-gray-700 mb-3">📋 결과 개수</h3>
@@ -1422,46 +1442,59 @@ export function youtubeAnalyzerTemplate() {
         </button>
       </div>
 
-      <!-- 인기 영상 목록 -->
-      <div class="bg-white rounded-xl shadow-sm border p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-bold text-gray-800">
-            <i class="fas fa-list mr-2" style="color: #FF6B6B;"></i>
-            인기 영상 목록
-          </h3>
-          <span id="trending-result-count" class="text-sm text-gray-500">0개</span>
-        </div>
-        
-        <!-- 로딩 표시 -->
-        <div id="trending-loading" class="hidden text-center py-8">
-          <i class="fas fa-spinner fa-spin text-3xl text-gray-400 mb-3"></i>
-          <p class="text-gray-500">인기 영상을 불러오는 중...</p>
+      <!-- 인기 영상 목록 (2열 레이아웃) -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- 왼쪽: 테이블 (2/3) -->
+        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-gray-800">
+              <i class="fas fa-list mr-2" style="color: #FF6B6B;"></i>
+              인기 영상 목록
+            </h3>
+            <span id="trending-result-count" class="text-sm text-gray-500">0개</span>
+          </div>
+          
+          <!-- 로딩 표시 -->
+          <div id="trending-loading" class="hidden text-center py-8">
+            <i class="fas fa-spinner fa-spin text-3xl text-gray-400 mb-3"></i>
+            <p class="text-gray-500">인기 영상을 불러오는 중...</p>
+          </div>
+
+          <!-- 테이블 -->
+          <div id="trending-table-container" class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gray-50 border-b">
+                <tr>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">순위</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">영상</th>
+                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">채널</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">조회수</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">좋아요</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">댓글</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">게시일</th>
+                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">길이</th>
+                </tr>
+              </thead>
+              <tbody id="trending-table-body">
+                <tr>
+                  <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+                    <i class="fas fa-fire text-3xl mb-3 text-gray-300"></i>
+                    <p>국가를 선택하고 '인기 영상 불러오기' 버튼을 클릭하세요</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <!-- 테이블 -->
-        <div id="trending-table-container" class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-gray-50 border-b">
-              <tr>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">순위</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">영상</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">채널</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">조회수</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">좋아요</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">댓글</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">게시일</th>
-                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">길이</th>
-              </tr>
-            </thead>
-            <tbody id="trending-table-body">
-              <tr>
-                <td colspan="8" class="px-4 py-8 text-center text-gray-500">
-                  <i class="fas fa-fire text-3xl mb-3 text-gray-300"></i>
-                  <p>국가를 선택하고 '인기 영상 불러오기' 버튼을 클릭하세요</p>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- 오른쪽: 상세 패널 (1/3) -->
+        <div class="lg:col-span-1">
+          <div id="trending-detail-panel" class="bg-white rounded-xl shadow-sm border p-6 sticky top-4">
+            <div class="text-center py-12 text-gray-400">
+              <i class="fas fa-mouse-pointer text-4xl mb-3"></i>
+              <p class="text-sm">영상을 클릭하여<br/>상세 정보를 확인하세요</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
