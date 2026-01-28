@@ -517,6 +517,144 @@ app.post('/api/youtube/channel', async (c) => {
 })
 
 // ========================================
+// Phase 2.5: YouTube 인기 영상 API (Trending)
+// ========================================
+app.post('/api/youtube/trending', async (c) => {
+  try {
+    const body = await c.req.json()
+    const { regionCode = 'KR', videoCategoryId, maxResults = 50 } = body
+
+    console.log(`🔥 [트렌딩] 요청: regionCode=${regionCode}, category=${videoCategoryId || '전체'}`)
+
+    // 1. YouTube API 키 확인
+    const youtubeApiKey = c.env.YOUTUBE_API_KEY
+    if (!youtubeApiKey) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'API_KEY_MISSING',
+          message: 'YouTube API 키가 설정되지 않았습니다.'
+        }
+      }, 500)
+    }
+
+    // 2. YouTube Trending API 호출
+    const url = new URL('https://www.googleapis.com/youtube/v3/videos')
+    url.searchParams.set('part', 'snippet,statistics,contentDetails')
+    url.searchParams.set('chart', 'mostPopular')
+    url.searchParams.set('regionCode', regionCode)
+    url.searchParams.set('maxResults', Math.min(maxResults, 50).toString())
+    url.searchParams.set('key', youtubeApiKey)
+    
+    if (videoCategoryId) {
+      url.searchParams.set('videoCategoryId', videoCategoryId)
+    }
+    
+    const response = await fetch(url.toString())
+    
+    if (!response.ok) {
+      if (response.status === 403) {
+        throw new Error('YouTube API 키가 유효하지 않습니다.')
+      }
+      if (response.status === 429) {
+        throw new Error('YouTube API 할당량을 초과했습니다.')
+      }
+      throw new Error(`YouTube Trending API 오류: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    
+    if (!data.items || data.items.length === 0) {
+      return c.json({
+        success: true,
+        data: {
+          region: regionCode,
+          category: videoCategoryId || 'all',
+          totalResults: 0,
+          videos: []
+        }
+      })
+    }
+
+    // 3. 채널 정보 조회 (구독자 수)
+    const channelIds = Array.from(new Set(data.items.map((item: any) => item.snippet.channelId))).join(',')
+    const channelUrl = `https://www.googleapis.com/youtube/v3/channels?id=${channelIds}&key=${youtubeApiKey}&part=statistics`
+    const channelResponse = await fetch(channelUrl)
+    
+    const channelData = channelResponse.ok ? await channelResponse.json() : { items: [] }
+    const channelMap = new Map(
+      channelData.items?.map((channel: any) => [
+        channel.id,
+        {
+          subscriberCount: parseInt(channel.statistics?.subscriberCount || '0'),
+          videoCount: parseInt(channel.statistics?.videoCount || '0')
+        }
+      ]) || []
+    )
+
+    // 4. 평탄화된 구조로 변환
+    const videos = data.items.map((item: any) => {
+      const views = parseInt(item.statistics.viewCount || '0')
+      const likes = parseInt(item.statistics.likeCount || '0')
+      const comments = parseInt(item.statistics.commentCount || '0')
+      const channelInfo = channelMap.get(item.snippet.channelId) || { subscriberCount: 0, videoCount: 0 }
+      
+      // 성과도 계산
+      let performance: 'Great' | 'Good' | 'Normal' = 'Normal'
+      if (views >= 10000000) performance = 'Great'
+      else if (views >= 1000000) performance = 'Good'
+      
+      // 기여도 계산
+      const contribution_ratio = channelInfo.subscriberCount > 0 ? views / channelInfo.subscriberCount : 0
+      let contribution: 'Great' | 'Good' | 'Normal' = 'Normal'
+      if (contribution_ratio >= 10) contribution = 'Great'
+      else if (contribution_ratio >= 5) contribution = 'Good'
+
+      return {
+        videoId: item.id,
+        title: item.snippet.title,
+        channel: item.snippet.channelTitle,
+        channelId: item.snippet.channelId,
+        thumbnailUrl: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.high?.url || '',
+        publishedAt: item.snippet.publishedAt,
+        views,
+        likes,
+        comments,
+        description: item.snippet.description || '',
+        duration: item.contentDetails?.duration || '',
+        subscriberCount: channelInfo.subscriberCount,
+        videoCount: channelInfo.videoCount,
+        performance,
+        contribution,
+        categoryId: item.snippet.categoryId
+      }
+    })
+
+    console.log(`✅ [트렌딩] ${videos.length}개 인기 영상 로드 완료`)
+
+    return c.json({
+      success: true,
+      data: {
+        region: regionCode,
+        category: videoCategoryId || 'all',
+        totalResults: videos.length,
+        videos: videos
+      }
+    })
+
+  } catch (error: any) {
+    console.error('YouTube trending error:', error)
+    return c.json<ApiResponse<null>>({
+      success: false,
+      error: {
+        code: 'TRENDING_ERROR',
+        message: error.message || '인기 영상 조회 중 오류가 발생했습니다.'
+      }
+    }, 500)
+  }
+})
+
+// ========================================
 // Phase 4: 콘텐츠 전략 AI
 // ========================================
 

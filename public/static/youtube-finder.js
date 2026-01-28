@@ -5479,6 +5479,140 @@ function previewPDFReport() {
   alert(`선택된 섹션: ${selectedCount}개\n\n실제 PDF를 생성하려면 'PDF 보고서 생성' 버튼을 클릭하세요.`);
 }
 
+// ======================
+// Phase 2 추가: 인기 영상 탭
+// ======================
+
+let trendingVideos = [];
+
+/**
+ * 인기 영상 로드
+ */
+async function loadTrendingVideos() {
+  const regionCode = document.getElementById('trending-region')?.value || 'KR';
+  const videoCategoryId = document.getElementById('trending-category')?.value || '';
+  const maxResults = parseInt(document.getElementById('trending-max-results')?.value || '20');
+
+  const loadingEl = document.getElementById('trending-loading');
+  const tableBody = document.getElementById('trending-table-body');
+  const resultCount = document.getElementById('trending-result-count');
+
+  try {
+    // 로딩 표시
+    loadingEl?.classList.remove('hidden');
+    tableBody.innerHTML = '';
+
+    console.log(`🔥 [인기 영상] 로드 시작: regionCode=${regionCode}, category=${videoCategoryId}, maxResults=${maxResults}`);
+
+    // API 호출
+    const response = await fetch('/api/youtube/trending', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        regionCode,
+        videoCategoryId,
+        maxResults
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error?.message || '인기 영상 로드 실패');
+    }
+
+    trendingVideos = result.data.videos || [];
+    console.log(`✅ [인기 영상] ${trendingVideos.length}개 로드 완료`);
+
+    // 테이블 렌더링
+    renderTrendingTable(trendingVideos);
+    resultCount.textContent = `${trendingVideos.length}개`;
+
+  } catch (error) {
+    console.error('인기 영상 로드 실패:', error);
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="8" class="px-4 py-8 text-center text-red-500">
+          <i class="fas fa-exclamation-circle text-3xl mb-3"></i>
+          <p>인기 영상을 불러오는데 실패했습니다: ${error.message}</p>
+        </td>
+      </tr>
+    `;
+    resultCount.textContent = '0개';
+  } finally {
+    loadingEl?.classList.add('hidden');
+  }
+}
+
+/**
+ * 인기 영상 테이블 렌더링
+ */
+function renderTrendingTable(videos) {
+  const tableBody = document.getElementById('trending-table-body');
+  
+  if (!tableBody) {
+    console.error('trending-table-body 요소를 찾을 수 없습니다');
+    return;
+  }
+
+  if (!videos || videos.length === 0) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+          <i class="fas fa-fire text-3xl mb-3 text-gray-300"></i>
+          <p>검색 결과가 없습니다</p>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  // 범용 매핑 (평탄화 & 중첩 구조 모두 지원)
+  tableBody.innerHTML = videos.map((video, index) => {
+    const videoId = video.id?.videoId || video.videoId || video.id;
+    const title = video.snippet?.title || video.title || '제목 정보 없음';
+    const thumbnail = video.snippet?.thumbnails?.medium?.url || video.thumbnailUrl || 'https://via.placeholder.com/120x90?text=No+Image';
+    const channelTitle = video.snippet?.channelTitle || video.channel || '채널 정보 없음';
+    const views = parseInt(video.statistics?.viewCount ?? video.views ?? 0);
+    const likes = parseInt(video.statistics?.likeCount ?? video.likes ?? 0);
+    const comments = parseInt(video.statistics?.commentCount ?? video.comments ?? 0);
+    const publishedAt = video.snippet?.publishedAt || video.publishedAt || '';
+    const duration = video.contentDetails?.duration || video.duration || '';
+
+    const formattedDate = publishedAt ? formatDate(new Date(publishedAt)) : '정보 없음';
+    const formattedDuration = duration ? formatDuration(duration) : '정보 없음';
+
+    return `
+      <tr class="border-b hover:bg-gray-50 cursor-pointer" onclick="window.open('https://www.youtube.com/watch?v=${videoId}', '_blank')">
+        <td class="px-4 py-3 text-center font-bold text-lg" style="color: #FF6B6B;">${index + 1}</td>
+        <td class="px-4 py-3">
+          <div class="flex items-center gap-3">
+            <img src="${thumbnail}" alt="${escapeHtml(title)}" class="w-24 h-16 rounded object-cover">
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-gray-800 truncate">${escapeHtml(title)}</p>
+              <p class="text-sm text-gray-500">ID: ${videoId}</p>
+            </div>
+          </div>
+        </td>
+        <td class="px-4 py-3">
+          <p class="font-medium text-gray-700">${escapeHtml(channelTitle)}</p>
+        </td>
+        <td class="px-4 py-3 text-center font-semibold text-blue-600">${formatNumber(views)}</td>
+        <td class="px-4 py-3 text-center text-gray-700">${formatNumber(likes)}</td>
+        <td class="px-4 py-3 text-center text-gray-700">${formatNumber(comments)}</td>
+        <td class="px-4 py-3 text-center text-sm text-gray-600">${formattedDate}</td>
+        <td class="px-4 py-3 text-center text-sm text-gray-600">${formattedDuration}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
 // 이벤트 리스너
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('deep-analysis-btn')?.addEventListener('click', deepAnalyzeVideo);
@@ -5490,6 +5624,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-preview-pdf')?.addEventListener('click', previewPDFReport);
   document.getElementById('btn-download-pdf')?.addEventListener('click', generatePDFReport);
   
-  console.log('✅ [Phase 6E/F/G + Phase 7] 상세분석 + 성장추적 + A/B테스트 + PDF 보고서 초기화 완료');
+  // Phase 2 추가: 인기 영상 탭
+  document.getElementById('trending-load-btn')?.addEventListener('click', loadTrendingVideos);
+  
+  console.log('✅ [Phase 6E/F/G + Phase 7 + Trending] 상세분석 + 성장추적 + A/B테스트 + PDF 보고서 + 인기 영상 초기화 완료');
 });
 

@@ -913,6 +913,11 @@ export function youtubeAnalyzerTemplate() {
         <span class="subnav-text">마켓 탐색 & 분석</span>
       </div>
       
+      <div class="subnav-item" data-tab="trending">
+        <span class="subnav-icon">🔥</span>
+        <span class="subnav-text">인기 영상</span>
+      </div>
+      
       <div class="subnav-item" data-tab="advanced-analytics">
         <span class="subnav-icon">🚀</span>
         <span class="subnav-text">고급 분석</span>
@@ -1340,6 +1345,126 @@ export function youtubeAnalyzerTemplate() {
 
       </div> <!-- three-column-layout 닫기 -->
     </div> <!-- tab-market-explorer 닫기 -->
+
+    <!-- 탭 콘텐츠: 인기 영상 -->
+    <div id="tab-trending" class="tab-content hidden">
+      <!-- 필터 영역 -->
+      <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">
+          <i class="fas fa-fire mr-2" style="color: #FF6B6B;"></i>
+          국가별 인기 영상
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- 국가 선택 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">국가</label>
+            <select id="trending-region" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+              <option value="KR">🇰🇷 한국</option>
+              <option value="US">🇺🇸 미국</option>
+              <option value="JP">🇯🇵 일본</option>
+              <option value="GB">🇬🇧 영국</option>
+              <option value="CA">🇨🇦 캐나다</option>
+              <option value="AU">🇦🇺 호주</option>
+              <option value="DE">🇩🇪 독일</option>
+              <option value="FR">🇫🇷 프랑스</option>
+              <option value="IN">🇮🇳 인도</option>
+              <option value="BR">🇧🇷 브라질</option>
+              <option value="MX">🇲🇽 멕시코</option>
+              <option value="ES">🇪🇸 스페인</option>
+              <option value="IT">🇮🇹 이탈리아</option>
+              <option value="RU">🇷🇺 러시아</option>
+              <option value="TH">🇹🇭 태국</option>
+              <option value="VN">🇻🇳 베트남</option>
+              <option value="ID">🇮🇩 인도네시아</option>
+              <option value="MY">🇲🇾 말레이시아</option>
+              <option value="SG">🇸🇬 싱가포르</option>
+              <option value="PH">🇵🇭 필리핀</option>
+            </select>
+          </div>
+
+          <!-- 카테고리 선택 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">카테고리</label>
+            <select id="trending-category" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+              <option value="">전체</option>
+              <option value="10">음악</option>
+              <option value="20">게임</option>
+              <option value="22">브이로그</option>
+              <option value="23">코미디</option>
+              <option value="24">엔터테인먼트</option>
+              <option value="25">뉴스 & 정치</option>
+              <option value="26">하우투 & 스타일</option>
+              <option value="27">교육</option>
+              <option value="28">과학 & 기술</option>
+            </select>
+          </div>
+
+          <!-- 결과 수 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">결과 수</label>
+            <select id="trending-max-results" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+              <option value="10">10개</option>
+              <option value="20" selected>20개</option>
+              <option value="50">50개</option>
+            </select>
+          </div>
+        </div>
+
+        <button 
+          id="trending-load-btn"
+          class="mt-4 w-full px-6 py-3 text-white font-semibold rounded-lg transition"
+          style="background: #FF6B6B;"
+          onmouseover="this.style.background='#FF5252'" 
+          onmouseout="this.style.background='#FF6B6B'"
+        >
+          <i class="fas fa-fire mr-2"></i>
+          인기 영상 불러오기
+        </button>
+      </div>
+
+      <!-- 인기 영상 목록 -->
+      <div class="bg-white rounded-xl shadow-sm border p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-gray-800">
+            <i class="fas fa-list mr-2" style="color: #FF6B6B;"></i>
+            인기 영상 목록
+          </h3>
+          <span id="trending-result-count" class="text-sm text-gray-500">0개</span>
+        </div>
+        
+        <!-- 로딩 표시 -->
+        <div id="trending-loading" class="hidden text-center py-8">
+          <i class="fas fa-spinner fa-spin text-3xl text-gray-400 mb-3"></i>
+          <p class="text-gray-500">인기 영상을 불러오는 중...</p>
+        </div>
+
+        <!-- 테이블 -->
+        <div id="trending-table-container" class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50 border-b">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">순위</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">영상</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">채널</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">조회수</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">좋아요</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">댓글</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">게시일</th>
+                <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">길이</th>
+              </tr>
+            </thead>
+            <tbody id="trending-table-body">
+              <tr>
+                <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+                  <i class="fas fa-fire text-3xl mb-3 text-gray-300"></i>
+                  <p>국가를 선택하고 '인기 영상 불러오기' 버튼을 클릭하세요</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
       <!-- 탭 콘텐츠: 채널 분석 -->
       <div id="tab-channel-analysis" class="tab-content hidden">
@@ -2838,6 +2963,12 @@ export function youtubeAnalyzerTemplate() {
         // 새로운 탭 구조에 맞게 매핑
         if (tab === 'market-explorer') {
           document.getElementById('tab-market-explorer')?.classList.remove('hidden');
+        } else if (tab === 'trending') {
+          document.getElementById('tab-trending')?.classList.remove('hidden');
+          // 인기 영상 자동 로드 (한국 기본값)
+          if (typeof loadTrendingVideos === 'function') {
+            loadTrendingVideos();
+          }
         } else if (tab === 'channel-analysis') {
           document.getElementById('tab-channel-analysis')?.classList.remove('hidden');
         } else if (tab === 'content-strategy') {
