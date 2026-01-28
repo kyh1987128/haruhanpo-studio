@@ -2163,8 +2163,24 @@ async function searchMarket200() {
     
   } catch (error) {
     console.error('❌ [마켓 탐색] 검색 오류:', error);
-    alert(`검색 중 오류가 발생했습니다: ${error.message}`);
+    
+    // 사용자 친화적인 에러 메시지
+    let errorMessage = '검색 중 오류가 발생했습니다.';
+    
+    if (error.message.includes('401') || error.message.includes('인증')) {
+      errorMessage = '로그인이 필요합니다. 다시 로그인해주세요.';
+    } else if (error.message.includes('403') || error.message.includes('quota')) {
+      errorMessage = 'YouTube API 할당량이 초과되었습니다. 나중에 다시 시도해주세요.';
+    } else if (error.message.includes('network') || error.message.includes('fetch')) {
+      errorMessage = '네트워크 연결을 확인해주세요.';
+    } else if (error.message) {
+      errorMessage = `검색 오류: ${error.message}`;
+    }
+    
+    alert(errorMessage);
     renderMarketTable([]);
+    updateResultCount(0);
+    
   } finally {
     showMarketLoading(false);
   }
@@ -2610,14 +2626,50 @@ function showMarketLoading(show) {
   if (!tbody) return;
   
   if (show) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="8" class="text-center py-12">
-          <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-          <p class="text-lg mt-4 text-gray-600">200개 영상 수집 중...</p>
+    // 스켈레톤 로딩 UI (3개 행)
+    const skeletonRows = Array.from({ length: 3 }, (_, i) => `
+      <tr class="border-b">
+        <td class="px-4 py-3">
+          <div class="skeleton" style="width: 16px; height: 16px;"></div>
+        </td>
+        <td class="video-thumbnail-cell px-4 py-3">
+          <div class="flex items-start gap-3">
+            <div class="skeleton skeleton-thumbnail"></div>
+            <div class="flex-1 min-w-0">
+              <div class="skeleton skeleton-text-large mb-2" style="width: 90%;"></div>
+              <div class="skeleton skeleton-text" style="width: 60%;"></div>
+              <div class="flex items-center gap-2 mt-2">
+                <div class="skeleton skeleton-circle" style="width: 24px; height: 24px;"></div>
+                <div class="skeleton skeleton-text" style="width: 100px;"></div>
+              </div>
+            </div>
+          </div>
+        </td>
+        <td class="px-4 py-3">
+          <div class="skeleton skeleton-text" style="width: 80px; margin-left: auto;"></div>
+        </td>
+        <td class="px-4 py-3">
+          <div class="skeleton skeleton-text" style="width: 60px; margin: 0 auto;"></div>
+        </td>
+        <td class="px-4 py-3">
+          <div class="skeleton skeleton-text" style="width: 80px; margin-left: auto;"></div>
+        </td>
+        <td class="px-4 py-3">
+          <div class="skeleton skeleton-text" style="width: 50px; margin-left: auto;"></div>
+        </td>
+        <td class="px-4 py-3">
+          <div class="skeleton skeleton-text" style="width: 40px; margin-left: auto;"></div>
+        </td>
+        <td class="px-4 py-3">
+          <div class="skeleton skeleton-text" style="width: 80px; margin: 0 auto;"></div>
+        </td>
+        <td class="px-4 py-3">
+          <div class="skeleton skeleton-text" style="width: 60px; margin: 0 auto;"></div>
         </td>
       </tr>
-    `;
+    `).join('');
+    
+    tbody.innerHTML = skeletonRows;
   }
 }
 
@@ -2752,12 +2804,231 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   
-  // CSV/Excel 다운로드 (미구현)
+  // CSV/Excel 다운로드
   document.getElementById('export-csv-btn')?.addEventListener('click', () => {
-    alert('CSV 다운로드 기능은 곧 제공됩니다.');
+    exportToCSV();
   });
   
   document.getElementById('export-excel-btn')?.addEventListener('click', () => {
-    alert('Excel 다운로드 기능은 곧 제공됩니다.');
+    exportToExcel();
   });
 });
+
+// ========================================
+// CSV/Excel 다운로드 함수
+// ========================================
+
+/**
+ * CSV 다운로드
+ */
+function exportToCSV() {
+  if (!filteredMarketVideos || filteredMarketVideos.length === 0) {
+    alert('다운로드할 데이터가 없습니다. 먼저 검색을 진행해주세요.');
+    return;
+  }
+  
+  console.log('📥 [CSV 다운로드] 시작:', filteredMarketVideos.length, '개');
+  
+  try {
+    // CSV 헤더
+    const headers = [
+      '영상 제목',
+      '채널명',
+      '조회수',
+      '성과도 (%)',
+      '성과도 등급',
+      '구독자 수',
+      '좋아요 수',
+      '좋아요율 (%)',
+      '댓글 수',
+      '업로드 날짜',
+      '영상 길이',
+      '카테고리 ID',
+      '언어',
+      '영상 URL'
+    ];
+    
+    // CSV 데이터 생성
+    const rows = filteredMarketVideos.map(video => {
+      const title = (video.snippet?.title || '').replace(/"/g, '""'); // CSV escape
+      const channelTitle = (video.snippet?.channelTitle || '').replace(/"/g, '""');
+      const views = video.statistics?.viewCount || 0;
+      const performanceRatio = video.performance?.ratio || 0;
+      const performanceLevel = getPerformanceLevelText(video.performance?.level || 'low');
+      const subscribers = video.channelInfo?.subscriberCount || 0;
+      const likes = video.statistics?.likeCount || 0;
+      const likeRate = views > 0 ? ((likes / views) * 100).toFixed(2) : '0.00';
+      const comments = video.statistics?.commentCount || 0;
+      const publishedAt = formatDate(video.snippet?.publishedAt || '');
+      const duration = formatDuration(parseDuration(video.contentDetails?.duration || ''));
+      const categoryId = video.snippet?.categoryId || '';
+      const language = video.snippet?.defaultLanguage || video.snippet?.defaultAudioLanguage || '';
+      const videoUrl = `https://www.youtube.com/watch?v=${video.id?.videoId || video.id || ''}`;
+      
+      return [
+        `"${title}"`,
+        `"${channelTitle}"`,
+        views,
+        performanceRatio,
+        performanceLevel,
+        subscribers,
+        likes,
+        likeRate,
+        comments,
+        publishedAt,
+        duration,
+        categoryId,
+        language,
+        videoUrl
+      ].join(',');
+    });
+    
+    // CSV 문자열 생성
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    
+    // BOM 추가 (Excel에서 한글 깨짐 방지)
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+    // 파일명 생성 (날짜 + 키워드)
+    const keyword = document.getElementById('market-search-input')?.value.trim() || 'youtube_data';
+    const date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const filename = `youtube_market_${keyword}_${date}.csv`;
+    
+    // 다운로드
+    downloadFile(blob, filename);
+    
+    console.log('✅ [CSV 다운로드] 완료:', filename);
+    alert(`CSV 파일이 다운로드되었습니다.\n파일명: ${filename}\n데이터: ${filteredMarketVideos.length}개`);
+    
+  } catch (error) {
+    console.error('❌ [CSV 다운로드 오류]', error);
+    alert('CSV 다운로드 중 오류가 발생했습니다.');
+  }
+}
+
+/**
+ * Excel (XLSX) 다운로드
+ * Excel 형식은 CSV와 동일하지만 파일 확장자가 .xlsx
+ * 실제 Excel 바이너리 포맷은 라이브러리가 필요하므로, CSV를 .xlsx로 저장
+ * (Excel은 CSV를 자동으로 열 수 있음)
+ */
+function exportToExcel() {
+  if (!filteredMarketVideos || filteredMarketVideos.length === 0) {
+    alert('다운로드할 데이터가 없습니다. 먼저 검색을 진행해주세요.');
+    return;
+  }
+  
+  console.log('📥 [Excel 다운로드] 시작:', filteredMarketVideos.length, '개');
+  
+  try {
+    // HTML 테이블 생성 (Excel이 인식 가능한 형식)
+    let tableHTML = '<table border="1">';
+    
+    // 헤더
+    tableHTML += '<thead><tr>';
+    const headers = [
+      '영상 제목',
+      '채널명',
+      '조회수',
+      '성과도 (%)',
+      '성과도 등급',
+      '구독자 수',
+      '좋아요 수',
+      '좋아요율 (%)',
+      '댓글 수',
+      '업로드 날짜',
+      '영상 길이',
+      '카테고리 ID',
+      '언어',
+      '영상 URL'
+    ];
+    headers.forEach(header => {
+      tableHTML += `<th>${header}</th>`;
+    });
+    tableHTML += '</tr></thead>';
+    
+    // 데이터
+    tableHTML += '<tbody>';
+    filteredMarketVideos.forEach(video => {
+      const title = escapeHtml(video.snippet?.title || '');
+      const channelTitle = escapeHtml(video.snippet?.channelTitle || '');
+      const views = video.statistics?.viewCount || 0;
+      const performanceRatio = video.performance?.ratio || 0;
+      const performanceLevel = getPerformanceLevelText(video.performance?.level || 'low');
+      const subscribers = video.channelInfo?.subscriberCount || 0;
+      const likes = video.statistics?.likeCount || 0;
+      const likeRate = views > 0 ? ((likes / views) * 100).toFixed(2) : '0.00';
+      const comments = video.statistics?.commentCount || 0;
+      const publishedAt = formatDate(video.snippet?.publishedAt || '');
+      const duration = formatDuration(parseDuration(video.contentDetails?.duration || ''));
+      const categoryId = video.snippet?.categoryId || '';
+      const language = video.snippet?.defaultLanguage || video.snippet?.defaultAudioLanguage || '';
+      const videoUrl = `https://www.youtube.com/watch?v=${video.id?.videoId || video.id || ''}`;
+      
+      tableHTML += '<tr>';
+      tableHTML += `<td>${title}</td>`;
+      tableHTML += `<td>${channelTitle}</td>`;
+      tableHTML += `<td>${views.toLocaleString()}</td>`;
+      tableHTML += `<td>${performanceRatio}</td>`;
+      tableHTML += `<td>${performanceLevel}</td>`;
+      tableHTML += `<td>${subscribers.toLocaleString()}</td>`;
+      tableHTML += `<td>${likes.toLocaleString()}</td>`;
+      tableHTML += `<td>${likeRate}</td>`;
+      tableHTML += `<td>${comments.toLocaleString()}</td>`;
+      tableHTML += `<td>${publishedAt}</td>`;
+      tableHTML += `<td>${duration}</td>`;
+      tableHTML += `<td>${categoryId}</td>`;
+      tableHTML += `<td>${language}</td>`;
+      tableHTML += `<td><a href="${videoUrl}" target="_blank">링크</a></td>`;
+      tableHTML += '</tr>';
+    });
+    tableHTML += '</tbody></table>';
+    
+    // BOM 추가 (Excel에서 한글 깨짐 방지)
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + tableHTML], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    
+    // 파일명 생성 (날짜 + 키워드)
+    const keyword = document.getElementById('market-search-input')?.value.trim() || 'youtube_data';
+    const date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const filename = `youtube_market_${keyword}_${date}.xls`;
+    
+    // 다운로드
+    downloadFile(blob, filename);
+    
+    console.log('✅ [Excel 다운로드] 완료:', filename);
+    alert(`Excel 파일이 다운로드되었습니다.\n파일명: ${filename}\n데이터: ${filteredMarketVideos.length}개`);
+    
+  } catch (error) {
+    console.error('❌ [Excel 다운로드 오류]', error);
+    alert('Excel 다운로드 중 오류가 발생했습니다.');
+  }
+}
+
+/**
+ * 성과도 등급 텍스트 반환
+ */
+function getPerformanceLevelText(level) {
+  switch (level) {
+    case 'viral': return '떡상 중';
+    case 'algorithm': return '알고리즘 픽';
+    case 'normal': return '일반';
+    case 'low': return '저조';
+    default: return '알 수 없음';
+  }
+}
+
+/**
+ * 파일 다운로드 헬퍼 함수
+ */
+function downloadFile(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}

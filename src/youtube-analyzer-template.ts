@@ -497,6 +497,213 @@ export function youtubeAnalyzerTemplate() {
       transition: all 0.2s;
     }
     
+    /* 스켈레톤 로딩 애니메이션 */
+    @keyframes skeleton-loading {
+      0% {
+        background-position: -200px 0;
+      }
+      100% {
+        background-position: calc(200px + 100%) 0;
+      }
+    }
+    
+    .skeleton {
+      background: linear-gradient(90deg, #f3f4f6 0px, #e5e7eb 40px, #f3f4f6 80px);
+      background-size: 200px 100%;
+      animation: skeleton-loading 1.5s ease-in-out infinite;
+      border-radius: 4px;
+    }
+    
+    .skeleton-thumbnail {
+      width: 180px;
+      height: 101px;
+      border-radius: 8px;
+    }
+    
+    .skeleton-text {
+      height: 14px;
+      border-radius: 4px;
+    }
+    
+    .skeleton-text-large {
+      height: 18px;
+      border-radius: 4px;
+    }
+    
+    .skeleton-circle {
+      border-radius: 50%;
+    }
+    
+    /* 로딩 오버레이 */
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    
+    .loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #e5e7eb;
+      border-top-color: #00B87D;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+      margin-top: 16px;
+      font-size: 14px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+    
+    .loading-progress {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+    
+    /* 반응형 디자인 */
+    
+    /* 태블릿 (768px 이하) */
+    @media (max-width: 768px) {
+      .youtube-finder-workspace {
+        flex-direction: column;
+      }
+      
+      .filter-sidebar {
+        position: relative;
+        top: 0;
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 16px;
+      }
+      
+      .filter-section {
+        margin-bottom: 16px;
+      }
+      
+      .detail-sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+        border-left: none;
+        border-top: 1px solid #e5e7eb;
+        padding: 16px;
+      }
+      
+      .video-table-container {
+        overflow-x: auto;
+      }
+      
+      .video-table {
+        min-width: 800px;
+      }
+      
+      .video-thumbnail-cell {
+        min-width: 300px;
+      }
+      
+      /* 테이블 헤더 고정 해제 */
+      .video-table thead {
+        position: relative;
+        top: 0;
+      }
+    }
+    
+    /* 모바일 (480px 이하) */
+    @media (max-width: 480px) {
+      .subnav-container {
+        padding: 12px 16px;
+        height: auto;
+        overflow-x: auto;
+      }
+      
+      .subnav-item {
+        padding: 12px 16px;
+        font-size: 14px;
+        white-space: nowrap;
+      }
+      
+      .filter-sidebar {
+        padding: 12px;
+      }
+      
+      .filter-section {
+        margin-bottom: 12px;
+      }
+      
+      .filter-label {
+        font-size: 12px;
+      }
+      
+      .filter-select {
+        padding: 8px;
+        font-size: 14px;
+      }
+      
+      .search-bar {
+        flex-direction: column;
+        gap: 12px;
+      }
+      
+      .search-bar input {
+        width: 100%;
+      }
+      
+      .action-buttons {
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .action-buttons button {
+        width: 100%;
+      }
+      
+      .video-table {
+        min-width: 600px;
+      }
+      
+      .video-thumbnail-wrapper {
+        width: 120px !important;
+        height: 68px !important;
+      }
+      
+      .video-thumbnail-cell {
+        min-width: 250px;
+      }
+      
+      .video-title {
+        font-size: 13px;
+      }
+      
+      .channel-name {
+        font-size: 11px;
+      }
+      
+      .detail-sidebar {
+        padding: 12px;
+      }
+      
+      .detail-video-player {
+        height: 200px;
+      }
+    }
+    
     .btn-reset:hover {
       background: #f9fafb;
       border-color: #9ca3af;
