@@ -15,6 +15,29 @@
 
 ## 🌟 최신 업데이트
 
+### 🌐 **AI 자동 번역 & 댓글 수 & 설명 필드 추가** ⭐⭐⭐ (2026-01-28)
+**지역별 자동 번역으로 글로벌 콘텐츠 검색 가능!**
+
+**주요 기능:**
+- ✅ **AI 자동 번역 (GPT-4o-mini)**:
+  - 지역 선택 시 키워드 자동 번역 (예: 한국어 "게임" → 일본어 "ゲーム")
+  - 35개 국가/언어 지원
+  - 번역 전후 로그 출력
+- ✅ **댓글 수 추가**: YouTube videos API에서 commentCount 조회
+- ✅ **설명 & 영상 길이**: description, duration 필드 추가
+
+**사용 예시:**
+```
+지역: 일본 선택 + 키워드: "게임"
+→ 시스템 자동 번역: "ゲーム"
+→ 결과: 일본 게임 영상 ✅
+```
+
+**커밋:**
+- `8a9e403` feat: AI 자동 번역 & 댓글 수 & 설명 필드 추가
+
+---
+
 ### 🐛 **버그 수정: 데이터 매핑 이슈 해결** ⭐⭐⭐ (2026-01-28)
 **"제목 없음", "채널 없음", "0 조회수" 문제 완전 해결!**
 
@@ -167,13 +190,13 @@ YouTube_분석보고서_[채널명]_2026-01-28.pdf
 ## 🌐 URLs
 
 ### Production URL
-- **메인**: https://6732c0ce.haruhanpo-studio-new.pages.dev
-- **YouTube Finder**: https://6732c0ce.haruhanpo-studio-new.pages.dev/youtube-analyzer
+- **메인**: https://b2aaca45.haruhanpo-studio-new.pages.dev
+- **YouTube Finder**: https://b2aaca45.haruhanpo-studio-new.pages.dev/youtube-analyzer
 
 ### GitHub
 - **리포지토리**: https://github.com/kyh1987128/haruhanpo-studio.git
 - **브랜치**: `main`
-- **최신 커밋**: `6e82246` (데이터 매핑 수정)
+- **최신 커밋**: `8a9e403` (AI 자동 번역 & 댓글 수 추가)
 
 ### 개발 서버
 - **로컬**: http://localhost:3000/youtube-analyzer
@@ -507,9 +530,12 @@ MIT License
 GenSpark AI Agent
 
 ## 📅 마지막 업데이트
-- **버전**: Phase 7 완료 + 버그 수정
+- **버전**: Phase 7 완료 + AI 번역 추가
 - **날짜**: 2026-01-28
 - **변경사항**: 
+  - 🌐 **AI 자동 번역**: GPT-4o-mini로 지역별 키워드 자동 번역 (35개 언어)
+  - 💬 **댓글 수 추가**: YouTube videos API에서 commentCount 조회
+  - 📝 **설명 & 영상 길이**: description, duration 필드 추가
   - 🐛 **데이터 매핑 수정**: "제목 없음", "채널 없음" 문제 해결 (범용 매핑 적용)
   - 🔐 **인증 수정**: YouTube 검색/채널 API 인증 불필요로 변경
   - ✅ Phase 7: PDF 보고서 생성 완성 (8개 섹션 선택, 차트 이미지 캡처, 전문적인 레이아웃)
