@@ -2023,6 +2023,10 @@ let marketSortOrder = 'desc';
 let selectedCompareVideos = []; // 선택된 영상 배열 (최대 3개)
 let compareChart = null; // Chart.js 인스턴스
 
+// 북마크 기능
+let bookmarkedVideos = []; // 북마크된 영상 ID 배열
+let showBookmarksOnly = false; // 북마크 필터 상태
+
 // 성과도 계산 함수
 function calculatePerformance(video) {
   const views = video.statistics?.viewCount || 0;
@@ -2286,6 +2290,12 @@ function applyMarketFilters() {
       if (publishedAt < cutoffDate) return false;
     }
     
+    // 북마크 필터
+    if (showBookmarksOnly) {
+      const videoId = video.id?.videoId || video.id;
+      if (!bookmarkedVideos.includes(videoId)) return false;
+    }
+    
     return true;
   });
   
@@ -2358,7 +2368,7 @@ function renderMarketTable(videos) {
   if (videos.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="9" class="text-center py-12 text-gray-400">
+        <td colspan="10" class="text-center py-12 text-gray-400">
           <i class="fas fa-inbox text-4xl mb-3"></i>
           <p class="text-lg">검색 결과가 없습니다</p>
           <p class="text-sm mt-1">다른 키워드로 검색해보세요</p>
@@ -2386,6 +2396,7 @@ function renderMarketTable(videos) {
     const performance = video.performance || {};
     const likeRate = views > 0 ? ((likes / views) * 100).toFixed(2) : '0.00';
     const isSelected = selectedCompareVideos.some(v => (v.id?.videoId || v.id) === videoId);
+    const isBookmarked = bookmarkedVideos.includes(videoId);
     
     return `
       <tr data-video-id="${videoId}" class="${selectedMarketVideo?.id === videoId ? 'selected' : ''}">
@@ -2398,6 +2409,20 @@ function renderMarketTable(videos) {
             ${isSelected ? 'checked' : ''}
             onchange="toggleCompareVideo('${videoId}')"
           />
+        </td>
+        
+        <!-- 북마크 -->
+        <td class="text-center" onclick="event.stopPropagation();">
+          <button 
+            onclick="toggleBookmark('${videoId}')" 
+            class="hover:scale-125 transition-transform"
+            title="${isBookmarked ? '북마크 제거' : '북마크 추가'}"
+          >
+            <i 
+              class="${isBookmarked ? 'fas' : 'far'} fa-star ${isBookmarked ? 'text-yellow-500' : 'text-gray-400'} text-lg"
+              data-bookmark-id="${videoId}"
+            ></i>
+          </button>
         </td>
         
         <!-- 영상 (썸네일 + 제목 + 채널) -->
@@ -2847,6 +2872,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target.id === 'compare-modal') {
       closeCompareModal();
     }
+  });
+  
+  // AI 비교 분석
+  document.getElementById('generate-compare-ai-btn')?.addEventListener('click', () => {
+    generateCompareAIAnalysis();
+  });
+  
+  // 북마크 필터
+  document.getElementById('bookmark-filter-btn')?.addEventListener('click', () => {
+    toggleBookmarkFilter();
   });
 });
 
@@ -3370,7 +3405,289 @@ function renderCompareChart() {
   });
 }
 
+/**
+ * AI 비교 분석 생성
+ */
+async function generateCompareAIAnalysis() {
+  if (selectedCompareVideos.length < 2) {
+    alert('최소 2개 이상의 영상을 선택해주세요.');
+    return;
+  }
+  
+  console.log('🤖 [AI 비교 분석] 시작:', selectedCompareVideos.length, '개');
+  
+  const btn = document.getElementById('generate-compare-ai-btn');
+  const resultDiv = document.getElementById('compare-ai-result');
+  const contentDiv = document.getElementById('compare-ai-content');
+  
+  if (!btn || !resultDiv || !contentDiv) return;
+  
+  try {
+    // 로딩 상태
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>AI 분석 중...';
+    
+    // 영상 정보 구성
+    const videosInfo = selectedCompareVideos.map((video, index) => {
+      const title = video.snippet?.title || '제목 없음';
+      const channelTitle = video.snippet?.channelTitle || '채널 없음';
+      const views = video.statistics?.viewCount || 0;
+      const subscribers = video.channelInfo?.subscriberCount || 0;
+      const likes = video.statistics?.likeCount || 0;
+      const comments = video.statistics?.commentCount || 0;
+      const performance = video.performance?.ratio || 0;
+      const likeRate = views > 0 ? ((likes / views) * 100).toFixed(2) : '0.00';
+      
+      return {
+        index: index + 1,
+        title,
+        channelTitle,
+        views,
+        subscribers,
+        likes,
+        likeRate,
+        comments,
+        performance
+      };
+    });
+    
+    // 프롬프트 생성
+    const prompt = `
+다음 ${videosInfo.length}개의 YouTube 영상을 비교 분석해주세요:
+
+${videosInfo.map(v => `
+**영상 ${v.index}: ${v.title}**
+- 채널: ${v.channelTitle}
+- 조회수: ${formatNumber(v.views)}
+- 구독자: ${formatNumber(v.subscribers)}
+- 성과도: ${v.performance}%
+- 좋아요율: ${v.likeRate}%
+- 댓글 수: ${formatNumber(v.comments)}
+`).join('\n')}
+
+다음 형식으로 상세 비교 분석을 제공해주세요:
+
+## 📊 종합 평가
+- 각 영상의 전반적인 성과 평가
+
+## 🏆 강점 분석
+- 영상 1의 강점
+- 영상 2의 강점
+${videosInfo.length > 2 ? '- 영상 3의 강점' : ''}
+
+## ⚠️ 약점 분석
+- 영상 1의 약점
+- 영상 2의 약점
+${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
+
+## 💡 개선 제안 TOP 3
+1. 첫 번째 개선안
+2. 두 번째 개선안
+3. 세 번째 개선안
+
+## 🎯 결론 및 추천
+- 어떤 영상의 전략을 벤치마킹해야 하는지
+- 핵심 성공 요인
+
+**Markdown 형식으로 작성해주세요.**
+    `.trim();
+    
+    // API 호출
+    const token = localStorage.getItem('postflow_token');
+    
+    const response = await fetch('/api/youtube/strategy', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ prompt })
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok || !result.success) {
+      throw new Error(result.error?.message || 'AI 분석 실패');
+    }
+    
+    const analysis = result.data?.analysis || result.data?.strategy || '';
+    
+    if (!analysis) {
+      throw new Error('AI 분석 결과가 비어있습니다');
+    }
+    
+    // Markdown을 HTML로 변환 (간단한 변환)
+    const html = markdownToHtml(analysis);
+    
+    // 결과 표시
+    contentDiv.innerHTML = html;
+    resultDiv.classList.remove('hidden');
+    
+    console.log('✅ [AI 비교 분석] 완료');
+    
+  } catch (error) {
+    console.error('❌ [AI 비교 분석 오류]', error);
+    
+    let errorMessage = 'AI 분석 중 오류가 발생했습니다.';
+    
+    if (error.message.includes('401') || error.message.includes('인증')) {
+      errorMessage = '로그인이 필요합니다. 다시 로그인해주세요.';
+    } else if (error.message) {
+      errorMessage = `AI 분석 오류: ${error.message}`;
+    }
+    
+    alert(errorMessage);
+    
+  } finally {
+    // 버튼 복구
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-robot mr-2"></i>AI 비교 분석 생성';
+  }
+}
+
+/**
+ * 간단한 Markdown to HTML 변환
+ */
+function markdownToHtml(markdown) {
+  let html = markdown;
+  
+  // 헤더 변환
+  html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold text-gray-900 mt-6 mb-3">$1</h3>');
+  html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold text-gray-900 mt-8 mb-4">$1</h2>');
+  html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold text-gray-900 mt-8 mb-4">$1</h1>');
+  
+  // 리스트 변환
+  html = html.replace(/^\* (.*$)/gim, '<li class="ml-4 mb-2">• $1</li>');
+  html = html.replace(/^- (.*$)/gim, '<li class="ml-4 mb-2">• $1</li>');
+  html = html.replace(/^\d+\. (.*$)/gim, '<li class="ml-4 mb-2">$1</li>');
+  
+  // 볼드 변환
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-gray-900">$1</strong>');
+  
+  // 줄바꿈 변환
+  html = html.replace(/\n\n/g, '</p><p class="mb-4">');
+  html = '<p class="mb-4">' + html + '</p>';
+  
+  // 빈 p 태그 제거
+  html = html.replace(/<p class="mb-4"><\/p>/g, '');
+  
+  return html;
+}
+
 // 전역 함수로 노출
 window.toggleCompareVideo = toggleCompareVideo;
 window.openCompareModal = openCompareModal;
 window.closeCompareModal = closeCompareModal;
+window.generateCompareAIAnalysis = generateCompareAIAnalysis;
+
+// ========================================
+// 북마크 기능
+// ========================================
+
+/**
+ * localStorage에서 북마크 로드
+ */
+function loadBookmarks() {
+  try {
+    const saved = localStorage.getItem('youtube_bookmarks');
+    if (saved) {
+      bookmarkedVideos = JSON.parse(saved);
+      console.log('✅ [북마크] 로드:', bookmarkedVideos.length, '개');
+    }
+  } catch (error) {
+    console.error('❌ [북마크 로드 오류]', error);
+    bookmarkedVideos = [];
+  }
+  updateBookmarkCount();
+}
+
+/**
+ * localStorage에 북마크 저장
+ */
+function saveBookmarks() {
+  try {
+    localStorage.setItem('youtube_bookmarks', JSON.stringify(bookmarkedVideos));
+    console.log('✅ [북마크] 저장:', bookmarkedVideos.length, '개');
+  } catch (error) {
+    console.error('❌ [북마크 저장 오류]', error);
+  }
+}
+
+/**
+ * 북마크 토글
+ */
+function toggleBookmark(videoId) {
+  const index = bookmarkedVideos.indexOf(videoId);
+  
+  if (index >= 0) {
+    // 북마크 제거
+    bookmarkedVideos.splice(index, 1);
+    console.log('✅ [북마크] 제거:', videoId);
+  } else {
+    // 북마크 추가
+    bookmarkedVideos.push(videoId);
+    console.log('✅ [북마크] 추가:', videoId);
+  }
+  
+  saveBookmarks();
+  updateBookmarkCount();
+  
+  // 북마크 필터 활성화 시 테이블 다시 렌더링
+  if (showBookmarksOnly) {
+    applyMarketFilters();
+  } else {
+    // 아이콘만 업데이트
+    const icon = document.querySelector(`[data-bookmark-id="${videoId}"]`);
+    if (icon) {
+      if (bookmarkedVideos.includes(videoId)) {
+        icon.classList.remove('far');
+        icon.classList.add('fas');
+        icon.classList.add('text-yellow-500');
+      } else {
+        icon.classList.remove('fas');
+        icon.classList.add('far');
+        icon.classList.remove('text-yellow-500');
+      }
+    }
+  }
+}
+
+/**
+ * 북마크 카운트 업데이트
+ */
+function updateBookmarkCount() {
+  const countSpan = document.getElementById('bookmark-count');
+  if (countSpan) {
+    countSpan.textContent = bookmarkedVideos.length;
+  }
+}
+
+/**
+ * 북마크 필터 토글
+ */
+function toggleBookmarkFilter() {
+  showBookmarksOnly = !showBookmarksOnly;
+  
+  const btn = document.getElementById('bookmark-filter-btn');
+  if (btn) {
+    if (showBookmarksOnly) {
+      btn.classList.add('bg-yellow-50', 'border-yellow-400');
+      btn.innerHTML = '<i class="fas fa-star text-yellow-500 mr-1"></i>북마크만 보기 (<span id="bookmark-count">' + bookmarkedVideos.length + '</span>) ✓';
+    } else {
+      btn.classList.remove('bg-yellow-50', 'border-yellow-400');
+      btn.innerHTML = '<i class="far fa-star text-yellow-500 mr-1"></i>북마크만 보기 (<span id="bookmark-count">' + bookmarkedVideos.length + '</span>)';
+    }
+  }
+  
+  console.log('🔄 [북마크 필터]', showBookmarksOnly ? '활성화' : '비활성화');
+  
+  // 필터 재적용
+  applyMarketFilters();
+}
+
+// 페이지 로드 시 북마크 로드
+loadBookmarks();
+
+// 전역 함수로 노출
+window.toggleBookmark = toggleBookmark;
+window.toggleBookmarkFilter = toggleBookmarkFilter;

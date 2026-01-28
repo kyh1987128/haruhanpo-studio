@@ -958,7 +958,7 @@ export function youtubeAnalyzerTemplate() {
           </div>
           
           <!-- 액션 버튼 -->
-          <div class="flex gap-2 items-center">
+          <div class="flex gap-2 items-center flex-wrap">
             <button 
               id="compare-videos-btn" 
               class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -966,6 +966,13 @@ export function youtubeAnalyzerTemplate() {
             >
               <i class="fas fa-chart-bar mr-1"></i>
               선택 영상 비교 (<span id="selected-count">0</span>/3)
+            </button>
+            <button 
+              id="bookmark-filter-btn" 
+              class="px-4 py-2 text-sm border rounded-lg hover:bg-yellow-50 hover:border-yellow-400"
+            >
+              <i class="far fa-star text-yellow-500 mr-1"></i>
+              북마크만 보기 (<span id="bookmark-count">0</span>)
             </button>
             <button id="export-csv-btn" class="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">
               📥 CSV 다운로드
@@ -987,6 +994,9 @@ export function youtubeAnalyzerTemplate() {
                 <th class="text-center" style="width: 40px;">
                   <input type="checkbox" id="select-all-videos" class="w-4 h-4 cursor-pointer" title="전체 선택">
                 </th>
+                <th class="text-center" style="width: 40px;" title="북마크">
+                  <i class="fas fa-star text-yellow-500"></i>
+                </th>
                 <th class="sortable" data-sort="title">영상</th>
                 <th class="sortable text-right" data-sort="views">조회수</th>
                 <th class="sortable text-center" data-sort="performance">성과도</th>
@@ -1000,7 +1010,7 @@ export function youtubeAnalyzerTemplate() {
             <tbody id="video-table-body">
               <!-- 빈 상태 -->
               <tr>
-                <td colspan="9" class="text-center py-12 text-gray-400">
+                <td colspan="10" class="text-center py-12 text-gray-400">
                   <i class="fas fa-search text-4xl mb-3"></i>
                   <p class="text-lg">키워드를 입력하여 검색을 시작하세요</p>
                   <p class="text-sm mt-1">최대 200개의 영상을 분석합니다</p>
@@ -1071,6 +1081,28 @@ export function youtubeAnalyzerTemplate() {
           </h3>
           <div class="flex justify-center">
             <canvas id="compare-radar-chart" style="max-width: 500px; max-height: 500px;"></canvas>
+          </div>
+        </div>
+        
+        <!-- AI 비교 분석 -->
+        <div class="mt-6">
+          <button 
+            id="generate-compare-ai-btn"
+            class="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold flex items-center justify-center gap-2"
+          >
+            <i class="fas fa-robot"></i>
+            AI 비교 분석 생성
+          </button>
+          
+          <!-- AI 분석 결과 -->
+          <div id="compare-ai-result" class="hidden mt-4 bg-white rounded-xl border p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">
+              <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
+              AI 비교 분석 결과
+            </h3>
+            <div id="compare-ai-content" class="prose max-w-none">
+              <!-- 동적 생성 -->
+            </div>
           </div>
         </div>
       </div>
