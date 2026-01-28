@@ -1219,4 +1219,316 @@ Return JSON format:
   }
 })
 
+// ========================================
+// Phase 6C: 영상 추천 알고리즘
+// ========================================
+app.post('/api/youtube/recommend', async (c) => {
+  try {
+    const { videos, mode = 'performance' } = await c.req.json()
+    
+    if (!videos || !Array.isArray(videos) || videos.length === 0) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'INVALID_INPUT',
+          message: '영상 데이터가 필요합니다.'
+        }
+      }, 400)
+    }
+    
+    // 추천 알고리즘 3가지 모드
+    let recommendations: any[] = []
+    
+    switch (mode) {
+      case 'performance':
+        // 1. 성과도 기반 추천 (상위 20% 고성과 영상)
+        recommendations = videos
+          .filter((v: any) => v.performance?.score)
+          .sort((a: any, b: any) => b.performance.score - a.performance.score)
+          .slice(0, 10)
+          .map((v: any, idx: number) => ({
+            rank: idx + 1,
+            videoId: v.id,
+            title: v.snippet.title,
+            thumbnail: v.snippet.thumbnails.medium.url,
+            channelTitle: v.snippet.channelTitle,
+            viewCount: v.statistics.viewCount,
+            likeCount: v.statistics.likeCount,
+            commentCount: v.statistics.commentCount,
+            performanceScore: v.performance.score,
+            performanceLevel: v.performance.level,
+            reason: `성과 점수 ${v.performance.score.toFixed(1)}점으로 상위 ${Math.ceil((idx + 1) / videos.length * 100)}% 영상`
+          }))
+        break
+      
+      case 'similarity':
+        // 2. 유사도 기반 추천 (첫 번째 영상과 유사한 영상)
+        const referenceVideo = videos[0]
+        recommendations = videos
+          .slice(1) // 첫 번째 제외
+          .map((v: any) => {
+            // 간단한 유사도 계산 (카테고리, 채널, 키워드 기반)
+            let similarityScore = 0
+            
+            // 같은 카테고리 (+30점)
+            if (v.snippet.categoryId === referenceVideo.snippet.categoryId) {
+              similarityScore += 30
+            }
+            
+            // 같은 채널 (+50점)
+            if (v.snippet.channelId === referenceVideo.snippet.channelId) {
+              similarityScore += 50
+            }
+            
+            // 제목 키워드 유사도 (+20점)
+            const refKeywords = referenceVideo.snippet.title.toLowerCase().split(' ')
+            const vidKeywords = v.snippet.title.toLowerCase().split(' ')
+            const commonKeywords = refKeywords.filter((k: string) => vidKeywords.includes(k))
+            similarityScore += Math.min(commonKeywords.length * 5, 20)
+            
+            return { ...v, similarityScore }
+          })
+          .sort((a: any, b: any) => b.similarityScore - a.similarityScore)
+          .slice(0, 10)
+          .map((v: any, idx: number) => ({
+            rank: idx + 1,
+            videoId: v.id,
+            title: v.snippet.title,
+            thumbnail: v.snippet.thumbnails.medium.url,
+            channelTitle: v.snippet.channelTitle,
+            viewCount: v.statistics.viewCount,
+            similarityScore: v.similarityScore,
+            reason: `기준 영상과 ${v.similarityScore}% 유사 (카테고리/채널/키워드 기반)`
+          }))
+        break
+      
+      case 'niche':
+        // 3. 틈새 전략 추천 (낮은 경쟁, 높은 성과)
+        recommendations = videos
+          .filter((v: any) => {
+            const views = v.statistics.viewCount
+            const subs = v.channelInfo?.subscriberCount || 0
+            // 구독자 대비 높은 조회수 (성과도 높음) + 중소 채널
+            return subs < 100000 && views > subs * 2
+          })
+          .sort((a: any, b: any) => {
+            const ratioA = a.statistics.viewCount / (a.channelInfo?.subscriberCount || 1)
+            const ratioB = b.statistics.viewCount / (b.channelInfo?.subscriberCount || 1)
+            return ratioB - ratioA
+          })
+          .slice(0, 10)
+          .map((v: any, idx: number) => {
+            const ratio = (v.statistics.viewCount / (v.channelInfo?.subscriberCount || 1)).toFixed(2)
+            return {
+              rank: idx + 1,
+              videoId: v.id,
+              title: v.snippet.title,
+              thumbnail: v.snippet.thumbnails.medium.url,
+              channelTitle: v.snippet.channelTitle,
+              viewCount: v.statistics.viewCount,
+              subscriberCount: v.channelInfo?.subscriberCount || 0,
+              ratio: parseFloat(ratio),
+              reason: `구독자 대비 ${ratio}배 조회수 (틈새 시장 기회)`
+            }
+          })
+        break
+      
+      default:
+        return c.json<ApiResponse<null>>({
+          success: false,
+          error: {
+            code: 'INVALID_MODE',
+            message: 'mode는 performance, similarity, niche 중 하나여야 합니다.'
+          }
+        }, 400)
+    }
+    
+    return c.json({
+      success: true,
+      data: {
+        mode,
+        totalVideos: videos.length,
+        recommendations,
+        summary: {
+          mode: mode === 'performance' ? '성과도 기반' : mode === 'similarity' ? '유사도 기반' : '틈새 전략',
+          count: recommendations.length,
+          description: mode === 'performance' 
+            ? '높은 성과를 보이는 영상들을 추천합니다'
+            : mode === 'similarity'
+            ? '기준 영상과 유사한 콘텐츠를 추천합니다'
+            : '낮은 경쟁에서 높은 성과를 거둔 틈새 시장 영상을 추천합니다'
+        }
+      }
+    })
+    
+  } catch (error: any) {
+    console.error('Recommendation error:', error)
+    return c.json<ApiResponse<null>>({
+      success: false,
+      error: {
+        code: 'RECOMMENDATION_ERROR',
+        message: error.message || '추천 생성 중 오류가 발생했습니다.'
+      }
+    }, 500)
+  }
+})
+
+// ========================================
+// Phase 6D: 성과 시뮬레이터
+// ========================================
+app.post('/api/youtube/simulate', async (c) => {
+  try {
+    const { 
+      subscriberCount,
+      uploadFrequency,  // 월 업로드 횟수
+      avgWatchTime,     // 평균 시청 시간 (초)
+      avgLikeRate,      // 평균 좋아요율 (%)
+      categoryId,       // 카테고리 ID
+      targetPeriod = 30 // 시뮬레이션 기간 (일)
+    } = await c.req.json()
+    
+    // 입력 검증
+    if (!subscriberCount || !uploadFrequency) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'INVALID_INPUT',
+          message: '구독자 수와 업로드 빈도는 필수입니다.'
+        }
+      }, 400)
+    }
+    
+    // 기본값 설정
+    const watchTime = avgWatchTime || 180  // 기본 3분
+    const likeRate = avgLikeRate || 3      // 기본 3%
+    
+    // ========================================
+    // 성과 예측 알고리즘
+    // ========================================
+    
+    // 1. 기본 조회수 예측 (구독자 기반)
+    // 일반적으로 구독자의 5-15%가 초기 조회
+    const baseViewRate = 0.10  // 10% 기본값
+    const baseViews = subscriberCount * baseViewRate
+    
+    // 2. 알고리즘 부스트 계산
+    // 요소: 시청 시간, 좋아요율, 업로드 빈도
+    let algorithmBoost = 1.0
+    
+    // 시청 시간 영향 (180초 이상이면 보너스)
+    if (watchTime >= 180) {
+      algorithmBoost += 0.2
+    }
+    if (watchTime >= 300) {
+      algorithmBoost += 0.3  // 5분 이상이면 추가 보너스
+    }
+    
+    // 좋아요율 영향 (3% 이상이면 보너스)
+    if (likeRate >= 3) {
+      algorithmBoost += 0.15
+    }
+    if (likeRate >= 5) {
+      algorithmBoost += 0.25  // 5% 이상이면 추가 보너스
+    }
+    
+    // 업로드 빈도 영향 (주 2회 이상이면 보너스)
+    const uploadsPerWeek = uploadFrequency / 4
+    if (uploadsPerWeek >= 2) {
+      algorithmBoost += 0.2
+    }
+    if (uploadsPerWeek >= 4) {
+      algorithmBoost += 0.3  // 주 4회 이상이면 추가 보너스
+    }
+    
+    // 3. 카테고리 보정 계수
+    const categoryMultipliers: Record<string, number> = {
+      '10': 1.5,  // 음악 (높은 조회수)
+      '20': 1.4,  // 게임
+      '24': 1.3,  // 엔터테인먼트
+      '22': 1.2,  // 브이로그
+      '27': 1.1,  // 교육
+      '28': 1.1,  // 과학기술
+    }
+    const categoryMultiplier = categoryId ? (categoryMultipliers[categoryId] || 1.0) : 1.0
+    
+    // 4. 최종 예측 조회수
+    const predictedViews = Math.round(baseViews * algorithmBoost * categoryMultiplier)
+    
+    // 5. 기간별 예측
+    const dailyUploadCount = uploadFrequency / 30
+    const totalUploads = Math.ceil(dailyUploadCount * targetPeriod)
+    const totalViews = predictedViews * totalUploads
+    
+    // 6. 수익 예측 (CPM 기준)
+    // 한국 평균 CPM: $1.5-3.0 (₩2,000-4,000)
+    const avgCPM = 3000  // 원화 기준
+    const estimatedRevenue = Math.round((totalViews / 1000) * avgCPM)
+    
+    // 7. 구독자 증가 예측
+    // 일반적으로 조회수의 1-3%가 구독 전환
+    const subscriptionRate = 0.02  // 2%
+    const newSubscribers = Math.round(totalViews * subscriptionRate)
+    const finalSubscribers = subscriberCount + newSubscribers
+    
+    // 8. 성장 속도 등급
+    let growthRate = 'normal'
+    const growthPercentage = (newSubscribers / subscriberCount) * 100
+    if (growthPercentage >= 50) growthRate = 'explosive'
+    else if (growthPercentage >= 20) growthRate = 'fast'
+    else if (growthPercentage >= 10) growthRate = 'steady'
+    else if (growthPercentage < 5) growthRate = 'slow'
+    
+    // 9. 결과 반환
+    return c.json({
+      success: true,
+      data: {
+        input: {
+          subscriberCount,
+          uploadFrequency,
+          avgWatchTime: watchTime,
+          avgLikeRate: likeRate,
+          categoryId,
+          targetPeriod
+        },
+        predictions: {
+          avgViewsPerVideo: predictedViews,
+          totalUploads,
+          totalViews,
+          estimatedRevenue,
+          newSubscribers,
+          finalSubscribers,
+          growthRate,
+          growthPercentage: parseFloat(growthPercentage.toFixed(2))
+        },
+        breakdown: {
+          baseViews,
+          algorithmBoost: parseFloat(algorithmBoost.toFixed(2)),
+          categoryMultiplier,
+          factors: {
+            watchTime: watchTime >= 180 ? 'positive' : 'neutral',
+            likeRate: likeRate >= 3 ? 'positive' : 'neutral',
+            uploadFrequency: uploadsPerWeek >= 2 ? 'positive' : 'neutral'
+          }
+        },
+        recommendations: [
+          algorithmBoost < 1.5 && '시청 시간을 5분 이상으로 늘리세요 (알고리즘 신호 강화)',
+          likeRate < 3 && '좋아요율을 3% 이상으로 높이세요 (콜투액션 추가)',
+          uploadsPerWeek < 2 && '주 2회 이상 업로드하세요 (채널 활성도 향상)',
+          subscriberCount < 1000 && '구독자 1,000명 달성에 집중하세요 (수익화 조건)'
+        ].filter(Boolean)
+      }
+    })
+    
+  } catch (error: any) {
+    console.error('Simulation error:', error)
+    return c.json<ApiResponse<null>>({
+      success: false,
+      error: {
+        code: 'SIMULATION_ERROR',
+        message: error.message || '시뮬레이션 중 오류가 발생했습니다.'
+      }
+    }, 500)
+  }
+})
+
 export default app

@@ -4535,3 +4535,277 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('✅ [Phase 6] 고급 분석 기능 초기화 완료');
 });
 
+// ========================================
+// Phase 6C: 영상 추천 알고리즘
+// ========================================
+
+// 전역 변수: 선택된 추천 모드
+let selectedRecommendMode = 'performance';
+
+// 추천 모드 버튼 클릭 이벤트
+document.addEventListener('DOMContentLoaded', () => {
+  const modeButtons = document.querySelectorAll('.recommend-mode-btn');
+  modeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      // 모든 버튼 스타일 초기화
+      modeButtons.forEach(b => {
+        b.classList.remove('border-purple-500', 'bg-purple-50', 'border-blue-500', 'bg-blue-50', 'border-green-500', 'bg-green-50');
+        b.classList.add('border-transparent');
+      });
+      
+      // 선택된 버튼 스타일 적용
+      const mode = btn.dataset.mode;
+      selectedRecommendMode = mode;
+      
+      if (mode === 'performance') {
+        btn.classList.add('border-purple-500', 'bg-purple-50');
+      } else if (mode === 'similarity') {
+        btn.classList.add('border-blue-500', 'bg-blue-50');
+      } else if (mode === 'niche') {
+        btn.classList.add('border-green-500', 'bg-green-50');
+      }
+      
+      console.log(`🎯 [추천 모드] ${mode} 선택됨`);
+    });
+  });
+});
+
+// 영상 추천 생성 함수
+async function generateRecommendations() {
+  // marketVideos 확인
+  if (!window.marketVideos || window.marketVideos.length === 0) {
+    alert('⚠️ 먼저 "마켓 탐색 & 분석" 탭에서 영상을 검색해주세요');
+    return;
+  }
+  
+  // 로딩 표시
+  document.getElementById('recommendation-empty').classList.add('hidden');
+  document.getElementById('recommendation-results').classList.add('hidden');
+  document.getElementById('recommendation-loading').classList.remove('hidden');
+  
+  try {
+    console.log(`🔍 [영상 추천] ${selectedRecommendMode} 모드, ${window.marketVideos.length}개 영상 분석 시작...`);
+    
+    const response = await fetch('/api/youtube/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        videos: window.marketVideos,
+        mode: selectedRecommendMode
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API 오류: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+      throw new Error(result.error?.message || '알 수 없는 오류');
+    }
+    
+    console.log('✅ [영상 추천] 생성 완료', result.data);
+    
+    // 결과 렌더링
+    renderRecommendations(result.data);
+    
+    // 로딩 숨기고 결과 표시
+    document.getElementById('recommendation-loading').classList.add('hidden');
+    document.getElementById('recommendation-results').classList.remove('hidden');
+    
+  } catch (error) {
+    console.error('❌ [영상 추천] 오류:', error);
+    document.getElementById('recommendation-loading').classList.add('hidden');
+    alert(`❌ 영상 추천 생성 실패: ${error.message}`);
+  }
+}
+
+// 영상 추천 결과 렌더링
+function renderRecommendations(data) {
+  const { mode, totalVideos, recommendations, summary } = data;
+  
+  // 요약 정보
+  document.getElementById('recommendation-summary-title').textContent = summary.mode;
+  document.getElementById('recommendation-summary-desc').textContent = summary.description;
+  document.getElementById('recommendation-total').textContent = totalVideos;
+  
+  // 추천 목록
+  const listContainer = document.getElementById('recommendation-list');
+  listContainer.innerHTML = recommendations.map(rec => {
+    const medal = rec.rank <= 3 ? ['🥇', '🥈', '🥉'][rec.rank - 1] : `${rec.rank}.`;
+    return `
+      <div class="flex items-center gap-4 p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition cursor-pointer">
+        <div class="text-2xl font-bold w-10">${medal}</div>
+        <img src="${rec.thumbnail}" class="w-32 h-18 rounded object-cover shadow-sm" />
+        <div class="flex-1">
+          <h5 class="font-semibold text-gray-900 line-clamp-2 mb-1">${rec.title}</h5>
+          <p class="text-sm text-gray-600 mb-2">
+            <i class="fas fa-user-circle mr-1"></i>${rec.channelTitle}
+          </p>
+          <p class="text-xs text-gray-500">${rec.reason}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-sm text-gray-600">조회수</p>
+          <p class="text-lg font-bold text-gray-900">${rec.viewCount.toLocaleString()}</p>
+          ${rec.performanceLevel ? `<div class="badge badge-${rec.performanceLevel} mt-2">${rec.performanceLevel}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ========================================
+// Phase 6D: 성과 시뮬레이터
+// ========================================
+
+// 성과 시뮬레이션 실행 함수
+async function runSimulation() {
+  // 입력값 가져오기
+  const subscribers = parseInt(document.getElementById('sim-subscribers').value);
+  const uploadFrequency = parseInt(document.getElementById('sim-upload-frequency').value);
+  const watchTime = parseInt(document.getElementById('sim-watch-time').value) || 180;
+  const likeRate = parseFloat(document.getElementById('sim-like-rate').value) || 3;
+  const categoryId = document.getElementById('sim-category').value;
+  const period = parseInt(document.getElementById('sim-period').value) || 30;
+  
+  // 필수값 검증
+  if (!subscribers || !uploadFrequency) {
+    alert('⚠️ 구독자 수와 월 업로드 횟수는 필수입니다');
+    return;
+  }
+  
+  if (subscribers < 0 || uploadFrequency < 0) {
+    alert('⚠️ 음수 값은 입력할 수 없습니다');
+    return;
+  }
+  
+  // 로딩 표시
+  document.getElementById('simulation-results').classList.add('hidden');
+  document.getElementById('simulation-loading').classList.remove('hidden');
+  
+  try {
+    console.log(`🔮 [성과 시뮬레이터] 실행 시작...`, { subscribers, uploadFrequency, watchTime, likeRate, categoryId, period });
+    
+    const response = await fetch('/api/youtube/simulate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subscriberCount: subscribers,
+        uploadFrequency,
+        avgWatchTime: watchTime,
+        avgLikeRate: likeRate,
+        categoryId,
+        targetPeriod: period
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API 오류: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+      throw new Error(result.error?.message || '알 수 없는 오류');
+    }
+    
+    console.log('✅ [성과 시뮬레이터] 실행 완료', result.data);
+    
+    // 결과 렌더링
+    renderSimulationResults(result.data);
+    
+    // 로딩 숨기고 결과 표시
+    document.getElementById('simulation-loading').classList.add('hidden');
+    document.getElementById('simulation-results').classList.remove('hidden');
+    
+  } catch (error) {
+    console.error('❌ [성과 시뮬레이터] 오류:', error);
+    document.getElementById('simulation-loading').classList.add('hidden');
+    alert(`❌ 시뮬레이션 실행 실패: ${error.message}`);
+  }
+}
+
+// 시뮬레이션 결과 렌더링
+function renderSimulationResults(data) {
+  const { predictions, breakdown, recommendations } = data;
+  
+  // 예측 카드
+  document.getElementById('sim-avg-views').textContent = predictions.avgViewsPerVideo.toLocaleString();
+  document.getElementById('sim-total-views').textContent = predictions.totalViews.toLocaleString();
+  document.getElementById('sim-revenue').textContent = `₩${predictions.estimatedRevenue.toLocaleString()}`;
+  
+  // 성장 예측
+  document.getElementById('sim-current-subs').textContent = data.input.subscriberCount.toLocaleString();
+  document.getElementById('sim-new-subs').textContent = `+${predictions.newSubscribers.toLocaleString()}`;
+  document.getElementById('sim-final-subs').textContent = predictions.finalSubscribers.toLocaleString();
+  
+  // 성장 속도 배지
+  const growthBadge = document.getElementById('sim-growth-badge');
+  const growthRate = predictions.growthRate;
+  growthBadge.className = 'badge';
+  
+  if (growthRate === 'explosive') {
+    growthBadge.classList.add('badge-viral');
+    growthBadge.textContent = '🚀 폭발적 성장';
+  } else if (growthRate === 'fast') {
+    growthBadge.classList.add('badge-algorithm');
+    growthBadge.textContent = '⚡ 빠른 성장';
+  } else if (growthRate === 'steady') {
+    growthBadge.classList.add('badge-normal');
+    growthBadge.textContent = '📈 꾸준한 성장';
+  } else {
+    growthBadge.classList.add('badge-low');
+    growthBadge.textContent = '🐢 느린 성장';
+  }
+  
+  document.getElementById('sim-growth-percentage').textContent = `${predictions.growthPercentage}% 증가`;
+  
+  // 성과 요인 분석
+  const factors = breakdown.factors;
+  
+  const watchFactor = document.getElementById('sim-factor-watch');
+  watchFactor.textContent = factors.watchTime === 'positive' ? '✅ 긍정적' : '⚠️ 보통';
+  watchFactor.className = factors.watchTime === 'positive' ? 'px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-700' : 'px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-700';
+  
+  const likeFactor = document.getElementById('sim-factor-like');
+  likeFactor.textContent = factors.likeRate === 'positive' ? '✅ 긍정적' : '⚠️ 보통';
+  likeFactor.className = factors.likeRate === 'positive' ? 'px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-700' : 'px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-700';
+  
+  const uploadFactor = document.getElementById('sim-factor-upload');
+  uploadFactor.textContent = factors.uploadFrequency === 'positive' ? '✅ 긍정적' : '⚠️ 보통';
+  uploadFactor.className = factors.uploadFrequency === 'positive' ? 'px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-700' : 'px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-700';
+  
+  document.getElementById('sim-algorithm-boost').textContent = `×${breakdown.algorithmBoost}`;
+  
+  // AI 추천사항
+  const recsContainer = document.getElementById('sim-recommendations');
+  if (recommendations && recommendations.length > 0) {
+    recsContainer.innerHTML = recommendations.map(rec => `
+      <div class="flex items-start gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <i class="fas fa-lightbulb text-yellow-500 text-xl mt-1"></i>
+        <p class="text-gray-700 flex-1">${rec}</p>
+      </div>
+    `).join('');
+  } else {
+    recsContainer.innerHTML = '<p class="text-gray-500 text-center">모든 지표가 양호합니다! 🎉</p>';
+  }
+}
+
+// 이벤트 리스너 등록
+document.addEventListener('DOMContentLoaded', () => {
+  // 영상 추천 버튼
+  const recommendBtn = document.getElementById('generate-recommendations-btn');
+  if (recommendBtn) {
+    recommendBtn.addEventListener('click', generateRecommendations);
+  }
+  
+  // 성과 시뮬레이터 버튼
+  const simulateBtn = document.getElementById('run-simulation-btn');
+  if (simulateBtn) {
+    simulateBtn.addEventListener('click', runSimulation);
+  }
+  
+  console.log('✅ [Phase 6C/D] 영상 추천 & 성과 시뮬레이터 초기화 완료');
+});
+

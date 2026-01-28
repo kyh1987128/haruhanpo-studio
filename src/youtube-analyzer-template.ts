@@ -1921,23 +1921,35 @@ export function youtubeAnalyzerTemplate() {
             <p class="text-gray-600">AI 기반 경쟁사 비교 분석과 트렌드 예측으로 데이터 기반 의사결정을 지원합니다</p>
           </div>
 
-          <!-- 탭 네비게이션 (서브 탭) -->
+          <!-- 탭 네비게이션 (서브 탭) - 5개로 확장 -->
           <div class="bg-white rounded-xl shadow-sm border mb-6">
-            <div class="flex border-b">
+            <div class="flex border-b overflow-x-auto">
               <button 
-                class="advanced-subtab flex-1 px-6 py-4 font-semibold transition border-b-2 border-purple-500 text-purple-600" 
+                class="advanced-subtab flex-1 px-6 py-4 font-semibold transition border-b-2 border-purple-500 text-purple-600 whitespace-nowrap" 
                 data-subtab="competitor"
               >
-                <i class="fas fa-users mr-2"></i>경쟁사 비교 분석
+                <i class="fas fa-users mr-2"></i>경쟁사 비교
               </button>
               <button 
-                class="advanced-subtab flex-1 px-6 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300" 
+                class="advanced-subtab flex-1 px-6 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300 whitespace-nowrap" 
                 data-subtab="prediction"
               >
-                <i class="fas fa-chart-line mr-2"></i>트렌드 예측 AI
+                <i class="fas fa-chart-line mr-2"></i>트렌드 예측
               </button>
               <button 
-                class="advanced-subtab flex-1 px-6 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300" 
+                class="advanced-subtab flex-1 px-6 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300 whitespace-nowrap" 
+                data-subtab="recommendation"
+              >
+                <i class="fas fa-star mr-2"></i>영상 추천
+              </button>
+              <button 
+                class="advanced-subtab flex-1 px-6 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300 whitespace-nowrap" 
+                data-subtab="simulator"
+              >
+                <i class="fas fa-calculator mr-2"></i>성과 시뮬레이터
+              </button>
+              <button 
+                class="advanced-subtab flex-1 px-6 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300 whitespace-nowrap" 
                 data-subtab="dashboard"
               >
                 <i class="fas fa-tachometer-alt mr-2"></i>대시보드
@@ -2196,6 +2208,320 @@ export function youtubeAnalyzerTemplate() {
                   <p class="text-lg font-semibold text-gray-900 mb-2">AI 예측 분석 중...</p>
                   <p class="text-sm text-gray-600">GPT-4를 활용하여 성과를 예측하고 있습니다</p>
                   <p class="text-xs text-gray-500 mt-2">최대 10초 소요됩니다</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 영상 추천 알고리즘 콘텐츠 -->
+          <div id="subtab-recommendation" class="advanced-subtab-content hidden">
+            <!-- 추천 모드 선택 -->
+            <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+              <h3 class="text-lg font-bold text-gray-800 mb-4">
+                <i class="fas fa-magic mr-2 text-yellow-500"></i>
+                추천 모드 선택
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button 
+                  class="recommend-mode-btn p-6 border-2 border-purple-500 bg-purple-50 rounded-lg hover:shadow-lg transition"
+                  data-mode="performance"
+                >
+                  <i class="fas fa-trophy text-3xl text-purple-500 mb-3"></i>
+                  <h4 class="font-bold text-gray-900 mb-2">성과도 기반</h4>
+                  <p class="text-sm text-gray-600">높은 성과를 보이는 상위 영상 추천</p>
+                </button>
+                <button 
+                  class="recommend-mode-btn p-6 border-2 border-transparent hover:border-blue-500 hover:bg-blue-50 rounded-lg hover:shadow-lg transition"
+                  data-mode="similarity"
+                >
+                  <i class="fas fa-link text-3xl text-blue-500 mb-3"></i>
+                  <h4 class="font-bold text-gray-900 mb-2">유사도 기반</h4>
+                  <p class="text-sm text-gray-600">첫 번째 영상과 유사한 콘텐츠 추천</p>
+                </button>
+                <button 
+                  class="recommend-mode-btn p-6 border-2 border-transparent hover:border-green-500 hover:bg-green-50 rounded-lg hover:shadow-lg transition"
+                  data-mode="niche"
+                >
+                  <i class="fas fa-bullseye text-3xl text-green-500 mb-3"></i>
+                  <h4 class="font-bold text-gray-900 mb-2">틈새 전략</h4>
+                  <p class="text-sm text-gray-600">낮은 경쟁에서 높은 성과 영상 추천</p>
+                </button>
+              </div>
+              <button 
+                id="generate-recommendations-btn"
+                class="mt-6 w-full px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition flex items-center justify-center gap-2"
+              >
+                <i class="fas fa-magic"></i>
+                <span>추천 영상 생성</span>
+              </button>
+              <p class="text-sm text-gray-500 mt-2 text-center">
+                <i class="fas fa-info-circle mr-1"></i>
+                먼저 "마켓 탐색 & 분석" 탭에서 영상을 검색해주세요
+              </p>
+            </div>
+
+            <!-- 추천 결과 -->
+            <div id="recommendation-results" class="hidden">
+              <!-- 추천 요약 -->
+              <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 mb-6">
+                <div class="flex items-center gap-4">
+                  <i class="fas fa-info-circle text-3xl text-purple-500"></i>
+                  <div class="flex-1">
+                    <h4 class="font-bold text-gray-900 mb-1" id="recommendation-summary-title">-</h4>
+                    <p class="text-gray-600" id="recommendation-summary-desc">-</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-sm text-gray-600">전체 영상</p>
+                    <p id="recommendation-total" class="text-2xl font-bold text-purple-600">-</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 추천 영상 목록 -->
+              <div class="bg-white rounded-xl shadow-sm border p-6">
+                <h4 class="font-semibold text-gray-700 mb-4">
+                  <i class="fas fa-list mr-2 text-purple-500"></i>
+                  추천 영상 TOP 10
+                </h4>
+                <div class="space-y-3" id="recommendation-list">
+                  <!-- JavaScript로 동적 생성 -->
+                </div>
+              </div>
+            </div>
+
+            <!-- 로딩 상태 -->
+            <div id="recommendation-loading" class="hidden bg-white rounded-xl shadow-sm border p-8">
+              <div class="flex flex-col items-center justify-center space-y-4">
+                <div class="loading-spinner"></div>
+                <div class="text-center">
+                  <p class="text-lg font-semibold text-gray-900 mb-2">추천 영상 생성 중...</p>
+                  <p class="text-sm text-gray-600">데이터를 분석하여 최적의 영상을 추천하고 있습니다</p>
+                  <p class="text-xs text-gray-500 mt-2">1-2초 소요됩니다</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 빈 상태 -->
+            <div id="recommendation-empty" class="bg-white rounded-xl shadow-sm border p-12 text-center">
+              <i class="fas fa-search text-6xl text-gray-300 mb-4"></i>
+              <h3 class="text-xl font-bold text-gray-700 mb-2">영상 데이터가 없습니다</h3>
+              <p class="text-gray-500">먼저 "마켓 탐색 & 분석" 탭에서 키워드를 검색하세요</p>
+            </div>
+          </div>
+
+          <!-- 성과 시뮬레이터 콘텐츠 -->
+          <div id="subtab-simulator" class="advanced-subtab-content hidden">
+            <!-- 입력 폼 -->
+            <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+              <h3 class="text-lg font-bold text-gray-800 mb-4">
+                <i class="fas fa-cog mr-2 text-blue-500"></i>
+                채널 정보 입력
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 구독자 수 -->
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-users mr-1 text-red-500"></i>
+                    현재 구독자 수 <span class="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="number" 
+                    id="sim-subscribers"
+                    placeholder="예: 5000"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <!-- 업로드 빈도 -->
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-calendar-alt mr-1 text-green-500"></i>
+                    월 업로드 횟수 <span class="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="number" 
+                    id="sim-upload-frequency"
+                    placeholder="예: 8 (주 2회)"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <!-- 평균 시청 시간 -->
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-clock mr-1 text-purple-500"></i>
+                    평균 시청 시간 (초)
+                  </label>
+                  <input 
+                    type="number" 
+                    id="sim-watch-time"
+                    placeholder="예: 240 (4분)"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p class="text-xs text-gray-500 mt-1">기본값: 180초 (3분)</p>
+                </div>
+
+                <!-- 평균 좋아요율 -->
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-thumbs-up mr-1 text-blue-500"></i>
+                    평균 좋아요율 (%)
+                  </label>
+                  <input 
+                    type="number" 
+                    id="sim-like-rate"
+                    placeholder="예: 5"
+                    step="0.1"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p class="text-xs text-gray-500 mt-1">기본값: 3%</p>
+                </div>
+
+                <!-- 카테고리 -->
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-tag mr-1 text-yellow-500"></i>
+                    카테고리
+                  </label>
+                  <select 
+                    id="sim-category"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">선택하지 않음</option>
+                    <option value="10">음악</option>
+                    <option value="20">게임</option>
+                    <option value="24">엔터테인먼트</option>
+                    <option value="22">브이로그</option>
+                    <option value="27">교육</option>
+                    <option value="28">과학기술</option>
+                  </select>
+                </div>
+
+                <!-- 시뮬레이션 기간 -->
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    <i class="fas fa-hourglass-half mr-1 text-orange-500"></i>
+                    시뮬레이션 기간 (일)
+                  </label>
+                  <input 
+                    type="number" 
+                    id="sim-period"
+                    placeholder="예: 30"
+                    value="30"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <button 
+                id="run-simulation-btn"
+                class="mt-6 w-full px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition flex items-center justify-center gap-2"
+              >
+                <i class="fas fa-play"></i>
+                <span>시뮬레이션 실행</span>
+              </button>
+            </div>
+
+            <!-- 시뮬레이션 결과 -->
+            <div id="simulation-results" class="hidden">
+              <!-- 예측 카드 그리드 -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white rounded-xl shadow-sm border p-6">
+                  <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-semibold text-gray-700">영상당 평균 조회수</h4>
+                    <i class="fas fa-eye text-blue-500 text-2xl"></i>
+                  </div>
+                  <p id="sim-avg-views" class="text-3xl font-bold text-blue-600">-</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border p-6">
+                  <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-semibold text-gray-700">총 조회수</h4>
+                    <i class="fas fa-chart-line text-green-500 text-2xl"></i>
+                  </div>
+                  <p id="sim-total-views" class="text-3xl font-bold text-green-600">-</p>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border p-6">
+                  <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-semibold text-gray-700">예상 수익</h4>
+                    <i class="fas fa-won-sign text-purple-500 text-2xl"></i>
+                  </div>
+                  <p id="sim-revenue" class="text-3xl font-bold text-purple-600">-</p>
+                </div>
+              </div>
+
+              <!-- 성장 예측 -->
+              <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                <h4 class="font-semibold text-gray-700 mb-4">
+                  <i class="fas fa-chart-area mr-2 text-green-500"></i>
+                  성장 예측
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <p class="text-sm text-gray-600 mb-1">현재 구독자</p>
+                    <p id="sim-current-subs" class="text-2xl font-bold text-gray-900">-</p>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-600 mb-1">신규 구독자</p>
+                    <p id="sim-new-subs" class="text-2xl font-bold text-green-600">-</p>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-600 mb-1">최종 구독자</p>
+                    <p id="sim-final-subs" class="text-2xl font-bold text-blue-600">-</p>
+                  </div>
+                </div>
+                <div class="mt-4 flex items-center gap-3">
+                  <span class="text-sm text-gray-600">성장 속도:</span>
+                  <div id="sim-growth-badge" class="badge badge-viral">-</div>
+                  <span id="sim-growth-percentage" class="font-semibold text-gray-900">-</span>
+                </div>
+              </div>
+
+              <!-- 분석 breakdown -->
+              <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                <h4 class="font-semibold text-gray-700 mb-4">
+                  <i class="fas fa-lightbulb mr-2 text-yellow-500"></i>
+                  성과 요인 분석
+                </h4>
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span class="text-gray-700">시청 시간 영향</span>
+                    <span id="sim-factor-watch" class="px-3 py-1 rounded-full text-sm font-semibold">-</span>
+                  </div>
+                  <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span class="text-gray-700">좋아요율 영향</span>
+                    <span id="sim-factor-like" class="px-3 py-1 rounded-full text-sm font-semibold">-</span>
+                  </div>
+                  <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span class="text-gray-700">업로드 빈도 영향</span>
+                    <span id="sim-factor-upload" class="px-3 py-1 rounded-full text-sm font-semibold">-</span>
+                  </div>
+                  <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span class="text-gray-700">알고리즘 부스트</span>
+                    <span id="sim-algorithm-boost" class="text-lg font-bold text-blue-600">-</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- AI 추천사항 -->
+              <div class="bg-white rounded-xl shadow-sm border p-6">
+                <h4 class="font-semibold text-gray-700 mb-4">
+                  <i class="fas fa-robot mr-2 text-purple-500"></i>
+                  개선 추천사항
+                </h4>
+                <div id="sim-recommendations" class="space-y-2">
+                  <!-- JavaScript로 동적 생성 -->
+                </div>
+              </div>
+            </div>
+
+            <!-- 로딩 상태 -->
+            <div id="simulation-loading" class="hidden bg-white rounded-xl shadow-sm border p-8">
+              <div class="flex flex-col items-center justify-center space-y-4">
+                <div class="loading-spinner"></div>
+                <div class="text-center">
+                  <p class="text-lg font-semibold text-gray-900 mb-2">시뮬레이션 실행 중...</p>
+                  <p class="text-sm text-gray-600">채널 성과를 예측하고 있습니다</p>
+                  <p class="text-xs text-gray-500 mt-2">1-2초 소요됩니다</p>
                 </div>
               </div>
             </div>
