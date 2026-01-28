@@ -2062,9 +2062,12 @@ function calculatePerformance(video) {
 }
 
 // 200개 검색 (페이지네이션)
-async function searchMarket200() {
-  const searchInput = document.getElementById('market-search-input');
-  const keyword = searchInput?.value.trim();
+async function searchMarket200(keyword = null) {
+  // 파라미터로 받은 키워드가 없으면 DOM에서 읽기
+  if (!keyword) {
+    const searchInput = document.getElementById('market-search-input');
+    keyword = searchInput?.value.trim();
+  }
   
   if (!keyword) {
     alert('검색 키워드를 입력해주세요.');
@@ -3824,8 +3827,8 @@ async function handleKeywordSearch() {
   
   console.log(`🔍 [키워드 검색] Query: ${query}`);
   
-  // searchMarket200 함수 호출 (기존 검색 로직)
-  await searchMarket200();
+  // searchMarket200 함수 호출 (키워드 전달)
+  await searchMarket200(query);
 }
 
 /**
