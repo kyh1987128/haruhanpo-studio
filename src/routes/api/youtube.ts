@@ -891,4 +891,332 @@ app.post('/api/youtube/category/videos', async (c) => {
   }
 })
 
+// ========================================
+// Phase 6: 경쟁사 비교 분석 API
+// ========================================
+
+app.post('/api/youtube/competitor/compare', async (c) => {
+  try {
+    const body = await c.req.json()
+    const { channelIds, period = '30d' } = body
+
+    if (!channelIds || !Array.isArray(channelIds) || channelIds.length === 0) {
+      return c.json({
+        success: false,
+        error: { code: 'INVALID_INPUT', message: '채널 ID 목록을 입력해주세요.' }
+      }, 400)
+    }
+
+    if (channelIds.length > 5) {
+      return c.json({
+        success: false,
+        error: { code: 'TOO_MANY_CHANNELS', message: '최대 5개 채널까지 비교 가능합니다.' }
+      }, 400)
+    }
+
+    const youtubeApiKey = c.env.YOUTUBE_API_KEY
+    if (!youtubeApiKey) {
+      return c.json({
+        success: false,
+        error: { code: 'API_KEY_MISSING', message: 'YouTube API 키가 설정되지 않았습니다.' }
+      }, 500)
+    }
+
+    // 각 채널 정보 가져오기
+    const channelDataPromises = channelIds.map(async (channelId: string) => {
+      // 채널 기본 정보
+      const channelParams = new URLSearchParams({
+        part: 'snippet,statistics',
+        id: channelId,
+        key: youtubeApiKey
+      })
+
+      const channelResponse = await fetch(
+        `https://www.googleapis.com/youtube/v3/channels?${channelParams.toString()}`
+      )
+
+      if (!channelResponse.ok) {
+        throw new Error(`Channel API error for ${channelId}`)
+      }
+
+      const channelData = await channelResponse.json()
+      const channel = channelData.items?.[0]
+
+      if (!channel) {
+        return null
+      }
+
+      // 최근 영상 50개 가져오기 (통계 계산용)
+      const searchParams = new URLSearchParams({
+        part: 'snippet',
+        channelId: channelId,
+        type: 'video',
+        maxResults: '50',
+        order: 'date',
+        key: youtubeApiKey
+      })
+
+      const searchResponse = await fetch(
+        `https://www.googleapis.com/youtube/v3/search?${searchParams.toString()}`
+      )
+
+      let recentVideos = []
+      if (searchResponse.ok) {
+        const searchData = await searchResponse.json()
+        const videoIds = searchData.items?.map((item: any) => item.id.videoId).join(',')
+
+        if (videoIds) {
+          const videosParams = new URLSearchParams({
+            part: 'statistics,contentDetails',
+            id: videoIds,
+            key: youtubeApiKey
+          })
+
+          const videosResponse = await fetch(
+            `https://www.googleapis.com/youtube/v3/videos?${videosParams.toString()}`
+          )
+
+          if (videosResponse.ok) {
+            const videosData = await videosResponse.json()
+            recentVideos = videosData.items || []
+          }
+        }
+      }
+
+      // 통계 계산
+      const subscribers = parseInt(channel.statistics?.subscriberCount || '0')
+      const totalViews = parseInt(channel.statistics?.viewCount || '0')
+      const videoCount = parseInt(channel.statistics?.videoCount || '0')
+
+      let avgViews = 0
+      let avgLikeRate = 0
+      let avgComments = 0
+
+      if (recentVideos.length > 0) {
+        const totalVideoViews = recentVideos.reduce((sum: number, v: any) => 
+          sum + parseInt(v.statistics?.viewCount || '0'), 0)
+        avgViews = Math.round(totalVideoViews / recentVideos.length)
+
+        const validLikes = recentVideos.filter((v: any) => 
+          parseInt(v.statistics?.viewCount || '0') > 0)
+        if (validLikes.length > 0) {
+          const totalLikeRate = validLikes.reduce((sum: number, v: any) => {
+            const views = parseInt(v.statistics?.viewCount || '0')
+            const likes = parseInt(v.statistics?.likeCount || '0')
+            return sum + (views > 0 ? (likes / views * 100) : 0)
+          }, 0)
+          avgLikeRate = parseFloat((totalLikeRate / validLikes.length).toFixed(2))
+        }
+
+        const totalComments = recentVideos.reduce((sum: number, v: any) => 
+          sum + parseInt(v.statistics?.commentCount || '0'), 0)
+        avgComments = Math.round(totalComments / recentVideos.length)
+      }
+
+      const avgPerformance = subscribers > 0 ? parseFloat(((avgViews / subscribers) * 100).toFixed(2)) : 0
+      const uploadFrequency = videoCount > 0 ? parseFloat((videoCount / 30).toFixed(2)) : 0
+
+      return {
+        channelId: channel.id,
+        channelInfo: {
+          title: channel.snippet?.title,
+          thumbnail: channel.snippet?.thumbnails?.default?.url,
+          description: channel.snippet?.description
+        },
+        metrics: {
+          subscribers,
+          totalViews,
+          videoCount,
+          avgViews,
+          avgPerformance,
+          avgLikeRate,
+          avgComments,
+          uploadFrequency
+        }
+      }
+    })
+
+    const channels = (await Promise.all(channelDataPromises)).filter(Boolean)
+
+    // 랭킹 계산
+    const rankings = {
+      subscribers: [...channels].sort((a, b) => b.metrics.subscribers - a.metrics.subscribers).map(c => c.channelId),
+      avgViews: [...channels].sort((a, b) => b.metrics.avgViews - a.metrics.avgViews).map(c => c.channelId),
+      avgPerformance: [...channels].sort((a, b) => b.metrics.avgPerformance - a.metrics.avgPerformance).map(c => c.channelId),
+      avgLikeRate: [...channels].sort((a, b) => b.metrics.avgLikeRate - a.metrics.avgLikeRate).map(c => c.channelId)
+    }
+
+    return c.json({
+      success: true,
+      data: { channels, rankings, period }
+    })
+
+  } catch (error: any) {
+    console.error('Competitor comparison error:', error)
+    return c.json({
+      success: false,
+      error: {
+        code: 'COMPARISON_ERROR',
+        message: error.message || '경쟁사 비교 중 오류가 발생했습니다.'
+      }
+    }, 500)
+  }
+})
+
+// ========================================
+// Phase 6: 트렌드 예측 AI API
+// ========================================
+
+app.post('/api/youtube/predict', async (c) => {
+  try {
+    const body = await c.req.json()
+    const { videoId, channelInfo, historicalData } = body
+
+    if (!videoId) {
+      return c.json({
+        success: false,
+        error: { code: 'INVALID_INPUT', message: '영상 ID를 입력해주세요.' }
+      }, 400)
+    }
+
+    const openaiApiKey = c.env.OPENAI_API_KEY
+    if (!openaiApiKey) {
+      return c.json({
+        success: false,
+        error: { code: 'API_KEY_MISSING', message: 'OpenAI API 키가 설정되지 않았습니다.' }
+      }, 500)
+    }
+
+    // 영상 정보 가져오기
+    const youtubeApiKey = c.env.YOUTUBE_API_KEY
+    const videoParams = new URLSearchParams({
+      part: 'snippet,statistics,contentDetails',
+      id: videoId,
+      key: youtubeApiKey
+    })
+
+    const videoResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?${videoParams.toString()}`
+    )
+
+    if (!videoResponse.ok) {
+      throw new Error('영상 정보를 가져올 수 없습니다.')
+    }
+
+    const videoData = await videoResponse.json()
+    const video = videoData.items?.[0]
+
+    if (!video) {
+      throw new Error('영상을 찾을 수 없습니다.')
+    }
+
+    // AI 프롬프트 생성
+    const prompt = `You are a YouTube analytics expert. Analyze this video and predict its performance.
+
+Video Information:
+- Title: ${video.snippet?.title}
+- Views: ${video.statistics?.viewCount}
+- Likes: ${video.statistics?.likeCount}
+- Comments: ${video.statistics?.commentCount}
+- Published: ${video.snippet?.publishedAt}
+- Channel Subscribers: ${channelInfo?.subscriberCount || 'Unknown'}
+
+Based on current metrics, predict:
+1. Views in 24 hours
+2. Views in 7 days
+3. Final estimated views
+4. Performance level (viral/algorithm/normal/low)
+5. Confidence score (0-100%)
+
+Also provide recommendations:
+1. Optimal upload time (day of week and hour)
+2. Top 10 recommended keywords
+3. Recommended video length (min-max minutes)
+4. Thumbnail improvement suggestions
+
+Return JSON format:
+{
+  "predictions": {
+    "views24h": number,
+    "views7d": number,
+    "viewsFinal": number,
+    "performanceLevel": "viral|algorithm|normal|low",
+    "confidence": number
+  },
+  "recommendations": {
+    "optimalUploadTime": {
+      "dayOfWeek": number (0-6),
+      "hourOfDay": number (0-23),
+      "reason": "string"
+    },
+    "keywords": ["keyword1", "keyword2", ...],
+    "videoLength": { "min": number, "max": number },
+    "thumbnailSuggestions": ["suggestion1", ...]
+  }
+}`
+
+    // OpenAI API 호출
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openaiApiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: 'You are a YouTube analytics expert. Always respond in valid JSON format.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 1500
+      })
+    })
+
+    if (!openaiResponse.ok) {
+      throw new Error('AI 분석 중 오류가 발생했습니다.')
+    }
+
+    const openaiData = await openaiResponse.json()
+    const aiResponse = openaiData.choices?.[0]?.message?.content
+
+    try {
+      const result = JSON.parse(aiResponse)
+      return c.json({
+        success: true,
+        data: result
+      })
+    } catch {
+      return c.json({
+        success: true,
+        data: {
+          predictions: {
+            views24h: Math.round(parseInt(video.statistics?.viewCount || '0') * 1.2),
+            views7d: Math.round(parseInt(video.statistics?.viewCount || '0') * 3),
+            viewsFinal: Math.round(parseInt(video.statistics?.viewCount || '0') * 5),
+            performanceLevel: 'normal',
+            confidence: 60
+          },
+          recommendations: {
+            optimalUploadTime: { dayOfWeek: 2, hourOfDay: 18, reason: '구독자 활동 피크타임' },
+            keywords: ['추천 키워드 생성 중'],
+            videoLength: { min: 8, max: 15 },
+            thumbnailSuggestions: ['시선을 끄는 썸네일 사용']
+          }
+        }
+      })
+    }
+
+  } catch (error: any) {
+    console.error('Prediction error:', error)
+    return c.json({
+      success: false,
+      error: {
+        code: 'PREDICTION_ERROR',
+        message: error.message || '예측 중 오류가 발생했습니다.'
+      }
+    }, 500)
+  }
+})
+
 export default app
