@@ -416,14 +416,22 @@ app.post('/api/youtube/search', async (c) => {
 
     // 2. YouTube API 키 확인
     const youtubeApiKey = c.env.YOUTUBE_API_KEY
-    console.log('🔑 [API Key Check]', youtubeApiKey ? `OK (${youtubeApiKey.substring(0, 10)}...)` : '❌ MISSING')
+    
+    // 🔍 디버깅: 환경 변수 전체 확인
+    console.log('🔍 [Environment Check]', {
+      YOUTUBE_API_KEY: youtubeApiKey ? `${youtubeApiKey.substring(0, 10)}...` : '❌ MISSING',
+      OPENAI_API_KEY: c.env.OPENAI_API_KEY ? 'OK' : '❌ MISSING',
+      SUPABASE_URL: c.env.SUPABASE_URL ? 'OK' : '❌ MISSING',
+      SUPABASE_SERVICE_ROLE_KEY: c.env.SUPABASE_SERVICE_ROLE_KEY ? 'OK' : '❌ MISSING',
+      allEnvKeys: Object.keys(c.env)
+    })
     
     if (!youtubeApiKey) {
       return c.json<ApiResponse<null>>({
         success: false,
         error: {
           code: 'API_KEY_MISSING',
-          message: 'YouTube API 키가 설정되지 않았습니다.'
+          message: 'YouTube API 키가 설정되지 않았습니다. Cloudflare Dashboard에서 YOUTUBE_API_KEY 환경 변수를 확인해주세요.'
         }
       }, 500)
     }
