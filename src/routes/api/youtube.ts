@@ -416,6 +416,8 @@ app.post('/api/youtube/search', async (c) => {
 
     // 2. YouTube API 키 확인
     const youtubeApiKey = c.env.YOUTUBE_API_KEY
+    console.log('🔑 [API Key Check]', youtubeApiKey ? `OK (${youtubeApiKey.substring(0, 10)}...)` : '❌ MISSING')
+    
     if (!youtubeApiKey) {
       return c.json<ApiResponse<null>>({
         success: false,
@@ -484,6 +486,8 @@ app.post('/api/youtube/channel', async (c) => {
 
     // 2. YouTube API 키 확인
     const youtubeApiKey = c.env.YOUTUBE_API_KEY
+    console.log('🔑 [API Key Check]', youtubeApiKey ? `OK (${youtubeApiKey.substring(0, 10)}...)` : '❌ MISSING')
+    
     if (!youtubeApiKey) {
       return c.json<ApiResponse<null>>({
         success: false,
@@ -811,6 +815,8 @@ app.post('/api/youtube/channel/videos', async (c) => {
 
     // 2. YouTube API 키 확인
     const youtubeApiKey = c.env.YOUTUBE_API_KEY
+    console.log('🔑 [API Key Check]', youtubeApiKey ? `OK (${youtubeApiKey.substring(0, 10)}...)` : '❌ MISSING')
+    
     if (!youtubeApiKey) {
       return c.json<ApiResponse<null>>({
         success: false,
@@ -931,6 +937,8 @@ app.post('/api/youtube/category/videos', async (c) => {
 
     // 2. YouTube API 키 확인
     const youtubeApiKey = c.env.YOUTUBE_API_KEY
+    console.log('🔑 [API Key Check]', youtubeApiKey ? `OK (${youtubeApiKey.substring(0, 10)}...)` : '❌ MISSING')
+    
     if (!youtubeApiKey) {
       return c.json<ApiResponse<null>>({
         success: false,
