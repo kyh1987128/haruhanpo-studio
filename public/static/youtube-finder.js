@@ -2028,11 +2028,13 @@ let showBookmarksOnly = false; // 북마크 필터 상태
 
 // 성과도 계산 함수
 function calculatePerformance(video) {
-  const views = video.statistics?.viewCount || 0;
-  const subscribers = video.channelInfo?.subscriberCount || 1;
+  // 두 가지 구조 모두 지원하는 안전한 데이터 접근
+  const views = parseInt(video.statistics?.viewCount ?? video.views ?? 0);
+  const subscribers = parseInt(video.channelInfo?.subscriberCount ?? video.subscriberCount ?? 1);
   
-  // 성과도 = (조회수 / 구독자 수) × 100
-  const performanceRatio = (views / subscribers) * 100;
+  // 0으로 나누기 방지
+  const safeSubscribers = subscribers || 1;
+  const performanceRatio = (views / safeSubscribers) * 100;
   
   let level = 'low';
   let badge = '🔵 저조';
@@ -2232,13 +2234,14 @@ function applyMarketFilters() {
   
   // 필터링
   filteredMarketVideos = marketVideos.filter(video => {
-    const subscribers = video.channelInfo?.subscriberCount || 0;
-    const views = video.statistics?.viewCount || 0;
-    const duration = parseDuration(video.contentDetails?.duration || '');
-    const publishedAt = new Date(video.snippet?.publishedAt || 0);
-    const performance = video.performance?.level || 'low';
-    const categoryId = video.snippet?.categoryId || '';
-    const defaultLanguage = video.snippet?.defaultLanguage || video.snippet?.defaultAudioLanguage || '';
+    // 안전한 데이터 접근 방식 (평탄화 & 중첩 구조 모두 지원)
+    const subscribers = parseInt(video.channelInfo?.subscriberCount ?? video.subscriberCount ?? 0);
+    const views = parseInt(video.statistics?.viewCount ?? video.views ?? 0);
+    const duration = parseDuration(video.contentDetails?.duration || video.duration || '');
+    const publishedAt = new Date(video.snippet?.publishedAt || video.publishedAt || 0);
+    const performance = video.performance?.level || (typeof video.performance === 'string' ? video.performance.toLowerCase() : 'low');
+    const categoryId = video.snippet?.categoryId || video.categoryId || '';
+    const defaultLanguage = video.snippet?.defaultLanguage || video.snippet?.defaultAudioLanguage || video.language || '';
     
     // 구독자 구간 필터 (드롭다운)
     if (filterSubscriber !== 'all') {
@@ -2325,36 +2328,36 @@ function sortMarketVideos() {
     
     switch (marketSortColumn) {
       case 'views':
-        aValue = a.statistics?.viewCount || 0;
-        bValue = b.statistics?.viewCount || 0;
+        aValue = parseInt(a.statistics?.viewCount ?? a.views ?? 0);
+        bValue = parseInt(b.statistics?.viewCount ?? b.views ?? 0);
         break;
       case 'performance':
         aValue = parseFloat(a.performance?.ratio || 0);
         bValue = parseFloat(b.performance?.ratio || 0);
         break;
       case 'subscribers':
-        aValue = a.channelInfo?.subscriberCount || 0;
-        bValue = b.channelInfo?.subscriberCount || 0;
+        aValue = parseInt(a.channelInfo?.subscriberCount ?? a.subscriberCount ?? 0);
+        bValue = parseInt(b.channelInfo?.subscriberCount ?? b.subscriberCount ?? 0);
         break;
       case 'likeRate':
-        const aLikes = a.statistics?.likeCount || 0;
-        const aViews = a.statistics?.viewCount || 1;
-        const bLikes = b.statistics?.likeCount || 0;
-        const bViews = b.statistics?.viewCount || 1;
+        const aLikes = parseInt(a.statistics?.likeCount ?? a.likes ?? 0);
+        const aViews = parseInt(a.statistics?.viewCount ?? a.views ?? 1);
+        const bLikes = parseInt(b.statistics?.likeCount ?? b.likes ?? 0);
+        const bViews = parseInt(b.statistics?.viewCount ?? b.views ?? 1);
         aValue = (aLikes / aViews) * 100;
         bValue = (bLikes / bViews) * 100;
         break;
       case 'comments':
-        aValue = a.statistics?.commentCount || 0;
-        bValue = b.statistics?.commentCount || 0;
+        aValue = parseInt(a.statistics?.commentCount ?? a.comments ?? 0);
+        bValue = parseInt(b.statistics?.commentCount ?? b.comments ?? 0);
         break;
       case 'publishedAt':
-        aValue = new Date(a.snippet?.publishedAt || 0).getTime();
-        bValue = new Date(b.snippet?.publishedAt || 0).getTime();
+        aValue = new Date(a.snippet?.publishedAt || a.publishedAt || 0).getTime();
+        bValue = new Date(b.snippet?.publishedAt || b.publishedAt || 0).getTime();
         break;
       default:
-        aValue = a.snippet?.title || '';
-        bValue = b.snippet?.title || '';
+        aValue = a.snippet?.title || a.title || '';
+        bValue = b.snippet?.title || b.title || '';
     }
     
     if (marketSortOrder === 'asc') {
@@ -2392,23 +2395,65 @@ function renderMarketTable(videos) {
     return;
   }
   
+  // 🔥 디버깅: 데이터 구조 확인
+  console.log('📊 [데이터 구조 확인] 첫 번째 영상:', videos[0]);
+  
   // 테이블 렌더링
   tbody.innerHTML = videos.map(video => {
-    const thumbnail = video.snippet?.thumbnails?.medium?.url || '';
-    const title = video.snippet?.title || '제목 없음';
-    const channelTitle = video.snippet?.channelTitle || '채널 없음';
-    const channelAvatar = video.channelInfo?.thumbnails?.default?.url || '';
-    const views = video.statistics?.viewCount || 0;
-    const subscribers = video.channelInfo?.subscriberCount || 0;
-    const likes = video.statistics?.likeCount || 0;
-    const comments = video.statistics?.commentCount || 0;
-    const publishedAt = video.snippet?.publishedAt || '';
-    const duration = video.contentDetails?.duration || '';
-    const videoId = video.id?.videoId || video.id;
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 🔧 범용 데이터 매핑: 중첩 구조 & 평탄화 구조 모두 지원
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     
-    const performance = video.performance || {};
+    // ID 추출 (3가지 경우 지원)
+    const videoId = video.id?.videoId || video.videoId || video.id || 'unknown';
+    
+    // 기본 정보 추출 (안전한 접근)
+    const title = video.snippet?.title || video.title || '제목 정보 없음';
+    const thumbnail = video.snippet?.thumbnails?.medium?.url || 
+                     video.thumbnailUrl || 
+                     video.thumbnail || 
+                     'https://via.placeholder.com/320x180?text=No+Image';
+    const channelTitle = video.snippet?.channelTitle || 
+                        video.channel || 
+                        video.channelTitle || 
+                        '채널 정보 없음';
+    const channelAvatar = video.channelInfo?.thumbnails?.default?.url || 
+                         video.channelThumbnail || '';
+
+    // 통계 데이터 안전 추출 (0 값도 유효하므로 ?? 사용)
+    const views = parseInt(video.statistics?.viewCount ?? video.views ?? 0);
+    const subscribers = parseInt(video.channelInfo?.subscriberCount ?? video.subscriberCount ?? 0);
+    const likes = parseInt(video.statistics?.likeCount ?? video.likes ?? 0);
+    const comments = parseInt(video.statistics?.commentCount ?? video.comments ?? 0);
+
+    // 날짜 및 기간 정보
+    const publishedAt = video.snippet?.publishedAt || video.publishedAt || '';
+    const duration = video.contentDetails?.duration || video.duration || 'PT0S';
+
+    // 성과도 처리 (문자열 또는 객체 모두 지원)
+    let performance = video.performance;
+    if (typeof performance === 'string') {
+      const performanceMap = {
+        'Great': { badge: '🔥 떡상', badgeClass: 'viral', ratio: '300+' },
+        'Good': { badge: '🟢 알고리즘', badgeClass: 'algorithm', ratio: '150+' },
+        'Normal': { badge: '⚪ 일반', badgeClass: 'normal', ratio: '80+' },
+        'Low': { badge: '🔵 저조', badgeClass: 'low', ratio: '30-' }
+      };
+      performance = performanceMap[performance] || { badge: '🔵 저조', badgeClass: 'low', ratio: '0' };
+    } else if (!performance || !performance.badge) {
+      // 성과도 계산 필요한 경우
+      performance = calculatePerformance({ 
+        statistics: { viewCount: views },
+        channelInfo: { subscriberCount: subscribers }
+      });
+    }
+
+    // 계산 필드
     const likeRate = views > 0 ? ((likes / views) * 100).toFixed(2) : '0.00';
-    const isSelected = selectedCompareVideos.some(v => (v.id?.videoId || v.id) === videoId);
+    const isSelected = selectedCompareVideos.some(v => {
+      const vId = v.id?.videoId || v.videoId || v.id;
+      return vId === videoId;
+    });
     const isBookmarked = bookmarkedVideos.includes(videoId);
     
     return `
@@ -2500,7 +2545,10 @@ function renderMarketTable(videos) {
 
 // 영상 선택
 function selectMarketVideo(videoId) {
-  const video = filteredMarketVideos.find(v => (v.id?.videoId || v.id) === videoId);
+  const video = filteredMarketVideos.find(v => {
+    const vId = v.id?.videoId || v.videoId || v.id;
+    return vId === videoId;
+  });
   
   if (!video) return;
   
@@ -2522,16 +2570,17 @@ function renderDetailPanel(video) {
   
   if (!detailPanel) return;
   
-  const videoId = video.id?.videoId || video.id;
-  const title = video.snippet?.title || '제목 없음';
-  const channelTitle = video.snippet?.channelTitle || '';
-  const channelAvatar = video.channelInfo?.thumbnails?.default?.url || '';
-  const subscribers = video.channelInfo?.subscriberCount || 0;
-  const views = video.statistics?.viewCount || 0;
-  const likes = video.statistics?.likeCount || 0;
-  const comments = video.statistics?.commentCount || 0;
-  const description = video.snippet?.description || '';
-  const tags = video.snippet?.tags || [];
+  // 범용 데이터 접근
+  const videoId = video.id?.videoId || video.videoId || video.id;
+  const title = video.snippet?.title || video.title || '제목 없음';
+  const channelTitle = video.snippet?.channelTitle || video.channel || '';
+  const channelAvatar = video.channelInfo?.thumbnails?.default?.url || video.channelThumbnail || '';
+  const subscribers = parseInt(video.channelInfo?.subscriberCount ?? video.subscriberCount ?? 0);
+  const views = parseInt(video.statistics?.viewCount ?? video.views ?? 0);
+  const likes = parseInt(video.statistics?.likeCount ?? video.likes ?? 0);
+  const comments = parseInt(video.statistics?.commentCount ?? video.comments ?? 0);
+  const description = video.snippet?.description || video.description || '';
+  const tags = video.snippet?.tags || video.tags || [];
   const performance = video.performance || {};
   
   detailPanel.innerHTML = `
