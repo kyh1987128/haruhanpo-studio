@@ -4957,12 +4957,286 @@ async function runABTest() {
   }
 }
 
+// ========================================
+// Phase 7: PDF 보고서 생성
+// ========================================
+
+// 차트를 이미지로 변환
+async function captureChartImage(chartElement) {
+  if (!chartElement) return null;
+  
+  try {
+    const canvas = await html2canvas(chartElement, {
+      backgroundColor: '#ffffff',
+      scale: 2,
+      logging: false
+    });
+    return canvas.toDataURL('image/png');
+  } catch (error) {
+    console.error('Chart capture error:', error);
+    return null;
+  }
+}
+
+// PDF 보고서 생성
+async function generatePDFReport() {
+  const loadingEl = document.getElementById('pdf-loading');
+  const resultEl = document.getElementById('pdf-result');
+  const emptyEl = document.getElementById('pdf-empty');
+  
+  try {
+    // UI 상태 변경
+    loadingEl.classList.remove('hidden');
+    resultEl.classList.add('hidden');
+    emptyEl.classList.add('hidden');
+    
+    // 설정값 가져오기
+    const reportTitle = document.getElementById('pdf-report-title').value || 'YouTube 분석 보고서';
+    const channelName = document.getElementById('pdf-channel-name').value || '분석 대상 채널';
+    
+    // 선택된 섹션 확인
+    const selectedSections = [];
+    document.querySelectorAll('.pdf-section-checkbox:checked').forEach(checkbox => {
+      selectedSections.push(checkbox.dataset.section);
+    });
+    
+    if (selectedSections.length === 0) {
+      alert('최소 1개 이상의 섹션을 선택해주세요.');
+      loadingEl.classList.add('hidden');
+      emptyEl.classList.remove('hidden');
+      return;
+    }
+    
+    // jsPDF 인스턴스 생성
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 20;
+    const contentWidth = pageWidth - (margin * 2);
+    let yPosition = margin;
+    
+    // 표지 페이지
+    pdf.setFillColor(124, 58, 237); // Purple
+    pdf.rect(0, 0, pageWidth, 60, 'F');
+    
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(28);
+    pdf.text(reportTitle, margin, 35);
+    
+    pdf.setFontSize(14);
+    pdf.text(`채널: ${channelName}`, margin, 48);
+    
+    // 생성 날짜
+    pdf.setTextColor(100, 100, 100);
+    pdf.setFontSize(10);
+    const today = new Date().toISOString().split('T')[0];
+    pdf.text(`생성일: ${today}`, margin, 70);
+    
+    // 구분선
+    pdf.setDrawColor(200, 200, 200);
+    pdf.line(margin, 80, pageWidth - margin, 80);
+    
+    yPosition = 90;
+    
+    // 목차
+    pdf.setTextColor(0, 0, 0);
+    pdf.setFontSize(16);
+    pdf.text('목차', margin, yPosition);
+    yPosition += 10;
+    
+    pdf.setFontSize(11);
+    const sectionNames = {
+      'competitor': '1. 경쟁사 비교 분석',
+      'prediction': '2. 트렌드 예측',
+      'recommendation': '3. 영상 추천',
+      'simulator': '4. 성과 시뮬레이터',
+      'deep-analysis': '5. 영상 상세 분석',
+      'growth': '6. 채널 성장 추적',
+      'ab-test': '7. A/B 테스트',
+      'dashboard': '8. 대시보드'
+    };
+    
+    selectedSections.forEach((section, index) => {
+      pdf.text(sectionNames[section], margin + 5, yPosition);
+      yPosition += 8;
+    });
+    
+    // 섹션별 데이터 추가
+    for (const section of selectedSections) {
+      pdf.addPage();
+      yPosition = margin;
+      
+      // 섹션 제목
+      pdf.setFillColor(243, 244, 246);
+      pdf.rect(margin, yPosition, contentWidth, 12, 'F');
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(14);
+      pdf.text(sectionNames[section], margin + 5, yPosition + 8);
+      yPosition += 20;
+      
+      // 섹션별 내용 추가
+      pdf.setFontSize(10);
+      pdf.setTextColor(60, 60, 60);
+      
+      if (section === 'competitor') {
+        pdf.text('경쟁사 비교 분석 결과가 여기에 표시됩니다.', margin, yPosition);
+        yPosition += 10;
+        
+        // 레이더 차트 캡처 시도
+        const radarChart = document.getElementById('competitor-radar-chart');
+        if (radarChart) {
+          const chartImage = await captureChartImage(radarChart.parentElement);
+          if (chartImage) {
+            pdf.addImage(chartImage, 'PNG', margin, yPosition, contentWidth, 80);
+            yPosition += 85;
+          }
+        }
+      } else if (section === 'prediction') {
+        pdf.text('AI 트렌드 예측 결과가 여기에 표시됩니다.', margin, yPosition);
+        yPosition += 10;
+        
+        // 예측 데이터 표시
+        const predictionResults = document.getElementById('prediction-results');
+        if (predictionResults && !predictionResults.classList.contains('hidden')) {
+          pdf.text('• 24시간 예측 조회수: 예측값 표시', margin + 5, yPosition);
+          yPosition += 7;
+          pdf.text('• 7일 예측 조회수: 예측값 표시', margin + 5, yPosition);
+          yPosition += 7;
+          pdf.text('• 최종 예측 조회수: 예측값 표시', margin + 5, yPosition);
+          yPosition += 10;
+        }
+      } else if (section === 'recommendation') {
+        pdf.text('영상 추천 결과가 여기에 표시됩니다.', margin, yPosition);
+        yPosition += 10;
+        
+        // TOP 10 영상 목록
+        const recommendList = document.getElementById('recommendation-list');
+        if (recommendList && !recommendList.classList.contains('hidden')) {
+          pdf.text('TOP 10 추천 영상:', margin, yPosition);
+          yPosition += 7;
+          pdf.setFontSize(9);
+          for (let i = 1; i <= 10; i++) {
+            pdf.text(`${i}. 영상 제목 (조회수, 성과도)`, margin + 5, yPosition);
+            yPosition += 6;
+            if (yPosition > pageHeight - margin - 20) {
+              pdf.addPage();
+              yPosition = margin;
+            }
+          }
+          pdf.setFontSize(10);
+        }
+      } else if (section === 'simulator') {
+        pdf.text('성과 시뮬레이터 결과가 여기에 표시됩니다.', margin, yPosition);
+        yPosition += 10;
+        
+        const simulatorResults = document.getElementById('simulator-results');
+        if (simulatorResults && !simulatorResults.classList.contains('hidden')) {
+          pdf.text('예측 결과:', margin, yPosition);
+          yPosition += 7;
+          pdf.text('• 평균 조회수: 예측값', margin + 5, yPosition);
+          yPosition += 7;
+          pdf.text('• 총 조회수: 예측값', margin + 5, yPosition);
+          yPosition += 7;
+          pdf.text('• 예상 수익: 예측값', margin + 5, yPosition);
+          yPosition += 10;
+        }
+      } else if (section === 'dashboard') {
+        pdf.text('대시보드 차트가 여기에 표시됩니다.', margin, yPosition);
+        yPosition += 10;
+        
+        // 조회수 분포 차트
+        const viewsChart = document.getElementById('chart-views-distribution');
+        if (viewsChart) {
+          const chartImage = await captureChartImage(viewsChart.parentElement);
+          if (chartImage) {
+            pdf.addImage(chartImage, 'PNG', margin, yPosition, contentWidth * 0.48, 60);
+          }
+        }
+        
+        // 성과도 파이 차트
+        const performanceChart = document.getElementById('chart-performance-pie');
+        if (performanceChart) {
+          const chartImage = await captureChartImage(performanceChart.parentElement);
+          if (chartImage) {
+            pdf.addImage(chartImage, 'PNG', pageWidth / 2 + 2, yPosition, contentWidth * 0.48, 60);
+          }
+        }
+        
+        yPosition += 65;
+      } else {
+        pdf.text(`${sectionNames[section]} 데이터가 여기에 표시됩니다.`, margin, yPosition);
+        yPosition += 10;
+      }
+    }
+    
+    // 마지막 페이지: 푸터
+    pdf.addPage();
+    yPosition = margin;
+    
+    pdf.setFillColor(249, 250, 251);
+    pdf.rect(0, pageHeight - 60, pageWidth, 60, 'F');
+    
+    pdf.setTextColor(100, 100, 100);
+    pdf.setFontSize(10);
+    pdf.text('이 보고서는 YouTube Finder(TrendFinder)에서 자동 생성되었습니다.', margin, pageHeight - 45);
+    pdf.text(`생성일시: ${new Date().toLocaleString('ko-KR')}`, margin, pageHeight - 35);
+    pdf.text('© 2024 하루한포스트. All rights reserved.', margin, pageHeight - 25);
+    
+    // PDF 저장
+    const fileName = `YouTube_분석보고서_${channelName}_${today}.pdf`;
+    pdf.save(fileName);
+    
+    // UI 업데이트
+    loadingEl.classList.add('hidden');
+    resultEl.classList.remove('hidden');
+    
+    document.getElementById('pdf-page-count').textContent = `${pdf.internal.pages.length - 1}페이지`;
+    document.getElementById('pdf-generated-time').textContent = new Date().toLocaleTimeString('ko-KR');
+    
+    // 포함된 섹션 배지
+    const sectionsContainer = document.getElementById('pdf-included-sections');
+    sectionsContainer.innerHTML = '';
+    selectedSections.forEach(section => {
+      const badge = document.createElement('span');
+      badge.className = 'px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium';
+      badge.textContent = sectionNames[section];
+      sectionsContainer.appendChild(badge);
+    });
+    
+    console.log('✅ PDF 보고서 생성 완료:', fileName);
+    
+  } catch (error) {
+    console.error('PDF generation error:', error);
+    loadingEl.classList.add('hidden');
+    emptyEl.classList.remove('hidden');
+    alert(`PDF 생성 실패: ${error.message}`);
+  }
+}
+
+// 미리보기 (간단한 알림으로 대체)
+function previewPDFReport() {
+  const selectedCount = document.querySelectorAll('.pdf-section-checkbox:checked').length;
+  if (selectedCount === 0) {
+    alert('최소 1개 이상의 섹션을 선택해주세요.');
+    return;
+  }
+  
+  alert(`선택된 섹션: ${selectedCount}개\n\n실제 PDF를 생성하려면 'PDF 보고서 생성' 버튼을 클릭하세요.`);
+}
+
 // 이벤트 리스너
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('deep-analysis-btn')?.addEventListener('click', deepAnalyzeVideo);
   document.getElementById('growth-track-btn')?.addEventListener('click', trackChannelGrowth);
   document.getElementById('ab-test-btn')?.addEventListener('click', runABTest);
   
-  console.log('✅ [Phase 6E/F/G] 상세분석 + 성장추적 + A/B테스트 초기화 완료');
+  // Phase 7: PDF 이벤트
+  document.getElementById('btn-generate-pdf')?.addEventListener('click', generatePDFReport);
+  document.getElementById('btn-preview-pdf')?.addEventListener('click', previewPDFReport);
+  document.getElementById('btn-download-pdf')?.addEventListener('click', generatePDFReport);
+  
+  console.log('✅ [Phase 6E/F/G + Phase 7] 상세분석 + 성장추적 + A/B테스트 + PDF 보고서 초기화 완료');
 });
 

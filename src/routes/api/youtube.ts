@@ -2078,4 +2078,58 @@ JSON 형식으로 다음을 제공해주세요:
   }
 })
 
+// Phase 7: PDF 보고서 데이터 수집 API
+app.post('/api/youtube/report/generate', async (c) => {
+  try {
+    const body = await c.req.json()
+    const { sections, channelInfo, dateRange } = body
+    
+    // 입력 검증
+    if (!sections || !Array.isArray(sections) || sections.length === 0) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'INVALID_INPUT',
+          message: 'sections 배열은 필수입니다.'
+        }
+      }, 400)
+    }
+    
+    // 보고서 메타데이터 생성
+    const reportData = {
+      generatedAt: new Date().toISOString(),
+      dateRange: dateRange || {
+        start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        end: new Date().toISOString().split('T')[0]
+      },
+      channelInfo: channelInfo || {
+        name: '분석 대상 채널',
+        id: '',
+        thumbnail: ''
+      },
+      sections: sections,
+      summary: {
+        totalSections: sections.length,
+        includedAnalysis: sections.map((s: any) => s.type),
+        pageCount: Math.ceil(sections.length * 2) // 섹션당 약 2페이지 추정
+      }
+    }
+    
+    return c.json<ApiResponse<any>>({
+      success: true,
+      data: reportData
+    })
+    
+  } catch (error: any) {
+    console.error('Report generation error:', error)
+    return c.json<ApiResponse<null>>({
+      success: false,
+      error: {
+        code: 'REPORT_ERROR',
+        message: error.message || '보고서 생성 중 오류가 발생했습니다.'
+      }
+    }, 500)
+  }
+})
+
 export default app

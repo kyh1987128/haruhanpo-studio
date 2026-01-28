@@ -12,6 +12,9 @@ export function youtubeAnalyzerTemplate() {
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Phase 7: PDF 생성 라이브러리 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     /* ========================================
        Phase 5A: Viewtrap 수준 3단 레이아웃 
@@ -1968,6 +1971,12 @@ export function youtubeAnalyzerTemplate() {
               </button>
               <button 
                 class="advanced-subtab flex-1 px-4 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300 whitespace-nowrap text-sm" 
+                data-subtab="pdf-report"
+              >
+                <i class="fas fa-file-pdf mr-1"></i>PDF보고서
+              </button>
+              <button 
+                class="advanced-subtab flex-1 px-4 py-4 font-semibold text-gray-600 hover:text-gray-900 transition border-b-2 border-transparent hover:border-gray-300 whitespace-nowrap text-sm" 
                 data-subtab="dashboard"
               >
                 <i class="fas fa-tachometer-alt mr-1"></i>대시보드
@@ -2687,6 +2696,269 @@ export function youtubeAnalyzerTemplate() {
               <div class="flex flex-col items-center justify-center space-y-4">
                 <div class="loading-spinner"></div>
                 <p class="text-lg font-semibold text-gray-900">시뮬레이션 실행 중...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Phase 7: PDF 보고서 생성 콘텐츠 -->
+          <div id="subtab-pdf-report" class="advanced-subtab-content hidden">
+            <div class="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-6 mb-6 border border-purple-200">
+              <h3 class="text-2xl font-bold text-gray-800 mb-2 flex items-center">
+                <i class="fas fa-file-pdf text-red-500 mr-3"></i>
+                PDF 보고서 생성
+              </h3>
+              <p class="text-gray-600 text-sm">
+                현재 분석 결과를 종합하여 전문적인 PDF 보고서를 생성합니다.
+              </p>
+            </div>
+
+            <!-- 보고서 설정 -->
+            <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+              <h4 class="font-semibold text-gray-700 mb-4 flex items-center">
+                <i class="fas fa-cog mr-2 text-purple-600"></i>
+                보고서 설정
+              </h4>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <!-- 보고서 제목 -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    보고서 제목
+                  </label>
+                  <input 
+                    type="text" 
+                    id="pdf-report-title"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                    placeholder="예: 2024년 1월 YouTube 성과 분석 보고서"
+                    value="YouTube 분석 보고서"
+                  />
+                </div>
+                
+                <!-- 채널명 -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    채널명
+                  </label>
+                  <input 
+                    type="text" 
+                    id="pdf-channel-name"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                    placeholder="채널 이름 입력"
+                  />
+                </div>
+              </div>
+
+              <!-- 포함할 섹션 선택 -->
+              <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-3">
+                  <i class="fas fa-list-check mr-2"></i>포함할 분석 섹션
+                </label>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <!-- 경쟁사 비교 -->
+                  <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition border border-gray-200">
+                    <input 
+                      type="checkbox" 
+                      class="pdf-section-checkbox w-4 h-4 text-purple-600 rounded focus:ring-2 focus:ring-purple-500" 
+                      data-section="competitor"
+                      checked
+                    />
+                    <span class="ml-3 text-sm font-medium text-gray-700">
+                      <i class="fas fa-users text-blue-500 mr-2"></i>경쟁사 비교
+                    </span>
+                  </label>
+                  
+                  <!-- 트렌드 예측 -->
+                  <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition border border-gray-200">
+                    <input 
+                      type="checkbox" 
+                      class="pdf-section-checkbox w-4 h-4 text-purple-600 rounded focus:ring-2 focus:ring-purple-500" 
+                      data-section="prediction"
+                      checked
+                    />
+                    <span class="ml-3 text-sm font-medium text-gray-700">
+                      <i class="fas fa-chart-line text-green-500 mr-2"></i>트렌드 예측
+                    </span>
+                  </label>
+                  
+                  <!-- 영상 추천 -->
+                  <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition border border-gray-200">
+                    <input 
+                      type="checkbox" 
+                      class="pdf-section-checkbox w-4 h-4 text-purple-600 rounded focus:ring-2 focus:ring-purple-500" 
+                      data-section="recommendation"
+                      checked
+                    />
+                    <span class="ml-3 text-sm font-medium text-gray-700">
+                      <i class="fas fa-star text-yellow-500 mr-2"></i>영상 추천
+                    </span>
+                  </label>
+                  
+                  <!-- 성과 시뮬레이터 -->
+                  <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition border border-gray-200">
+                    <input 
+                      type="checkbox" 
+                      class="pdf-section-checkbox w-4 h-4 text-purple-600 rounded focus:ring-2 focus:ring-purple-500" 
+                      data-section="simulator"
+                      checked
+                    />
+                    <span class="ml-3 text-sm font-medium text-gray-700">
+                      <i class="fas fa-calculator text-purple-500 mr-2"></i>시뮬레이터
+                    </span>
+                  </label>
+                  
+                  <!-- 영상 상세 분석 -->
+                  <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition border border-gray-200">
+                    <input 
+                      type="checkbox" 
+                      class="pdf-section-checkbox w-4 h-4 text-purple-600 rounded focus:ring-2 focus:ring-purple-500" 
+                      data-section="deep-analysis"
+                    />
+                    <span class="ml-3 text-sm font-medium text-gray-700">
+                      <i class="fas fa-microscope text-indigo-500 mr-2"></i>상세 분석
+                    </span>
+                  </label>
+                  
+                  <!-- 채널 성장 추적 -->
+                  <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition border border-gray-200">
+                    <input 
+                      type="checkbox" 
+                      class="pdf-section-checkbox w-4 h-4 text-purple-600 rounded focus:ring-2 focus:ring-purple-500" 
+                      data-section="growth"
+                    />
+                    <span class="ml-3 text-sm font-medium text-gray-700">
+                      <i class="fas fa-chart-area text-teal-500 mr-2"></i>성장 추적
+                    </span>
+                  </label>
+                  
+                  <!-- A/B 테스트 -->
+                  <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition border border-gray-200">
+                    <input 
+                      type="checkbox" 
+                      class="pdf-section-checkbox w-4 h-4 text-purple-600 rounded focus:ring-2 focus:ring-purple-500" 
+                      data-section="ab-test"
+                    />
+                    <span class="ml-3 text-sm font-medium text-gray-700">
+                      <i class="fas fa-flask text-orange-500 mr-2"></i>A/B 테스트
+                    </span>
+                  </label>
+                  
+                  <!-- 대시보드 -->
+                  <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition border border-gray-200">
+                    <input 
+                      type="checkbox" 
+                      class="pdf-section-checkbox w-4 h-4 text-purple-600 rounded focus:ring-2 focus:ring-purple-500" 
+                      data-section="dashboard"
+                      checked
+                    />
+                    <span class="ml-3 text-sm font-medium text-gray-700">
+                      <i class="fas fa-chart-pie text-pink-500 mr-2"></i>대시보드
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 버튼 -->
+              <div class="flex gap-3">
+                <button 
+                  id="btn-generate-pdf"
+                  class="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition shadow-md hover:shadow-lg"
+                >
+                  <i class="fas fa-file-pdf mr-2"></i>PDF 보고서 생성
+                </button>
+                <button 
+                  id="btn-preview-pdf"
+                  class="px-6 py-3 border-2 border-purple-600 text-purple-600 rounded-lg font-semibold hover:bg-purple-50 transition"
+                >
+                  <i class="fas fa-eye mr-2"></i>미리보기
+                </button>
+              </div>
+            </div>
+
+            <!-- 로딩 상태 -->
+            <div id="pdf-loading" class="hidden bg-white rounded-xl shadow-sm border p-8 text-center">
+              <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+              <p class="text-gray-600 font-medium">PDF 보고서 생성 중...</p>
+              <p class="text-sm text-gray-500 mt-2">차트와 데이터를 수집하고 있습니다. 잠시만 기다려주세요.</p>
+            </div>
+
+            <!-- 결과 (성공) -->
+            <div id="pdf-result" class="hidden bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 border-b">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center">
+                    <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mr-4">
+                      <i class="fas fa-check text-white text-xl"></i>
+                    </div>
+                    <div>
+                      <h4 class="font-bold text-gray-800 text-lg">PDF 보고서 생성 완료!</h4>
+                      <p class="text-sm text-gray-600 mt-1">보고서가 성공적으로 생성되었습니다.</p>
+                    </div>
+                  </div>
+                  <button id="btn-download-pdf" class="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition shadow-md hover:shadow-lg">
+                    <i class="fas fa-download mr-2"></i>다운로드
+                  </button>
+                </div>
+              </div>
+              
+              <!-- 보고서 정보 -->
+              <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                    <i class="fas fa-file-pdf text-red-500 text-2xl mr-3"></i>
+                    <div>
+                      <p class="text-xs text-gray-500">파일 형식</p>
+                      <p class="font-semibold text-gray-700">PDF</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                    <i class="fas fa-file-lines text-blue-500 text-2xl mr-3"></i>
+                    <div>
+                      <p class="text-xs text-gray-500">총 페이지</p>
+                      <p id="pdf-page-count" class="font-semibold text-gray-700">-</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center p-4 bg-gray-50 rounded-lg">
+                    <i class="fas fa-clock text-purple-500 text-2xl mr-3"></i>
+                    <div>
+                      <p class="text-xs text-gray-500">생성 시간</p>
+                      <p id="pdf-generated-time" class="font-semibold text-gray-700">-</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 포함된 섹션 -->
+                <div class="mt-6">
+                  <h5 class="font-semibold text-gray-700 mb-3 flex items-center">
+                    <i class="fas fa-list mr-2 text-purple-600"></i>
+                    포함된 분석 섹션
+                  </h5>
+                  <div id="pdf-included-sections" class="flex flex-wrap gap-2">
+                    <!-- 동적 생성 -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 빈 상태 -->
+            <div id="pdf-empty" class="bg-white rounded-xl shadow-sm border p-12 text-center">
+              <div class="text-gray-400 mb-4">
+                <i class="fas fa-file-pdf text-6xl"></i>
+              </div>
+              <h4 class="font-semibold text-gray-700 mb-2">보고서를 생성해보세요</h4>
+              <p class="text-sm text-gray-500 mb-4">위에서 설정을 완료하고 'PDF 보고서 생성' 버튼을 클릭하세요.</p>
+              <div class="flex items-center justify-center gap-4 text-sm text-gray-500">
+                <div class="flex items-center">
+                  <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                  차트 포함
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                  데이터 요약
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                  AI 인사이트
+                </div>
               </div>
             </div>
           </div>
