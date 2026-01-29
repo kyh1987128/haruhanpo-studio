@@ -2786,6 +2786,13 @@ function normalizeYouTubeData(videos) {
     }
     
     return videos.map(video => {
+        // VideoID 추출 (모든 가능한 구조 탐색)
+        let videoId = video.videoId || '';
+        if (!videoId && typeof video.id === 'string') videoId = video.id;
+        else if (!videoId && video.id && video.id.videoId) videoId = video.id.videoId;
+        else if (!videoId && video.contentDetails?.videoId) videoId = video.contentDetails.videoId;
+        else if (!videoId && video.snippet?.resourceId?.videoId) videoId = video.snippet.resourceId.videoId;
+        
         // 안전하게 기존 값 추출
         const views = Number(video.views || video.viewCount || video.statistics?.viewCount || 0);
         const likes = Number(video.likes || video.likeCount || video.statistics?.likeCount || 0);
@@ -2794,8 +2801,20 @@ function normalizeYouTubeData(videos) {
         const title = video.title || video.snippet?.title || '제목 없음';
         const channel = video.channel || video.channelTitle || video.snippet?.channelTitle || '채널 없음';
         
+        // duration 처리: PT6M57S → 6:57
+        const rawDuration = video.duration || video.contentDetails?.duration || video.snippet?.duration || '';
+        const duration = formatDuration(rawDuration);
+        
+        // 카테고리 및 언어
+        const categoryId = video.category || video.categoryId || video.snippet?.categoryId || '22';
+        const language = video.language || video.snippet?.defaultLanguage || video.snippet?.defaultAudioLanguage || '한국어';
+        
         return {
             ...video,
+            
+            // ID 복구
+            videoId,
+            id: videoId,
             
             // 1. 최상위 레벨 필드 (호환성)
             views, viewCount: views,
@@ -2803,6 +2822,12 @@ function normalizeYouTubeData(videos) {
             comments, commentCount: comments,
             subscribers, subscriberCount: subscribers,
             title, channel, channelTitle: channel,
+            
+            // duration, category, language 추가
+            duration,
+            category: categoryId,
+            language,
+            url: videoId ? `https://www.youtube.com/watch?v=${videoId}` : video.url || '',
             
             // 2. YouTube API 표준 구조
             statistics: {
@@ -2816,9 +2841,17 @@ function normalizeYouTubeData(videos) {
                 title,
                 channelTitle: channel,
                 publishedAt: video.publishedAt || video.snippet?.publishedAt || new Date().toISOString(),
+                categoryId,
+                defaultLanguage: language,
+                duration,
                 thumbnails: video.thumbnails || video.snippet?.thumbnails || {
                     default: { url: video.thumbnailUrl || '' }
                 }
+            },
+            
+            contentDetails: {
+                ...(video.contentDetails || {}),
+                duration
             },
             
             // 3. 성과도 정규화
@@ -2826,10 +2859,7 @@ function normalizeYouTubeData(videos) {
                 ratio: Number(video.performance?.ratio || video.performanceRatio || 0),
                 level: video.performance?.level || 'normal',
                 badge: video.performance?.badge || ''
-            },
-            
-            // 4. URL 보장
-            url: video.url || `https://www.youtube.com/watch?v=${video.videoId}`
+            }
         };
     });
 }
