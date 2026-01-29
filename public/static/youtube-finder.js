@@ -5986,15 +5986,18 @@ async function generateVideoSummary(videoId) {
     // 결과 표시
     const contentEl = document.getElementById('summary-content');
     
+    // summary 안전성 체크
+    const summary = result.data?.summary || result.summary || '요약 내용을 가져올 수 없습니다.';
+    
     // 안전한 이스케이프 처리
-    const escapedSummary = result.summary
+    const escapedSummary = summary
       .replace(/\\/g, '\\\\')
       .replace(/`/g, '\\`')
       .replace(/'/g, "\\'")
       .replace(/"/g, '&quot;')
       .replace(/\n/g, '\\n');
     
-    const safeHtmlSummary = result.summary
+    const safeHtmlSummary = summary
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
@@ -6108,15 +6111,18 @@ async function generateVideoScript(videoId) {
     // 결과 표시
     const contentEl = document.getElementById('script-content');
     
+    // transcript 안전성 체크
+    const transcript = result.data?.transcript || result.transcript || '스크립트를 가져올 수 없습니다.';
+    
     // 안전한 이스케이프 처리
-    const escapedTranscript = result.transcript
+    const escapedTranscript = transcript
       .replace(/\\/g, '\\\\')
       .replace(/`/g, '\\`')
       .replace(/'/g, "\\'")
       .replace(/"/g, '&quot;')
       .replace(/\n/g, '\\n');
     
-    const safeHtmlTranscript = result.transcript
+    const safeHtmlTranscript = transcript
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
