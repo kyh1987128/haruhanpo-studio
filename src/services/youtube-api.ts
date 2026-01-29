@@ -337,6 +337,24 @@ export async function searchYouTubeVideos(
     const comments = parseInt(video.statistics.commentCount || '0')  // ✅ 댓글 수
     const channelInfo = channelMap.get(video.snippet.channelId) || { subscriberCount: 0, videoCount: 0 }
     
+    // ⭐ ISO 8601 duration 변환 (PT3M1S → 3:01)
+    const rawDuration = video.contentDetails?.duration || ''
+    let duration = '0:00'
+    if (rawDuration.startsWith('PT')) {
+      const match = rawDuration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)
+      if (match) {
+        const hours = parseInt(match[1] || '0')
+        const minutes = parseInt(match[2] || '0')
+        const seconds = parseInt(match[3] || '0')
+        
+        let result = []
+        if (hours > 0) result.push(hours)
+        result.push(minutes.toString().padStart(result.length ? 2 : 1, '0'))
+        result.push(seconds.toString().padStart(2, '0'))
+        duration = result.join(':')
+      }
+    }
+    
     // 성과도 계산 (조회수 기준)
     let performance: 'Great' | 'Good' | 'Normal' = 'Normal'
     if (views >= 10000000) performance = 'Great'
@@ -359,7 +377,7 @@ export async function searchYouTubeVideos(
       likes,
       comments,  // ✅ 댓글 수 추가
       description: video.snippet.description || '',  // ✅ 설명 추가
-      duration: video.contentDetails?.duration || '',  // ✅ 영상 길이 추가
+      duration,  // ⭐ 변환된 duration (3:01 형식)
       subscriberCount: channelInfo.subscriberCount,
       videoCount: channelInfo.videoCount,
       performance,

@@ -6306,7 +6306,11 @@ async function generateVideoScript(videoId) {
     const result = await response.json();
     
     if (!result.success) {
-      throw new Error(result.error || '스크립트 생성 실패');
+      // ⭐ 에러 메시지 개선: 객체 형태 에러도 처리
+      const errorMessage = typeof result.error === 'object' 
+        ? result.error.message || JSON.stringify(result.error)
+        : result.error || '스크립트 생성 실패';
+      throw new Error(errorMessage);
     }
     
     // 결과 표시
