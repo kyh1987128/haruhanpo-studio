@@ -12725,4 +12725,4 @@ function addHelpGuideButton() {
   
   console.log('✅ 도움말 버튼이 성공적으로 추가되었습니다');
 }
-
+*/
