@@ -8,7 +8,13 @@
   ],
   "vars": {
     "ENVIRONMENT": "production"
-  }
+  },
+  "kv_namespaces": [
+    {
+      "binding": "YOUTUBE_CACHE",
+      "id": "76994c222b2644ff9fb9646e30115105"
+    }
+  ]
   // 환경 변수는 Cloudflare Pages Dashboard에서 설정:
   // - YOUTUBE_API_KEY
   // - OPENAI_API_KEY
