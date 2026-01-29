@@ -2701,7 +2701,7 @@ function renderDetailPanel(video) {
           onclick="generateVideoSummary('${videoId}')"
           class="bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium text-sm"
         >
-          <i class="fas fa-sparkles mr-1"></i>영상 요약 (1크레딧)
+          <i class="fas fa-sparkles mr-1"></i>영상 요약
         </button>
         <button 
           onclick="generateVideoScript('${videoId}')"
@@ -3663,11 +3663,14 @@ function renderCompareTable() {
         case 'publishedAt':
           return formatDate(video.snippet?.publishedAt || '');
         case 'duration':
-          return formatDuration(video.contentDetails?.duration || '');
+          // ⭐ 수정: video.duration 직접 사용 (이미 "5:11" 형식으로 정규화됨)
+          return video.duration || '정보 없음';
         case 'categoryId':
-          return video.snippet?.categoryId || '-';
+          // ⭐ 수정: category 필드 사용 (이미 한글로 정규화됨)
+          return video.category || video.snippet?.categoryId || '-';
         case 'language':
-          return video.snippet?.defaultLanguage || video.snippet?.defaultAudioLanguage || '-';
+          // ⭐ 수정: language 필드 사용 (이미 정규화됨)
+          return video.language || video.snippet?.defaultLanguage || video.snippet?.defaultAudioLanguage || '-';
       }
       
       return value;
@@ -6054,7 +6057,7 @@ function renderTrendingDetailPanel(video) {
           onclick="generateVideoSummary('${videoId}')"
           class="bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium text-sm"
         >
-          <i class="fas fa-sparkles mr-1"></i>영상 요약 (1크레딧)
+          <i class="fas fa-sparkles mr-1"></i>영상 요약
         </button>
         <button 
           onclick="generateVideoScript('${videoId}')"

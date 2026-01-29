@@ -378,6 +378,8 @@ export async function searchYouTubeVideos(
       comments,  // ✅ 댓글 수 추가
       description: video.snippet.description || '',  // ✅ 설명 추가
       duration,  // ⭐ 변환된 duration (3:01 형식)
+      categoryId: video.snippet.categoryId || '22',  // ⭐ 카테고리 ID 추가
+      language: video.snippet.defaultAudioLanguage || video.snippet.defaultLanguage || 'ko',  // ⭐ 언어 추가
       subscriberCount: channelInfo.subscriberCount,
       videoCount: channelInfo.videoCount,
       performance,

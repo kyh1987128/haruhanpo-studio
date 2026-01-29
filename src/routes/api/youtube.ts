@@ -2630,7 +2630,31 @@ app.post('/api/youtube/transcript-raw', authMiddleware, async (c) => {
       }, 404)
     }
 
-    transcriptData = await response.json()
+    // ⭐ 빈 응답 체크 추가
+    const responseText = await response.text()
+    if (!responseText || responseText.trim() === '') {
+      console.warn('⚠️ [빈 응답] YouTube API가 빈 문자열 반환')
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'TRANSCRIPT_EMPTY_RESPONSE',
+          message: '자막 데이터가 비어있습니다. 이 영상은 자막이 제공되지 않을 수 있습니다.'
+        }
+      }, 404)
+    }
+
+    try {
+      transcriptData = JSON.parse(responseText)
+    } catch (err) {
+      console.error('❌ [JSON 파싱 실패]', err)
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'TRANSCRIPT_PARSE_ERROR',
+          message: '자막 데이터를 처리할 수 없습니다.'
+        }
+      }, 500)
+    }
 
     // 6. 자막 데이터 파싱 및 포맷팅
     let transcript = ''
