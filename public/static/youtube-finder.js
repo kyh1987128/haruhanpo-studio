@@ -2698,23 +2698,13 @@ function renderDetailPanel(video) {
       <!-- 설명 -->
       <div>
         <h4 class="font-semibold mb-2">📝 설명</h4>
-        <div id="description-content">
-          <p class="text-sm text-gray-700 whitespace-pre-wrap" id="description-text">
-            ${escapeHtml(description.substring(0, 300))}${description.length > 300 ? '...' : ''}
+        <div 
+          id="description-content"
+          style="max-height: 300px; overflow-y: auto; padding: 12px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;"
+        >
+          <p class="text-sm text-gray-700 whitespace-pre-wrap">
+            ${escapeHtml(description)}
           </p>
-          ${description.length > 300 ? `
-            <button 
-              onclick="toggleDescription()"
-              id="description-toggle-btn"
-              class="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
-            >
-              더보기 ▼
-            </button>
-            <script>
-              window.fullDescription = \`${description.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`;
-              window.shortDescription = \`${description.substring(0, 300).replace(/`/g, '\\`').replace(/\$/g, '\\$')}...\`;
-            </script>
-          ` : ''}
         </div>
       </div>
     </div>
@@ -5883,23 +5873,13 @@ function renderTrendingDetailPanel(video) {
       ${description ? `
         <div>
           <h4 class="font-semibold mb-2 text-sm">📝 설명</h4>
-          <div id="trending-description-content">
-            <p class="text-xs text-gray-700 whitespace-pre-wrap" id="trending-description-text">
-              ${escapeHtml(description.substring(0, 200))}${description.length > 200 ? '...' : ''}
+          <div 
+            id="trending-description-content"
+            style="max-height: 200px; overflow-y: auto; padding: 12px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;"
+          >
+            <p class="text-xs text-gray-700 whitespace-pre-wrap">
+              ${escapeHtml(description)}
             </p>
-            ${description.length > 200 ? `
-              <button 
-                onclick="toggleTrendingDescription()"
-                id="trending-description-toggle-btn"
-                class="mt-2 text-xs text-blue-600 hover:text-blue-800 font-medium"
-              >
-                더보기 ▼
-              </button>
-              <script>
-                window.trendingFullDescription = \`${description.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`;
-                window.trendingShortDescription = \`${description.substring(0, 200).replace(/`/g, '\\`').replace(/\$/g, '\\$')}...\`;
-              </script>
-            ` : ''}
           </div>
         </div>
       ` : ''}

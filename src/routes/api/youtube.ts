@@ -2349,8 +2349,10 @@ app.post('/api/youtube/summarize', authMiddleware, async (c) => {
     }
     
     const video = videoData.items[0]
-    const title = video.snippet.title
-    const description = video.snippet.description
+    const title = video.snippet.title || '제목 없음'
+    const description = video.snippet.description || '설명이 제공되지 않았습니다.'
+    
+    console.log('📹 [영상 정보]', { videoId, title, descriptionLength: description.length })
     
     // GPT-4로 요약 생성
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -2453,8 +2455,10 @@ app.post('/api/youtube/transcript', authMiddleware, async (c) => {
     }
     
     const video = videoData.items[0]
-    const title = video.snippet.title
-    const description = video.snippet.description
+    const title = video.snippet.title || '제목 없음'
+    const description = video.snippet.description || '설명이 제공되지 않았습니다.'
+    
+    console.log('📹 [영상 정보]', { videoId, title, descriptionLength: description.length })
     
     // GPT-4로 스크립트 생성
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
