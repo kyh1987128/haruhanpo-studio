@@ -2707,7 +2707,7 @@ function renderDetailPanel(video) {
           onclick="generateVideoScript('${videoId}')"
           class="bg-gradient-to-r from-purple-500 to-purple-600 text-white py-2 px-4 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all font-medium text-sm"
         >
-          <i class="fas fa-file-alt mr-1"></i>스크립트 생성 (1크레딧)
+          <i class="fas fa-file-alt mr-1"></i>스크립트 생성
         </button>
       </div>
       
@@ -6060,7 +6060,7 @@ function renderTrendingDetailPanel(video) {
           onclick="generateVideoScript('${videoId}')"
           class="bg-gradient-to-r from-purple-500 to-purple-600 text-white py-2 px-4 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all font-medium text-sm"
         >
-          <i class="fas fa-file-alt mr-1"></i>스크립트 생성 (1크레딧)
+          <i class="fas fa-file-alt mr-1"></i>스크립트 생성
         </button>
       </div>
       
@@ -6207,8 +6207,8 @@ async function generateVideoSummary(videoId) {
     
     contentEl.innerHTML = `
       <div class="text-left">
-        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
-          <p class="text-sm text-blue-700">✅ 크레딧 1개가 차감되었습니다. (잔여: ${result.remainingCredit})</p>
+        <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-4">
+          <p class="text-sm text-green-700">✅ 영상 요약이 완료되었습니다.</p>
         </div>
         <div class="prose max-w-none">
           <div class="whitespace-pre-wrap text-gray-800">${safeHtmlSummary}</div>
@@ -6230,11 +6230,11 @@ async function generateVideoSummary(videoId) {
       </div>
     `;
     
-    // 크레딧 업데이트
-    if (window.currentUser) {
-      window.currentUser.credit = result.remainingCredit;
-      updateCreditDisplay();
-    }
+    // 크레딧 업데이트 제거
+    // if (window.currentUser) {
+    //   window.currentUser.credit = result.remainingCredit;
+    //   updateCreditDisplay();
+    // }
     
     console.log('✅ [영상 요약] 완료');
   } catch (error) {
@@ -6336,8 +6336,8 @@ async function generateVideoScript(videoId) {
     
     contentEl.innerHTML = `
       <div class="text-left">
-        <div class="bg-purple-50 border-l-4 border-purple-500 p-4 mb-4">
-          <p class="text-sm text-purple-700">✅ 크레딧 1개가 차감되었습니다. (잔여: ${result.data.remainingCredit})</p>
+        <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-4">
+          <p class="text-sm text-green-700">✅ 스크립트 생성이 완료되었습니다.</p>
         </div>
         <div class="prose max-w-none">
           <div class="whitespace-pre-wrap text-gray-800 font-mono text-sm">${safeHtmlTranscript}</div>
@@ -6365,13 +6365,13 @@ async function generateVideoScript(videoId) {
       </div>
     `;
     
-    // 크레딧 업데이트
-    if (window.currentUser && result.data.remainingCredit !== undefined) {
-      window.currentUser.credit = result.data.remainingCredit;
-      if (typeof updateCreditDisplay === 'function') {
-        updateCreditDisplay();
-      }
-    }
+    // 크레딧 업데이트 제거
+    // if (window.currentUser && result.data.remainingCredit !== undefined) {
+    //   window.currentUser.credit = result.data.remainingCredit;
+    //   if (typeof updateCreditDisplay === 'function') {
+    //     updateCreditDisplay();
+    //   }
+    // }
     
     console.log('✅ [스크립트 생성] 완료');
   } catch (error) {

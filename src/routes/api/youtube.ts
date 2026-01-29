@@ -2435,7 +2435,7 @@ app.post('/api/youtube/summarize', authMiddleware, async (c) => {
   }
 })
 
-// POST /api/youtube/transcript - 영상 스크립트 생성 (1크레딧)
+// POST /api/youtube/transcript - 영상 스크립트 생성 (무료)
 app.post('/api/youtube/transcript', authMiddleware, async (c) => {
   try {
     const user = c.get('user')
@@ -2452,16 +2452,16 @@ app.post('/api/youtube/transcript', authMiddleware, async (c) => {
       }, 400)
     }
     
-    // 크레딧 확인
-    if (user.credit < 1) {
-      return c.json<ApiResponse<null>>({
-        success: false,
-        error: {
-          code: 'INSUFFICIENT_CREDIT',
-          message: '크레딧이 부족합니다.'
-        }
-      }, 403)
-    }
+    // 크레딧 확인 (주석 처리 - 무료 제공)
+    // if (user.credit < 1) {
+    //   return c.json<ApiResponse<null>>({
+    //     success: false,
+    //     error: {
+    //       code: 'INSUFFICIENT_CREDIT',
+    //       message: '크레딧이 부족합니다.'
+    //     }
+    //   }, 403)
+    // }
     
     // YouTube 영상 정보 가져오기
     const videoInfo = await fetch(
@@ -2516,16 +2516,16 @@ app.post('/api/youtube/transcript', authMiddleware, async (c) => {
     const openaiData = await openaiResponse.json()
     const transcript = openaiData.choices[0].message.content
     
-    // 크레딧 차감 (DB 연동 필요 시 여기서 처리)
-    const remainingCredit = user.credit - 1
+    // 크레딧 차감 제거 (무료 제공)
+    // const remainingCredit = user.credit - 1
     
     return c.json<ApiResponse<any>>({
       success: true,
       data: {
         transcript,
         videoId,
-        title,
-        remainingCredit
+        title
+        // remainingCredit 제거
       }
     })
     
@@ -2562,13 +2562,13 @@ app.post('/api/youtube/transcript-raw', authMiddleware, async (c) => {
     // 2. 인증된 사용자 정보 가져오기
     const userId = c.get('userId')
 
-    // 3. Supabase 클라이언트 생성
+    // 3. Supabase 클라이언트 생성 (히스토리 저장용)
     const supabase = createClient(
       c.env.SUPABASE_URL,
       c.env.SUPABASE_SERVICE_KEY
     )
 
-    // 4. 사용자 크레딧 확인
+    // 4. 사용자 정보 조회 (크레딧 체크 없음 - 무료)
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('credit')
@@ -2585,18 +2585,18 @@ app.post('/api/youtube/transcript-raw', authMiddleware, async (c) => {
       }, 404)
     }
 
-    // 크레딧 확인
-    if (user.credit < 1) {
-      return c.json<ApiResponse<null>>({
-        success: false,
-        error: {
-          code: 'INSUFFICIENT_CREDIT',
-          message: '크레딧이 부족합니다.'
-        }
-      }, 403)
-    }
+    // ❌ 크레딧 확인 제거 (무료 제공)
+    // if (user.credit < 1) {
+    //   return c.json<ApiResponse<null>>({
+    //     success: false,
+    //     error: {
+    //       code: 'INSUFFICIENT_CREDIT',
+    //       message: '크레딧이 부족합니다.'
+    //     }
+    //   }, 403)
+    // }
 
-    console.log('🎬 [자막 기반 스크립트 생성 시작]', { videoId, lang })
+    console.log('🎬 [자막 기반 스크립트 생성 시작 - 무료]', { videoId, lang })
 
     // 5. YouTube 공식 자막 API 호출
     let transcriptData = null
@@ -2675,23 +2675,23 @@ app.post('/api/youtube/transcript-raw', authMiddleware, async (c) => {
     const video = videoData.items[0]
     const title = video.snippet.title || '제목 없음'
 
-    // 8. 크레딧 차감
-    const { error: creditError } = await supabase
-      .from('users')
-      .update({ credit: user.credit - 1 })
-      .eq('id', userId)
+    // 8. 크레딧 차감 제거 (무료 제공)
+    // const { error: creditError } = await supabase
+    //   .from('users')
+    //   .update({ credit: user.credit - 1 })
+    //   .eq('id', userId)
 
-    if (creditError) {
-      console.error('크레딧 차감 실패:', creditError)
-    }
+    // if (creditError) {
+    //   console.error('크레딧 차감 실패:', creditError)
+    // }
 
-    const remainingCredit = user.credit - 1
+    // const remainingCredit = user.credit - 1
 
-    console.log('✅ [자막 기반 스크립트 생성 완료]', { 
+    console.log('✅ [자막 기반 스크립트 생성 완료 - 무료]', { 
       videoId, 
       title, 
-      transcriptLength: transcript.length,
-      remainingCredit 
+      transcriptLength: transcript.length
+      // remainingCredit 제거
     })
 
     // 9. 응답 반환
@@ -2701,7 +2701,7 @@ app.post('/api/youtube/transcript-raw', authMiddleware, async (c) => {
         transcript,
         videoId,
         title,
-        remainingCredit,
+        // remainingCredit 제거
         source: 'youtube-captions'
       }
     })
