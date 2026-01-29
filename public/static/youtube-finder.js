@@ -6271,15 +6271,15 @@ async function generateVideoScript(videoId) {
     `;
     document.body.appendChild(modal);
     
-    // API 호출
+    // API 호출 - 새로운 자막 기반 엔드포인트 사용
     const token = localStorage.getItem('postflow_token');
-    const response = await fetch('/api/youtube/transcript', {
+    const response = await fetch('/api/youtube/transcript-raw', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ videoId })
+      body: JSON.stringify({ videoId, lang: 'ko' })
     });
     
     const result = await response.json();
@@ -6325,7 +6325,7 @@ async function generateVideoScript(videoId) {
             <i class="fas fa-copy mr-2"></i>스크립트 복사
           </button>
           <button 
-            onclick="downloadFile('script.txt', '${escapedTranscript}')"
+            onclick="(function() { const date = new Date().toISOString().slice(0, 10); downloadFile('${escapedTranscript}', 'youtube_script_' + date + '.txt'); })();"
             class="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors"
           >
             <i class="fas fa-download mr-2"></i>다운로드

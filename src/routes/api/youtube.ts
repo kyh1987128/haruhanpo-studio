@@ -2517,6 +2517,183 @@ app.post('/api/youtube/transcript', authMiddleware, async (c) => {
 })
 
 // ========================================
+// Phase 8-2: YouTube 공식 자막 기반 스크립트 생성 (신규)
+// ========================================
+app.post('/api/youtube/transcript-raw', authMiddleware, async (c) => {
+  try {
+    const { videoId, lang = 'ko' } = await c.req.json()
+
+    // 1. 입력 검증
+    if (!videoId) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'INVALID_INPUT',
+          message: 'videoId는 필수입니다.'
+        }
+      }, 400)
+    }
+
+    // 2. 인증된 사용자 정보 가져오기
+    const userId = c.get('userId')
+
+    // 3. Supabase 클라이언트 생성
+    const supabase = createClient(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    )
+
+    // 4. 사용자 크레딧 확인
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('credit')
+      .eq('id', userId)
+      .single()
+
+    if (userError || !user) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: '사용자 정보를 찾을 수 없습니다.'
+        }
+      }, 404)
+    }
+
+    // 크레딧 확인
+    if (user.credit < 1) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'INSUFFICIENT_CREDIT',
+          message: '크레딧이 부족합니다.'
+        }
+      }, 403)
+    }
+
+    console.log('🎬 [자막 기반 스크립트 생성 시작]', { videoId, lang })
+
+    // 5. YouTube 공식 자막 API 호출
+    let transcriptData = null
+    let captionUrl = `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${lang}&fmt=json3`
+
+    console.log('📝 [자막 API 호출]', captionUrl)
+
+    let response = await fetch(captionUrl)
+
+    // 한국어 자막이 없으면 자동 생성 자막 시도
+    if (!response.ok || response.status === 404) {
+      console.log('⚠️ [한국어 자막 없음] 자동 생성 자막 시도')
+      captionUrl = `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${lang}&fmt=json3&kind=asr`
+      response = await fetch(captionUrl)
+    }
+
+    // 여전히 실패하면 영어 자막 시도
+    if (!response.ok || response.status === 404) {
+      console.log('⚠️ [자동 생성 자막 없음] 영어 자막 시도')
+      captionUrl = `https://www.youtube.com/api/timedtext?v=${videoId}&lang=en&fmt=json3`
+      response = await fetch(captionUrl)
+    }
+
+    if (!response.ok) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'TRANSCRIPT_NOT_FOUND',
+          message: '이 영상에는 사용 가능한 자막이 없습니다.'
+        }
+      }, 404)
+    }
+
+    transcriptData = await response.json()
+
+    // 6. 자막 데이터 파싱 및 포맷팅
+    let transcript = ''
+    if (transcriptData && transcriptData.events) {
+      for (const event of transcriptData.events) {
+        if (event.segs) {
+          const text = event.segs.map((seg: any) => seg.utf8).join('')
+          const time = Math.floor(event.tStartMs / 1000)
+          const minutes = Math.floor(time / 60)
+          const seconds = time % 60
+          transcript += `[${minutes}:${seconds.toString().padStart(2, '0')}] ${text}\n`
+        }
+      }
+    }
+
+    if (!transcript) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'TRANSCRIPT_EMPTY',
+          message: '자막 데이터를 파싱할 수 없습니다.'
+        }
+      }, 500)
+    }
+
+    // 7. YouTube 영상 정보 가져오기
+    const videoInfo = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${c.env.YOUTUBE_API_KEY}`
+    )
+    const videoData = await videoInfo.json()
+
+    if (!videoData.items || videoData.items.length === 0) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'VIDEO_NOT_FOUND',
+          message: '영상을 찾을 수 없습니다.'
+        }
+      }, 404)
+    }
+
+    const video = videoData.items[0]
+    const title = video.snippet.title || '제목 없음'
+
+    // 8. 크레딧 차감
+    const { error: creditError } = await supabase
+      .from('users')
+      .update({ credit: user.credit - 1 })
+      .eq('id', userId)
+
+    if (creditError) {
+      console.error('크레딧 차감 실패:', creditError)
+    }
+
+    const remainingCredit = user.credit - 1
+
+    console.log('✅ [자막 기반 스크립트 생성 완료]', { 
+      videoId, 
+      title, 
+      transcriptLength: transcript.length,
+      remainingCredit 
+    })
+
+    // 9. 응답 반환
+    return c.json<ApiResponse<any>>({
+      success: true,
+      data: {
+        transcript,
+        videoId,
+        title,
+        remainingCredit,
+        source: 'youtube-captions'
+      }
+    })
+
+  } catch (error: any) {
+    console.error('❌ [Transcript Raw Error]', error)
+    return c.json<ApiResponse<null>>({
+      success: false,
+      error: {
+        code: 'TRANSCRIPT_ERROR',
+        message: error.message || '스크립트 생성 중 오류가 발생했습니다.'
+      }
+    }, 500)
+  }
+})
+
+// ========================================
 // 🔧 환경 변수 테스트 엔드포인트 (디버깅용)
 // ========================================
 app.get('/api/youtube/test-env', async (c) => {
