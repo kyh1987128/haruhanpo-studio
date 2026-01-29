@@ -3019,6 +3019,138 @@ export function youtubeAnalyzerTemplate() {
       document.getElementById('filterNormal').checked = true;
     });
   </script>
+
+  <!-- 회원가입/로그인 모달 (NEW v7.3) -->
+  <div id="authModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 w-full">
+      <div class="text-center mb-6">
+        <h3 id="authModalTitle" class="text-2xl font-bold text-gray-800 mb-2">
+          <i class="fas fa-user-plus mr-2 text-purple-600"></i><span id="authModalTitleText">회원가입</span>
+        </h3>
+        <p id="authModalSubtitle" class="text-gray-600">30개 무료 크레딧으로 시작하세요!</p>
+      </div>
+      
+      <!-- 이메일 인증 폼 (회원가입/로그인 공용) -->
+      <div id="emailAuthSection" class="space-y-4 mb-6">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">이메일</label>
+          <input 
+            type="email" 
+            id="authEmail" 
+            placeholder="your@email.com"
+            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+          >
+          <p class="text-xs text-gray-500 mt-1" id="emailDomainHint"></p>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">비밀번호 <span id="passwordHint">(8자 이상)</span></label>
+          <input 
+            type="password" 
+            id="authPassword" 
+            placeholder="비밀번호"
+            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+          >
+        </div>
+        <button 
+          id="emailAuthBtn" 
+          class="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition font-semibold"
+        >
+          <i class="fas fa-envelope mr-2"></i><span id="emailAuthBtnText">이메일로 가입하기</span>
+        </button>
+      </div>
+      
+      <!-- 구분선 -->
+      <div class="flex items-center mb-6">
+        <div class="flex-1 border-t border-gray-300"></div>
+        <span class="px-4 text-gray-500 text-sm">또는</span>
+        <div class="flex-1 border-t border-gray-300"></div>
+      </div>
+      
+      <!-- OAuth 로그인 버튼들 -->
+      <div class="space-y-3 mb-6">
+        <!-- Google 로그인 -->
+        <button 
+          id="googleLoginBtn" 
+          class="w-full px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition font-semibold flex items-center justify-center"
+        >
+          <img src="https://www.google.com/favicon.ico" alt="Google" class="w-5 h-5 mr-2">
+          Google로 계속하기
+        </button>
+        
+        <!-- Kakao 로그인 -->
+        <button 
+          id="kakaoLoginBtn" 
+          class="w-full px-6 py-3 bg-yellow-400 text-gray-900 rounded-lg hover:bg-yellow-500 transition font-semibold flex items-center justify-center"
+        >
+          <i class="fas fa-comment mr-2"></i>
+          카카오로 계속하기
+        </button>
+      </div>
+      
+      <!-- 안내 문구 (회원가입 모드) -->
+      <div id="signupNotice" class="bg-purple-50 border-l-4 border-purple-500 p-4 mb-4">
+        <p class="text-sm text-gray-700">
+          <strong>✨ 이메일 인증 완료 시 30개 무료 크레딧!</strong><br>
+          <span class="text-gray-600">• 동일 IP에서 24시간 내 최대 3개 계정<br>
+          • 이메일 인증을 완료해야 크레딧이 지급됩니다</span>
+        </p>
+      </div>
+      
+      <!-- 모드 전환 링크 -->
+      <div class="text-center mb-4">
+        <button id="authModeToggle" class="text-sm text-purple-600 hover:text-purple-700 font-semibold">
+          계정이 있으신가요? <span id="authModeToggleText">로그인</span>
+        </button>
+      </div>
+      
+      <!-- 닫기 버튼 -->
+      <button 
+        onclick="closeAuthModal()" 
+        class="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+      >
+        닫기
+      </button>
+    </div>
+  </div>
+  
+  <!-- 이메일 인증 대기 모달 (NEW v7.3) -->
+  <div id="emailVerificationModal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 w-full text-center">
+      <div class="text-6xl mb-4">📧</div>
+      <h3 class="text-2xl font-bold text-gray-800 mb-4">이메일 인증이 필요합니다</h3>
+      <p class="text-gray-600 mb-6">
+        <span id="verificationEmail" class="font-semibold text-purple-600"></span>으로<br>
+        인증 메일을 발송했습니다.<br><br>
+        메일함을 확인하여 인증을 완료해주세요.<br>
+        <strong class="text-purple-600">인증 완료 시 30개 무료 크레딧이 자동으로 지급됩니다!</strong>
+      </p>
+      <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 text-left">
+        <p class="text-sm text-gray-700">
+          <strong>💡 메일이 오지 않나요?</strong><br>
+          • 스팸/프로모션 폴더를 확인하세요<br>
+          • 메일 수신까지 최대 5분 소요될 수 있습니다<br><br>
+          <strong>✅ 인증 완료 후:</strong><br>
+          • 아래 "로그인" 버튼을 클릭하여 로그인하세요<br>
+          • 30개 크레딧이 자동으로 충전됩니다
+        </p>
+      </div>
+      <div class="space-y-3">
+        <button 
+          onclick="handleLoginAfterVerification()" 
+          class="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition font-semibold"
+        >
+          <i class="fas fa-check-circle mr-2"></i>인증 완료! 로그인하기
+        </button>
+        <button 
+          onclick="closeEmailVerificationModal()" 
+          class="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+        >
+          확인
+        </button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
   `
