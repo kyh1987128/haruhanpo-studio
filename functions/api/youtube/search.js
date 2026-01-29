@@ -211,6 +211,13 @@ export async function onRequest(context) {
   try {
     const body = await request.json();
     
+    // 🔍 디버깅: 환경 변수 확인
+    console.log('🔍 [Environment Variables]', {
+      YOUTUBE_API_KEY: env.YOUTUBE_API_KEY ? `${env.YOUTUBE_API_KEY.substring(0, 15)}...` : '❌ MISSING',
+      YOUTUBE_CACHE: env.YOUTUBE_CACHE ? 'EXISTS' : '❌ MISSING',
+      allKeys: Object.keys(env)
+    });
+    
     // 1. 기본 캐시 키 생성 (필터 제외)
     const cacheKey = generateBaseCacheKey(body);
     console.log('🔑 [Cache Key]', cacheKey);
