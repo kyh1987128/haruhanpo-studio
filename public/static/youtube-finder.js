@@ -4,6 +4,37 @@
 
 console.log('🚀 [YouTube Finder] 스크립트 로드');
 
+/**
+ * 크레딧 UI 업데이트 함수
+ * @param {number} remainingCredits - 남은 크레딧 수 (undefined면 자동 차감)
+ */
+function updateCreditDisplay(remainingCredits) {
+    console.log('✅ 크레딧 업데이트 호출됨:', remainingCredits);
+    
+    const creditSelectors = [
+        '#credit-count',
+        '.credit-count',
+        '[data-credit]',
+        '[class*="credit"]',
+        '[id*="credit"]'
+    ];
+    
+    creditSelectors.forEach(selector => {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach(el => {
+            if (/\d+.*크레딧|credit.*\d+/i.test(el.textContent)) {
+                if (remainingCredits !== undefined) {
+                    el.textContent = el.textContent.replace(/\d+/, remainingCredits);
+                } else {
+                    const current = parseInt(el.textContent.match(/\d+/)?.[0] || '0');
+                    el.textContent = el.textContent.replace(/\d+/, Math.max(0, current - 1));
+                }
+                console.log('✅ 크레딧 UI 업데이트:', el.textContent);
+            }
+        });
+    });
+}
+
 // 전역 상태
 let selectedVideos = new Set();
 let currentSearchResults = [];
@@ -2745,6 +2776,64 @@ function formatDuration(duration) {
   }
 }
 
+/**
+ * YouTube API 표준 구조로 데이터 정규화
+ */
+function normalizeYouTubeData(videos) {
+    if (!Array.isArray(videos) || videos.length === 0) {
+        console.warn('⚠️ 정규화할 데이터가 없습니다.');
+        return videos;
+    }
+    
+    return videos.map(video => {
+        // 안전하게 기존 값 추출
+        const views = Number(video.views || video.viewCount || video.statistics?.viewCount || 0);
+        const likes = Number(video.likes || video.likeCount || video.statistics?.likeCount || 0);
+        const comments = Number(video.comments || video.commentCount || video.statistics?.commentCount || 0);
+        const subscribers = Number(video.subscribers || video.subscriberCount || video.statistics?.subscriberCount || 0);
+        const title = video.title || video.snippet?.title || '제목 없음';
+        const channel = video.channel || video.channelTitle || video.snippet?.channelTitle || '채널 없음';
+        
+        return {
+            ...video,
+            
+            // 1. 최상위 레벨 필드 (호환성)
+            views, viewCount: views,
+            likes, likeCount: likes,
+            comments, commentCount: comments,
+            subscribers, subscriberCount: subscribers,
+            title, channel, channelTitle: channel,
+            
+            // 2. YouTube API 표준 구조
+            statistics: {
+                viewCount: String(views),
+                likeCount: String(likes),
+                commentCount: String(comments),
+                subscriberCount: String(subscribers)
+            },
+            
+            snippet: {
+                title,
+                channelTitle: channel,
+                publishedAt: video.publishedAt || video.snippet?.publishedAt || new Date().toISOString(),
+                thumbnails: video.thumbnails || video.snippet?.thumbnails || {
+                    default: { url: video.thumbnailUrl || '' }
+                }
+            },
+            
+            // 3. 성과도 정규화
+            performance: {
+                ratio: Number(video.performance?.ratio || video.performanceRatio || 0),
+                level: video.performance?.level || 'normal',
+                badge: video.performance?.badge || ''
+            },
+            
+            // 4. URL 보장
+            url: video.url || `https://www.youtube.com/watch?v=${video.videoId}`
+        };
+    });
+}
+
 function formatDate(dateString) {
   if (!dateString) return '-';
   
@@ -3081,6 +3170,9 @@ function exportToCSV() {
     return;
   }
   
+  // ⭐ 데이터 정규화
+  filteredMarketVideos = normalizeYouTubeData(filteredMarketVideos);
+  
   console.log('📥 [CSV 다운로드] 시작:', filteredMarketVideos.length, '개');
   
   try {
@@ -3172,6 +3264,9 @@ function exportToExcel() {
     alert('다운로드할 데이터가 없습니다. 먼저 검색을 진행해주세요.');
     return;
   }
+  
+  // ⭐ 데이터 정규화
+  filteredMarketVideos = normalizeYouTubeData(filteredMarketVideos);
   
   console.log('📥 [Excel 다운로드] 시작:', filteredMarketVideos.length, '개');
   
@@ -3274,17 +3369,69 @@ function getPerformanceLevelText(level) {
 }
 
 /**
- * 파일 다운로드 헬퍼 함수
+ * 스마트 파일 다운로드 함수 (매개변수 순서 자동 감지)
  */
-function downloadFile(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+function downloadFile(param1, param2) {
+    try {
+        let blob, fileName;
+        
+        // Blob 객체 확인
+        if (param1 instanceof Blob) {
+            blob = param1;
+            fileName = param2 || 'download.txt';
+        } else if (param2 instanceof Blob) {
+            blob = param2;
+            fileName = param1 || 'download.txt';
+        } else {
+            // 문자열 처리: 매개변수 순서 자동 감지 (내용이 긴 쪽을 content로 판단)
+            let content;
+            
+            if (param1 && (param1.length > 100 || param1.includes('**[') || param1.includes('\n'))) {
+                content = param1;
+                fileName = param2 || `youtube_script_${new Date().toISOString().slice(0,19).replace(/[:T]/g, '-')}.txt`;
+            } else if (param2 && (param2.length > 100 || param2.includes('**[') || param2.includes('\n'))) {
+                content = param2;
+                fileName = param1;
+            } else {
+                content = param1;
+                fileName = param2 || 'download.txt';
+            }
+            
+            // 문자열을 Blob으로 변환
+            blob = new Blob([content], { 
+                type: 'text/plain;charset=utf-8' 
+            });
+        }
+        
+        // 파일명 길이 제한
+        if (fileName.length > 50) {
+            const ext = fileName.includes('.') ? fileName.split('.').pop() : 'txt';
+            fileName = `youtube_${Date.now()}.${ext}`;
+        }
+        
+        console.log('📥 다운로드 시작:', fileName);
+        
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        link.style.display = 'none';
+        
+        document.body.appendChild(link);
+        link.click();
+        
+        // 메모리 정리
+        setTimeout(() => {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }, 100);
+        
+        console.log('✅ 다운로드 완료:', fileName);
+        
+    } catch (error) {
+        console.error('❌ 다운로드 실패:', error);
+        alert(`파일 다운로드 중 오류가 발생했습니다: ${error.message}`);
+    }
 }
 
 // ========================================
@@ -3379,6 +3526,9 @@ function openCompareModal() {
     alert('최소 2개 이상의 영상을 선택해주세요.');
     return;
   }
+  
+  // ⭐ 데이터 정규화
+  selectedCompareVideos = normalizeYouTubeData(selectedCompareVideos);
   
   console.log('📊 [비교] 모달 열기:', selectedCompareVideos.length, '개');
   
