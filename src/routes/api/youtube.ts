@@ -2542,9 +2542,9 @@ app.post('/api/youtube/transcript', authMiddleware, async (c) => {
 })
 
 // ========================================
-// Phase 8-2: YouTube 공식 자막 기반 스크립트 생성 (신규) - 무료 (인증 불필요)
+// Phase 8-2: YouTube 공식 자막 기반 스크립트 생성 (신규)
 // ========================================
-app.post('/api/youtube/transcript-raw', async (c) => {
+app.post('/api/youtube/transcript-raw', authMiddleware, async (c) => {
   try {
     const { videoId, lang = 'ko' } = await c.req.json()
 
@@ -2559,7 +2559,44 @@ app.post('/api/youtube/transcript-raw', async (c) => {
       }, 400)
     }
 
-    console.log('🎬 [자막 기반 스크립트 생성 시작 - 무료]', { videoId, lang })
+    // 2. 인증된 사용자 정보 가져오기
+    const userId = c.get('userId')
+
+    // 3. Supabase 클라이언트 생성
+    const supabase = createClient(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    )
+
+    // 4. 사용자 크레딧 확인
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('credit')
+      .eq('id', userId)
+      .single()
+
+    if (userError || !user) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: '사용자 정보를 찾을 수 없습니다.'
+        }
+      }, 404)
+    }
+
+    // 크레딧 확인
+    if (user.credit < 1) {
+      return c.json<ApiResponse<null>>({
+        success: false,
+        error: {
+          code: 'INSUFFICIENT_CREDIT',
+          message: '크레딧이 부족합니다.'
+        }
+      }, 403)
+    }
+
+    console.log('🎬 [자막 기반 스크립트 생성 시작]', { videoId, lang })
 
     // 5. YouTube 공식 자막 API 호출
     let transcriptData = null
@@ -2638,21 +2675,34 @@ app.post('/api/youtube/transcript-raw', async (c) => {
     const video = videoData.items[0]
     const title = video.snippet.title || '제목 없음'
 
-    console.log('✅ [자막 기반 스크립트 생성 완료 - 무료]', { 
+    // 8. 크레딧 차감
+    const { error: creditError } = await supabase
+      .from('users')
+      .update({ credit: user.credit - 1 })
+      .eq('id', userId)
+
+    if (creditError) {
+      console.error('크레딧 차감 실패:', creditError)
+    }
+
+    const remainingCredit = user.credit - 1
+
+    console.log('✅ [자막 기반 스크립트 생성 완료]', { 
       videoId, 
       title, 
-      transcriptLength: transcript.length
+      transcriptLength: transcript.length,
+      remainingCredit 
     })
 
-    // 7. 응답 반환 (무료 - 크레딧 차감 없음)
+    // 9. 응답 반환
     return c.json<ApiResponse<any>>({
       success: true,
       data: {
         transcript,
         videoId,
         title,
-        source: 'youtube-captions',
-        free: true  // 무료 표시
+        remainingCredit,
+        source: 'youtube-captions'
       }
     })
 

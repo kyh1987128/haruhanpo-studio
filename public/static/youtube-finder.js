@@ -6336,13 +6336,8 @@ async function generateVideoScript(videoId) {
     
     contentEl.innerHTML = `
       <div class="text-left">
-        <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-4">
-          <p class="text-sm text-green-700">
-            ✅ <strong>무료 스크립트 생성 완료!</strong> (크레딧 차감 없음)
-          </p>
-          <p class="text-xs text-green-600 mt-1">
-            YouTube 공식 자막 API 활용 · 완전 무료
-          </p>
+        <div class="bg-purple-50 border-l-4 border-purple-500 p-4 mb-4">
+          <p class="text-sm text-purple-700">✅ 크레딧 1개가 차감되었습니다. (잔여: ${result.data.remainingCredit})</p>
         </div>
         <div class="prose max-w-none">
           <div class="whitespace-pre-wrap text-gray-800 font-mono text-sm">${safeHtmlTranscript}</div>
@@ -6370,7 +6365,15 @@ async function generateVideoScript(videoId) {
       </div>
     `;
     
-    console.log('✅ [스크립트 생성] 완료 - 무료');
+    // 크레딧 업데이트
+    if (window.currentUser && result.data.remainingCredit !== undefined) {
+      window.currentUser.credit = result.data.remainingCredit;
+      if (typeof updateCreditDisplay === 'function') {
+        updateCreditDisplay();
+      }
+    }
+    
+    console.log('✅ [스크립트 생성] 완료');
   } catch (error) {
     console.error('❌ [스크립트 생성] 실패:', error);
     const contentEl = document.getElementById('script-content');
