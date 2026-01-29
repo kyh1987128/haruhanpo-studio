@@ -15,9 +15,11 @@ import type { AnalysisRequest, ApiResponse, AnalysisResult, PaginationParams } f
 
 type Bindings = {
   SUPABASE_URL: string
-  SUPABASE_SERVICE_ROLE_KEY: string
+  SUPABASE_SERVICE_KEY: string  // Cloudflare에서는 SUPABASE_SERVICE_KEY 사용
+  SUPABASE_ANON_KEY: string
   YOUTUBE_API_KEY: string
   OPENAI_API_KEY: string
+  GEMINI_API_KEY: string
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -70,7 +72,7 @@ app.post('/api/youtube/analyze', async (c) => {
     // 4. Supabase 클라이언트 생성
     const supabase = createClient(
       c.env.SUPABASE_URL,
-      c.env.SUPABASE_SERVICE_ROLE_KEY
+      c.env.SUPABASE_SERVICE_KEY
     )
 
     // 5. 캐시 조회
@@ -236,7 +238,7 @@ app.get('/api/youtube/history', async (c) => {
     // Supabase 클라이언트
     const supabase = createClient(
       c.env.SUPABASE_URL,
-      c.env.SUPABASE_SERVICE_ROLE_KEY
+      c.env.SUPABASE_SERVICE_KEY
     )
 
     // 히스토리 조회
@@ -268,7 +270,7 @@ app.get('/api/youtube/history/:id', async (c) => {
 
     const supabase = createClient(
       c.env.SUPABASE_URL,
-      c.env.SUPABASE_SERVICE_ROLE_KEY
+      c.env.SUPABASE_SERVICE_KEY
     )
 
     const history = await getHistoryById(supabase, userId, historyId)
@@ -308,7 +310,7 @@ app.delete('/api/youtube/history/:id', async (c) => {
 
     const supabase = createClient(
       c.env.SUPABASE_URL,
-      c.env.SUPABASE_SERVICE_ROLE_KEY
+      c.env.SUPABASE_SERVICE_KEY
     )
 
     const success = await deleteHistory(supabase, userId, historyId)
@@ -346,7 +348,7 @@ app.get('/api/youtube/stats', async (c) => {
 
     const supabase = createClient(
       c.env.SUPABASE_URL,
-      c.env.SUPABASE_SERVICE_ROLE_KEY
+      c.env.SUPABASE_SERVICE_KEY
     )
 
     const stats = await getUserAnalysisStats(supabase, userId)
@@ -374,7 +376,7 @@ app.get('/api/youtube/cache/stats', adminMiddleware, async (c) => {
 
     const supabase = createClient(
       c.env.SUPABASE_URL,
-      c.env.SUPABASE_SERVICE_ROLE_KEY
+      c.env.SUPABASE_SERVICE_KEY
     )
 
     const stats = await getCacheStats(supabase)
@@ -422,7 +424,7 @@ app.post('/api/youtube/search', async (c) => {
       YOUTUBE_API_KEY: youtubeApiKey ? `${youtubeApiKey.substring(0, 10)}...` : '❌ MISSING',
       OPENAI_API_KEY: c.env.OPENAI_API_KEY ? 'OK' : '❌ MISSING',
       SUPABASE_URL: c.env.SUPABASE_URL ? 'OK' : '❌ MISSING',
-      SUPABASE_SERVICE_ROLE_KEY: c.env.SUPABASE_SERVICE_ROLE_KEY ? 'OK' : '❌ MISSING',
+      SUPABASE_SERVICE_KEY: c.env.SUPABASE_SERVICE_KEY ? 'OK' : '❌ MISSING',
       allEnvKeys: Object.keys(c.env)
     })
     
@@ -2508,6 +2510,23 @@ app.post('/transcript', authMiddleware, async (c) => {
       }
     }, 500)
   }
+})
+
+// ========================================
+// 🔧 환경 변수 테스트 엔드포인트 (디버깅용)
+// ========================================
+app.get('/api/youtube/test-env', async (c) => {
+  return c.json({
+    success: true,
+    data: {
+      YOUTUBE_API_KEY: c.env.YOUTUBE_API_KEY ? `${c.env.YOUTUBE_API_KEY.substring(0, 15)}...` : '❌ MISSING',
+      OPENAI_API_KEY: c.env.OPENAI_API_KEY ? 'EXISTS' : '❌ MISSING',
+      SUPABASE_URL: c.env.SUPABASE_URL || '❌ MISSING',
+      SUPABASE_SERVICE_KEY: c.env.SUPABASE_SERVICE_KEY ? 'EXISTS' : '❌ MISSING',
+      allEnvKeys: Object.keys(c.env),
+      timestamp: new Date().toISOString()
+    }
+  })
 })
 
 export default app
