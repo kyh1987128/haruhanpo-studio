@@ -3810,6 +3810,17 @@ async function generateCompareAIAnalysis() {
   
   console.log('🤖 [AI 비교 분석] 시작:', selectedCompareVideos.length, '개');
   
+  // ⭐ 데이터 정규화 (최우선)
+  const normalizedVideos = normalizeYouTubeData(selectedCompareVideos);
+  
+  console.log('✅ [정규화 완료]', normalizedVideos.map(v => ({
+    id: v.videoId,
+    title: v.title,
+    duration: v.duration,
+    category: v.category,
+    views: v.views
+  })));
+  
   const btn = document.getElementById('generate-compare-ai-btn');
   const resultDiv = document.getElementById('compare-ai-result');
   const contentDiv = document.getElementById('compare-ai-content');
@@ -3821,27 +3832,22 @@ async function generateCompareAIAnalysis() {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>AI 분석 중...';
     
-    // 영상 정보 구성
-    const videosInfo = selectedCompareVideos.map((video, index) => {
-      const title = video.snippet?.title || '제목 없음';
-      const channelTitle = video.snippet?.channelTitle || '채널 없음';
-      const views = video.statistics?.viewCount || 0;
-      const subscribers = video.channelInfo?.subscriberCount || 0;
-      const likes = video.statistics?.likeCount || 0;
-      const comments = video.statistics?.commentCount || 0;
-      const performance = video.performance?.ratio || 0;
-      const likeRate = views > 0 ? ((likes / views) * 100).toFixed(2) : '0.00';
-      
+    // ⭐ 정규화된 데이터로 영상 정보 구성
+    const videosInfo = normalizedVideos.map((video, index) => {
       return {
         index: index + 1,
-        title,
-        channelTitle,
-        views,
-        subscribers,
-        likes,
-        likeRate,
-        comments,
-        performance
+        videoId: video.videoId,
+        title: video.title,
+        channel: video.channel,
+        views: Number(video.views || 0),
+        subscriberCount: Number(video.subscribers || 0),
+        likes: Number(video.likes || 0),
+        comments: Number(video.comments || 0),
+        publishedAt: video.snippet?.publishedAt || video.publishedAt || new Date().toISOString(),
+        duration: video.duration,
+        category: video.category,
+        language: video.language,
+        performance: Number(video.performance?.ratio || 0)
       };
     });
     
@@ -3886,6 +3892,18 @@ ${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
 **Markdown 형식으로 작성해주세요.**
     `.trim();
     
+    // ⭐ 디버깅 로그
+    console.log('📤 [API 요청 데이터]', {
+      videoCount: videosInfo.length,
+      firstVideo: {
+        videoId: videosInfo[0].videoId,
+        title: videosInfo[0].title,
+        duration: videosInfo[0].duration,
+        category: videosInfo[0].category,
+        views: videosInfo[0].views
+      }
+    });
+    
     // API 호출
     const token = localStorage.getItem('postflow_token');
     
@@ -3895,7 +3913,10 @@ ${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ prompt })
+      body: JSON.stringify({
+        goal: 'views',  // 기본 목표: 조회수 증가
+        analyzedVideos: videosInfo  // ⭐ 백엔드가 기대하는 필드명
+      })
     });
     
     const result = await response.json();

@@ -784,11 +784,36 @@ ${i + 1}. ${v.title}
 
     const aiResult = await aiResponse.json()
     const strategyData = JSON.parse(aiResult.choices[0].message.content)
+    
+    // ⭐ 프론트엔드 호환성을 위해 Markdown 텍스트로 변환
+    let strategyText = `## 📊 트렌드 분석\n\n`
+    strategyText += `### 🔑 공통 키워드\n${strategyData.trends?.commonKeywords?.map((k: string) => `- ${k}`).join('\n') || '분석 중...'}\n\n`
+    strategyText += `### ✅ 성공 패턴\n${strategyData.trends?.successPatterns?.map((p: string) => `- ${p}`).join('\n') || '분석 중...'}\n\n`
+    strategyText += `### 🕐 최적 게시 시간\n${strategyData.trends?.bestPublishTime || '분석 중...'}\n\n`
+    
+    strategyText += `## 💡 콘텐츠 제안\n\n`
+    if (strategyData.contentSuggestions && strategyData.contentSuggestions.length > 0) {
+      strategyData.contentSuggestions.forEach((suggestion: any, i: number) => {
+        strategyText += `### ${i + 1}. ${suggestion.title}\n`
+        strategyText += `${suggestion.description}\n\n`
+        strategyText += `**키워드**: ${suggestion.keywords?.join(', ') || '없음'}\n`
+        strategyText += `**예상 조회수**: ${suggestion.estimatedViews || '분석 중...'}\n\n`
+      })
+    }
+    
+    strategyText += `## 🎯 실행 계획\n\n`
+    strategyText += `### 즉시 실행\n${strategyData.actionPlan?.immediate?.map((a: string) => `- ${a}`).join('\n') || '분석 중...'}\n\n`
+    strategyText += `### 단기 전략\n${strategyData.actionPlan?.shortTerm?.map((a: string) => `- ${a}`).join('\n') || '분석 중...'}\n\n`
+    strategyText += `### 장기 전략\n${strategyData.actionPlan?.longTerm?.map((a: string) => `- ${a}`).join('\n') || '분석 중...'}\n\n`
 
     // 4. 결과 반환
     return c.json({
       success: true,
-      data: strategyData
+      data: {
+        strategy: strategyText,  // ⭐ 프론트엔드가 기대하는 필드
+        analysis: strategyText,  // ⭐ 대체 필드명
+        raw: strategyData        // 원본 데이터도 포함
+      }
     })
 
   } catch (error: any) {
