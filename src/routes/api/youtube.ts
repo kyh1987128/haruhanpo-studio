@@ -2305,7 +2305,7 @@ app.post('/api/youtube/report/generate', async (c) => {
 // ================================================
 
 // POST /api/youtube/summarize - 영상 요약 생성 (1크레딧)
-app.post('/summarize', authMiddleware, async (c) => {
+app.post('/api/youtube/summarize', authMiddleware, async (c) => {
   try {
     const user = c.get('user')
     const { videoId } = await c.req.json()
@@ -2409,7 +2409,7 @@ app.post('/summarize', authMiddleware, async (c) => {
 })
 
 // POST /api/youtube/transcript - 영상 스크립트 생성 (1크레딧)
-app.post('/transcript', authMiddleware, async (c) => {
+app.post('/api/youtube/transcript', authMiddleware, async (c) => {
   try {
     const user = c.get('user')
     const { videoId } = await c.req.json()
