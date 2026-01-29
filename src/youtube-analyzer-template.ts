@@ -3130,7 +3130,7 @@ export function youtubeAnalyzerTemplate() {
           • 스팸/프로모션 폴더를 확인하세요<br>
           • 메일 수신까지 최대 5분 소요될 수 있습니다<br><br>
           <strong>✅ 인증 완료 후:</strong><br>
-          • 아래 "로그인" 버튼을 클릭하여 로그인하세요<br>
+          • 아래 &quot;로그인&quot; 버튼을 클릭하여 로그인하세요<br>
           • 30개 크레딧이 자동으로 충전됩니다
         </p>
       </div>
