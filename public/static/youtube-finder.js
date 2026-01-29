@@ -2701,7 +2701,7 @@ function renderDetailPanel(video) {
           onclick="generateVideoSummary('${videoId}')"
           class="bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium text-sm"
         >
-          <i class="fas fa-sparkles mr-1"></i>영상 요약 (1크레딧)
+          <i class="fas fa-sparkles mr-1"></i>영상 요약
         </button>
         <button 
           onclick="generateVideoScript('${videoId}')"
@@ -6054,7 +6054,7 @@ function renderTrendingDetailPanel(video) {
           onclick="generateVideoSummary('${videoId}')"
           class="bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium text-sm"
         >
-          <i class="fas fa-sparkles mr-1"></i>영상 요약 (1크레딧)
+          <i class="fas fa-sparkles mr-1"></i>영상 요약
         </button>
         <button 
           onclick="generateVideoScript('${videoId}')"
