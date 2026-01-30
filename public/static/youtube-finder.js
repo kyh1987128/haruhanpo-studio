@@ -6141,13 +6141,27 @@ document.addEventListener('DOMContentLoaded', () => {
 async function generateVideoSummary(videoId) {
   console.log('🎬 [영상 요약] 시작:', videoId);
   
-  // 크레딧 확인
-  if (!window.currentUser || window.currentUser.credit < 1) {
-    alert('❌ 크레딧이 부족합니다.\n\n영상 요약은 1크레딧이 필요합니다.\n크레딧을 충전해주세요.');
+  // 로그인 확인 (크레딧 체크 제거 - 무료 서비스)
+  if (!window.currentUser) {
+    alert('❌ 로그인이 필요합니다.\n\n영상 요약은 로그인한 회원만 무료로 이용 가능합니다.');
+    
+    // 로그인 모달 열기
+    if (typeof openAuthModal === 'function') {
+      openAuthModal('login');
+    }
     return;
   }
   
   try {
+    // 토큰 확인
+    const token = localStorage.getItem('postflow_token');
+    if (!token) {
+      alert('❌ 인증 정보가 없습니다. 다시 로그인해주세요.');
+      if (typeof openAuthModal === 'function') {
+        openAuthModal('login');
+      }
+      return;
+    }
     // 로딩 표시
     const modal = document.createElement('div');
     modal.id = 'summary-modal';
@@ -6171,7 +6185,6 @@ async function generateVideoSummary(videoId) {
     document.body.appendChild(modal);
     
     // API 호출
-    const token = localStorage.getItem('postflow_token');
     const response = await fetch('/api/youtube/summarize', {
       method: 'POST',
       headers: {
@@ -6266,13 +6279,28 @@ async function generateVideoSummary(videoId) {
 async function generateVideoScript(videoId) {
   console.log('📝 [스크립트 생성] 시작:', videoId);
   
-  // 크레딧 확인
-  if (!window.currentUser || window.currentUser.credit < 1) {
-    alert('❌ 크레딧이 부족합니다.\n\n스크립트 생성은 1크레딧이 필요합니다.\n크레딧을 충전해주세요.');
+  // 로그인 확인 (크레딧 체크 제거 - 무료 서비스)
+  if (!window.currentUser) {
+    alert('❌ 로그인이 필요합니다.\n\n스크립트 생성은 로그인한 회원만 무료로 이용 가능합니다.');
+    
+    // 로그인 모달 열기
+    if (typeof openAuthModal === 'function') {
+      openAuthModal('login');
+    }
     return;
   }
   
   try {
+    // 토큰 확인
+    const token = localStorage.getItem('postflow_token');
+    if (!token) {
+      alert('❌ 인증 정보가 없습니다. 다시 로그인해주세요.');
+      if (typeof openAuthModal === 'function') {
+        openAuthModal('login');
+      }
+      return;
+    }
+    
     // 로딩 표시
     const modal = document.createElement('div');
     modal.id = 'script-modal';
@@ -6296,7 +6324,6 @@ async function generateVideoScript(videoId) {
     document.body.appendChild(modal);
     
     // API 호출 - 새로운 자막 기반 엔드포인트 사용
-    const token = localStorage.getItem('postflow_token');
     const response = await fetch('/api/youtube/transcript-raw', {
       method: 'POST',
       headers: {
