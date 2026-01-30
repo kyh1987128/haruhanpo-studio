@@ -1010,7 +1010,7 @@ export function youtubeAnalyzerTemplate() {
               placeholder="UC... 또는 youtube.com/channel/..."
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
             />
-            <p class="text-xs text-gray-500 mt-2">💡 해당 채널의 모든 영상을 분석합니다 (최대 200개)</p>
+            <p class="text-xs text-gray-500 mt-2">💡 해당 채널의 최근 영상 50개를 분석합니다</p>
           </div>
           
           <!-- 2-3. 카테고리 검색 입력 -->
@@ -1154,16 +1154,16 @@ export function youtubeAnalyzerTemplate() {
             <p class="text-xs text-gray-500 mt-2">💡 숏츠: 60초 이하 영상</p>
           </div>
           
-          <!-- 결과 개수 -->
+          <!-- 결과 개수 (고정) -->
           <div class="mb-6">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">📋 결과 개수</h3>
-            <select id="filter-max-results" class="filter-select">
-              <option value="50">50개</option>
-              <option value="100">100개</option>
-              <option value="150">150개</option>
-              <option value="200">200개</option>
-            </select>
-            <p class="text-xs text-gray-500 mt-1">💡 최대 200개까지 검색 가능</p>
+            <div class="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-chart-bar text-blue-600"></i>
+                <h3 class="text-sm font-semibold text-gray-800">📊 분석 영상 수</h3>
+              </div>
+              <p class="text-lg font-bold text-blue-600 mt-2">상위 50개 영상</p>
+              <p class="text-xs text-gray-600 mt-1">🎯 AI가 엄선한 상위 50개 영상을 분석해드립니다</p>
+            </div>
           </div>
           
           <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
@@ -1241,7 +1241,7 @@ export function youtubeAnalyzerTemplate() {
                 <td colspan="10" class="text-center py-12 text-gray-400">
                   <i class="fas fa-search text-4xl mb-3"></i>
                   <p class="text-lg">키워드를 입력하여 검색을 시작하세요</p>
-                  <p class="text-sm mt-1">최대 200개의 영상을 분석합니다</p>
+                  <p class="text-sm mt-1">🎯 상위 50개의 영상을 분석합니다</p>
                 </td>
               </tr>
             </tbody>

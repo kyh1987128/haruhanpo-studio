@@ -2092,7 +2092,7 @@ async function searchMarket200(keyword = null) {
     return;
   }
   
-  console.log('🔍 [마켓 탐색] 200개 검색 시작:', keyword);
+  console.log('🔍 [마켓 탐색] 50개 검색 시작:', keyword);
   
   // 필터 값 가져오기
   const filterOrder = document.getElementById('filter-order')?.value || 'relevance';
@@ -2139,12 +2139,12 @@ async function searchMarket200(keyword = null) {
   try {
     let pageToken = null;
     let totalCollected = 0;
-    const maxResults = 200;
+    const maxResults = 50; // 50개 고정
     const perPage = 50; // 한 번에 50개씩
     
-    // 최대 4번 반복 (50 × 4 = 200)
-    for (let i = 0; i < 4; i++) {
-      console.log(`📥 [마켓 탐색] 페이지 ${i + 1}/4 수집 중...`);
+    // 1번만 호출 (50개 고정)
+    for (let i = 0; i < 1; i++) {
+      console.log(`📥 [마켓 탐색] 상위 50개 수집 중...`);
       
       const searchBody = { 
         keyword, 
@@ -4451,14 +4451,14 @@ async function handleChannelSearch() {
     
     console.log(`✅ [채널 정보 수신] ID: ${actualChannelId}`);
     
-    // 채널 영상 가져오기 (최대 200개, 4페이지)
+    // 채널 영상 가져오기 (최대 50개, 1페이지)
     let totalCollected = 0;
     let pageToken = null;
-    const maxIterations = 4;
+    const maxIterations = 1; // 50개 고정
     const perPage = 50;
     
     for (let i = 0; i < maxIterations; i++) {
-      console.log(`📡 [채널 영상 수집] 페이지 ${i + 1}/${maxIterations}`);
+      console.log(`📡 [채널 영상 수집] 상위 50개 수집 중...`);
       
       const searchBody = {
         channelId: actualChannelId,
@@ -4571,14 +4571,14 @@ async function handleCategorySearch() {
     
     console.log(`📡 [카테고리 인기 영상] categoryId: ${categoryId}, region: ${regionCode}`);
     
-    // 카테고리 영상 가져오기 (최대 200개, 4페이지)
+    // 카테고리 영상 가져오기 (최대 50개, 1페이지)
     let totalCollected = 0;
     let pageToken = null;
-    const maxIterations = 4;
+    const maxIterations = 1; // 50개 고정
     const perPage = 50;
     
     for (let i = 0; i < maxIterations; i++) {
-      console.log(`📡 [카테고리 영상 수집] 페이지 ${i + 1}/${maxIterations}`);
+      console.log(`📡 [카테고리 영상 수집] 상위 50개 수집 중...`);
       
       const searchBody = {
         categoryId: categoryId,
