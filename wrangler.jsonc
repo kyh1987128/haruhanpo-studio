@@ -14,7 +14,28 @@
       "binding": "YOUTUBE_CACHE",
       "id": "76994c222b2644ff9fb9646e30115105"
     }
-  ]
+  ],
+  
+  // D1 데이터베이스 설정 (트렌드 분석용)
+  // 주의: 프로덕션 환경에서는 Cloudflare Dashboard에서 D1 데이터베이스를 생성하고
+  // 아래 database_id를 실제 ID로 교체해야 합니다
+  "d1_databases": [
+    {
+      "binding": "TRENDS_DB",
+      "database_name": "youtube-trends",
+      "database_id": "local-db-for-development",
+      "preview_database_id": "local-db-for-development"
+    }
+  ],
+  
+  // Cron Job 설정 (4시간마다 트렌드 데이터 수집)
+  // 주의: Cloudflare Pages에서는 Cron Triggers가 지원되지 않습니다
+  // 대신 Cloudflare Workers에서 scheduled 이벤트를 사용해야 합니다
+  // 또는 외부 Cron 서비스(GitHub Actions, etc.)를 사용하세요
+  "triggers": {
+    "crons": ["0 */4 * * *"]
+  }
+  
   // 환경 변수는 Cloudflare Pages Dashboard에서 설정:
   // - YOUTUBE_API_KEY
   // - OPENAI_API_KEY

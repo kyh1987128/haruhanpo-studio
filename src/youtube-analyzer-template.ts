@@ -904,36 +904,31 @@ export function youtubeAnalyzerTemplate() {
   ${header}
 
   <!-- ========================================
-       Phase 6: 3-Tab 네비게이션 (고급 분석 추가)
+       3-Tab 네비게이션 (단순화)
        ======================================== -->
   <nav class="youtube-finder-subnav">
     <div class="subnav-container">
-      <div class="subnav-item active" data-tab="market-explorer">
+      <div class="subnav-item active" data-tab="video-finder">
         <span class="subnav-icon">🔍</span>
-        <span class="subnav-text">마켓 탐색 & 분석</span>
+        <span class="subnav-text">영상 발굴</span>
       </div>
       
-      <div class="subnav-item" data-tab="trending">
+      <div class="subnav-item" data-tab="trends-insights">
         <span class="subnav-icon">🔥</span>
-        <span class="subnav-text">인기 영상</span>
+        <span class="subnav-text">트렌드 인사이트</span>
       </div>
       
-      <div class="subnav-item" data-tab="advanced-analytics">
-        <span class="subnav-icon">🚀</span>
-        <span class="subnav-text">고급 분석</span>
-      </div>
-      
-      <div class="subnav-item" data-tab="channel-tracking">
+      <div class="subnav-item" data-tab="channel-analysis">
         <span class="subnav-icon">📊</span>
-        <span class="subnav-text">관심 채널 추적 & 분석</span>
+        <span class="subnav-text">채널 분석</span>
       </div>
     </div>
   </nav>
 
   <!-- ========================================
-       Phase 5A: 3단 레이아웃 - 마켓 탐색 & 분석
+       Tab 1: 영상 발굴 (기존 마켓 탐색)
        ======================================== -->
-  <div id="tab-market-explorer" class="tab-content">
+  <div id="tab-video-finder" class="tab-content">
     <div class="three-column-layout">
       
       <!-- 좌측 필터 사이드바 -->
@@ -1355,139 +1350,114 @@ export function youtubeAnalyzerTemplate() {
     </div> <!-- tab-market-explorer 닫기 -->
 
     <!-- 탭 콘텐츠: 인기 영상 -->
-    <div id="tab-trending" class="tab-content hidden">
-      <!-- 필터 영역 -->
-      <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
-        <h3 class="text-lg font-bold text-gray-800 mb-4">
-          <i class="fas fa-fire mr-2" style="color: #FF6B6B;"></i>
-          국가별 인기 영상
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <!-- 국가 선택 -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">국가</label>
-            <select id="trending-region" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-              <option value="KR">🇰🇷 한국</option>
-              <option value="US">🇺🇸 미국</option>
-              <option value="JP">🇯🇵 일본</option>
-              <option value="GB">🇬🇧 영국</option>
-              <option value="CA">🇨🇦 캐나다</option>
-              <option value="AU">🇦🇺 호주</option>
-              <option value="DE">🇩🇪 독일</option>
-              <option value="FR">🇫🇷 프랑스</option>
-              <option value="IN">🇮🇳 인도</option>
-              <option value="BR">🇧🇷 브라질</option>
-              <option value="MX">🇲🇽 멕시코</option>
-              <option value="ES">🇪🇸 스페인</option>
-              <option value="IT">🇮🇹 이탈리아</option>
-              <option value="RU">🇷🇺 러시아</option>
-              <option value="TH">🇹🇭 태국</option>
-              <option value="VN">🇻🇳 베트남</option>
-              <option value="ID">🇮🇩 인도네시아</option>
-              <option value="MY">🇲🇾 말레이시아</option>
-              <option value="SG">🇸🇬 싱가포르</option>
-              <option value="PH">🇵🇭 필리핀</option>
-            </select>
+    <!-- ========================================
+         Tab 2: 트렌드 인사이트 (Supabase 연동)
+         ======================================== -->
+    <div id="tab-trends-insights" class="tab-content hidden">
+      <div class="max-w-7xl mx-auto p-6">
+        <!-- 헤더 -->
+        <div class="mb-8">
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">
+            <i class="fas fa-fire mr-3" style="color: #FF6B6B;"></i>
+            트렌드 인사이트
+          </h1>
+          <p class="text-gray-600">
+            실시간 급상승 키워드와 카테고리별 인기 영상을 확인하세요 
+            <span class="text-sm text-gray-500">(4시간마다 자동 업데이트)</span>
+          </p>
+        </div>
+
+        <!-- 급상승 키워드 섹션 -->
+        <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold text-gray-800">
+              <i class="fas fa-rocket mr-2" style="color: #FF6B6B;"></i>
+              실시간 급상승 키워드
+            </h2>
+            <div id="keywords-last-update" class="text-sm text-gray-500">
+              로딩 중...
+            </div>
           </div>
 
-          <!-- 카테고리 선택 -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">카테고리</label>
-            <select id="trending-category" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-              <option value="">전체</option>
-              <option value="10">음악</option>
-              <option value="20">게임</option>
-              <option value="22">브이로그</option>
-              <option value="23">코미디</option>
-              <option value="24">엔터테인먼트</option>
-              <option value="25">뉴스 & 정치</option>
-              <option value="26">하우투 & 스타일</option>
-              <option value="27">교육</option>
-              <option value="28">과학 & 기술</option>
-            </select>
+          <!-- 로딩 상태 -->
+          <div id="keywords-loading" class="text-center py-8">
+            <i class="fas fa-spinner fa-spin text-3xl text-gray-400 mb-3"></i>
+            <p class="text-gray-500">급상승 키워드를 불러오는 중...</p>
           </div>
 
-          <!-- 결과 수 -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">결과 수</label>
-            <select id="trending-max-results" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-              <option value="10">10개</option>
-              <option value="20" selected>20개</option>
-              <option value="50">50개</option>
-            </select>
+          <!-- 키워드 그리드 -->
+          <div id="keywords-grid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- JavaScript로 동적 생성 -->
+          </div>
+
+          <!-- 빈 상태 -->
+          <div id="keywords-empty" class="hidden text-center py-8 text-gray-400">
+            <i class="fas fa-exclamation-circle text-4xl mb-3"></i>
+            <p>급상승 키워드가 없습니다.</p>
+            <p class="text-sm mt-2">데이터가 수집되면 자동으로 표시됩니다.</p>
           </div>
         </div>
 
-        <button 
-          id="trending-load-btn"
-          class="mt-4 w-full px-6 py-3 text-white font-semibold rounded-lg transition"
-          style="background: #FF6B6B;"
-          onmouseover="this.style.background='#FF5252'" 
-          onmouseout="this.style.background='#FF6B6B'"
-        >
-          <i class="fas fa-fire mr-2"></i>
-          인기 영상 불러오기
-        </button>
-      </div>
-
-      <!-- 인기 영상 목록 (2열 레이아웃) -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- 왼쪽: 테이블 (2/3) -->
-        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border p-6">
+        <!-- 카테고리별 인기 영상 섹션 -->
+        <div class="bg-white rounded-xl shadow-sm border p-6">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-bold text-gray-800">
-              <i class="fas fa-list mr-2" style="color: #FF6B6B;"></i>
-              인기 영상 목록
-            </h3>
-            <span id="trending-result-count" class="text-sm text-gray-500">0개</span>
+            <h2 class="text-xl font-bold text-gray-800">
+              <i class="fas fa-chart-line mr-2" style="color: #00B87D;"></i>
+              카테고리별 인기 영상
+            </h2>
+            <div id="videos-last-update" class="text-sm text-gray-500">
+              로딩 중...
+            </div>
           </div>
-          
-          <!-- 로딩 표시 -->
-          <div id="trending-loading" class="hidden text-center py-8">
+
+          <!-- 카테고리 탭 -->
+          <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
+            <button class="category-tab-btn active px-4 py-2 rounded-lg text-sm font-medium transition" data-category="all">
+              전체
+            </button>
+            <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="10">
+              음악
+            </button>
+            <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="20">
+              게임
+            </button>
+            <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="22">
+              브이로그
+            </button>
+            <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="23">
+              코미디
+            </button>
+            <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="24">
+              엔터테인먼트
+            </button>
+            <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="25">
+              뉴스
+            </button>
+          </div>
+
+          <!-- 로딩 상태 -->
+          <div id="videos-loading" class="text-center py-8">
             <i class="fas fa-spinner fa-spin text-3xl text-gray-400 mb-3"></i>
             <p class="text-gray-500">인기 영상을 불러오는 중...</p>
           </div>
 
-          <!-- 테이블 -->
-          <div id="trending-table-container" class="overflow-x-auto">
-            <table class="w-full">
-              <thead class="bg-gray-50 border-b">
-                <tr>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">순위</th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">영상</th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">채널</th>
-                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">조회수</th>
-                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">좋아요</th>
-                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">댓글</th>
-                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">게시일</th>
-                  <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">길이</th>
-                </tr>
-              </thead>
-              <tbody id="trending-table-body">
-                <tr>
-                  <td colspan="8" class="px-4 py-8 text-center text-gray-500">
-                    <i class="fas fa-fire text-3xl mb-3 text-gray-300"></i>
-                    <p>국가를 선택하고 '인기 영상 불러오기' 버튼을 클릭하세요</p>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <!-- 영상 리스트 -->
+          <div id="videos-list" class="hidden space-y-3">
+            <!-- JavaScript로 동적 생성 -->
           </div>
-        </div>
 
-        <!-- 오른쪽: 상세 패널 (1/3) -->
-        <div class="lg:col-span-1">
-          <div id="trending-detail-panel" class="bg-white rounded-xl shadow-sm border p-6 sticky top-4">
-            <div class="text-center py-12 text-gray-400">
-              <i class="fas fa-mouse-pointer text-4xl mb-3"></i>
-              <p class="text-sm">영상을 클릭하여<br/>상세 정보를 확인하세요</p>
-            </div>
+          <!-- 빈 상태 -->
+          <div id="videos-empty" class="hidden text-center py-8 text-gray-400">
+            <i class="fas fa-video-slash text-4xl mb-3"></i>
+            <p>인기 영상이 없습니다.</p>
           </div>
         </div>
       </div>
     </div>
 
-      <!-- 탭 콘텐츠: 채널 분석 -->
+    <!-- ========================================
+         Tab 3: 채널 분석
+         ======================================== -->
       <div id="tab-channel-analysis" class="tab-content hidden">
         <!-- 채널 검색 영역 -->
         <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
@@ -2958,6 +2928,9 @@ export function youtubeAnalyzerTemplate() {
     </main>
   </div>
 
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
   <!-- 공통 인증 및 크레딧 시스템 (Supabase 초기화 포함) -->
   <script src="/static/app-v3-final.js?v=24.0.7"></script>
   
@@ -2967,7 +2940,10 @@ export function youtubeAnalyzerTemplate() {
   <!-- Phase 2: YouTube Finder 검색 기능 -->
   <script src="/static/youtube-finder.js"></script>
   
-  <!-- Phase 5A: 탭 전환 스크립트 (2개 탭) -->
+  <!-- Phase 2.5: Trends Insights (Supabase 연동) -->
+  <script src="/static/youtube-trends.js"></script>
+  
+  <!-- Phase 5A: 3-Tab 전환 스크립트 -->
   <script>
     // 서브 네비게이션 탭 전환
     document.querySelectorAll('.subnav-item').forEach(item => {
@@ -2981,30 +2957,17 @@ export function youtubeAnalyzerTemplate() {
         // 탭 콘텐츠 표시/숨김
         document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
         
-        // 새로운 탭 구조에 맞게 매핑
-        if (tab === 'market-explorer') {
-          document.getElementById('tab-market-explorer')?.classList.remove('hidden');
-        } else if (tab === 'trending') {
-          document.getElementById('tab-trending')?.classList.remove('hidden');
-          // 인기 영상 자동 로드 (한국 기본값)
-          if (typeof loadTrendingVideos === 'function') {
-            loadTrendingVideos();
+        // 3개 탭 구조에 맞게 매핑
+        if (tab === 'video-finder') {
+          document.getElementById('tab-video-finder')?.classList.remove('hidden');
+        } else if (tab === 'trends-insights') {
+          document.getElementById('tab-trends-insights')?.classList.remove('hidden');
+          // 트렌드 데이터 자동 로드
+          if (typeof initTrendsInsights === 'function') {
+            initTrendsInsights();
           }
         } else if (tab === 'channel-analysis') {
           document.getElementById('tab-channel-analysis')?.classList.remove('hidden');
-        } else if (tab === 'content-strategy') {
-          document.getElementById('tab-content-strategy')?.classList.remove('hidden');
-        } else if (tab === 'performance-tracking') {
-          document.getElementById('tab-performance-tracking')?.classList.remove('hidden');
-        } else if (tab === 'advanced-analytics') {
-          document.getElementById('tab-advanced-analytics')?.classList.remove('hidden');
-        } else if (tab === 'channel-tracking') {
-          // 'channel-tracking' 탭은 기존 'my-channel' ID를 사용
-          document.getElementById('tab-my-channel')?.classList.remove('hidden');
-          // 즐겨찾기 채널 목록 로드
-          if (typeof loadFavoriteChannels === 'function') {
-            loadFavoriteChannels();
-          }
         }
       });
     });

@@ -5513,6 +5513,10 @@ window.suggestKeywordsForContent = suggestKeywordsForContent;
 const SUPABASE_URL = 'https://gmjbsndricdogtqsovnb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtamJzbmRyaWNkb2d0cXNvdm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyNzE1ODksImV4cCI6MjA4Mjg0NzU4OX0.naZnsBPYd84pdLoLAh-mEz_qerl5UakYs2FfVumnEJw';
 
+// 환경 변수를 window 객체에 노출 (다른 스크립트에서 사용)
+window.SUPABASE_URL = SUPABASE_URL;
+window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
+
 // Supabase 클라이언트 (CDN에서 로드)
 let supabaseClient = null;
 
