@@ -2696,18 +2696,12 @@ function renderDetailPanel(video) {
       </div>
       
       <!-- AI 분석 버튼 -->
-      <div class="grid grid-cols-2 gap-3 mb-4">
+      <div class="mb-4">
         <button 
           onclick="generateVideoSummary('${videoId}')"
-          class="bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium text-sm"
+          class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium text-sm"
         >
           <i class="fas fa-sparkles mr-1"></i>영상 요약
-        </button>
-        <button 
-          onclick="generateVideoScript('${videoId}')"
-          class="bg-gradient-to-r from-purple-500 to-purple-600 text-white py-2 px-4 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all font-medium text-sm"
-        >
-          <i class="fas fa-file-alt mr-1"></i>스크립트 생성
         </button>
       </div>
       
@@ -6052,18 +6046,12 @@ function renderTrendingDetailPanel(video) {
       </div>
       
       <!-- AI 분석 버튼 -->
-      <div class="grid grid-cols-2 gap-3 mb-4">
+      <div class="mb-4">
         <button 
           onclick="generateVideoSummary('${videoId}')"
-          class="bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium text-sm"
+          class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium text-sm"
         >
           <i class="fas fa-sparkles mr-1"></i>영상 요약
-        </button>
-        <button 
-          onclick="generateVideoScript('${videoId}')"
-          class="bg-gradient-to-r from-purple-500 to-purple-600 text-white py-2 px-4 rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all font-medium text-sm"
-        >
-          <i class="fas fa-file-alt mr-1"></i>스크립트 생성
         </button>
       </div>
       
@@ -6276,6 +6264,13 @@ async function generateVideoSummary(videoId) {
   }
 }
 
+// ========================================
+// ❌ DEPRECATED: 스크립트 생성 기능 (YouTube 정책으로 비활성화)
+// ========================================
+// YouTube의 서버 IP 대역 차단으로 인해 자막 추출이 불가능합니다.
+// 코드는 향후 복원 가능성을 위해 보존합니다.
+// ========================================
+/*
 async function generateVideoScript(videoId) {
   console.log('📝 [스크립트 생성] 시작:', videoId);
   
@@ -6471,8 +6466,9 @@ async function generateVideoScript(videoId) {
     }
   }
 }
+*/
 
 // 전역 함수 노출
 window.generateVideoSummary = generateVideoSummary;
-window.generateVideoScript = generateVideoScript;
+// window.generateVideoScript = generateVideoScript;  // ❌ 비활성화
 
