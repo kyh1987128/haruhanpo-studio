@@ -2559,44 +2559,14 @@ app.post('/api/youtube/transcript-raw', authMiddleware, async (c) => {
       }, 400)
     }
 
-    // 2. 인증된 사용자 정보 가져오기
+    // 2. 인증된 사용자 정보 가져오기 (authMiddleware에서 이미 검증됨)
     const userId = c.get('userId')
 
-    // 3. Supabase 클라이언트 생성 (히스토리 저장용)
-    const supabase = createClient(
-      c.env.SUPABASE_URL,
-      c.env.SUPABASE_SERVICE_KEY
-    )
+    // ✅ 무료 서비스이므로 Supabase 사용자 조회 불필요
+    // authMiddleware에서 이미 사용자 인증 완료
+    // userId가 있으면 유효한 사용자임
 
-    // 4. 사용자 정보 조회 (크레딧 체크 없음 - 무료)
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('credit')
-      .eq('id', userId)
-      .single()
-
-    if (userError || !user) {
-      return c.json<ApiResponse<null>>({
-        success: false,
-        error: {
-          code: 'USER_NOT_FOUND',
-          message: '사용자 정보를 찾을 수 없습니다.'
-        }
-      }, 404)
-    }
-
-    // ❌ 크레딧 확인 제거 (무료 제공)
-    // if (user.credit < 1) {
-    //   return c.json<ApiResponse<null>>({
-    //     success: false,
-    //     error: {
-    //       code: 'INSUFFICIENT_CREDIT',
-    //       message: '크레딧이 부족합니다.'
-    //     }
-    //   }, 403)
-    // }
-
-    console.log('🎬 [자막 기반 스크립트 생성 시작 - 무료]', { videoId, lang })
+    console.log('🎬 [자막 기반 스크립트 생성 시작 - 무료]', { videoId, lang, userId })
 
     // 5. YouTube 공식 자막 API 호출
     let transcriptData = null
