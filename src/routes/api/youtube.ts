@@ -2542,6 +2542,28 @@ app.post('/api/youtube/transcript', authMiddleware, async (c) => {
 })
 
 // ========================================
+// 헬퍼 함수: VTT 시간 파싱
+// ========================================
+function parseVttTime(timeStr: string): number {
+  // 00:00:00.000 또는 00:00.000 형식을 밀리초로 변환
+  const parts = timeStr.split(':')
+  let hours = 0, minutes = 0, seconds = 0
+  
+  if (parts.length === 3) {
+    hours = parseInt(parts[0])
+    minutes = parseInt(parts[1])
+    seconds = parseFloat(parts[2])
+  } else if (parts.length === 2) {
+    minutes = parseInt(parts[0])
+    seconds = parseFloat(parts[1])
+  } else {
+    seconds = parseFloat(parts[0])
+  }
+  
+  return Math.floor((hours * 3600 + minutes * 60 + seconds) * 1000)
+}
+
+// ========================================
 // Phase 8-2: YouTube 공식 자막 기반 스크립트 생성 (신규)
 // ========================================
 app.post('/api/youtube/transcript-raw', authMiddleware, async (c) => {
@@ -2568,62 +2590,205 @@ app.post('/api/youtube/transcript-raw', authMiddleware, async (c) => {
 
     console.log('🎬 [자막 기반 스크립트 생성 시작 - 무료]', { videoId, lang, userId })
 
-    // 5. YouTube 공식 자막 API 호출
-    let transcriptData = null
-    let captionUrl = `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${lang}&fmt=json3`
-
-    console.log('📝 [자막 API 호출]', captionUrl)
-
-    let response = await fetch(captionUrl)
-
-    // 한국어 자막이 없으면 자동 생성 자막 시도
-    if (!response.ok || response.status === 404) {
-      console.log('⚠️ [한국어 자막 없음] 자동 생성 자막 시도')
-      captionUrl = `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${lang}&fmt=json3&kind=asr`
-      response = await fetch(captionUrl)
-    }
-
-    // 여전히 실패하면 영어 자막 시도
-    if (!response.ok || response.status === 404) {
-      console.log('⚠️ [자동 생성 자막 없음] 영어 자막 시도')
-      captionUrl = `https://www.youtube.com/api/timedtext?v=${videoId}&lang=en&fmt=json3`
-      response = await fetch(captionUrl)
-    }
-
-    if (!response.ok) {
-      return c.json<ApiResponse<null>>({
-        success: false,
-        error: {
-          code: 'TRANSCRIPT_NOT_FOUND',
-          message: '이 영상에는 사용 가능한 자막이 없습니다.'
-        }
-      }, 404)
-    }
-
-    // ⭐ 빈 응답 체크 추가
-    const responseText = await response.text()
-    if (!responseText || responseText.trim() === '') {
-      console.warn('⚠️ [빈 응답] YouTube API가 빈 문자열 반환')
-      return c.json<ApiResponse<null>>({
-        success: false,
-        error: {
-          code: 'TRANSCRIPT_EMPTY_RESPONSE',
-          message: '자막 데이터가 비어있습니다. 이 영상은 자막이 제공되지 않을 수 있습니다.'
-        }
-      }, 404)
-    }
-
+    // 3. KV 캐시 확인
+    const cacheKey = `transcript:${videoId}:${lang}`
+    let cachedData: any = null
+    
     try {
-      transcriptData = JSON.parse(responseText)
-    } catch (err) {
-      console.error('❌ [JSON 파싱 실패]', err)
+      if (c.env.YOUTUBE_CACHE) {
+        const cached = await c.env.YOUTUBE_CACHE.get(cacheKey, 'json')
+        if (cached) {
+          console.log('✅ [캐시 HIT] 자막 캐시 반환:', cacheKey)
+          return c.json<ApiResponse<any>>({
+            success: true,
+            data: {
+              ...cached,
+              source: 'cache',
+              cached: true
+            }
+          })
+        }
+        console.log('⚠️ [캐시 MISS] 새로 자막 추출:', cacheKey)
+      }
+    } catch (cacheError) {
+      console.error('⚠️ [캐시 오류] KV 읽기 실패:', cacheError)
+      // 캐시 실패해도 계속 진행
+    }
+
+    // 5. YouTube 공식 자막 API 호출 - 다중 시도 로직
+    const captionHeaders = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': '*/*',
+      'Referer': 'https://www.youtube.com/'
+    }
+
+    const attempts = [
+      { lang: lang || 'ko', fmt: 'json3', kind: '', desc: `${lang || 'ko'} 공식` },
+      { lang: lang || 'ko', fmt: 'json3', kind: 'asr', desc: `${lang || 'ko'} 자동생성` },
+      { lang: 'en', fmt: 'json3', kind: '', desc: '영어 공식' },
+      { lang: 'en', fmt: 'srv3', kind: '', desc: '영어 SRV3' },
+      { lang: 'en', fmt: 'vtt', kind: '', desc: '영어 VTT' }
+    ]
+
+    let transcriptData = null
+    let successFormat = ''
+
+    for (const attempt of attempts) {
+      const kindParam = attempt.kind ? `&kind=${attempt.kind}` : ''
+      const captionUrl = `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${attempt.lang}&fmt=${attempt.fmt}${kindParam}`
+      
+      console.log(`🔍 [자막 시도] ${attempt.desc} - ${captionUrl}`)
+
+      try {
+        const response = await fetch(captionUrl, { headers: captionHeaders })
+        
+        if (!response.ok) {
+          console.log(`❌ [자막 실패] HTTP ${response.status}: ${attempt.desc}`)
+          continue
+        }
+
+        const responseText = await response.text()
+        
+        // 빈 응답 체크 강화
+        if (!responseText || responseText.trim().length < 10) {
+          console.log(`⚠️ [빈 응답] ${attempt.desc} - 크기: ${responseText?.length || 0}바이트`)
+          continue
+        }
+
+        // 포맷별 파싱
+        if (attempt.fmt === 'json3') {
+          // JSON3 포맷 파싱
+          try {
+            const data = JSON.parse(responseText)
+            
+            // 이벤트 배열 검증
+            if (!data.events || !Array.isArray(data.events) || data.events.length === 0) {
+              console.log(`⚠️ [유효한 이벤트 없음] ${attempt.desc}`)
+              continue
+            }
+            
+            transcriptData = data
+            successFormat = `${attempt.lang}-${attempt.fmt}${attempt.kind ? '-' + attempt.kind : ''}`
+            console.log(`✅ [자막 성공] ${attempt.desc} - 이벤트 ${data.events.length}개`)
+            break
+          } catch (parseError) {
+            console.log(`❌ [JSON 파싱 실패] ${attempt.desc}:`, parseError)
+            continue
+          }
+        } else if (attempt.fmt === 'srv3') {
+          // SRV3 (XML) 포맷 파싱
+          try {
+            // SRV3는 XML 형식: <text start="0.0" dur="2.5">텍스트</text>
+            const textMatches = responseText.matchAll(/<text[^>]*start="([^"]+)"[^>]*dur="([^"]+)"[^>]*>([^<]+)<\/text>/g)
+            const events: any[] = []
+            
+            for (const match of textMatches) {
+              const startTime = parseFloat(match[1])
+              const duration = parseFloat(match[2])
+              const text = match[3]
+                .replace(/&amp;/g, '&')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&quot;/g, '"')
+                .replace(/&#39;/g, "'")
+              
+              events.push({
+                tStartMs: Math.floor(startTime * 1000),
+                dDurationMs: Math.floor(duration * 1000),
+                segs: [{ utf8: text }]
+              })
+            }
+            
+            if (events.length === 0) {
+              console.log(`⚠️ [유효한 텍스트 없음] ${attempt.desc}`)
+              continue
+            }
+            
+            transcriptData = { events }
+            successFormat = `${attempt.lang}-${attempt.fmt}`
+            console.log(`✅ [자막 성공] ${attempt.desc} - 이벤트 ${events.length}개`)
+            break
+          } catch (parseError) {
+            console.log(`❌ [SRV3 파싱 실패] ${attempt.desc}:`, parseError)
+            continue
+          }
+        } else if (attempt.fmt === 'vtt') {
+          // VTT (WebVTT) 포맷 파싱
+          try {
+            // VTT 형식:
+            // WEBVTT
+            // 
+            // 00:00:00.000 --> 00:00:02.500
+            // 텍스트
+            const lines = responseText.split('\n')
+            const events: any[] = []
+            let i = 0
+            
+            // WEBVTT 헤더 건너뛰기
+            while (i < lines.length && !lines[i].includes('-->')) {
+              i++
+            }
+            
+            while (i < lines.length) {
+              const line = lines[i].trim()
+              
+              if (line.includes('-->')) {
+                const [startStr, endStr] = line.split('-->').map(s => s.trim())
+                const startMs = parseVttTime(startStr)
+                const endMs = parseVttTime(endStr)
+                
+                // 다음 줄이 텍스트
+                i++
+                let text = ''
+                while (i < lines.length && lines[i].trim() && !lines[i].includes('-->')) {
+                  text += lines[i].trim() + ' '
+                  i++
+                }
+                
+                if (text.trim()) {
+                  events.push({
+                    tStartMs: startMs,
+                    dDurationMs: endMs - startMs,
+                    segs: [{ utf8: text.trim() }]
+                  })
+                }
+              }
+              i++
+            }
+            
+            if (events.length === 0) {
+              console.log(`⚠️ [유효한 자막 없음] ${attempt.desc}`)
+              continue
+            }
+            
+            transcriptData = { events }
+            successFormat = `${attempt.lang}-${attempt.fmt}`
+            console.log(`✅ [자막 성공] ${attempt.desc} - 이벤트 ${events.length}개`)
+            break
+          } catch (parseError) {
+            console.log(`❌ [VTT 파싱 실패] ${attempt.desc}:`, parseError)
+            continue
+          }
+        } else {
+          console.log(`⚠️ [포맷 미지원] ${attempt.fmt} 포맷은 현재 파싱하지 않음`)
+          continue
+        }
+      } catch (error: any) {
+        console.log(`🚨 [자막 요청 오류] ${attempt.desc}:`, error.message)
+        continue
+      }
+    }
+
+    // 모든 시도 실패
+    if (!transcriptData) {
+      console.error('❌ [자막 추출 실패] 모든 포맷 시도 실패')
       return c.json<ApiResponse<null>>({
         success: false,
         error: {
-          code: 'TRANSCRIPT_PARSE_ERROR',
-          message: '자막 데이터를 처리할 수 없습니다.'
+          code: 'TRANSCRIPT_NOT_AVAILABLE',
+          message: '이 영상은 자막 외부 접근이 제한됩니다. 뉴스나 강의 영상에서 시도해보세요.'
         }
-      }, 500)
+      }, 400)
     }
 
     // 6. 자막 데이터 파싱 및 포맷팅
@@ -2649,6 +2814,57 @@ app.post('/api/youtube/transcript-raw', authMiddleware, async (c) => {
         }
       }, 500)
     }
+
+    // 6.5. 영어 자막인 경우 한국어로 번역 (사용자가 한국어를 원했지만 영어만 있는 경우)
+    let translatedTranscript = transcript
+    const shouldTranslate = (lang === 'ko' || !lang) && successFormat.startsWith('en-')
+    
+    if (shouldTranslate && c.env.GEMINI_API_KEY) {
+      console.log('🌐 [번역 시작] 영어 자막을 한국어로 번역 중...')
+      
+      try {
+        // Gemini API를 사용한 번역
+        const geminiResponse = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${c.env.GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{
+                  text: `다음 YouTube 자막을 자연스러운 한국어로 번역해주세요. 타임스탬프 형식 [분:초]는 그대로 유지하고, 내용만 번역하세요:\n\n${transcript}`
+                }]
+              }],
+              generationConfig: {
+                temperature: 0.3,
+                maxOutputTokens: 8000
+              }
+            })
+          }
+        )
+        
+        if (geminiResponse.ok) {
+          const geminiData = await geminiResponse.json()
+          const translatedText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text
+          
+          if (translatedText && translatedText.length > 100) {
+            translatedTranscript = translatedText.trim()
+            console.log('✅ [번역 완료] 한국어 자막 생성 성공')
+            successFormat += '-translated'
+          } else {
+            console.log('⚠️ [번역 실패] 번역 결과가 너무 짧음, 원본 사용')
+          }
+        } else {
+          console.log('⚠️ [번역 실패] Gemini API 오류, 원본 사용')
+        }
+      } catch (translateError) {
+        console.error('⚠️ [번역 오류]', translateError)
+        // 번역 실패해도 원본 자막 사용
+      }
+    }
+
+    // 최종 자막 사용 (번역되었으면 번역본, 아니면 원본)
+    const finalTranscript = translatedTranscript
 
     // 7. YouTube 영상 정보 가져오기
     const videoInfo = await fetch(
@@ -2684,20 +2900,39 @@ app.post('/api/youtube/transcript-raw', authMiddleware, async (c) => {
     console.log('✅ [자막 기반 스크립트 생성 완료 - 무료]', { 
       videoId, 
       title, 
-      transcriptLength: transcript.length
-      // remainingCredit 제거
+      transcriptLength: finalTranscript.length,
+      format: successFormat,
+      translated: successFormat.includes('translated')
     })
 
-    // 9. 응답 반환
+    // 8. 결과 데이터 준비
+    const resultData = {
+      transcript: finalTranscript,
+      videoId,
+      title,
+      format: successFormat,
+      source: 'youtube-captions',
+      timestamp: new Date().toISOString()
+    }
+
+    // 9. KV 캐시 저장 (비동기, 실패해도 응답에 영향 없음)
+    try {
+      if (c.env.YOUTUBE_CACHE) {
+        // 7일(604800초) 동안 캐시 유지
+        await c.env.YOUTUBE_CACHE.put(cacheKey, JSON.stringify(resultData), {
+          expirationTtl: 604800 // 7 days
+        })
+        console.log('✅ [캐시 저장] KV에 자막 캐시 저장:', cacheKey)
+      }
+    } catch (cacheError) {
+      console.error('⚠️ [캐시 저장 실패] KV 쓰기 오류:', cacheError)
+      // 캐시 저장 실패해도 응답은 정상 반환
+    }
+
+    // 10. 응답 반환
     return c.json<ApiResponse<any>>({
       success: true,
-      data: {
-        transcript,
-        videoId,
-        title,
-        // remainingCredit 제거
-        source: 'youtube-captions'
-      }
+      data: resultData
     })
 
   } catch (error: any) {

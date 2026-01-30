@@ -6316,12 +6316,40 @@ async function generateVideoScript(videoId) {
           </div>
           <div id="script-content" class="text-center py-12">
             <i class="fas fa-spinner fa-spin text-4xl text-purple-500 mb-4"></i>
-            <p class="text-gray-600">AI가 스크립트를 생성하고 있습니다...</p>
+            <p class="text-gray-600 text-lg font-semibold mb-2">자막 추출 중...</p>
+            <div id="progress-text" class="text-sm text-gray-500">
+              <p>🔍 단계 1/3: 한국어 공식 자막 검색 중...</p>
+            </div>
           </div>
         </div>
       </div>
     `;
     document.body.appendChild(modal);
+    
+    // 진행 상황 업데이트 함수
+    const updateProgress = (step, message) => {
+      const progressEl = document.getElementById('progress-text');
+      if (progressEl) {
+        progressEl.innerHTML = `<p>${message}</p>`;
+      }
+    };
+    
+    // 진행 상황 시뮬레이션 (실제 API 진행률은 서버에서 확인 불가하므로 예상 시간 기반)
+    const progressSteps = [
+      { delay: 1000, message: '🔍 단계 1/3: 한국어 공식 자막 검색 중...' },
+      { delay: 2000, message: '🔍 단계 2/3: 자동 생성 자막 확인 중...' },
+      { delay: 3000, message: '🔍 단계 3/3: 영어 자막 확인 중...' },
+      { delay: 4000, message: '🌐 번역 준비 중...' },
+      { delay: 5000, message: '📝 자막 포맷팅 중...' }
+    ];
+    
+    let progressIndex = 0;
+    const progressInterval = setInterval(() => {
+      if (progressIndex < progressSteps.length) {
+        updateProgress(progressIndex + 1, progressSteps[progressIndex].message);
+        progressIndex++;
+      }
+    }, 1000);
     
     // API 호출 - 새로운 자막 기반 엔드포인트 사용
     const response = await fetch('/api/youtube/transcript-raw', {
@@ -6334,6 +6362,9 @@ async function generateVideoScript(videoId) {
     });
     
     const result = await response.json();
+    
+    // 진행 상황 인터벌 정리
+    clearInterval(progressInterval);
     
     if (!result.success) {
       // ⭐ 에러 메시지 개선: 객체 형태 에러도 처리
@@ -6348,6 +6379,11 @@ async function generateVideoScript(videoId) {
     
     // transcript 안전성 체크
     const transcript = result.data?.transcript || result.transcript || '스크립트를 가져올 수 없습니다.';
+    
+    // 데이터 소스 확인 (캐시 또는 새로 추출)
+    const isCached = result.data?.source === 'cache' || result.data?.cached === true;
+    const format = result.data?.format || 'unknown';
+    const isTranslated = format.includes('translated');
     
     // 안전한 이스케이프 처리
     const escapedTranscript = transcript
@@ -6367,7 +6403,16 @@ async function generateVideoScript(videoId) {
     contentEl.innerHTML = `
       <div class="text-left">
         <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-4">
-          <p class="text-sm text-green-700">✅ 스크립트 생성이 완료되었습니다.</p>
+          <div class="flex items-center justify-between">
+            <p class="text-sm text-green-700">
+              ✅ 스크립트 생성이 완료되었습니다.
+            </p>
+            <div class="flex gap-2 text-xs">
+              ${isCached ? '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded">⚡ 캐시</span>' : '<span class="bg-green-100 text-green-700 px-2 py-1 rounded">🆕 새로 추출</span>'}
+              ${isTranslated ? '<span class="bg-purple-100 text-purple-700 px-2 py-1 rounded">🌐 번역됨</span>' : ''}
+              <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded">${format}</span>
+            </div>
+          </div>
         </div>
         <div class="prose max-w-none">
           <div class="whitespace-pre-wrap text-gray-800 font-mono text-sm">${safeHtmlTranscript}</div>
