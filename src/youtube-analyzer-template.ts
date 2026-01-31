@@ -937,33 +937,65 @@ export function youtubeAnalyzerTemplate() {
           <h2 class="font-bold text-lg mb-4">🔍 검색 & 필터</h2>
           
           <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-          <!-- 1. 검색 방식 선택 (드롭다운) -->
+          <!-- 1. 키워드 검색 -->
           <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
           <div class="mb-6 pb-6 border-b border-gray-200">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">📍 검색 방식</h3>
-            <select 
-              id="search-type-select" 
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm font-medium"
-            >
-              <option value="keyword">🔍 키워드 검색</option>
-              <option value="channel">👤 채널 ID/URL</option>
-              <option value="category">📂 카테고리 검색</option>
-            </select>
-          </div>
-          
-          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-          <!-- 2. 입력 필드 (동적 변경) -->
-          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-          
-          <!-- 2-1. 키워드 검색 입력 -->
-          <div id="input-keyword" class="mb-6 pb-6 border-b border-gray-200">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">📝 키워드 입력</h3>
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">📝 키워드 검색</h3>
             <input
               type="text"
               id="market-search-input"
               placeholder="예: 게임 실황, 브이로그, 요리"
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
             />
+          </div>
+          
+          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+          <!-- 2. 카테고리 선택 -->
+          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+          <div class="mb-6 pb-6 border-b border-gray-200">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">📂 카테고리</h3>
+            <select 
+              id="category-select" 
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm"
+            >
+              <option value="">전체 카테고리</option>
+              <option value="1">영화/애니메이션</option>
+              <option value="2">자동차/교통</option>
+              <option value="10">음악</option>
+              <option value="15">반려동물</option>
+              <option value="17">스포츠</option>
+              <option value="19">여행/이벤트</option>
+              <option value="20">게임</option>
+              <option value="22">브이로그</option>
+              <option value="23">코미디</option>
+              <option value="24">엔터테인먼트</option>
+              <option value="25">뉴스/정치</option>
+              <option value="26">노하우/스타일</option>
+              <option value="27">교육</option>
+              <option value="28">과학/기술</option>
+            </select>
+          </div>
+          
+          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+          <!-- 3. 국가별 필터 -->
+          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+          <div class="mb-6 pb-6 border-b border-gray-200">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">🌍 글로벌 지역</h3>
+            <select 
+              id="region-select" 
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm"
+            >
+              <option value="">전 세계</option>
+              <option value="KR">🇰🇷 한국</option>
+              <option value="US">🇺🇸 미국</option>
+              <option value="JP">🇯🇵 일본</option>
+              <option value="GB">🇬🇧 영국</option>
+              <option value="IN">🇮🇳 인도</option>
+              <option value="DE">🇩🇪 독일</option>
+              <option value="FR">🇫🇷 프랑스</option>
+              <option value="CA">🇨🇦 캐나다</option>
+              <option value="AU">🇦🇺 호주</option>
+            </select>
           </div>
           
           <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->

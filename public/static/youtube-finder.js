@@ -2796,7 +2796,7 @@ function parseDuration(duration) {
   // ISO 8601 duration을 초로 변환 (예: PT1H2M10S)
   if (!duration) return 0;
   
-  const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+  const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
   if (!match) return 0;
   
   const hours = parseInt(match[1]) || 0;
