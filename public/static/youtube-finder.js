@@ -2847,9 +2847,10 @@ function normalizeYouTubeData(videos) {
         const title = video.title || video.snippet?.title || '제목 없음';
         const channel = video.channel || video.channelTitle || video.snippet?.channelTitle || '채널 없음';
         
-        // duration 처리: PT6M57S → 6:57
-        const rawDuration = video.duration || video.contentDetails?.duration || video.snippet?.duration || '';
-        const duration = formatDuration(rawDuration);
+        // duration 처리: ISO 원본 유지
+        const rawDuration = video.duration || video.contentDetails?.duration || video.snippet?.duration || 'PT0S';
+        const duration = rawDuration; // ISO 형식 원본 유지 (예: PT3M19S)
+        const displayDuration = formatDuration(rawDuration); // 표시용 (예: 3:19)
         
         // 카테고리 및 언어
         const categoryId = video.category || video.categoryId || video.snippet?.categoryId || '22';
@@ -2870,7 +2871,8 @@ function normalizeYouTubeData(videos) {
             title, channel, channelTitle: channel,
             
             // duration, category, language 추가
-            duration,
+            duration, // ISO 형식 (예: PT3M19S) - 레이더 차트용
+            displayDuration, // 표시용 (예: 3:19) - 테이블용
             category: categoryId,
             language,
             url: videoId ? `https://www.youtube.com/watch?v=${videoId}` : video.url || '',
@@ -3315,7 +3317,7 @@ function exportToCSV() {
       const likeRate = views > 0 ? ((likes / views) * 100).toFixed(2) : '0.00';
       const comments = video.statistics?.commentCount || 0;
       const publishedAt = formatDate(video.snippet?.publishedAt || '');
-      const duration = formatDuration(parseDuration(video.contentDetails?.duration || ''));
+      const duration = video.displayDuration || formatDuration(video.contentDetails?.duration || video.duration || 'PT0S');
       const categoryId = video.snippet?.categoryId || '';
       const language = video.snippet?.defaultLanguage || video.snippet?.defaultAudioLanguage || '';
       const videoUrl = `https://www.youtube.com/watch?v=${video.id?.videoId || video.id || ''}`;
@@ -3419,7 +3421,7 @@ function exportToExcel() {
       const likeRate = views > 0 ? ((likes / views) * 100).toFixed(2) : '0.00';
       const comments = video.statistics?.commentCount || 0;
       const publishedAt = formatDate(video.snippet?.publishedAt || '');
-      const duration = formatDuration(parseDuration(video.contentDetails?.duration || ''));
+      const duration = video.displayDuration || formatDuration(video.contentDetails?.duration || video.duration || 'PT0S');
       const categoryId = video.snippet?.categoryId || '';
       const language = video.snippet?.defaultLanguage || video.snippet?.defaultAudioLanguage || '';
       const videoUrl = `https://www.youtube.com/watch?v=${video.id?.videoId || video.id || ''}`;
@@ -3646,9 +3648,13 @@ function openCompareModal() {
   console.log('🔍 [비교 디버깅] 첫 번째 영상 데이터:', {
     subscriberCount: selectedCompareVideos[0]?.subscriberCount,
     duration: selectedCompareVideos[0]?.duration,
+    displayDuration: selectedCompareVideos[0]?.displayDuration,
+    contentDetails_duration: selectedCompareVideos[0]?.contentDetails?.duration,
     commentCount: selectedCompareVideos[0]?.commentCount || selectedCompareVideos[0]?.comments,
     statistics: selectedCompareVideos[0]?.statistics
   });
+  console.log('✅ parseDuration("PT3M19S") =', parseDuration('PT3M19S'), '초 (기대값: 199)');
+  console.log('✅ formatDuration("PT3M19S") =', formatDuration('PT3M19S'), '(기대값: 3:19)');
   console.log('🔍 비교 분석 데이터:', window.comparisonVideosData?.[0]);
   
   // 모달 표시
@@ -3754,9 +3760,13 @@ function renderCompareTable() {
         case 'publishedAt':
           return formatDate(video.snippet?.publishedAt || '');
         case 'duration':
-          // ⭐ 수정: 영상 길이 다중 경로 지원
+          // ⭐ 수정: displayDuration 우선 사용 (이미 포맷됨)
+          if (video.displayDuration && video.displayDuration !== '0:00') {
+            return video.displayDuration;
+          }
+          // Fallback: ISO 형식이면 변환
           const rawDur = video.duration || video.contentDetails?.duration || video.snippet?.duration || '';
-          return rawDur && rawDur !== 'PT0S' ? (rawDur.includes(':') ? rawDur : formatDuration(rawDur)) : '정보 없음';
+          return rawDur && rawDur !== 'PT0S' ? formatDuration(rawDur) : '정보 없음';
         case 'categoryId':
           // ⭐ 수정: category 필드 사용 (이미 한글로 정규화됨)
           return video.category || video.snippet?.categoryId || '-';
