@@ -678,12 +678,12 @@ app.post('/api/youtube/strategy', async (c) => {
     const { goal, analyzedVideos } = body
 
     // 1. 입력 검증
-    if (!analyzedVideos || !Array.isArray(analyzedVideos) || analyzedVideos.length < 3) {
+    if (!analyzedVideos || !Array.isArray(analyzedVideos) || analyzedVideos.length < 2) {
       return c.json<ApiResponse<null>>({
         success: false,
         error: {
           code: 'INSUFFICIENT_DATA',
-          message: '최소 3개 이상의 분석된 영상이 필요합니다.'
+          message: '최소 2개 이상의 분석된 영상이 필요합니다.'
         }
       }, 400)
     }
@@ -723,35 +723,106 @@ app.post('/api/youtube/strategy', async (c) => {
     // OpenAI API 호출
     const prompt = `당신은 YouTube 콘텐츠 전략 전문가입니다. 다음 분석된 영상 데이터를 기반으로 "${goalText}"를 목표로 하는 콘텐츠 전략을 제안해주세요.
 
-분석된 영상 데이터:
+### 분석 대상 영상
+
 ${analyzedVideos.map((v: any, i: number) => `
-${i + 1}. ${v.title}
-   - 조회수: ${v.views?.toLocaleString()}
-   - 좋아요: ${v.likes?.toLocaleString()}
-   - 채널: ${v.channel} (구독자 ${v.subscriberCount?.toLocaleString()})
-   - 게시일: ${v.publishedAt}
-   - 성과도: ${v.performance}
+**영상 ${i + 1}: ${v.title}**
+- 조회수: ${v.views?.toLocaleString()}회
+- 좋아요: ${v.likes?.toLocaleString()}개 (좋아요율: ${v.views > 0 ? ((v.likes / v.views) * 100).toFixed(2) : '0.00'}%)
+- 댓글: ${v.comments?.toLocaleString()}개
+- 영상 길이: ${v.displayDuration || v.duration}
+- 채널: ${v.channel} (구독자 ${v.subscriberCount?.toLocaleString()}명)
+- 성과도: ${v.performance}% (구독자 대비 조회수 비율)
+- 카테고리: ${v.category || '미지정'}
+- 게시일: ${v.publishedAt}
+- 썸네일 URL: ${v.thumbnailUrl || ''}
 `).join('\n')}
+
+### 분석 요구사항 (5단계 구조)
+
+**[1단계] 개별 영상 심층 분석** ⭐ 가장 중요
+각 영상마다 3-4문장으로 구체적 분석:
+- 조회수 대비 좋아요율로 참여도 평가 (높을수록 시청자 만족도 높음)
+- 채널 구독자 수 대비 조회수 비율로 바이럴 효과 분석 (100% 이상이면 외부 유입 많음)
+- 영상 길이가 성과에 미친 영향 (숏폼 vs 롱폼 전략)
+- 제목에서 클릭을 유도한 요소 분석 (숫자, 질문, 감정 자극 등)
+
+**[2단계] 썸네일 & 클릭 유도 전략 분석** ⭐ 신규 필수
+각 영상의 썸네일을 분석 (썸네일 URL 참고):
+- 시각적 구성: 인물 배치, 표정, 시선 방향, 텍스트 요소, 색상 대비
+- 감정적 임팩트: 놀라움, 호기심, 공감 유도 방식
+- 클릭 유도 요소: 화살표/강조 표시, 숫자 활용, 대비 구조(VS, Before/After), 긴급성 표현
+
+**[3단계] 비교 분석 (패턴 발견)**
+- 1위 vs 꼴찌 영상의 결정적 차이점 (조회수, 좋아요율, 썸네일 전략)
+- 참여도(좋아요율) 최고 영상의 특징
+- 영상 길이와 성과의 상관관계
+- 같은 소재라도 성과가 다른 이유 (썸네일, 제목, 업로드 타이밍)
+
+**[4단계] 핵심 인사이트 (3-4개)**
+- 실제 데이터에서 발견된 명확한 패턴
+- 썸네일 전략과 조회수 차이의 상관관계
+- 채널 성장을 위한 전략적 방향
+
+**[5단계] 콘텐츠 제안 (최소 5개)** ⭐ 필수
+각 제안마다 반드시 포함:
+- 구체적 제목 (15-20자, 클릭 유도 요소 포함)
+- 썸네일 기획안 (구체적 구도, 텍스트 배치, 색상 팔레트, 인물 표정/포즈) ⭐
+- 3-4문장 상세 시나리오
+- 어떤 영상의 어떤 요소를 벤치마킹했는지 명시
+- 차별화 포인트
+- 예상 제작 난이도 (쉬움/보통/어려움)
+
+### 절대 금지 사항
+❌ 실제 데이터 없는 허구 수치 생성 금지 ("78% 긍정 반응", "댓글 분석 결과" 등)
+❌ 위 표에 있는 수치 데이터를 다시 나열하지 말 것 (이미 보여줌)
+❌ "소통 강화", "다양한 시도" 같은 뻔한 조언 금지
+❌ 썸네일을 보지 않고 추측으로 평가 금지
+❌ "매력적인 썸네일" 같은 추상적 표현 금지
+❌ 콘텐츠 제안 5개 미만 금지
+❌ 썸네일 기획안 없는 제안 금지
+
+### 데이터 활용 원칙
+✅ 위에 제공된 수치 데이터만 사용
+✅ 수치의 "의미"와 "해석"에 집중
+✅ 실제 제공된 데이터만으로 분석
+✅ 썸네일 URL을 참고하여 시각적 분석
 
 다음 형식으로 JSON 응답해주세요:
 {
+  "individualAnalysis": [
+    {
+      "videoIndex": 1,
+      "analysis": "영상 1 심층 분석 (3-4문장)",
+      "thumbnailAnalysis": "썸네일 전략 분석 (2-3문장)"
+    }
+  ],
+  "comparisonAnalysis": "비교 분석 (1위 vs 꼴찌 차이, 패턴 발견)",
   "trends": {
-    "commonKeywords": ["키워드1", "키워드2", "키워드3"],
-    "successPatterns": ["패턴1", "패턴2", "패턴3"],
-    "bestPublishTime": "권장 게시 시간대"
+    "commonKeywords": ["실제 공통 키워드만"],
+    "successPatterns": ["구체적 패턴 (썸네일 전략 포함)"],
+    "bestPublishTime": "데이터 기반 권장 시간대"
   },
+  "keyInsights": [
+    "인사이트 1 (썸네일 상관관계)",
+    "인사이트 2 (채널 전략)",
+    "인사이트 3 (성과 패턴)"
+  ],
   "contentSuggestions": [
     {
-      "title": "추천 제목 1",
-      "description": "콘텐츠 설명",
-      "keywords": ["키워드1", "키워드2"],
+      "title": "구체적 제목 (15-20자)",
+      "thumbnailStrategy": "썸네일 기획: 구체적 구도, 텍스트 배치, 색상 팔레트, 인물 표정",
+      "scenario": "3-4문장 상세 시나리오",
+      "benchmarking": "영상 X의 Y 요소 벤치마킹",
+      "differentiation": "차별화 포인트",
+      "difficulty": "쉬움/보통/어려움",
       "estimatedViews": "예상 조회수 범위"
     }
   ],
   "actionPlan": {
-    "immediate": ["즉시 실행 항목 1", "즉시 실행 항목 2"],
-    "shortTerm": ["단기 전략 1", "단기 전략 2"],
-    "longTerm": ["장기 전략 1", "장기 전략 2"]
+    "immediate": ["즉시 실행 (데이터 기반)"],
+    "shortTerm": ["단기 전략 (1-2주)"],
+    "longTerm": ["장기 전략 (1-3개월)"]
   }
 }`
 
@@ -785,26 +856,67 @@ ${i + 1}. ${v.title}
     const aiResult = await aiResponse.json()
     const strategyData = JSON.parse(aiResult.choices[0].message.content)
     
-    // ⭐ 프론트엔드 호환성을 위해 Markdown 텍스트로 변환
-    let strategyText = `## 📊 트렌드 분석\n\n`
-    strategyText += `### 🔑 공통 키워드\n${strategyData.trends?.commonKeywords?.map((k: string) => `- ${k}`).join('\n') || '분석 중...'}\n\n`
-    strategyText += `### ✅ 성공 패턴\n${strategyData.trends?.successPatterns?.map((p: string) => `- ${p}`).join('\n') || '분석 중...'}\n\n`
+    // ⭐ 프론트엔드 호환성을 위해 Markdown 텍스트로 변환 (5단계 구조)
+    let strategyText = ''
+    
+    // [1단계] 개별 영상 심층 분석
+    strategyText += `## 🎬 개별 영상 심층 분석\n\n`
+    if (strategyData.individualAnalysis && strategyData.individualAnalysis.length > 0) {
+      strategyData.individualAnalysis.forEach((item: any) => {
+        strategyText += `### 영상 ${item.videoIndex}\n`
+        strategyText += `**성과 분석**: ${item.analysis}\n\n`
+        strategyText += `**썸네일 전략**: ${item.thumbnailAnalysis}\n\n`
+      })
+    }
+    
+    // [2단계] 비교 분석
+    if (strategyData.comparisonAnalysis) {
+      strategyText += `## 🔍 비교 분석 (패턴 발견)\n\n`
+      strategyText += `${strategyData.comparisonAnalysis}\n\n`
+    }
+    
+    // [3단계] 트렌드 분석
+    strategyText += `## 📊 트렌드 분석\n\n`
+    strategyText += `### 🔑 공통 키워드\n${strategyData.trends?.commonKeywords?.map((k: string) => `• ${k}`).join('\n') || '분석 중...'}\n\n`
+    strategyText += `### ✅ 성공 패턴\n${strategyData.trends?.successPatterns?.map((p: string) => `• ${p}`).join('\n') || '분석 중...'}\n\n`
     strategyText += `### 🕐 최적 게시 시간\n${strategyData.trends?.bestPublishTime || '분석 중...'}\n\n`
     
+    // [4단계] 핵심 인사이트
+    if (strategyData.keyInsights && strategyData.keyInsights.length > 0) {
+      strategyText += `## 💎 핵심 인사이트\n\n`
+      strategyData.keyInsights.forEach((insight: string, i: number) => {
+        strategyText += `${i + 1}. ${insight}\n`
+      })
+      strategyText += `\n`
+    }
+    
+    // [5단계] 콘텐츠 제안 (최소 5개)
     strategyText += `## 💡 콘텐츠 제안\n\n`
     if (strategyData.contentSuggestions && strategyData.contentSuggestions.length > 0) {
       strategyData.contentSuggestions.forEach((suggestion: any, i: number) => {
         strategyText += `### ${i + 1}. ${suggestion.title}\n`
-        strategyText += `${suggestion.description}\n\n`
-        strategyText += `**키워드**: ${suggestion.keywords?.join(', ') || '없음'}\n`
+        if (suggestion.thumbnailStrategy) {
+          strategyText += `**썸네일 기획**: ${suggestion.thumbnailStrategy}\n\n`
+        }
+        strategyText += `${suggestion.scenario}\n\n`
+        if (suggestion.benchmarking) {
+          strategyText += `**벤치마킹**: ${suggestion.benchmarking}\n`
+        }
+        if (suggestion.differentiation) {
+          strategyText += `**차별화**: ${suggestion.differentiation}\n`
+        }
+        if (suggestion.difficulty) {
+          strategyText += `**제작 난이도**: ${suggestion.difficulty}\n`
+        }
         strategyText += `**예상 조회수**: ${suggestion.estimatedViews || '분석 중...'}\n\n`
       })
     }
     
+    // 실행 계획
     strategyText += `## 🎯 실행 계획\n\n`
-    strategyText += `### 즉시 실행\n${strategyData.actionPlan?.immediate?.map((a: string) => `- ${a}`).join('\n') || '분석 중...'}\n\n`
-    strategyText += `### 단기 전략\n${strategyData.actionPlan?.shortTerm?.map((a: string) => `- ${a}`).join('\n') || '분석 중...'}\n\n`
-    strategyText += `### 장기 전략\n${strategyData.actionPlan?.longTerm?.map((a: string) => `- ${a}`).join('\n') || '분석 중...'}\n\n`
+    strategyText += `### 즉시 실행\n${strategyData.actionPlan?.immediate?.map((a: string) => `• ${a}`).join('\n') || '분석 중...'}\n\n`
+    strategyText += `### 단기 전략\n${strategyData.actionPlan?.shortTerm?.map((a: string) => `• ${a}`).join('\n') || '분석 중...'}\n\n`
+    strategyText += `### 장기 전략\n${strategyData.actionPlan?.longTerm?.map((a: string) => `• ${a}`).join('\n') || '분석 중...'}\n\n`
 
     // 4. 결과 반환
     return c.json({

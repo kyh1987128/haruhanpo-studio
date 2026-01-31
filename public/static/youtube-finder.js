@@ -3939,17 +3939,28 @@ async function generateCompareAIAnalysis() {
     
     // ⭐ 정규화된 데이터로 영상 정보 구성
     const videosInfo = normalizedVideos.map((video, index) => {
+      // 썸네일 URL 추출
+      const thumbnailUrl = video.thumbnails?.high?.url 
+        || video.thumbnails?.medium?.url 
+        || video.thumbnails?.default?.url
+        || video.snippet?.thumbnails?.high?.url
+        || video.snippet?.thumbnails?.medium?.url
+        || video.snippet?.thumbnails?.default?.url
+        || `https://i.ytimg.com/vi/${video.videoId}/hqdefault.jpg`;
+      
       return {
         index: index + 1,
         videoId: video.videoId,
         title: video.title,
         channel: video.channel,
+        thumbnailUrl: thumbnailUrl,  // ⭐ 썸네일 URL 추가
         views: Number(video.views || 0),
         subscriberCount: Number(video.subscribers || 0),
         likes: Number(video.likes || 0),
         comments: Number(video.comments || 0),
         publishedAt: video.snippet?.publishedAt || video.publishedAt || new Date().toISOString(),
         duration: video.duration,
+        displayDuration: video.displayDuration || formatDuration(video.duration),
         category: video.category,
         language: video.language,
         performance: Number(video.performance?.ratio || 0)
