@@ -69,9 +69,17 @@ export function youtubeAnalyzerTemplate() {
       background: #f9fafb;
     }
     
+    /* 중앙 메인 영역 (트렌드/채널 분석용) */
+    .results-main {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+      background: #f9fafb;
+    }
+    
     /* 우측 상세 패널 */
     .detail-sidebar {
-      width: 420px;
+      width: 380px;
       background: #ffffff;
       border-left: 1px solid #e5e7eb;
       overflow-y: auto;

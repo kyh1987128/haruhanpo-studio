@@ -1235,48 +1235,115 @@ function updateChannelDetailPanel(video) {
   
   panelEl.classList.remove('detail-sidebar-empty');
   panelEl.innerHTML = `
-    <div class="space-y-4">
+    <div class="p-6 space-y-6">
       <!-- 썸네일 -->
       <div class="relative rounded-lg overflow-hidden">
         <img src="${video.thumbnailUrl}" alt="${video.title}" class="w-full">
       </div>
       
       <!-- 제목 -->
-      <h3 class="text-lg font-bold text-gray-900">${video.title}</h3>
+      <h3 class="text-lg font-bold text-gray-900 leading-snug">${video.title}</h3>
       
       <!-- 채널 정보 -->
-      <div class="flex items-center gap-2 text-sm text-gray-600">
-        <i class="fas fa-user-circle"></i>
-        <span>${video.channel}</span>
+      <div class="space-y-2">
+        <div class="flex items-center gap-2 text-sm text-gray-700">
+          <i class="fas fa-user-circle text-gray-400"></i>
+          <span class="font-medium">${video.channel}</span>
+        </div>
+        ${video.subscriberCount ? `
+        <div class="flex items-center gap-2 text-sm text-gray-600">
+          <i class="fas fa-users text-gray-400"></i>
+          <span>구독자 ${formatNumber(video.subscriberCount)}명</span>
+        </div>
+        ` : ''}
+        ${video.videoCount ? `
+        <div class="flex items-center gap-2 text-sm text-gray-600">
+          <i class="fas fa-video text-gray-400"></i>
+          <span>영상 ${formatNumber(video.videoCount)}개</span>
+        </div>
+        ` : ''}
       </div>
       
       <!-- 통계 -->
-      <div class="grid grid-cols-2 gap-3 py-3 border-t border-b border-gray-200">
+      <div class="grid grid-cols-3 gap-3 py-4 border-t border-b border-gray-200">
         <div class="text-center">
-          <div class="text-2xl font-bold text-gray-900">${formatNumber(video.views)}</div>
-          <div class="text-xs text-gray-600">조회수</div>
+          <div class="text-lg font-bold text-gray-900">${formatNumber(video.views)}</div>
+          <div class="text-xs text-gray-500">조회수</div>
         </div>
         <div class="text-center">
-          <div class="text-2xl font-bold text-gray-900">${formatNumber(video.likes)}</div>
-          <div class="text-xs text-gray-600">좋아요</div>
+          <div class="text-lg font-bold text-gray-900">${formatNumber(video.likes)}</div>
+          <div class="text-xs text-gray-500">좋아요</div>
+        </div>
+        <div class="text-center">
+          <div class="text-sm font-medium text-gray-900">${new Date(video.publishedAt).toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '')}</div>
+          <div class="text-xs text-gray-500">게시일</div>
         </div>
       </div>
       
-      <!-- 게시일 -->
-      <div class="flex items-center gap-2 text-sm text-gray-600">
-        <i class="fas fa-calendar mr-1"></i>
-        <span>${new Date(video.publishedAt).toLocaleDateString('ko-KR')}</span>
+      <!-- 상세 메트릭 -->
+      ${video.likeRate || video.viralIndex || video.commentCount ? `
+      <div class="space-y-2">
+        ${video.likeRate ? `
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-600">좋아요율</span>
+          <span class="font-semibold text-gray-900">${(video.likeRate * 100).toFixed(1)}%</span>
+        </div>
+        ` : ''}
+        ${video.viralIndex ? `
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-600">바이럴 지수</span>
+          <span class="font-semibold text-gray-900">${video.viralIndex.toFixed(1)}</span>
+        </div>
+        ` : ''}
+        ${video.commentCount ? `
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-600">댓글</span>
+          <span class="font-semibold text-gray-900">${formatNumber(video.commentCount)}개</span>
+        </div>
+        ` : ''}
       </div>
+      ` : ''}
       
-      <!-- YouTube 링크 -->
-      <a href="https://www.youtube.com/watch?v=${video.videoId}" 
-         target="_blank"
-         class="block w-full px-4 py-3 bg-red-600 text-white text-center rounded-lg hover:bg-red-700 transition">
-        <i class="fab fa-youtube mr-2"></i>
-        YouTube에서 보기
-      </a>
+      <!-- 설명 -->
+      ${video.description ? `
+      <div class="border-t pt-4">
+        <h4 class="text-sm font-semibold text-gray-700 mb-2">설명</h4>
+        <div class="text-sm text-gray-600 leading-relaxed">
+          <p id="channel-detail-description" class="line-clamp-3">${video.description}</p>
+          <button onclick="toggleChannelDescription()" class="text-blue-600 hover:text-blue-700 text-xs mt-2">
+            더보기
+          </button>
+        </div>
+      </div>
+      ` : ''}
+      
+      <!-- 액션 버튼 -->
+      <div class="space-y-2 border-t pt-4">
+        <a href="https://www.youtube.com/watch?v=${video.videoId}" 
+           target="_blank"
+           class="flex items-center justify-center gap-2 w-full px-4 py-3 bg-red-600 text-white text-center rounded-lg hover:bg-red-700 transition font-medium">
+          <i class="fab fa-youtube"></i>
+          YouTube에서 보기
+        </a>
+      </div>
     </div>
   `;
+}
+
+/**
+ * 설명 더보기/접기 (채널 분석용)
+ */
+function toggleChannelDescription() {
+  const descEl = document.getElementById('channel-detail-description');
+  if (!descEl) return;
+  
+  if (descEl.classList.contains('line-clamp-3')) {
+    descEl.classList.remove('line-clamp-3');
+    event.target.textContent = '접기';
+  } else {
+    descEl.classList.add('line-clamp-3');
+    event.target.textContent = '더보기';
+  }
 }
 
 // DOMContentLoaded에 채널 검색 버튼 이벤트 추가
