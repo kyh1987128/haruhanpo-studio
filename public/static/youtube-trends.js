@@ -175,18 +175,14 @@ function renderVideos(videos) {
       <!-- 보기 버튼 -->
       <div class="flex-shrink-0">
         <button 
-           onclick="event.stopPropagation(); window.openVideoDetailModal({
+           onclick="event.stopPropagation(); updateTrendDetailPanel({
              videoId: '${video.video_id}',
              title: '${escapeHtml(video.title).replace(/'/g, "\\'")}',
              channel: '${escapeHtml(video.channel_title).replace(/'/g, "\\'")}',
              thumbnailUrl: 'https://i.ytimg.com/vi/${video.video_id}/hqdefault.jpg',
              views: ${video.views},
-             likes: 0,
              publishedAt: '${video.published_at}',
-             subscriberCount: 0,
-             videoCount: 0,
-             performance: 'Normal',
-             contribution: 'Normal'
+             category: '${video.category}'
            })"
            class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium">
           <i class="fas fa-info-circle"></i>
@@ -204,6 +200,63 @@ function openVideo(videoId) {
   if (videoId) {
     window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
   }
+}
+
+/**
+ * 트렌드 우측 패널 업데이트
+ */
+function updateTrendDetailPanel(video) {
+  const panelEl = document.getElementById('trend-detail-panel');
+  if (!panelEl) {
+    console.error('trend-detail-panel not found');
+    return;
+  }
+  
+  panelEl.classList.remove('detail-sidebar-empty');
+  panelEl.innerHTML = `
+    <div class="space-y-4">
+      <!-- 썸네일 -->
+      <div class="relative rounded-lg overflow-hidden">
+        <img src="${video.thumbnailUrl}" alt="${video.title}" class="w-full">
+      </div>
+      
+      <!-- 제목 -->
+      <h3 class="text-lg font-bold text-gray-900">${video.title}</h3>
+      
+      <!-- 채널 정보 -->
+      <div class="flex items-center gap-2 text-sm text-gray-600">
+        <i class="fas fa-user-circle"></i>
+        <span>${video.channel}</span>
+      </div>
+      
+      <!-- 통계 -->
+      <div class="grid grid-cols-2 gap-3 py-3 border-t border-b border-gray-200">
+        <div class="text-center">
+          <div class="text-2xl font-bold text-gray-900">${formatNumber(video.views)}</div>
+          <div class="text-xs text-gray-600">조회수</div>
+        </div>
+        <div class="text-center">
+          <div class="text-sm font-bold text-gray-900">${formatRelativeTime(new Date(video.publishedAt))}</div>
+          <div class="text-xs text-gray-600">게시일</div>
+        </div>
+      </div>
+      
+      <!-- 카테고리 -->
+      <div class="flex items-center gap-2">
+        <span class="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
+          ${getCategoryName(video.category)}
+        </span>
+      </div>
+      
+      <!-- YouTube 링크 -->
+      <a href="https://www.youtube.com/watch?v=${video.videoId}" 
+         target="_blank"
+         class="block w-full px-4 py-3 bg-red-600 text-white text-center rounded-lg hover:bg-red-700 transition">
+        <i class="fab fa-youtube mr-2"></i>
+        YouTube에서 보기
+      </a>
+    </div>
+  `;
 }
 
 /**

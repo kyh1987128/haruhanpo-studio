@@ -1209,18 +1209,14 @@ function displayTopVideos(videos) {
         <td class="px-4 py-3 text-center text-gray-700">${publishDate}</td>
         <td class="px-4 py-3 text-center">
           <button 
-            onclick="event.stopPropagation(); window.openVideoDetailModal({
+            onclick="event.stopPropagation(); updateChannelDetailPanel({
               videoId: '${video.videoId}',
               title: '${escapeHtml(video.title).replace(/'/g, "\\'")}',
               channel: '채널 영상',
               thumbnailUrl: '${video.thumbnailUrl}',
               views: ${video.views},
               likes: ${video.likes},
-              publishedAt: '${video.publishedAt}',
-              subscriberCount: 0,
-              videoCount: 0,
-              performance: 'Normal',
-              contribution: 'Normal'
+              publishedAt: '${video.publishedAt}'
             })"
             class="inline-flex items-center gap-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition"
             style="background: #00B87D;"
@@ -1236,6 +1232,62 @@ function displayTopVideos(videos) {
   }).join('');
 
   container.classList.remove('hidden');
+}
+
+/**
+ * 채널 우측 패널 업데이트
+ */
+function updateChannelDetailPanel(video) {
+  const panelEl = document.getElementById('channel-detail-panel');
+  if (!panelEl) {
+    console.error('channel-detail-panel not found');
+    return;
+  }
+  
+  panelEl.classList.remove('detail-sidebar-empty');
+  panelEl.innerHTML = `
+    <div class="space-y-4">
+      <!-- 썸네일 -->
+      <div class="relative rounded-lg overflow-hidden">
+        <img src="${video.thumbnailUrl}" alt="${video.title}" class="w-full">
+      </div>
+      
+      <!-- 제목 -->
+      <h3 class="text-lg font-bold text-gray-900">${video.title}</h3>
+      
+      <!-- 채널 정보 -->
+      <div class="flex items-center gap-2 text-sm text-gray-600">
+        <i class="fas fa-user-circle"></i>
+        <span>${video.channel}</span>
+      </div>
+      
+      <!-- 통계 -->
+      <div class="grid grid-cols-2 gap-3 py-3 border-t border-b border-gray-200">
+        <div class="text-center">
+          <div class="text-2xl font-bold text-gray-900">${formatNumber(video.views)}</div>
+          <div class="text-xs text-gray-600">조회수</div>
+        </div>
+        <div class="text-center">
+          <div class="text-2xl font-bold text-gray-900">${formatNumber(video.likes)}</div>
+          <div class="text-xs text-gray-600">좋아요</div>
+        </div>
+      </div>
+      
+      <!-- 게시일 -->
+      <div class="flex items-center gap-2 text-sm text-gray-600">
+        <i class="fas fa-calendar mr-1"></i>
+        <span>${new Date(video.publishedAt).toLocaleDateString('ko-KR')}</span>
+      </div>
+      
+      <!-- YouTube 링크 -->
+      <a href="https://www.youtube.com/watch?v=${video.videoId}" 
+         target="_blank"
+         class="block w-full px-4 py-3 bg-red-600 text-white text-center rounded-lg hover:bg-red-700 transition">
+        <i class="fab fa-youtube mr-2"></i>
+        YouTube에서 보기
+      </a>
+    </div>
+  `;
 }
 
 // DOMContentLoaded에 채널 검색 버튼 이벤트 추가
