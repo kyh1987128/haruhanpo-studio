@@ -27,22 +27,20 @@ function getFromMemoryCache(key: string) {
 }
 
 function setMemoryCache(key: string, data: any, ttlMinutes: number) {
+  // 만료된 캐시 정리 (저장 시마다 실행)
+  const now = Date.now();
+  for (const [k, item] of memoryCache.entries()) {
+    if (now > item.expiry) {
+      memoryCache.delete(k);
+    }
+  }
+  
   memoryCache.set(key, {
     data,
     expiry: Date.now() + (ttlMinutes * 60 * 1000)
   });
   console.log(`💾 [캐시 저장] ${key} (${ttlMinutes}분)`);
 }
-
-// 10분마다 만료된 캐시 정리
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, item] of memoryCache.entries()) {
-    if (now > item.expiry) {
-      memoryCache.delete(key);
-    }
-  }
-}, 10 * 60 * 1000);
 
 type Bindings = {
   SUPABASE_URL: string
