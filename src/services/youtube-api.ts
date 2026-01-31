@@ -504,3 +504,72 @@ export async function getChannelInfo(
     topVideos
   }
 }
+
+// ========================================
+// 🎬 YouTube CommentThreads API
+// ========================================
+
+export interface VideoComment {
+  author: string
+  text: string
+  likeCount: number
+  publishedAt: string
+}
+
+/**
+ * 영상의 댓글 가져오기 (상위 20개, 관련성 순)
+ * @param videoId - YouTube 영상 ID
+ * @param apiKey - YouTube API 키
+ * @param maxResults - 최대 댓글 수 (기본: 20)
+ * @returns 댓글 배열
+ */
+export async function getVideoComments(
+  videoId: string,
+  apiKey: string,
+  maxResults: number = 20
+): Promise<VideoComment[]> {
+  try {
+    const params = new URLSearchParams({
+      part: 'snippet',
+      videoId: videoId,
+      maxResults: maxResults.toString(),
+      order: 'relevance', // 관련성 순 (좋아요 많은 순)
+      key: apiKey
+    })
+
+    const url = `https://www.googleapis.com/youtube/v3/commentThreads?${params.toString()}`
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      // 댓글이 비활성화된 경우 빈 배열 반환
+      if (response.status === 403) {
+        console.warn(`댓글이 비활성화됨: ${videoId}`)
+        return []
+      }
+      throw new YouTubeAPIError(`댓글 조회 실패: ${response.statusText}`, response.status)
+    }
+
+    const data = await response.json()
+
+    if (!data.items || data.items.length === 0) {
+      return []
+    }
+
+    // 댓글 데이터 변환
+    const comments: VideoComment[] = data.items.map((item: any) => {
+      const snippet = item.snippet.topLevelComment.snippet
+      return {
+        author: snippet.authorDisplayName,
+        text: snippet.textDisplay,
+        likeCount: snippet.likeCount || 0,
+        publishedAt: snippet.publishedAt
+      }
+    })
+
+    return comments
+  } catch (error) {
+    console.error(`댓글 조회 오류 (${videoId}):`, error)
+    // 오류 발생 시 빈 배열 반환 (댓글 없어도 분석 계속 진행)
+    return []
+  }
+}
