@@ -1017,7 +1017,7 @@ export function youtubeAnalyzerTemplate() {
           <!-- 검색 버튼 -->
           <button id="market-search-btn" class="w-full px-6 py-4 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition text-base">
             <i class="fas fa-search mr-2"></i>
-            🔍 검색 시작 (최대 50개)
+            🔍 검색 시작
           </button>
         </div>
       </aside>
