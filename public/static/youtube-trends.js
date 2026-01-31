@@ -133,8 +133,7 @@ function renderVideos(videos) {
   if (!listEl) return;
   
   listEl.innerHTML = videos.map((video, index) => `
-    <div class="flex items-start gap-4 p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition cursor-pointer"
-         onclick="openVideo('${video.video_id}')">
+    <div class="flex items-start gap-4 p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition">
       <!-- 순위 -->
       <div class="flex-shrink-0 w-8 text-center">
         <span class="text-lg font-bold ${index < 3 ? 'text-orange-600' : 'text-gray-400'}">
@@ -176,7 +175,7 @@ function renderVideos(videos) {
       <!-- 보기 버튼 -->
       <div class="flex-shrink-0">
         <button 
-           onclick="window.openVideoDetailModal({
+           onclick="event.stopPropagation(); window.openVideoDetailModal({
              videoId: '${video.video_id}',
              title: '${escapeHtml(video.title).replace(/'/g, "\\'")}',
              channel: '${escapeHtml(video.channel_title).replace(/'/g, "\\'")}',
