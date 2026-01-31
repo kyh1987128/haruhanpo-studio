@@ -1210,7 +1210,7 @@ export function youtubeAnalyzerTemplate() {
         </div>
 
         <!-- 급상승 키워드 섹션 -->
-        <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+        <div class="keywords-section bg-white rounded-xl shadow-sm border p-6 mb-6">
           <div class="flex items-center justify-between mb-4">
             <h2 class="text-xl font-bold text-gray-800">
               <i class="fas fa-rocket mr-2" style="color: #FF6B6B;"></i>

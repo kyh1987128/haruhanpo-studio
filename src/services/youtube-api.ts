@@ -415,8 +415,33 @@ export async function getChannelInfo(
   // 1. 채널 ID 추출
   let channelId = channelIdOrUrl
 
+  // 영상 URL에서 채널 ID 추출 (youtu.be 또는 watch?v=)
+  const videoIdPattern = /(?:youtu\.be\/|watch\?v=)([a-zA-Z0-9_-]{11})/
+  const videoMatch = channelIdOrUrl.match(videoIdPattern)
+  
+  if (videoMatch) {
+    const videoId = videoMatch[1]
+    console.log('🎬 [Channel] 영상 URL 감지, 채널 정보 추출 중...', videoId)
+    
+    // Videos API로 채널 ID 추출
+    const videoUrl = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet`
+    const videoResponse = await fetch(videoUrl)
+    
+    if (!videoResponse.ok) {
+      throw new YouTubeAPIError('영상 정보 조회 실패', videoResponse.status)
+    }
+    
+    const videoData = await videoResponse.json()
+    
+    if (!videoData.items || videoData.items.length === 0) {
+      throw new YouTubeAPIError('영상을 찾을 수 없습니다.', 404)
+    }
+    
+    channelId = videoData.items[0].snippet.channelId
+    console.log('✅ [Channel] 채널 ID 추출 완료:', channelId)
+  }
   // URL에서 채널 ID 추출
-  if (channelIdOrUrl.includes('youtube.com')) {
+  else if (channelIdOrUrl.includes('youtube.com')) {
     // youtube.com/@channelname 또는 youtube.com/channel/UCxxxxxx
     if (channelIdOrUrl.includes('/@')) {
       const username = channelIdOrUrl.split('/@')[1].split('/')[0].split('?')[0]
