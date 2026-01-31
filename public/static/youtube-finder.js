@@ -1188,7 +1188,16 @@ function displayTopVideos(videos) {
     }).replace(/\. /g, '.').replace(/\.$/, '');
 
     return `
-      <tr class="border-b hover:bg-gray-50 transition">
+      <tr class="border-b hover:bg-gray-50 transition cursor-pointer"
+          onclick="updateChannelDetailPanel({
+            videoId: '${video.videoId}',
+            title: '${escapeHtml(video.title).replace(/'/g, "\\'")}',
+            channel: '채널 영상',
+            thumbnailUrl: '${video.thumbnailUrl}',
+            views: ${video.views},
+            likes: ${video.likes},
+            publishedAt: '${video.publishedAt}'
+          })">
         <td class="px-4 py-3 text-center font-bold text-lg" style="color: ${index < 3 ? '#00B87D' : '#6b7280'}">
           ${index + 1}
         </td>
@@ -1207,26 +1216,6 @@ function displayTopVideos(videos) {
         <td class="px-4 py-3 text-right font-semibold text-gray-900">${formatNumber(video.views)}</td>
         <td class="px-4 py-3 text-right text-gray-700">${formatNumber(video.likes)}</td>
         <td class="px-4 py-3 text-center text-gray-700">${publishDate}</td>
-        <td class="px-4 py-3 text-center">
-          <button 
-            onclick="event.stopPropagation(); updateChannelDetailPanel({
-              videoId: '${video.videoId}',
-              title: '${escapeHtml(video.title).replace(/'/g, "\\'")}',
-              channel: '채널 영상',
-              thumbnailUrl: '${video.thumbnailUrl}',
-              views: ${video.views},
-              likes: ${video.likes},
-              publishedAt: '${video.publishedAt}'
-            })"
-            class="inline-flex items-center gap-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition"
-            style="background: #00B87D;"
-            onmouseover="this.style.background='#00a06f'" 
-            onmouseout="this.style.background='#00B87D'"
-          >
-            <i class="fas fa-info-circle"></i>
-            보기
-          </button>
-        </td>
       </tr>
     `;
   }).join('');

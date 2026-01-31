@@ -1349,7 +1349,6 @@ export function youtubeAnalyzerTemplate() {
                       <th class="px-4 py-3 text-right text-sm font-semibold text-gray-600">조회수</th>
                       <th class="px-4 py-3 text-right text-sm font-semibold text-gray-600">좋아요</th>
                       <th class="px-4 py-3 text-center text-sm font-semibold text-gray-600">게시일</th>
-                      <th class="px-4 py-3 text-center text-sm font-semibold text-gray-600">액션</th>
                     </tr>
                   </thead>
                   <tbody id="channel-videos-body">
