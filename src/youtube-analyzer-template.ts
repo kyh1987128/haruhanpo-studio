@@ -1209,36 +1209,7 @@ export function youtubeAnalyzerTemplate() {
           </p>
         </div>
 
-        <!-- 급상승 키워드 섹션 -->
-        <div class="keywords-section bg-white rounded-xl shadow-sm border p-6 mb-6">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-bold text-gray-800">
-              <i class="fas fa-rocket mr-2" style="color: #FF6B6B;"></i>
-              실시간 급상승 키워드
-            </h2>
-            <div id="keywords-last-update" class="text-sm text-gray-500">
-              로딩 중...
-            </div>
-          </div>
-
-          <!-- 로딩 상태 -->
-          <div id="keywords-loading" class="text-center py-8">
-            <i class="fas fa-spinner fa-spin text-3xl text-gray-400 mb-3"></i>
-            <p class="text-gray-500">급상승 키워드를 불러오는 중...</p>
-          </div>
-
-          <!-- 키워드 그리드 -->
-          <div id="keywords-grid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <!-- JavaScript로 동적 생성 -->
-          </div>
-
-          <!-- 빈 상태 -->
-          <div id="keywords-empty" class="hidden text-center py-8 text-gray-400">
-            <i class="fas fa-exclamation-circle text-4xl mb-3"></i>
-            <p>급상승 키워드가 없습니다.</p>
-            <p class="text-sm mt-2">데이터가 수집되면 자동으로 표시됩니다.</p>
-          </div>
-        </div>
+        <!-- 급상승 키워드 섹션 제거 (현재 미구현) -->
 
         <!-- 카테고리별 인기 영상 섹션 -->
         <div class="bg-white rounded-xl shadow-sm border p-6">

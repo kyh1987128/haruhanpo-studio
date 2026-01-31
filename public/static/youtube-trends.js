@@ -173,15 +173,22 @@ function renderVideos(videos) {
         </div>
       </div>
       
-      <!-- YouTube 버튼 -->
+      <!-- 보기 버튼 -->
       <div class="flex-shrink-0">
-        <a href="https://www.youtube.com/watch?v=${video.video_id}" 
-           target="_blank"
-           onclick="event.stopPropagation()"
+        <button 
+           onclick="openVideoDetailModal({
+             videoId: '${video.video_id}',
+             title: '${escapeHtml(video.title).replace(/'/g, "\\'")}',
+             channelTitle: '${escapeHtml(video.channel_title).replace(/'/g, "\\'")}',
+             thumbnailUrl: 'https://i.ytimg.com/vi/${video.video_id}/hqdefault.jpg',
+             views: ${video.views},
+             publishedAt: '${video.published_at}',
+             category: '${video.category}'
+           })"
            class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium">
-          <i class="fab fa-youtube"></i>
+          <i class="fas fa-info-circle"></i>
           보기
-        </a>
+        </button>
       </div>
     </div>
   `).join('');

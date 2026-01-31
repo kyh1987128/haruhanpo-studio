@@ -1213,17 +1213,24 @@ function displayTopVideos(videos) {
         <td class="px-4 py-3 text-right text-gray-700">${formatNumber(video.likes)}</td>
         <td class="px-4 py-3 text-center text-gray-700">${publishDate}</td>
         <td class="px-4 py-3 text-center">
-          <a 
-            href="https://www.youtube.com/watch?v=${video.videoId}" 
-            target="_blank"
+          <button 
+            onclick="openVideoDetailModal({
+              videoId: '${video.videoId}',
+              title: '${escapeHtml(video.title).replace(/'/g, "\\'")}',
+              channelTitle: '채널 영상',
+              thumbnailUrl: '${video.thumbnailUrl}',
+              views: ${video.views},
+              likes: ${video.likes},
+              publishedAt: '${video.publishedAt}'
+            })"
             class="inline-flex items-center gap-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition"
             style="background: #00B87D;"
             onmouseover="this.style.background='#00a06f'" 
             onmouseout="this.style.background='#00B87D'"
           >
-            <i class="fab fa-youtube"></i>
+            <i class="fas fa-info-circle"></i>
             보기
-          </a>
+          </button>
         </td>
       </tr>
     `;
@@ -4030,39 +4037,7 @@ function generateVisualizationDashboard(videosInfo, analysisText) {
       </div>
     </div>
 
-    <!-- 액션 플랜 카드 -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 30px;">
-      <div style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; padding: 22px; border-radius: 14px; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3); transition: transform 0.2s;">
-        <div style="font-size: 13px; opacity: 0.95; margin-bottom: 6px; font-weight: 600;">🔴 긴급 (1-3일)</div>
-        <div style="font-size: 20px; font-weight: 800; margin-bottom: 14px; line-height: 1.3;">썸네일 신뢰도 보강</div>
-        <div style="font-size: 14px; line-height: 1.7; opacity: 0.95;">
-          • <strong>작업:</strong> "검증완료" 뱃지 추가<br>
-          • <strong>효과:</strong> 좋아요율 증가 예상<br>
-          • <strong>난이도:</strong> 쉬움<br>
-          • <strong>소요:</strong> 1시간
-        </div>
-      </div>
-      <div style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 22px; border-radius: 14px; box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3); transition: transform 0.2s;">
-        <div style="font-size: 13px; opacity: 0.95; margin-bottom: 6px; font-weight: 600;">🟡 중요 (1주)</div>
-        <div style="font-size: 20px; font-weight: 800; margin-bottom: 14px; line-height: 1.3;">시리즈 콘텐츠 기획</div>
-        <div style="font-size: 14px; line-height: 1.7; opacity: 0.95;">
-          • <strong>작업:</strong> 2위 포맷 벤치마킹<br>
-          • <strong>효과:</strong> 안정적 조회수<br>
-          • <strong>난이도:</strong> 보통<br>
-          • <strong>소요:</strong> 3일
-        </div>
-      </div>
-      <div style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 22px; border-radius: 14px; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3); transition: transform 0.2s;">
-        <div style="font-size: 13px; opacity: 0.95; margin-bottom: 6px; font-weight: 600;">🟢 장기 (1개월)</div>
-        <div style="font-size: 20px; font-weight: 800; margin-bottom: 14px; line-height: 1.3;">채널 브랜딩 확립</div>
-        <div style="font-size: 14px; line-height: 1.7; opacity: 0.95;">
-          • <strong>작업:</strong> 일관된 썸네일 스타일<br>
-          • <strong>효과:</strong> 구독자 증가<br>
-          • <strong>난이도:</strong> 어려움<br>
-          • <strong>소요:</strong> 1개월
-        </div>
-      </div>
-    </div>
+    <!-- 액션 플랜은 AI 분석 결과에서 추출 -->
 
     <hr style="border: none; border-top: 2px dashed #e5e7eb; margin: 30px 0;">
     <h3 style="color: #1f2937; font-size: 22px; font-weight: 700; margin-bottom: 20px;">📝 상세 텍스트 분석</h3>
