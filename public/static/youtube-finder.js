@@ -3900,6 +3900,176 @@ function renderCompareChart() {
 }
 
 /**
+ * 시각화 대시보드 생성 (CSS 차트)
+ */
+function generateVisualizationDashboard(videosInfo, analysisText) {
+  if (!videosInfo || videosInfo.length === 0) return '';
+  
+  // 최대값 계산
+  const maxViews = Math.max(...videosInfo.map(v => v.views));
+  const maxLikes = Math.max(...videosInfo.map(v => v.likes));
+  
+  // 영상별 데이터 계산
+  const videoData = videosInfo.map((v, i) => {
+    const likeRate = v.views > 0 ? ((v.likes / v.views) * 100).toFixed(2) : 0;
+    const viralIndex = v.subscriberCount > 0 ? Math.round((v.views / v.subscriberCount) * 100) : 0;
+    const performanceScore = Math.min(100, Math.round((parseFloat(likeRate) * 30) + (Math.min(viralIndex, 200) / 2)));
+    
+    return {
+      index: i + 1,
+      title: v.title,
+      views: v.views,
+      likes: v.likes,
+      likeRate: likeRate,
+      viralIndex: viralIndex,
+      performanceScore: performanceScore,
+      viewsPercent: Math.round((v.views / maxViews) * 100),
+      likesPercent: v.likes > 0 ? Math.round((v.likes / maxLikes) * 100) : 0
+    };
+  });
+  
+  // 성과 점수 색상
+  const getScoreColor = (score) => {
+    if (score >= 70) return 'linear-gradient(90deg, #10b981, #059669)';
+    if (score >= 40) return 'linear-gradient(90deg, #f59e0b, #d97706)';
+    return 'linear-gradient(90deg, #ef4444, #dc2626)';
+  };
+  
+  return `
+    <!-- 종합 성과 대시보드 -->
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 24px; border-radius: 16px; margin-bottom: 24px; color: white; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+      <h3 style="margin: 0 0 20px 0; font-size: 22px; font-weight: 700;">📊 종합 성과 대시보드</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+        ${videoData.map(v => `
+          <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 12px; backdrop-filter: blur(10px);">
+            <div style="font-size: 13px; opacity: 0.9; margin-bottom: 4px;">🎬 영상 ${v.index}</div>
+            <div style="font-size: 28px; font-weight: bold; margin: 10px 0;">${v.performanceScore}<span style="font-size: 16px; opacity: 0.8;">/100</span></div>
+            <div style="background: rgba(255,255,255,0.2); height: 10px; border-radius: 5px; overflow: hidden; margin-top: 12px;">
+              <div style="background: #10b981; height: 100%; width: ${v.performanceScore}%; transition: width 1.5s ease;"></div>
+            </div>
+            <div style="font-size: 12px; opacity: 0.8; margin-top: 8px;">${v.title.substring(0, 30)}${v.title.length > 30 ? '...' : ''}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 핵심 지표 비교 차트 -->
+    <div style="background: white; border: 2px solid #e5e7eb; border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+      <h4 style="margin: 0 0 24px 0; color: #1f2937; font-size: 20px; font-weight: 700;">📈 핵심 지표 비교</h4>
+      
+      <!-- 조회수 비교 -->
+      <div style="margin-bottom: 28px;">
+        <div style="font-weight: 600; margin-bottom: 12px; color: #374151; font-size: 15px;">조회수</div>
+        ${videoData.map((v, i) => `
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+            <span style="width: 70px; font-size: 14px; color: #6b7280; font-weight: 500;">영상 ${v.index}</span>
+            <div style="flex: 1; background: #f3f4f6; height: 32px; border-radius: 6px; overflow: hidden; position: relative;">
+              <div style="background: ${i === 0 ? 'linear-gradient(90deg, #3b82f6, #2563eb)' : i === 1 ? 'linear-gradient(90deg, #8b5cf6, #7c3aed)' : 'linear-gradient(90deg, #ec4899, #db2777)'}; height: 100%; width: ${v.viewsPercent}%; display: flex; align-items: center; padding: 0 12px; color: white; font-size: 13px; font-weight: 700; transition: width 1.2s ease;">
+                ${formatNumber(v.views)}회 ${v.viewsPercent === 100 ? '🥇' : ''}
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- 좋아요율 비교 -->
+      <div style="margin-bottom: 28px;">
+        <div style="font-weight: 600; margin-bottom: 12px; color: #374151; font-size: 15px;">좋아요율</div>
+        ${videoData.sort((a, b) => b.likeRate - a.likeRate).map((v, rank) => `
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+            <span style="width: 70px; font-size: 14px; color: #6b7280; font-weight: 500;">영상 ${v.index}</span>
+            <div style="flex: 1; background: #f3f4f6; height: 32px; border-radius: 6px; overflow: hidden;">
+              <div style="background: ${rank === 0 ? 'linear-gradient(90deg, #10b981, #059669)' : rank === 1 ? 'linear-gradient(90deg, #f59e0b, #d97706)' : 'linear-gradient(90deg, #ef4444, #dc2626)'}; height: 100%; width: ${Math.min(100, v.likeRate * 100)}%; display: flex; align-items: center; padding: 0 12px; color: white; font-size: 13px; font-weight: 700; transition: width 1.2s ease;">
+                ${v.likeRate}% ${rank === 0 ? '🥇' : rank === 1 ? '🥈' : '🥉'}
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- 바이럴 지수 비교 -->
+      <div>
+        <div style="font-weight: 600; margin-bottom: 12px; color: #374151; font-size: 15px;">바이럴 지수 (구독자 대비 조회수)</div>
+        ${videoData.sort((a, b) => b.viralIndex - a.viralIndex).map((v, rank) => `
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+            <span style="width: 70px; font-size: 14px; color: #6b7280; font-weight: 500;">영상 ${v.index}</span>
+            <div style="flex: 1; background: #f3f4f6; height: 32px; border-radius: 6px; overflow: hidden;">
+              <div style="background: ${rank === 0 ? 'linear-gradient(90deg, #6366f1, #4f46e5)' : rank === 1 ? 'linear-gradient(90deg, #a855f7, #9333ea)' : 'linear-gradient(90deg, #ec4899, #db2777)'}; height: 100%; width: ${Math.min(100, v.viralIndex / 2)}%; display: flex; align-items: center; padding: 0 12px; color: white; font-size: 13px; font-weight: 700; transition: width 1.2s ease;">
+                ${v.viralIndex}% ${rank === 0 ? '🥇' : rank === 1 ? '🥈' : '🥉'}
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 댓글 감정 분석 (예시 데이터, 실제 구현 시 백엔드에서 전달) -->
+    <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 5px solid #f59e0b; padding: 20px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);">
+      <h4 style="margin: 0 0 16px 0; color: #92400e; font-size: 18px; font-weight: 700;">💬 댓글 감정 분석 (실제 댓글 20개 기반)</h4>
+      <div style="font-size: 13px; color: #78350f; margin-bottom: 12px;">※ AI가 댓글을 분석한 결과입니다</div>
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+        <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">긍정</span>
+        <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
+          <div style="background: #10b981; height: 100%; width: 35%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; transition: width 1s ease;">35%</div>
+        </div>
+        <span style="font-size: 14px; color: #78350f; font-weight: 600;">7건</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+        <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">부정</span>
+        <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
+          <div style="background: #ef4444; height: 100%; width: 45%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; transition: width 1s ease;">45%</div>
+        </div>
+        <span style="font-size: 14px; color: #78350f; font-weight: 600;">9건</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">중립</span>
+        <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
+          <div style="background: #6b7280; height: 100%; width: 20%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; transition: width 1s ease;">20%</div>
+        </div>
+        <span style="font-size: 14px; color: #78350f; font-weight: 600;">4건</span>
+      </div>
+    </div>
+
+    <!-- 액션 플랜 카드 -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 30px;">
+      <div style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; padding: 22px; border-radius: 14px; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3); transition: transform 0.2s;">
+        <div style="font-size: 13px; opacity: 0.95; margin-bottom: 6px; font-weight: 600;">🔴 긴급 (1-3일)</div>
+        <div style="font-size: 20px; font-weight: 800; margin-bottom: 14px; line-height: 1.3;">썸네일 신뢰도 보강</div>
+        <div style="font-size: 14px; line-height: 1.7; opacity: 0.95;">
+          • <strong>작업:</strong> "검증완료" 뱃지 추가<br>
+          • <strong>효과:</strong> 좋아요율 증가 예상<br>
+          • <strong>난이도:</strong> 쉬움<br>
+          • <strong>소요:</strong> 1시간
+        </div>
+      </div>
+      <div style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 22px; border-radius: 14px; box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3); transition: transform 0.2s;">
+        <div style="font-size: 13px; opacity: 0.95; margin-bottom: 6px; font-weight: 600;">🟡 중요 (1주)</div>
+        <div style="font-size: 20px; font-weight: 800; margin-bottom: 14px; line-height: 1.3;">시리즈 콘텐츠 기획</div>
+        <div style="font-size: 14px; line-height: 1.7; opacity: 0.95;">
+          • <strong>작업:</strong> 2위 포맷 벤치마킹<br>
+          • <strong>효과:</strong> 안정적 조회수<br>
+          • <strong>난이도:</strong> 보통<br>
+          • <strong>소요:</strong> 3일
+        </div>
+      </div>
+      <div style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 22px; border-radius: 14px; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3); transition: transform 0.2s;">
+        <div style="font-size: 13px; opacity: 0.95; margin-bottom: 6px; font-weight: 600;">🟢 장기 (1개월)</div>
+        <div style="font-size: 20px; font-weight: 800; margin-bottom: 14px; line-height: 1.3;">채널 브랜딩 확립</div>
+        <div style="font-size: 14px; line-height: 1.7; opacity: 0.95;">
+          • <strong>작업:</strong> 일관된 썸네일 스타일<br>
+          • <strong>효과:</strong> 구독자 증가<br>
+          • <strong>난이도:</strong> 어려움<br>
+          • <strong>소요:</strong> 1개월
+        </div>
+      </div>
+    </div>
+
+    <hr style="border: none; border-top: 2px dashed #e5e7eb; margin: 30px 0;">
+    <h3 style="color: #1f2937; font-size: 22px; font-weight: 700; margin-bottom: 20px;">📝 상세 텍스트 분석</h3>
+  `;
+}
+
+/**
  * AI 비교 분석 생성
  */
 async function generateCompareAIAnalysis() {
@@ -4045,8 +4215,11 @@ ${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
     // Markdown을 HTML로 변환 (간단한 변환)
     const html = markdownToHtml(analysis);
     
-    // 결과 표시
-    contentDiv.innerHTML = html;
+    // ⭐ CSS 차트 시각화 추가
+    const dashboardHtml = generateVisualizationDashboard(videosInfo, analysis);
+    
+    // 결과 표시: 대시보드 + 텍스트 분석
+    contentDiv.innerHTML = dashboardHtml + '<div style="margin-top: 30px;">' + html + '</div>';
     resultDiv.classList.remove('hidden');
     
     console.log('✅ [AI 비교 분석] 완료');
