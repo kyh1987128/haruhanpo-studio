@@ -203,111 +203,106 @@ function updateTrendDetailPanel(video) {
     return;
   }
   
+  console.log('📊 영상 데이터:', video);
+  
   panelEl.classList.remove('detail-sidebar-empty');
   panelEl.innerHTML = `
-    <div class="p-6 space-y-6">
+    <div class="p-6 space-y-4">
       <!-- 썸네일 -->
       <div class="relative rounded-lg overflow-hidden">
         <img src="${video.thumbnailUrl}" alt="${video.title}" class="w-full">
       </div>
       
       <!-- 제목 -->
-      <h3 class="text-lg font-bold text-gray-900 leading-snug">${video.title}</h3>
+      <h3 class="text-base font-bold text-gray-900 leading-snug">${video.title}</h3>
       
       <!-- 채널 정보 -->
-      <div class="space-y-2">
+      <div class="space-y-1.5">
         <div class="flex items-center gap-2 text-sm text-gray-700">
           <i class="fas fa-user-circle text-gray-400"></i>
           <span class="font-medium">${video.channel}</span>
         </div>
-        ${video.subscriberCount ? `
         <div class="flex items-center gap-2 text-sm text-gray-600">
           <i class="fas fa-users text-gray-400"></i>
-          <span>구독자 ${formatNumber(video.subscriberCount)}명</span>
+          <span>구독자 ${video.subscriberCount ? formatNumber(video.subscriberCount) : '정보 없음'}명</span>
         </div>
-        ` : ''}
-        ${video.videoCount ? `
         <div class="flex items-center gap-2 text-sm text-gray-600">
           <i class="fas fa-video text-gray-400"></i>
-          <span>영상 ${formatNumber(video.videoCount)}개</span>
+          <span>영상 ${video.videoCount ? formatNumber(video.videoCount) : '정보 없음'}개</span>
         </div>
-        ` : ''}
       </div>
       
       <!-- 통계 -->
-      <div class="grid grid-cols-3 gap-3 py-4 border-t border-b border-gray-200">
+      <div class="grid grid-cols-3 gap-2 py-3 border-t border-b border-gray-200">
         <div class="text-center">
-          <div class="text-lg font-bold text-gray-900">${formatNumber(video.views)}</div>
+          <div class="text-base font-bold text-gray-900">${formatNumber(video.views)}</div>
           <div class="text-xs text-gray-500">조회수</div>
         </div>
-        ${video.likes ? `
         <div class="text-center">
-          <div class="text-lg font-bold text-gray-900">${formatNumber(video.likes)}</div>
+          <div class="text-base font-bold text-gray-900">${video.likes ? formatNumber(video.likes) : '정보 없음'}</div>
           <div class="text-xs text-gray-500">좋아요</div>
         </div>
-        ` : ''}
         <div class="text-center">
-          <div class="text-sm font-medium text-gray-900">${formatRelativeTime(new Date(video.publishedAt))}</div>
+          <div class="text-xs font-medium text-gray-900">${formatRelativeTime(new Date(video.publishedAt))}</div>
           <div class="text-xs text-gray-500">게시일</div>
         </div>
       </div>
       
       <!-- 상세 메트릭 -->
-      ${video.likeRate || video.viralIndex ? `
-      <div class="space-y-2">
-        ${video.likeRate ? `
-        <div class="flex items-center justify-between text-sm">
+      <div class="space-y-1.5 text-sm">
+        <div class="flex items-center justify-between">
           <span class="text-gray-600">좋아요율</span>
-          <span class="font-semibold text-gray-900">${(video.likeRate * 100).toFixed(1)}%</span>
+          <span class="font-semibold text-gray-900">${video.likeRate ? (video.likeRate * 100).toFixed(1) + '%' : '정보 없음'}</span>
         </div>
-        ` : ''}
-        ${video.viralIndex ? `
-        <div class="flex items-center justify-between text-sm">
+        <div class="flex items-center justify-between">
           <span class="text-gray-600">바이럴 지수</span>
-          <span class="font-semibold text-gray-900">${video.viralIndex.toFixed(1)}</span>
+          <span class="font-semibold text-gray-900">${video.viralIndex ? video.viralIndex.toFixed(1) : '정보 없음'}</span>
         </div>
-        ` : ''}
-        ${video.commentCount ? `
-        <div class="flex items-center justify-between text-sm">
+        <div class="flex items-center justify-between">
           <span class="text-gray-600">댓글</span>
-          <span class="font-semibold text-gray-900">${formatNumber(video.commentCount)}개</span>
+          <span class="font-semibold text-gray-900">${video.commentCount ? formatNumber(video.commentCount) + '개' : '정보 없음'}</span>
         </div>
-        ` : ''}
       </div>
-      ` : ''}
       
       <!-- 카테고리 -->
-      <div class="flex items-center gap-2">
-        <span class="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-full">
+      <div class="flex items-center gap-2 border-t pt-3">
+        <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
           <i class="fas fa-tag text-gray-400 mr-1"></i>
           ${getCategoryName(video.category)}
         </span>
       </div>
       
       <!-- 설명 -->
-      ${video.description ? `
-      <div class="border-t pt-4">
+      <div class="border-t pt-3">
         <h4 class="text-sm font-semibold text-gray-700 mb-2">설명</h4>
         <div class="text-sm text-gray-600 leading-relaxed">
-          <p id="detail-description" class="line-clamp-3">${video.description}</p>
-          <button onclick="toggleDescription()" class="text-blue-600 hover:text-blue-700 text-xs mt-2">
+          <div id="detail-description" class="overflow-hidden transition-all duration-300" style="max-height: 4.5em;">
+            ${video.description || '설명이 없습니다.'}
+          </div>
+          <button onclick="toggleTrendDescription()" class="text-blue-600 hover:text-blue-700 text-xs mt-2 font-medium">
             더보기
           </button>
         </div>
       </div>
-      ` : ''}
-      
-      <!-- 액션 버튼 -->
-      <div class="space-y-2 border-t pt-4">
-        <a href="https://www.youtube.com/watch?v=${video.videoId}" 
-           target="_blank"
-           class="flex items-center justify-center gap-2 w-full px-4 py-3 bg-red-600 text-white text-center rounded-lg hover:bg-red-700 transition font-medium">
-          <i class="fab fa-youtube"></i>
-          YouTube에서 보기
-        </a>
-      </div>
     </div>
   `;
+}
+
+/**
+ * 설명 더보기/접기 (트렌드)
+ */
+function toggleTrendDescription() {
+  const descEl = document.getElementById('detail-description');
+  const btnEl = event.target;
+  if (!descEl || !btnEl) return;
+  
+  if (descEl.style.maxHeight === '4.5em') {
+    descEl.style.maxHeight = 'none';
+    btnEl.textContent = '접기';
+  } else {
+    descEl.style.maxHeight = '4.5em';
+    btnEl.textContent = '더보기';
+  }
 }
 
 /**
