@@ -3040,6 +3040,39 @@ document.addEventListener('DOMContentLoaded', () => {
     marketSearchBtn.addEventListener('click', handleUnifiedSearch);
   }
   
+  // 프리셋 버튼 이벤트
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const preset = e.currentTarget.getAttribute('data-preset');
+      const sortSelect = document.getElementById('sort-select');
+      const dateSelect = document.getElementById('date-select');
+      const durationSelect = document.getElementById('duration-select');
+      
+      if (preset === 'viral') {
+        // 🔥 떡상 중: 조회수순 + 1주일
+        if (sortSelect) sortSelect.value = 'viewCount';
+        if (dateSelect) dateSelect.value = 'week';
+        if (durationSelect) durationSelect.value = '';
+      } else if (preset === 'fresh') {
+        // 🌱 최신 트렌드: 최신순 + 1주일
+        if (sortSelect) sortSelect.value = 'date';
+        if (dateSelect) dateSelect.value = 'week';
+        if (durationSelect) durationSelect.value = '';
+      } else if (preset === 'longform') {
+        // 📺 롱폼 분석: 조회수순 + 20분 이상
+        if (sortSelect) sortSelect.value = 'viewCount';
+        if (dateSelect) dateSelect.value = '';
+        if (durationSelect) durationSelect.value = 'long';
+      }
+      
+      // 시각적 피드백
+      e.currentTarget.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        e.currentTarget.style.transform = 'scale(1)';
+      }, 100);
+    });
+  });
+  
   // 마켓 검색 입력 (엔터키)
   const marketSearchInput = document.getElementById('market-search-input');
   if (marketSearchInput) {

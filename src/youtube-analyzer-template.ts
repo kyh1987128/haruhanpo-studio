@@ -934,83 +934,91 @@ export function youtubeAnalyzerTemplate() {
       <!-- 좌측 필터 사이드바 -->
       <aside class="filter-sidebar">
         <div class="p-4">
-          <h2 class="font-bold text-lg mb-4">🔍 검색 & 필터</h2>
+          <h2 class="font-bold text-lg mb-4">🎯 영상 검색</h2>
           
-          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-          <!-- 1. 키워드 검색 -->
-          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-          <div class="mb-6 pb-6 border-b border-gray-200">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">📝 키워드 검색</h3>
+          <!-- 키워드 검색 -->
+          <div class="mb-4">
+            <label class="text-sm font-semibold text-gray-700 mb-2 block">🔍 키워드</label>
             <input
               type="text"
               id="market-search-input"
-              placeholder="예: 게임 실황, 브이로그, 요리"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+              placeholder="예: 게임 RPG 초보 공략 2024"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm"
             />
+            <div class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-gray-700">
+              <p class="font-semibold mb-1">💡 효과적인 검색 팁:</p>
+              <p class="mb-1">• <strong>구체적</strong>: "게임 RPG 초보 공략"</p>
+              <p>• <strong>제외</strong>: "게임 -오징어게임 -shorts"</p>
+            </div>
           </div>
           
-          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-          <!-- 2. 카테고리 선택 -->
-          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-          <div class="mb-6 pb-6 border-b border-gray-200">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">📂 카테고리</h3>
+          <!-- 정렬 방식 -->
+          <div class="mb-4">
+            <label class="text-sm font-semibold text-gray-700 mb-2 block">📊 정렬</label>
             <select 
-              id="category-select" 
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm"
+              id="sort-select" 
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm"
             >
-              <option value="">전체 카테고리</option>
-              <option value="1">영화/애니메이션</option>
-              <option value="2">자동차/교통</option>
-              <option value="10">음악</option>
-              <option value="15">반려동물</option>
-              <option value="17">스포츠</option>
-              <option value="19">여행/이벤트</option>
-              <option value="20">게임</option>
-              <option value="22">브이로그</option>
-              <option value="23">코미디</option>
-              <option value="24">엔터테인먼트</option>
-              <option value="25">뉴스/정치</option>
-              <option value="26">노하우/스타일</option>
-              <option value="27">교육</option>
-              <option value="28">과학/기술</option>
+              <option value="relevance">YouTube 추천 (관련성)</option>
+              <option value="viewCount">조회수순</option>
+              <option value="date">최신순</option>
+              <option value="rating">평점순</option>
             </select>
           </div>
           
-          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-          <!-- 3. 국가별 필터 -->
-          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-          <div class="mb-6 pb-6 border-b border-gray-200">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">🌍 글로벌 지역</h3>
+          <!-- 업로드 날짜 -->
+          <div class="mb-4">
+            <label class="text-sm font-semibold text-gray-700 mb-2 block">📅 업로드 날짜</label>
             <select 
-              id="region-select" 
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm"
+              id="date-select" 
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm"
             >
-              <option value="">전 세계</option>
-              <option value="KR">🇰🇷 한국</option>
-              <option value="US">🇺🇸 미국</option>
-              <option value="JP">🇯🇵 일본</option>
-              <option value="GB">🇬🇧 영국</option>
-              <option value="IN">🇮🇳 인도</option>
-              <option value="DE">🇩🇪 독일</option>
-              <option value="FR">🇫🇷 프랑스</option>
-              <option value="CA">🇨🇦 캐나다</option>
-              <option value="AU">🇦🇺 호주</option>
+              <option value="">전체 기간</option>
+              <option value="today">오늘 (24시간)</option>
+              <option value="week">1주일 이내</option>
+              <option value="month">1개월 이내</option>
+              <option value="year">1년 이내</option>
             </select>
           </div>
           
-          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+          <!-- 영상 길이 -->
+          <div class="mb-6">
+            <label class="text-sm font-semibold text-gray-700 mb-2 block">⏱️ 영상 길이</label>
+            <select 
+              id="duration-select" 
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm"
+            >
+              <option value="">전체</option>
+              <option value="short">Shorts (60초 이하)</option>
+              <option value="medium">일반 (4-20분)</option>
+              <option value="long">롱폼 (20분 이상)</option>
+            </select>
+          </div>
+          
+          <!-- 빠른 프리셋 -->
+          <div class="mb-6 pb-6 border-b border-gray-200">
+            <label class="text-sm font-semibold text-gray-700 mb-2 block">⚡ 빠른 프리셋</label>
+            <div class="grid grid-cols-1 gap-2">
+              <button class="preset-btn px-3 py-2 text-xs bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg text-left transition" data-preset="viral">
+                🔥 <strong>떡상 중</strong><br>
+                <span class="text-gray-600">조회수순 + 1주일</span>
+              </button>
+              <button class="preset-btn px-3 py-2 text-xs bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg text-left transition" data-preset="fresh">
+                🌱 <strong>최신 트렌드</strong><br>
+                <span class="text-gray-600">최신순 + 1주일</span>
+              </button>
+              <button class="preset-btn px-3 py-2 text-xs bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg text-left transition" data-preset="longform">
+                📺 <strong>롱폼 분석</strong><br>
+                <span class="text-gray-600">조회수순 + 20분 이상</span>
+              </button>
+            </div>
+          </div>
+          
           <!-- 검색 버튼 -->
-          <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-          <div class="mt-6 pt-6 border-t border-gray-200">
-            <button id="market-search-btn" class="w-full px-6 py-4 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition text-base">
-              <i class="fas fa-search mr-2"></i>
-              🔍 검색 시작
-            </button>
-            <button id="reset-filters-btn" class="w-full px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium rounded-lg mt-2 transition text-sm">
-              <i class="fas fa-redo mr-2"></i>
-              🔄 필터 초기화
-            </button>
-          </div>
+          <button id="market-search-btn" class="w-full px-6 py-4 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition text-base">
+            <i class="fas fa-search mr-2"></i>
+            🔍 검색 시작 (최대 50개)
+          </button>
         </div>
       </aside>
       
