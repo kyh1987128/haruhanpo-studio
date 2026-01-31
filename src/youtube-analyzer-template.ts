@@ -1204,7 +1204,7 @@ export function youtubeAnalyzerTemplate() {
             트렌드 인사이트
           </h1>
           <p class="text-gray-600">
-            실시간 급상승 키워드와 카테고리별 인기 영상을 확인하세요 
+            카테고리별 인기 영상을 확인하세요 
             <span class="text-sm text-gray-500">(4시간마다 자동 업데이트)</span>
           </p>
         </div>
