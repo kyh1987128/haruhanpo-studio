@@ -42,6 +42,80 @@ function setMemoryCache(key: string, data: any, ttlMinutes: number) {
   console.log(`💾 [캐시 저장] ${key} (${ttlMinutes}분)`);
 }
 
+// ⭐ 실제 댓글 기반 감정 분석 (로컬 키워드 방식)
+async function analyzeCommentSentiment(videoId: string, youtubeApiKey: string) {
+  try {
+    // 실제 댓글 20개 수집 (YouTube API 1 unit)
+    const params = new URLSearchParams({
+      part: 'snippet',
+      videoId: videoId,
+      maxResults: '20',
+      order: 'relevance',
+      key: youtubeApiKey
+    });
+
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/commentThreads?${params.toString()}`
+    );
+
+    if (!response.ok) {
+      console.error('댓글 수집 실패:', response.statusText);
+      return null;
+    }
+
+    const data = await response.json();
+    const comments = data.items || [];
+
+    if (comments.length === 0) {
+      return null;
+    }
+
+    // 로컬 키워드 분석 (AI 비용 0원)
+    const positiveKeywords = ['좋아요', '최고', '완벽', '감사', '재밌', '대박', '훌륭', '멋지', '굿', '👍', '❤️', '🔥', '😊', '💯'];
+    const negativeKeywords = ['별로', '최악', '실망', '지루', '사기', '낚시', '허위', '👎', '😡', '🤮', '😠'];
+
+    let positive = 0;
+    let negative = 0;
+    let neutral = 0;
+    const sampleComments: string[] = [];
+
+    comments.forEach((item: any) => {
+      const text = item.snippet?.topLevelComment?.snippet?.textDisplay?.toLowerCase() || '';
+      
+      // 샘플 댓글 수집 (최대 3개)
+      if (sampleComments.length < 3) {
+        sampleComments.push(item.snippet?.topLevelComment?.snippet?.textDisplay || '');
+      }
+
+      const hasPositive = positiveKeywords.some(word => text.includes(word));
+      const hasNegative = negativeKeywords.some(word => text.includes(word));
+
+      if (hasPositive && !hasNegative) {
+        positive++;
+      } else if (hasNegative && !hasPositive) {
+        negative++;
+      } else {
+        neutral++;
+      }
+    });
+
+    const total = comments.length;
+
+    return {
+      positive: Math.round((positive / total) * 100),
+      negative: Math.round((negative / total) * 100),
+      neutral: Math.round((neutral / total) * 100),
+      total,
+      isRealData: true,
+      analyzedAt: new Date().toISOString(),
+      sampleComments
+    };
+  } catch (error) {
+    console.error('댓글 감정 분석 오류:', error);
+    return null;
+  }
+}
+
 type Bindings = {
   SUPABASE_URL: string
   SUPABASE_SERVICE_KEY: string  // Cloudflare에서는 SUPABASE_SERVICE_KEY 사용
@@ -2818,6 +2892,84 @@ app.get('/api/youtube/test-env', async (c) => {
       timestamp: new Date().toISOString()
     }
   })
+})
+
+// ========================================
+// 📊 댓글 감정 분석 API (실제 댓글 기반)
+// ========================================
+app.post('/api/youtube/comment-sentiment', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { videoIds } = body;
+
+    if (!videoIds || !Array.isArray(videoIds) || videoIds.length === 0) {
+      return c.json({
+        success: false,
+        error: { code: 'INVALID_INPUT', message: '영상 ID 목록을 입력해주세요.' }
+      }, 400);
+    }
+
+    if (videoIds.length > 3) {
+      return c.json({
+        success: false,
+        error: { code: 'TOO_MANY_VIDEOS', message: '최대 3개 영상까지 분석 가능합니다.' }
+      }, 400);
+    }
+
+    const youtubeApiKey = c.env.YOUTUBE_API_KEY;
+    if (!youtubeApiKey) {
+      return c.json({
+        success: false,
+        error: { code: 'API_KEY_MISSING', message: 'YouTube API 키가 설정되지 않았습니다.' }
+      }, 500);
+    }
+
+    // 각 영상의 댓글 감정 분석 (캐싱 적용)
+    const results = await Promise.all(
+      videoIds.map(async (videoId: string) => {
+        // 캐시 확인 (12시간)
+        const cacheKey = `sentiment_${videoId}`;
+        const cached = getFromMemoryCache(cacheKey);
+        if (cached) {
+          return { videoId, ...cached };
+        }
+
+        // 실제 댓글 분석
+        const sentiment = await analyzeCommentSentiment(videoId, youtubeApiKey);
+        
+        if (sentiment) {
+          // 캐시 저장 (12시간)
+          setMemoryCache(cacheKey, sentiment, 720);
+          return { videoId, ...sentiment };
+        }
+
+        return {
+          videoId,
+          positive: 0,
+          negative: 0,
+          neutral: 0,
+          total: 0,
+          isRealData: false,
+          message: '댓글을 가져올 수 없습니다.'
+        };
+      })
+    );
+
+    return c.json({
+      success: true,
+      data: { results }
+    });
+
+  } catch (error: any) {
+    console.error('댓글 감정 분석 오류:', error);
+    return c.json({
+      success: false,
+      error: {
+        code: 'SENTIMENT_ANALYSIS_ERROR',
+        message: error.message || '댓글 감정 분석 중 오류가 발생했습니다.'
+      }
+    }, 500);
+  }
 })
 
 export default app

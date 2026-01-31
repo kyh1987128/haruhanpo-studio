@@ -4387,6 +4387,47 @@ ${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
       console.log('⚠️ JSON 파싱 실패, Markdown 모드로 전환');
     }
     
+    // ⭐ 댓글 감정 분석 실행 (실제 데이터 기반)
+    console.log('📊 [댓글 감정 분석] 시작...');
+    let commentSentiments = {};
+    try {
+      const videoIds = videosInfo.map(v => v.videoId);
+      const sentimentResponse = await fetch('/api/youtube/comment-sentiment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ videoIds })
+      });
+      
+      if (sentimentResponse.ok) {
+        const sentimentResult = await sentimentResponse.json();
+        if (sentimentResult.success && sentimentResult.data?.results) {
+          sentimentResult.data.results.forEach(result => {
+            if (result.isRealData) {
+              commentSentiments[result.videoId] = {
+                positive: result.positive,
+                negative: result.negative,
+                neutral: result.neutral,
+                total: result.total,
+                sampleComments: result.sampleComments || []
+              };
+              console.log(`✅ [댓글 분석] ${result.videoId}: 긍정 ${result.positive}%, 부정 ${result.negative}%, 중립 ${result.neutral}%`);
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.error('⚠️ [댓글 감정 분석] 오류:', error);
+    }
+    
+    // videosInfo에 댓글 감정 데이터 추가
+    videosInfo.forEach(video => {
+      if (commentSentiments[video.videoId]) {
+        video.commentSentiment = commentSentiments[video.videoId];
+      }
+    });
+    
     let finalHtml = '';
     
     if (strategyData && strategyData.individualAnalysis) {
