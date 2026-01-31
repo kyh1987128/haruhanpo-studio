@@ -2843,7 +2843,7 @@ function normalizeYouTubeData(videos) {
         const views = Number(video.views || video.viewCount || video.statistics?.viewCount || 0);
         const likes = Number(video.likes || video.likeCount || video.statistics?.likeCount || 0);
         const comments = Number(video.comments || video.commentCount || video.statistics?.commentCount || 0);
-        const subscribers = Number(video.subscribers || video.subscriberCount || video.statistics?.subscriberCount || 0);
+        const subscribers = Number(video.subscribers || video.subscriberCount || video.channelInfo?.subscriberCount || video.statistics?.subscriberCount || 0);
         const title = video.title || video.snippet?.title || '제목 없음';
         const channel = video.channel || video.channelTitle || video.snippet?.channelTitle || '채널 없음';
         
@@ -3606,6 +3606,9 @@ function openCompareModal() {
   // ⭐ 데이터 정규화
   selectedCompareVideos = normalizeYouTubeData(selectedCompareVideos);
   
+  // ⭐ 전역 변수 저장 (디버깅용)
+  window.comparisonVideosData = selectedCompareVideos;
+  
   console.log('📊 [비교] 모달 열기:', selectedCompareVideos.length, '개');
   console.log('🔍 [비교 디버깅] 첫 번째 영상 데이터:', {
     subscriberCount: selectedCompareVideos[0]?.subscriberCount,
@@ -3613,6 +3616,7 @@ function openCompareModal() {
     commentCount: selectedCompareVideos[0]?.commentCount || selectedCompareVideos[0]?.comments,
     statistics: selectedCompareVideos[0]?.statistics
   });
+  console.log('🔍 비교 분석 데이터:', window.comparisonVideosData?.[0]);
   
   // 모달 표시
   const modal = document.getElementById('compare-modal');
