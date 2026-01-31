@@ -859,30 +859,109 @@ ${videosWithComments.map((v: any, i: number) => {
 • 화살표(→)로 인과관계 명시
 • 체크박스(✅❌)로 긍정/부정 표시
 
-다음 형식으로 JSON 응답해주세요:
-{
-  "individualAnalysis": [
-    {
-      "videoIndex": 1,
-      "performanceAnalysis": "성과 지표 분석 (2-3문장)",
-      "titleStrategy": "제목 전략 분석 (2-3문장)",
-      "thumbnailStrategy": "썸네일 전략 분석 (2-3문장)",
-      "commentAnalysis": "실제 댓글 반응 분석 (3-4문장, 긍정/부정/질문 키워드 포함)",
-      "durationAnalysis": "영상 길이 분석 (1-2문장)"
-    }
-  ],
-  "comparisonTable": "표 형식 비교 (위 형식 그대로)",
-  "keyFindings": "핵심 발견 (2-3문장)",
-  "actionPlan": [
-    {
-      "priority": 1,
-      "action": "구체적 액션",
-      "effect": "예상 효과",
-      "difficulty": "쉬움/보통/어려움",
-      "timeRequired": "소요 시간"
-    }
-  ]
-}`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎨 응답 형식: HTML + CSS 시각화 포함 (중요!)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+응답 시작 부분에 다음 HTML/CSS 시각화를 반드시 포함:
+
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 24px; border-radius: 16px; margin: 20px 0; color: white;">
+  <h3 style="margin: 0 0 16px 0; font-size: 20px;">📊 종합 성과 대시보드</h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+    <div style="background: rgba(255,255,255,0.1); padding: 16px; border-radius: 8px;">
+      <div style="font-size: 14px; opacity: 0.9;">🎬 영상 1</div>
+      <div style="font-size: 24px; font-weight: bold; margin: 8px 0;">[점수]/100</div>
+      <div style="background: rgba(255,255,255,0.2); height: 8px; border-radius: 4px; overflow: hidden;">
+        <div style="background: #10b981; height: 100%; width: [점수]%;"></div>
+      </div>
+    </div>
+    <!-- 영상 2, 3도 동일 형식 -->
+  </div>
+</div>
+
+<div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; margin: 20px 0;">
+  <h4 style="margin: 0 0 16px 0; color: #1f2937;">📈 핵심 지표 비교</h4>
+  
+  <div style="margin-bottom: 20px;">
+    <div style="font-weight: 600; margin-bottom: 8px;">조회수</div>
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+      <span style="width: 60px; font-size: 14px;">영상 1</span>
+      <div style="flex: 1; background: #f3f4f6; height: 24px; border-radius: 4px; overflow: hidden;">
+        <div style="background: linear-gradient(90deg, #3b82f6, #2563eb); height: 100%; width: [최대값 기준 %]%; display: flex; align-items: center; padding: 0 8px; color: white; font-size: 12px; font-weight: 600;">[조회수]</div>
+      </div>
+    </div>
+    <!-- 영상 2, 3도 동일 -->
+  </div>
+
+  <div style="margin-bottom: 20px;">
+    <div style="font-weight: 600; margin-bottom: 8px;">좋아요율</div>
+    <!-- 위와 동일한 바 차트 구조 -->
+  </div>
+
+  <div>
+    <div style="font-weight: 600; margin-bottom: 8px;">바이럴 지수</div>
+    <!-- 위와 동일한 바 차트 구조 -->
+  </div>
+</div>
+
+<div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 8px; margin: 20px 0;">
+  <h4 style="margin: 0 0 12px 0; color: #92400e;">💬 댓글 감정 분석</h4>
+  <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+    <span style="width: 80px; font-size: 14px; color: #78350f;">긍정 [%]</span>
+    <div style="flex: 1; background: rgba(0,0,0,0.1); height: 20px; border-radius: 10px; overflow: hidden;">
+      <div style="background: #10b981; height: 100%; width: [%]%;"></div>
+    </div>
+    <span style="font-size: 14px; color: #78350f;">[건수]건</span>
+  </div>
+  <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+    <span style="width: 80px; font-size: 14px; color: #78350f;">부정 [%]</span>
+    <div style="flex: 1; background: rgba(0,0,0,0.1); height: 20px; border-radius: 10px; overflow: hidden;">
+      <div style="background: #ef4444; height: 100%; width: [%]%;"></div>
+    </div>
+    <span style="font-size: 14px; color: #78350f;">[건수]건</span>
+  </div>
+  <div style="display: flex; align-items: center; gap: 12px;">
+    <span style="width: 80px; font-size: 14px; color: #78350f;">중립 [%]</span>
+    <div style="flex: 1; background: rgba(0,0,0,0.1); height: 20px; border-radius: 10px; overflow: hidden;">
+      <div style="background: #6b7280; height: 100%; width: [%]%;"></div>
+    </div>
+    <span style="font-size: 14px; color: #78350f;">[건수]건</span>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 20px 0;">
+  <div style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; padding: 20px; border-radius: 12px;">
+    <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">🔴 긴급 (1-3일)</div>
+    <div style="font-size: 18px; font-weight: bold; margin-bottom: 12px;">[액션 제목]</div>
+    <div style="font-size: 14px; line-height: 1.6;">
+      • 작업: [구체적 내용]<br>
+      • 효과: [예상 결과]<br>
+      • 난이도: [쉬움/보통/어려움]<br>
+      • 소요: [시간]
+    </div>
+  </div>
+  <div style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 20px; border-radius: 12px;">
+    <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">🟡 중요 (1주)</div>
+    <!-- 동일 구조 -->
+  </div>
+  <div style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 20px; border-radius: 12px;">
+    <div style="font-size: 12px; opacity: 0.9; margin-bottom: 4px;">🟢 장기 (1개월)</div>
+    <!-- 동일 구조 -->
+  </div>
+</div>
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+위 HTML/CSS 시각화 다음에 기존 텍스트 분석을 이어서 작성:
+
+[1단계] 영상별 심층 분석
+[2단계] 비교 분석  
+[3단계] 액션 플랜
+
+주의: 
+- 실제 데이터 기반으로 [점수], [%], [조회수] 등을 정확한 숫자로 대체
+- 바 차트 width는 실제 비율로 계산 (예: 701만/701만 = 100%, 444만/701만 = 63%)
+- 댓글 감정 분석은 실제 댓글 20개 기반으로 계산`
 
     const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
