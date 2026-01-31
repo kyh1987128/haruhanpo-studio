@@ -3173,12 +3173,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   
-  // CSV/Excel 다운로드
-  // CSV/Excel 다운로드
-  document.getElementById('export-csv-btn')?.addEventListener('click', () => {
-    exportToCSV();
-  });
-  
+  // Excel 다운로드
   document.getElementById('export-excel-btn')?.addEventListener('click', () => {
     exportToExcel();
   });
@@ -3307,15 +3302,15 @@ function exportToCSV() {
     
     // CSV 데이터 생성
     const rows = filteredMarketVideos.map(video => {
-      const title = (video.snippet?.title || '').replace(/"/g, '""'); // CSV escape
-      const channelTitle = (video.snippet?.channelTitle || '').replace(/"/g, '""');
-      const views = video.statistics?.viewCount || 0;
+      const title = (video.snippet?.title || video.title || '').replace(/"/g, '""'); // CSV escape
+      const channelTitle = (video.snippet?.channelTitle || video.channel || '').replace(/"/g, '""');
+      const views = video.statistics?.viewCount || video.views || 0;
       const performanceRatio = video.performance?.ratio || 0;
       const performanceLevel = getPerformanceLevelText(video.performance?.level || 'low');
-      const subscribers = video.channelInfo?.subscriberCount || 0;
-      const likes = video.statistics?.likeCount || 0;
+      const subscribers = video.subscriberCount || video.subscribers || 0;  // ⭐ 수정: 정규화된 필드명 사용
+      const likes = video.statistics?.likeCount || video.likes || 0;
       const likeRate = views > 0 ? ((likes / views) * 100).toFixed(2) : '0.00';
-      const comments = video.statistics?.commentCount || 0;
+      const comments = video.statistics?.commentCount || video.comments || 0;
       const publishedAt = formatDate(video.snippet?.publishedAt || '');
       const duration = video.displayDuration || formatDuration(video.contentDetails?.duration || video.duration || 'PT0S');
       const categoryId = video.snippet?.categoryId || '';
@@ -3411,15 +3406,15 @@ function exportToExcel() {
     // 데이터
     tableHTML += '<tbody>';
     filteredMarketVideos.forEach(video => {
-      const title = escapeHtml(video.snippet?.title || '');
-      const channelTitle = escapeHtml(video.snippet?.channelTitle || '');
-      const views = video.statistics?.viewCount || 0;
+      const title = escapeHtml(video.snippet?.title || video.title || '');
+      const channelTitle = escapeHtml(video.snippet?.channelTitle || video.channel || '');
+      const views = video.statistics?.viewCount || video.views || 0;
       const performanceRatio = video.performance?.ratio || 0;
       const performanceLevel = getPerformanceLevelText(video.performance?.level || 'low');
-      const subscribers = video.channelInfo?.subscriberCount || 0;
-      const likes = video.statistics?.likeCount || 0;
+      const subscribers = video.subscriberCount || video.subscribers || 0;  // ⭐ 수정: 정규화된 필드명 사용
+      const likes = video.statistics?.likeCount || video.likes || 0;
       const likeRate = views > 0 ? ((likes / views) * 100).toFixed(2) : '0.00';
-      const comments = video.statistics?.commentCount || 0;
+      const comments = video.statistics?.commentCount || video.comments || 0;
       const publishedAt = formatDate(video.snippet?.publishedAt || '');
       const duration = video.displayDuration || formatDuration(video.contentDetails?.duration || video.duration || 'PT0S');
       const categoryId = video.snippet?.categoryId || '';

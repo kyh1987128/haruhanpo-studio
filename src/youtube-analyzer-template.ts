@@ -1042,9 +1042,6 @@ export function youtubeAnalyzerTemplate() {
               <i class="far fa-star text-yellow-500 mr-1"></i>
               북마크만 보기 (<span id="bookmark-count">0</span>)
             </button>
-            <button id="export-csv-btn" class="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">
-              📥 CSV 다운로드
-            </button>
             <button id="export-excel-btn" class="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50">
               📊 Excel 다운로드
             </button>
