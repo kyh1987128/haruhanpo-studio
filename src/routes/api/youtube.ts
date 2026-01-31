@@ -13,6 +13,37 @@ import { saveAnalysisHistory, getAnalysisHistory, getHistoryById, deleteHistory,
 
 import type { AnalysisRequest, ApiResponse, AnalysisResult, PaginationParams } from '../../types/youtube'
 
+// ⭐ 간단한 인메모리 캐시 (Redis 없이 할당량 절약)
+const memoryCache = new Map<string, { data: any, expiry: number }>();
+
+function getFromMemoryCache(key: string) {
+  const item = memoryCache.get(key);
+  if (!item || Date.now() > item.expiry) {
+    memoryCache.delete(key);
+    return null;
+  }
+  console.log(`✅ [캐시 HIT] ${key}`);
+  return item.data;
+}
+
+function setMemoryCache(key: string, data: any, ttlMinutes: number) {
+  memoryCache.set(key, {
+    data,
+    expiry: Date.now() + (ttlMinutes * 60 * 1000)
+  });
+  console.log(`💾 [캐시 저장] ${key} (${ttlMinutes}분)`);
+}
+
+// 10분마다 만료된 캐시 정리
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, item] of memoryCache.entries()) {
+    if (now > item.expiry) {
+      memoryCache.delete(key);
+    }
+  }
+}, 10 * 60 * 1000);
+
 type Bindings = {
   SUPABASE_URL: string
   SUPABASE_SERVICE_KEY: string  // Cloudflare에서는 SUPABASE_SERVICE_KEY 사용
@@ -818,26 +849,38 @@ ${videosWithComments.map((v: any, i: number) => {
 다음 표 형식으로 3개 영상의 핵심 지표를 나란히 비교:
 
 🔍 **결정적 차이점 비교**
-┌──────────┬─────────┬─────────┬─────────┐
-│ 지표     │ 영상 1  │ 영상 2  │ 영상 3  │
-├──────────┼─────────┼─────────┼─────────┤
-│ 조회수   │ [수치]  │ [수치]  │ [수치]  │
-│ 좋아요율 │ [%]     │ [%]     │ [%]     │
-│ 바이럴   │ [%]     │ [%]     │ [%]     │
-│ 댓글긍정 │ [분석]  │ [분석]  │ [분석]  │
-│ 영상길이 │ [시간]  │ [시간]  │ [시간]  │
-└──────────┴─────────┴─────────┴─────────┘
+
+| 지표 | 영상 1 | 영상 2 | 영상 3 |
+|------|--------|--------|--------|
+| 조회수 | [수치] | [수치] | [수치] |
+| 좋아요율 | [%] | [%] | [%] |
+| 바이럴 | [%] | [%] | [%] |
+| 댓글긍정 | [분석] | [분석] | [분석] |
+| 영상길이 | [시간] | [시간] | [시간] |
 
 **핵심 발견**: 1위 vs 꼴찌 영상의 결정적 차이점을 2-3문장으로 요약
 
 **[3단계] 즉시 실행 가능한 액션 플랜 (3개만)** ⭐
 
-각 액션마다 반드시 포함:
-• ✅ 구체적 액션 (예: "영상 1을 12분 → 3분으로 재편집")
-• 📈 예상 효과 (예: "참여도 3배 증가 예상")
-• 🎯 실행 난이도 (쉬움/보통/어려움)
-• 🏆 우선순위 (1/2/3순위)
-• ⏰ 소요 시간 (예: "반나절 작업")
+각 액션마다 반드시 다음 형식으로 작성:
+
+**1순위: [액션 제목]**
+- **액션**: 구체적 실행 내용
+- **예상 효과**: 수치 기반 효과
+- **난이도**: 쉬움/보통/어려움
+- **소요 시간**: 예상 시간
+
+**2순위: [액션 제목]**
+- **액션**: 구체적 실행 내용
+- **예상 효과**: 수치 기반 효과
+- **난이도**: 쉬움/보통/어려움
+- **소요 시간**: 예상 시간
+
+**3순위: [액션 제목]**
+- **액션**: 구체적 실행 내용
+- **예상 효과**: 수치 기반 효과
+- **난이도**: 쉬움/보통/어려움
+- **소요 시간**: 예상 시간
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🚫 절대 금지 사항
@@ -850,16 +893,18 @@ ${videosWithComments.map((v: any, i: number) => {
 ❌ 댓글 데이터가 없을 시 추측으로 반응 분석 금지
 ❌ "공통 키워드", "성공 패턴", "최적 게시 시간" 섹션 생성 금지
 ❌ "콘텐츠 제안 5개" 섹션 생성 금지
+❌ ASCII 박스 문자(┌─┐, │, └─┘) 사용 금지 - Markdown만 사용
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ 필수 시각화 요소
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 • 이모지/아이콘 20개 이상 사용 (📊📈🎯💡🔍💬✅❌ 등)
-• 박스(┌─┐) 또는 구분선(━━━) 10개 이상 사용
-• 표 형식 비교 분석 1개 이상 포함
+• 구분선(━━━) 10개 이상 사용
+• Markdown Table 형식 비교 분석 1개 이상 포함
 • 화살표(→)로 인과관계 명시
 • 체크박스(✅❌)로 긍정/부정 표시
+• 불렛 포인트(-) 사용으로 가독성 확보
 
 다음 형식으로 JSON 응답해주세요:
 {
@@ -1294,6 +1339,13 @@ app.post('/api/youtube/competitor/compare', async (c) => {
       }, 400)
     }
 
+    // ⭐ 캐시 키 생성 (6시간 캐싱)
+    const cacheKey = `compare_${channelIds.sort().join('_')}_${period}`;
+    const cached = getFromMemoryCache(cacheKey);
+    if (cached) {
+      return c.json(cached);
+    }
+
     const youtubeApiKey = c.env.YOUTUBE_API_KEY
     if (!youtubeApiKey) {
       return c.json({
@@ -1426,10 +1478,15 @@ app.post('/api/youtube/competitor/compare', async (c) => {
       avgLikeRate: [...channels].sort((a, b) => b.metrics.avgLikeRate - a.metrics.avgLikeRate).map(c => c.channelId)
     }
 
-    return c.json({
+    const response = {
       success: true,
       data: { channels, rankings, period }
-    })
+    };
+    
+    // ⭐ 캐시 저장 (6시간)
+    setMemoryCache(cacheKey, response, 360);
+    
+    return c.json(response)
 
   } catch (error: any) {
     console.error('Competitor comparison error:', error)
