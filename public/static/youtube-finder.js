@@ -3603,6 +3603,12 @@ function openCompareModal() {
   selectedCompareVideos = normalizeYouTubeData(selectedCompareVideos);
   
   console.log('📊 [비교] 모달 열기:', selectedCompareVideos.length, '개');
+  console.log('🔍 [비교 디버깅] 첫 번째 영상 데이터:', {
+    subscriberCount: selectedCompareVideos[0]?.subscriberCount,
+    duration: selectedCompareVideos[0]?.duration,
+    commentCount: selectedCompareVideos[0]?.commentCount || selectedCompareVideos[0]?.comments,
+    statistics: selectedCompareVideos[0]?.statistics
+  });
   
   // 모달 표시
   const modal = document.getElementById('compare-modal');
@@ -3686,7 +3692,8 @@ function renderCompareTable() {
           value = video.statistics?.viewCount || 0;
           break;
         case 'subscribers':
-          value = video.channelInfo?.subscriberCount || 0;
+          // ⭐ 수정: 구독자 수 다중 경로 지원
+          value = video.subscriberCount || video.subscribers || video.channelInfo?.subscriberCount || video.statistics?.subscriberCount || 0;
           break;
         case 'performance':
           value = parseFloat(video.performance?.ratio || 0);
@@ -3700,13 +3707,15 @@ function renderCompareTable() {
           value = views > 0 ? (likes / views) * 100 : 0;
           break;
         case 'comments':
-          value = video.statistics?.commentCount || 0;
+          // ⭐ 수정: 댓글 수 다중 경로 지원
+          value = video.comments || video.commentCount || video.statistics?.commentCount || 0;
           break;
         case 'publishedAt':
           return formatDate(video.snippet?.publishedAt || '');
         case 'duration':
-          // ⭐ 수정: video.duration 직접 사용 (이미 "5:11" 형식으로 정규화됨)
-          return video.duration || '정보 없음';
+          // ⭐ 수정: 영상 길이 다중 경로 지원
+          const rawDur = video.duration || video.contentDetails?.duration || video.snippet?.duration || '';
+          return rawDur && rawDur !== 'PT0S' ? (rawDur.includes(':') ? rawDur : formatDuration(rawDur)) : '정보 없음';
         case 'categoryId':
           // ⭐ 수정: category 필드 사용 (이미 한글로 정규화됨)
           return video.category || video.snippet?.categoryId || '-';
@@ -3774,17 +3783,17 @@ function renderCompareChart() {
   
   // 데이터셋 준비
   const datasets = selectedCompareVideos.map((video, index) => {
-    const views = video.statistics?.viewCount || 0;
-    const subscribers = video.channelInfo?.subscriberCount || 1;
-    const likes = video.statistics?.likeCount || 0;
-    const comments = video.statistics?.commentCount || 0;
+    const views = video.views || video.statistics?.viewCount || 0;
+    const subscribers = video.subscriberCount || video.subscribers || video.channelInfo?.subscriberCount || 1;
+    const likes = video.likes || video.statistics?.likeCount || 0;
+    const comments = video.comments || video.commentCount || video.statistics?.commentCount || 0;
     const performance = parseFloat(video.performance?.ratio || 0);
     
     // 정규화 (0-100 스케일)
-    const maxViews = Math.max(...selectedCompareVideos.map(v => v.statistics?.viewCount || 0));
-    const maxSubscribers = Math.max(...selectedCompareVideos.map(v => v.channelInfo?.subscriberCount || 0));
-    const maxLikes = Math.max(...selectedCompareVideos.map(v => v.statistics?.likeCount || 0));
-    const maxComments = Math.max(...selectedCompareVideos.map(v => v.statistics?.commentCount || 0));
+    const maxViews = Math.max(...selectedCompareVideos.map(v => v.views || v.statistics?.viewCount || 0));
+    const maxSubscribers = Math.max(...selectedCompareVideos.map(v => v.subscriberCount || v.subscribers || v.channelInfo?.subscriberCount || 0));
+    const maxLikes = Math.max(...selectedCompareVideos.map(v => v.likes || v.statistics?.likeCount || 0));
+    const maxComments = Math.max(...selectedCompareVideos.map(v => v.comments || v.commentCount || v.statistics?.commentCount || 0));
     const maxPerformance = Math.max(...selectedCompareVideos.map(v => parseFloat(v.performance?.ratio || 0)));
     
     const data = [
