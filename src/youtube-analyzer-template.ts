@@ -1197,9 +1197,9 @@ export function youtubeAnalyzerTemplate() {
          ======================================== -->
     <div id="tab-trends-insights" class="tab-content hidden">
       
-      <div class="dashboard-grid">
+      <div class="three-column-layout">
         <!-- 중앙: 트렌드 영상 리스트 -->
-        <main class="results-main col-span-2">
+        <main class="results-main">
           <!-- 헤더 -->
           <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900 mb-2">
@@ -1285,9 +1285,9 @@ export function youtubeAnalyzerTemplate() {
          ======================================== -->
       <div id="tab-channel-analysis" class="tab-content hidden">
       
-        <div class="dashboard-grid">
+        <div class="three-column-layout">
           <!-- 중앙: 채널 정보 및 영상 리스트 -->
-          <main class="results-main col-span-2">
+          <main class="results-main">
             <!-- 채널 검색 영역 -->
             <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
               <h3 class="text-lg font-bold text-gray-800 mb-4">
