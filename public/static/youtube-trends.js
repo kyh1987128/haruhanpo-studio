@@ -173,23 +173,7 @@ function renderVideos(videos) {
         </div>
       </div>
       
-      <!-- 보기 버튼 -->
-      <div class="flex-shrink-0">
-        <button 
-           onclick="openVideoDetailModal({
-             videoId: '${video.video_id}',
-             title: '${escapeHtml(video.title).replace(/'/g, "\\'")}',
-             channelTitle: '${escapeHtml(video.channel_title).replace(/'/g, "\\'")}',
-             thumbnailUrl: 'https://i.ytimg.com/vi/${video.video_id}/hqdefault.jpg',
-             views: ${video.views},
-             publishedAt: '${video.published_at}',
-             category: '${video.category}'
-           })"
-           class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium">
-          <i class="fas fa-info-circle"></i>
-          보기
-        </button>
-      </div>
+      <!-- 보기 버튼 제거 -->
     </div>
   `).join('');
 }
