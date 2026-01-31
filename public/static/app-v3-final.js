@@ -10338,8 +10338,6 @@ window.handleDeleteAccount = handleDeleteAccount;
  * 크레딧 UI 업데이트 함수
  */
 function updateCreditsUI(credits) {
-  console.log('💳 크레딧 UI 업데이트:', credits);
-  
   if (!credits) return;
   
   const userCreditsElement = document.getElementById('userCredits');
@@ -10348,23 +10346,10 @@ function updateCreditsUI(credits) {
     userCreditsElement.textContent = `${totalCredits} 크레딧`;
   }
   
-  // currentUser 객체 업데이트
+  // currentUser 객체 업데이트 (LocalStorage는 업데이트하지 않음 - 무한 루프 방지)
   if (window.currentUser) {
     window.currentUser.free_credits = credits.free_credits || 0;
     window.currentUser.paid_credits = credits.paid_credits || 0;
-    
-    // LocalStorage 업데이트
-    const userData = localStorage.getItem('postflow_user');
-    if (userData) {
-      try {
-        const user = JSON.parse(userData);
-        user.free_credits = credits.free_credits || 0;
-        user.paid_credits = credits.paid_credits || 0;
-        localStorage.setItem('postflow_user', JSON.stringify(user));
-      } catch (e) {
-        console.error('❌ LocalStorage 업데이트 실패:', e);
-      }
-    }
   }
 }
 
@@ -10435,14 +10420,19 @@ window.addEventListener('storage', (event) => {
   if (event.key === 'postflow_user' && event.newValue) {
     try {
       const userData = JSON.parse(event.newValue);
-      console.log('💾 LocalStorage 변경 감지:', userData);
       
-      // 크레딧 정보가 변경되었으면 UI 업데이트
+      // 크레딧 정보가 변경되었으면 UI만 업데이트 (LocalStorage는 건드리지 않음)
       if (userData.free_credits !== undefined || userData.paid_credits !== undefined) {
-        updateCreditsUI({
-          free_credits: userData.free_credits || 0,
-          paid_credits: userData.paid_credits || 0
-        });
+        const userCreditsElement = document.getElementById('userCredits');
+        if (userCreditsElement) {
+          const totalCredits = (userData.free_credits || 0) + (userData.paid_credits || 0);
+          userCreditsElement.textContent = `${totalCredits} 크레딧`;
+        }
+        
+        if (window.currentUser) {
+          window.currentUser.free_credits = userData.free_credits || 0;
+          window.currentUser.paid_credits = userData.paid_credits || 0;
+        }
       }
     } catch (error) {
       console.error('❌ LocalStorage 파싱 오류:', error);
