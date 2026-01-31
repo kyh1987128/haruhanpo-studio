@@ -1048,45 +1048,10 @@ export function youtubeAnalyzerTemplate() {
             </select>
           </div>
           
-          <!-- 성과도 레벨 (체크박스로 변경) -->
-          <div class="mb-6">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">📊 성과도 레벨</h3>
-            <div class="flex flex-col gap-2">
-              <label class="flex items-center cursor-pointer text-sm">
-                <input type="checkbox" class="performance-checkbox mr-2" value="viral" checked>
-                <span>🔥 떡상 중 (300%+)</span>
-              </label>
-              <label class="flex items-center cursor-pointer text-sm">
-                <input type="checkbox" class="performance-checkbox mr-2" value="algorithm" checked>
-                <span>🟢 알고리즘 픽 (100-300%)</span>
-              </label>
-              <label class="flex items-center cursor-pointer text-sm">
-                <input type="checkbox" class="performance-checkbox mr-2" value="normal" checked>
-                <span>⚪ 일반 (50-100%)</span>
-              </label>
-              <label class="flex items-center cursor-pointer text-sm">
-                <input type="checkbox" class="performance-checkbox mr-2" value="low">
-                <span>🔵 저조 (50% 미만)</span>
-              </label>
-            </div>
-          </div>
           
-          <!-- 최소 조회수 -->
+          <!-- 업로드 날짜 -->
           <div class="mb-6">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">🔢 최소 조회수</h3>
-            <select id="filter-min-views" class="filter-select">
-              <option value="">제한 없음</option>
-              <option value="1000">1천+ 조회수</option>
-              <option value="10000">1만+ 조회수</option>
-              <option value="100000">10만+ 조회수</option>
-              <option value="1000000">100만+ 조회수</option>
-              <option value="10000000">1000만+ 조회수</option>
-            </select>
-          </div>
-          
-          <!-- 조회수 기간 -->
-          <div class="mb-6">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">📅 조회수 기간</h3>
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">📅 업로드 날짜</h3>
             <select id="filter-upload-date" class="filter-select">
               <option value="">전체</option>
               <option value="today">1일</option>
@@ -1113,18 +1078,6 @@ export function youtubeAnalyzerTemplate() {
             </select>
           </div>
           
-          <!-- 구독자 구간 -->
-          <div class="mb-6">
-            <h3 class="text-sm font-semibold text-gray-700 mb-3">👥 구독자 구간</h3>
-            <select id="filter-subscribers" class="filter-select">
-              <option value="">전체</option>
-              <option value="0-10000">1만 미만</option>
-              <option value="10000-100000">1만-10만</option>
-              <option value="100000-1000000">10만-100만</option>
-              <option value="1000000-10000000">100만-1000만</option>
-              <option value="10000000+">1000만 이상</option>
-            </select>
-          </div>
           
           <!-- 영상 길이 -->
           <div class="mb-6">

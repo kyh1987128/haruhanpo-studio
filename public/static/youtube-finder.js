@@ -4714,12 +4714,6 @@ async function handleCategorySearch() {
   }
 }
 
-// 채널 검색 버튼 이벤트
-const channelSearchBtn = document.getElementById('channel-search-btn');
-if (channelSearchBtn) {
-  channelSearchBtn.addEventListener('click', handleChannelSearch);
-}
-
 // 카테고리 검색 버튼 이벤트
 const categorySearchBtn = document.getElementById('category-search-btn');
 if (categorySearchBtn) {
