@@ -2264,7 +2264,11 @@ async function searchMarket200(keyword = null) {
       performance: calculatePerformance(video)
     }));
     
+    // ⭐ 데이터 정규화 (채널 정보 경로 통일)
+    marketVideos = normalizeYouTubeData(marketVideos);
+    
     console.log('🎯 [마켓 탐색] 최종 수집:', marketVideos.length, '개');
+    console.log('🔍 [마켓 탐색] 첫 영상 구독자 수:', marketVideos[0]?.subscriberCount);
     
     // ⚠️ 수집 결과가 예상보다 적을 때 사용자에게 알림
     if (marketVideos.length < 50) {
