@@ -4010,34 +4010,11 @@ function generateVisualizationDashboard(videosInfo, analysisText) {
       </div>
     </div>
 
-    <!-- 댓글 감정 분석 (예시 데이터, 실제 구현 시 백엔드에서 전달) -->
-    <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 5px solid #f59e0b; padding: 20px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);">
-      <h4 style="margin: 0 0 16px 0; color: #92400e; font-size: 18px; font-weight: 700;">💬 댓글 감정 분석 (실제 댓글 20개 기반)</h4>
-      <div style="font-size: 13px; color: #78350f; margin-bottom: 12px;">※ AI가 댓글을 분석한 결과입니다</div>
-      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-        <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">긍정</span>
-        <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
-          <div style="background: #10b981; height: 100%; width: 35%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; transition: width 1s ease;">35%</div>
-        </div>
-        <span style="font-size: 14px; color: #78350f; font-weight: 600;">7건</span>
-      </div>
-      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-        <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">부정</span>
-        <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
-          <div style="background: #ef4444; height: 100%; width: 45%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; transition: width 1s ease;">45%</div>
-        </div>
-        <span style="font-size: 14px; color: #78350f; font-weight: 600;">9건</span>
-      </div>
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">중립</span>
-        <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
-          <div style="background: #6b7280; height: 100%; width: 20%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; transition: width 1s ease;">20%</div>
-        </div>
-        <span style="font-size: 14px; color: #78350f; font-weight: 600;">4건</span>
-      </div>
-    </div>
-
-    <!-- 액션 플랜은 AI 분석 결과에서 추출 -->
+    <!-- 댓글 감정 분석은 각 영상별로 표시 -->
+    ${videoData.map(v => {
+      // AI 응답에서 해당 영상의 댓글 감정 데이터가 있으면 표시
+      return '';  // 일단 비워두고 AI 응답 파싱 시 추가
+    }).join('')}
 
     <hr style="border: none; border-top: 2px dashed #e5e7eb; margin: 30px 0;">
     <h3 style="color: #1f2937; font-size: 22px; font-weight: 700; margin-bottom: 20px;">📝 상세 텍스트 분석</h3>
@@ -4187,14 +4164,28 @@ ${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
       throw new Error('AI 분석 결과가 비어있습니다');
     }
     
-    // Markdown을 HTML로 변환 (간단한 변환)
-    const html = markdownToHtml(analysis);
+    // JSON 파싱 시도
+    let strategyData = null;
+    try {
+      strategyData = JSON.parse(analysis);
+    } catch (e) {
+      console.log('⚠️ JSON 파싱 실패, Markdown 모드로 전환');
+    }
     
-    // ⭐ CSS 차트 시각화 추가
-    const dashboardHtml = generateVisualizationDashboard(videosInfo, analysis);
+    let finalHtml = '';
     
-    // 결과 표시: 대시보드 + 텍스트 분석
-    contentDiv.innerHTML = dashboardHtml + '<div style="margin-top: 30px;">' + html + '</div>';
+    if (strategyData && strategyData.individualAnalysis) {
+      // JSON 모드: 구조화된 데이터
+      finalHtml = generateStructuredAnalysis(videosInfo, strategyData);
+    } else {
+      // Markdown 모드: 기존 방식
+      const html = markdownToHtml(analysis);
+      const dashboardHtml = generateVisualizationDashboard(videosInfo, analysis);
+      finalHtml = dashboardHtml + '<div style="margin-top: 30px;">' + html + '</div>';
+    }
+    
+    // 결과 표시
+    contentDiv.innerHTML = finalHtml;
     resultDiv.classList.remove('hidden');
     
     console.log('✅ [AI 비교 분석] 완료');
@@ -4217,6 +4208,107 @@ ${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-robot mr-2"></i>AI 비교 분석 생성';
   }
+}
+
+/**
+ * 구조화된 분석 렌더링 (JSON 모드)
+ */
+function generateStructuredAnalysis(videosInfo, strategyData) {
+  // 대시보드 생성
+  const dashboardHtml = generateVisualizationDashboard(videosInfo, '');
+  
+  // 개별 영상 분석
+  let individualHtml = strategyData.individualAnalysis.map((video, i) => {
+    const videoInfo = videosInfo[i];
+    
+    // 댓글 감정 분석 HTML
+    let sentimentHtml = '';
+    if (video.commentSentiment) {
+      const sent = video.commentSentiment;
+      sentimentHtml = `
+        <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 5px solid #f59e0b; padding: 20px; border-radius: 12px; margin: 20px 0; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);">
+          <h4 style="margin: 0 0 16px 0; color: #92400e; font-size: 18px; font-weight: 700;">💬 댓글 감정 분석 (20개 댓글 기반)</h4>
+          <div style="font-size: 13px; color: #78350f; margin-bottom: 12px;">※ 영상 ${video.videoIndex}: ${videoInfo.title.substring(0, 30)}...</div>
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+            <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">긍정</span>
+            <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
+              <div style="background: #10b981; height: 100%; width: ${sent.positive.percent}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; transition: width 1s ease;">${sent.positive.percent}%</div>
+            </div>
+            <span style="font-size: 14px; color: #78350f; font-weight: 600;">${sent.positive.count}건</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+            <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">부정</span>
+            <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
+              <div style="background: #ef4444; height: 100%; width: ${sent.negative.percent}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; transition: width 1s ease;">${sent.negative.percent}%</div>
+            </div>
+            <span style="font-size: 14px; color: #78350f; font-weight: 600;">${sent.negative.count}건</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">중립</span>
+            <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
+              <div style="background: #6b7280; height: 100%; width: ${sent.neutral.percent}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; transition: width 1s ease;">${sent.neutral.percent}%</div>
+            </div>
+            <span style="font-size: 14px; color: #78350f; font-weight: 600;">${sent.neutral.count}건</span>
+          </div>
+        </div>
+      `;
+    }
+    
+    return `
+      <h3 style="color: #1f2937; font-size: 20px; font-weight: 700; margin: 30px 0 15px 0; border-bottom: 3px solid #00B87D; padding-bottom: 8px;">
+        🎬 영상 ${video.videoIndex}: ${videoInfo.title}
+      </h3>
+      
+      <div style="background: white; border: 2px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+        <p style="margin-bottom: 15px;"><strong>📊 성과 지표 분석:</strong><br>${video.performanceAnalysis}</p>
+        <p style="margin-bottom: 15px;"><strong>🎯 제목 전략 분석:</strong><br>${video.titleStrategy}</p>
+        <p style="margin-bottom: 15px;"><strong>🎨 썸네일 전략 분석:</strong><br>${video.thumbnailStrategy}</p>
+        <p style="margin-bottom: 15px;"><strong>💬 실제 댓글 반응 분석:</strong><br>${video.commentAnalysis}</p>
+        <p style="margin-bottom: 0;"><strong>⏱️ 영상 길이 분석:</strong><br>${video.durationAnalysis}</p>
+      </div>
+      
+      ${sentimentHtml}
+    `;
+  }).join('');
+  
+  // 비교 분석
+  const comparisonHtml = `
+    <h3 style="color: #1f2937; font-size: 22px; font-weight: 700; margin: 40px 0 20px 0;">📊 비교 분석</h3>
+    <div style="background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+      <pre style="white-space: pre-wrap; font-family: monospace; margin: 0;">${strategyData.comparisonTable || ''}</pre>
+      ${strategyData.keyFindings ? `<p style="margin-top: 20px; font-weight: 600; color: #1f2937;">💡 ${strategyData.keyFindings}</p>` : ''}
+    </div>
+  `;
+  
+  // 액션 플랜
+  let actionPlanHtml = '';
+  if (strategyData.actionPlan && strategyData.actionPlan.length > 0) {
+    const priorityColors = {
+      1: 'linear-gradient(135deg, #ef4444, #dc2626)',
+      2: 'linear-gradient(135deg, #f59e0b, #d97706)',
+      3: 'linear-gradient(135deg, #10b981, #059669)'
+    };
+    const priorityEmoji = { 1: '🔴 긴급', 2: '🟡 중요', 3: '🟢 장기' };
+    
+    actionPlanHtml = `
+      <h3 style="color: #1f2937; font-size: 22px; font-weight: 700; margin: 40px 0 20px 0;">🎯 즉시 실행 가능한 액션 플랜</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 30px;">
+        ${strategyData.actionPlan.map(action => `
+          <div style="background: ${priorityColors[action.priority] || priorityColors[3]}; color: white; padding: 22px; border-radius: 14px; box-shadow: 0 6px 20px rgba(0,0,0,0.2); transition: transform 0.2s;">
+            <div style="font-size: 13px; opacity: 0.95; margin-bottom: 6px; font-weight: 600;">${priorityEmoji[action.priority] || '🔵 기타'}</div>
+            <div style="font-size: 20px; font-weight: 800; margin-bottom: 14px; line-height: 1.3;">${action.action}</div>
+            <div style="font-size: 14px; line-height: 1.7; opacity: 0.95;">
+              • <strong>효과:</strong> ${action.effect}<br>
+              • <strong>난이도:</strong> ${action.difficulty}<br>
+              • <strong>소요:</strong> ${action.timeRequired}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+  
+  return dashboardHtml + individualHtml + comparisonHtml + actionPlanHtml;
 }
 
 /**
