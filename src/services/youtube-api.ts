@@ -363,7 +363,10 @@ export async function searchYouTubeVideos(
       likes,
       comments,  // ✅ 댓글 수 추가
       description: video.snippet.description || '',  // ✅ 설명 추가
-      duration,  // ⭐ 변환된 duration (3:01 형식)
+      duration,  // ⭐ ISO 8601 원본 형식 (PT3M42S)
+      contentDetails: {
+        duration  // ⭐ contentDetails.duration도 함께 반환 (프론트엔드 호환성)
+      },
       categoryId: video.snippet.categoryId || '22',  // ⭐ 카테고리 ID 추가
       language: video.snippet.defaultAudioLanguage || video.snippet.defaultLanguage || 'ko',  // ⭐ 언어 추가
       subscriberCount: channelInfo.subscriberCount,
