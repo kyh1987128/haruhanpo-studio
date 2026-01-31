@@ -200,19 +200,46 @@ async function loadTrendVideos(category = 'all') {
     
     const { data, error } = await query;
     
+    // Supabase 데이터가 없으면 fallback API 호출
+    let videos = data || [];
+    if ((!videos || videos.length === 0) && !error) {
+      console.log('📡 [Trends] Fallback: YouTube Trending API 호출');
+      try {
+        const response = await fetch('/api/youtube/trending', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('postflow_token')}` },
+          body: JSON.stringify({ regionCode: 'KR', maxResults: 20, videoCategoryId: category !== 'all' ? category : undefined })
+        });
+        const result = await response.json();
+        if (result.success && result.data?.videos) {
+          videos = result.data.videos.map(v => ({
+            video_id: v.videoId || v.id, title: v.title || v.snippet?.title || '',
+            channel_title: v.channel || v.snippet?.channelTitle || '',
+            views: v.views || v.statistics?.viewCount || 0,
+            published_at: v.publishedAt || v.snippet?.publishedAt || new Date().toISOString(),
+            category: category !== 'all' ? category : '24',
+            thumbnail_url: v.thumbnailUrl || v.snippet?.thumbnails?.medium?.url || '',
+            updated_at: new Date().toISOString()
+          }));
+          console.log(`✅ [Trends] Fallback에서 ${videos.length}개 로드`);
+        }
+      } catch (e) { console.error('❌ Fallback 실패:', e); }
+    }
+    
     if (error) throw error;
     
-    console.log(`✅ [Trends] ${data.length}개 영상 로드 완료`);
+    console.log(`✅ [Trends] ${videos.length}개 영상 로드 완료`);
     
-    trendsData.videos = data || [];
+    trendsData.videos = videos;
+    window.trendingVideos = videos; // 전역 변수 저장
     
     // UI 업데이트
-    if (data && data.length > 0) {
-      renderVideos(data);
+    if (videos && videos.length > 0) {
+      renderVideos(videos);
       listEl?.classList.remove('hidden');
       
       // 마지막 업데이트 시간
-      const lastUpdate = new Date(data[0].updated_at);
+      const lastUpdate = new Date(videos[0].updated_at);
       updateEl.textContent = `마지막 업데이트: ${formatRelativeTime(lastUpdate)}`;
     } else {
       emptyEl?.classList.remove('hidden');

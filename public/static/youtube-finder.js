@@ -96,9 +96,57 @@ async function handleSearch() {
     nextPageToken = result.data.nextPageToken;
     hasMoreResults = result.data.hasMore;
 
-    // 결과 저장 (필터링/정렬용)
-    allSearchResults = result.data.videos;
+    // 데이터 정규화 (API 응답 구조 통일)
+    const normalizedVideos = (result.data.videos || []).map(video => ({
+      ...video,
+      // 구독자 수 경로 통일
+      subscriberCount: video.subscriberCount || video.channelInfo?.subscriberCount || 0,
+      channelInfo: {
+        subscriberCount: video.subscriberCount || video.channelInfo?.subscriberCount || 0
+      },
+      // 영상 길이 경로 통일
+      duration: video.duration || video.contentDetails?.duration || 'PT0S',
+      contentDetails: {
+        duration: video.duration || video.contentDetails?.duration || 'PT0S'
+      },
+      // 통계 객체 복원
+      views: video.views || video.statistics?.viewCount || 0,
+      likes: video.likes || video.statistics?.likeCount || 0,
+      comments: video.comments || video.statistics?.commentCount || 0,
+      statistics: {
+        viewCount: video.views || video.statistics?.viewCount || 0,
+        likeCount: video.likes || video.statistics?.likeCount || 0,
+        commentCount: video.comments || video.statistics?.commentCount || 0
+      },
+      // 스니펫 정보 통일
+      title: video.title || video.snippet?.title || '',
+      channel: video.channel || video.snippet?.channelTitle || '',
+      snippet: {
+        title: video.title || video.snippet?.title || '',
+        channelTitle: video.channel || video.snippet?.channelTitle || '',
+        publishedAt: video.publishedAt || video.snippet?.publishedAt || '',
+        thumbnails: {
+          medium: { 
+            url: video.thumbnailUrl || video.snippet?.thumbnails?.medium?.url || '' 
+          }
+        }
+      }
+    }));
+
+    console.log('✅ 데이터 정규화 완료:', normalizedVideos.length, '개');
+    console.log('📊 샘플 데이터:', {
+      구독자: normalizedVideos[0]?.subscriberCount,
+      길이: normalizedVideos[0]?.duration,
+      조회수: normalizedVideos[0]?.views
+    });
+
+    // 결과 저장 (필터링/정렬용) - 정규화된 데이터 사용
+    allSearchResults = normalizedVideos;
     currentSearchResults = [...allSearchResults];
+    
+    // 전역 변수에 저장 (다른 함수에서 접근 가능)
+    window.marketVideos = normalizedVideos;
+    window.filteredMarketVideos = normalizedVideos;
 
     // 필터 적용
     applyFilters();
