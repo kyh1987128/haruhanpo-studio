@@ -1212,7 +1212,30 @@ function displayTopVideos(videos) {
         <td class="px-4 py-3 text-right font-semibold text-gray-900">${formatNumber(video.views)}</td>
         <td class="px-4 py-3 text-right text-gray-700">${formatNumber(video.likes)}</td>
         <td class="px-4 py-3 text-center text-gray-700">${publishDate}</td>
-        <!-- 보기 버튼 제거 -->
+        <td class="px-4 py-3 text-center">
+          <button 
+            onclick="window.openVideoDetailModal({
+              videoId: '${video.videoId}',
+              title: '${escapeHtml(video.title).replace(/'/g, "\\'")}',
+              channel: '채널 영상',
+              thumbnailUrl: '${video.thumbnailUrl}',
+              views: ${video.views},
+              likes: ${video.likes},
+              publishedAt: '${video.publishedAt}',
+              subscriberCount: 0,
+              videoCount: 0,
+              performance: 'Normal',
+              contribution: 'Normal'
+            })"
+            class="inline-flex items-center gap-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition"
+            style="background: #00B87D;"
+            onmouseover="this.style.background='#00a06f'" 
+            onmouseout="this.style.background='#00B87D'"
+          >
+            <i class="fas fa-info-circle"></i>
+            보기
+          </button>
+        </td>
       </tr>
     `;
   }).join('');
@@ -4347,6 +4370,8 @@ window.toggleCompareVideo = toggleCompareVideo;
 window.openCompareModal = openCompareModal;
 window.closeCompareModal = closeCompareModal;
 window.generateCompareAIAnalysis = generateCompareAIAnalysis;
+window.openVideoDetailModal = openVideoDetailModal;
+window.closeVideoDetailModal = closeVideoDetailModal;
 
 // 설명 더보기/접기
 window.toggleDescription = function() {
