@@ -4204,33 +4204,6 @@ function generateVisualizationDashboard(videosInfo, analysisText) {
       </div>
     </div>
 
-    <!-- 영상별 댓글 감정 분석 (하드코딩) -->
-    ${videoData.map((v, i) => `
-      <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 5px solid #f59e0b; padding: 20px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);">
-        <h4 style="margin: 0 0 16px 0; color: #92400e; font-size: 18px; font-weight: 700;">💬 댓글 감정 분석 - 영상 ${i + 1}</h4>
-        <div style="font-size: 13px; color: #78350f; margin-bottom: 12px;">영상: ${v.title.substring(0, 50)}${v.title.length > 50 ? '...' : ''}</div>
-        <div style="font-size: 13px; color: #78350f; margin-bottom: 12px;">※ 실제 댓글 20개 기반 AI 분석</div>
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-          <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">긍정</span>
-          <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
-            <div style="background: #10b981; height: 100%; width: ${Math.random() * 30 + 30}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; transition: width 1s ease;">분석중</div>
-          </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-          <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">부정</span>
-          <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
-            <div style="background: #ef4444; height: 100%; width: ${Math.random() * 30 + 20}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; transition: width 1s ease;">분석중</div>
-          </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">중립</span>
-          <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
-            <div style="background: #6b7280; height: 100%; width: ${Math.random() * 30 + 20}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; transition: width 1s ease;">분석중</div>
-          </div>
-        </div>
-      </div>
-    `).join('')}
-
     <hr style="border: none; border-top: 2px dashed #e5e7eb; margin: 30px 0;">
     <h3 style="color: #1f2937; font-size: 22px; font-weight: 700; margin-bottom: 20px;">📝 상세 텍스트 분석</h3>
   `;
