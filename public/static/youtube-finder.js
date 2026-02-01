@@ -4533,7 +4533,7 @@ function addCopyButton(contentDiv) {
   copyBtn.className = 'copy-analysis-btn';
   copyBtn.style.cssText = 'margin-top: 20px; text-align: right;';
   copyBtn.innerHTML = `
-    <button onclick="copyAIAnalysisContent()" style="
+    <button onclick="copyAIAnalysisContent(event)" style="
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
       padding: 12px 24px;
@@ -4555,7 +4555,7 @@ function addCopyButton(contentDiv) {
 /**
  * AI 분석 내용 복사
  */
-function copyAIAnalysisContent() {
+function copyAIAnalysisContent(event) {
   const contentDiv = document.getElementById('compare-ai-content');
   if (!contentDiv) {
     alert('복사할 내용이 없습니다.');
