@@ -4434,10 +4434,50 @@ ${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
       // JSON 모드: 구조화된 데이터
       finalHtml = generateStructuredAnalysis(videosInfo, strategyData);
     } else {
-      // Markdown 모드: 기존 방식
+      // Markdown 모드: 기존 방식 + 댓글 감정 분석 추가
       const html = markdownToHtml(analysis);
       const dashboardHtml = generateVisualizationDashboard(videosInfo, analysis);
-      finalHtml = dashboardHtml + '<div style="margin-top: 30px;">' + html + '</div>';
+      
+      // Markdown 모드에서도 댓글 감정 분석 표시
+      let sentimentHtmlAll = '';
+      videosInfo.forEach((videoInfo, i) => {
+        if (videoInfo.commentSentiment) {
+          const sent = videoInfo.commentSentiment;
+          const positiveCount = Math.round(sent.total * sent.positive / 100);
+          const negativeCount = Math.round(sent.total * sent.negative / 100);
+          const neutralCount = sent.total - positiveCount - negativeCount;
+          
+          sentimentHtmlAll += `
+            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 5px solid #f59e0b; padding: 20px; border-radius: 12px; margin: 20px 0; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);">
+              <h4 style="margin: 0 0 16px 0; color: #92400e; font-size: 18px; font-weight: 700;">💬 댓글 감정 분석 (${sent.total}개 댓글 기반)</h4>
+              <div style="font-size: 13px; color: #78350f; margin-bottom: 12px;">※ 영상 ${i + 1}: ${videoInfo.title.substring(0, 30)}...</div>
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">긍정</span>
+                <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
+                  <div style="background: #10b981; height: 100%; width: ${sent.positive}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700;">${sent.positive}%</div>
+                </div>
+                <span style="font-size: 14px; color: #78350f; font-weight: 600;">${positiveCount}건</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">부정</span>
+                <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
+                  <div style="background: #ef4444; height: 100%; width: ${sent.negative}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700;">${sent.negative}%</div>
+                </div>
+                <span style="font-size: 14px; color: #78350f; font-weight: 600;">${negativeCount}건</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">중립</span>
+                <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
+                  <div style="background: #6b7280; height: 100%; width: ${sent.neutral}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700;">${sent.neutral}%</div>
+                </div>
+                <span style="font-size: 14px; color: #78350f; font-weight: 600;">${neutralCount}건</span>
+              </div>
+            </div>
+          `;
+        }
+      });
+      
+      finalHtml = dashboardHtml + '<div style="margin-top: 30px;">' + html + '</div>' + sentimentHtmlAll;
     }
     
     // 결과 표시
