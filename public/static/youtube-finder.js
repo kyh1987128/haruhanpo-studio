@@ -4450,7 +4450,10 @@ ${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
         }
       });
       
-      finalHtml = dashboardHtml + sentimentHtmlAll + '<div style="margin-top: 30px;">' + html + '</div>';
+      // 왕관 섹션 생성
+      const crownSectionHtml = generateCrownSection(videosInfo);
+      
+      finalHtml = dashboardHtml + sentimentHtmlAll + crownSectionHtml + '<div style="margin-top: 30px;">' + html + '</div>';
     }
     
     // 결과 표시
@@ -4477,6 +4480,125 @@ ${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-robot mr-2"></i>AI 비교 분석 생성';
   }
+}
+
+/**
+ * 왕관 섹션 생성 (최고 성과 영상 분석)
+ */
+function generateCrownSection(videosInfo) {
+  // 최고 조회수 찾기
+  let maxViews = { video: null, index: -1, value: 0 };
+  let maxLikeRate = { video: null, index: -1, value: 0 };
+  let maxCommentPositive = { video: null, index: -1, value: 0 };
+  let minDuration = { video: null, index: -1, value: Infinity };
+  
+  videosInfo.forEach((video, i) => {
+    // 조회수
+    const views = parseInt(video.views) || 0;
+    if (views > maxViews.value) {
+      maxViews = { video, index: i, value: views };
+    }
+    
+    // 좋아요율
+    const likeRate = parseFloat(video.performance?.likeRate) || 0;
+    if (likeRate > maxLikeRate.value) {
+      maxLikeRate = { video, index: i, value: likeRate };
+    }
+    
+    // 댓글 긍정도
+    if (video.commentSentiment) {
+      const positive = parseInt(video.commentSentiment.positive) || 0;
+      if (positive > maxCommentPositive.value) {
+        maxCommentPositive = { video, index: i, value: positive };
+      }
+    }
+    
+    // 영상 길이 (짧은 것이 우승)
+    const duration = video.duration || 0;
+    if (duration > 0 && duration < minDuration.value) {
+      minDuration = { video, index: i, value: duration };
+    }
+  });
+  
+  // 바이럴 지수 계산
+  const viralScores = videosInfo.map((v, i) => {
+    const viral = parseFloat(v.performance?.viralScore) || 0;
+    return { video: v, index: i, value: viral };
+  });
+  const maxViral = viralScores.reduce((max, current) => current.value > max.value ? current : max, viralScores[0]);
+  
+  return `
+    <div style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border: 2px solid #fb923c; border-radius: 16px; padding: 32px; margin: 30px 0; box-shadow: 0 8px 24px rgba(251, 146, 60, 0.15);">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h2 style="margin: 0; font-size: 28px; color: #ea580c; font-weight: 800;">
+          🏆 최고 성과 영상 분석
+        </h2>
+        <p style="margin: 8px 0 0 0; font-size: 14px; color: #9a3412;">한눈에 보는 핵심 성과 지표</p>
+      </div>
+      
+      <div style="display: grid; gap: 16px;">
+        ${maxViews.video ? `
+        <div style="background: white; padding: 20px; border-radius: 12px; border-left: 4px solid #3b82f6;">
+          <div style="font-size: 20px; margin-bottom: 8px;">👑 <strong>조회수 챔피언</strong>: 영상 ${maxViews.index + 1}</div>
+          <div style="font-size: 16px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">
+            ${maxViews.value.toLocaleString()}회 | 바이럴 ${Math.round(maxViral.value)}%
+          </div>
+          <div style="font-size: 14px; color: #64748b; padding-left: 20px;">
+            └ 외부 유입 전략이 탁월함
+          </div>
+        </div>
+        ` : ''}
+        
+        ${maxLikeRate.video ? `
+        <div style="background: white; padding: 20px; border-radius: 12px; border-left: 4px solid #10b981;">
+          <div style="font-size: 20px; margin-bottom: 8px;">👑 <strong>좋아요율 챔피언</strong>: 영상 ${maxLikeRate.index + 1}</div>
+          <div style="font-size: 16px; color: #059669; font-weight: 600; margin-bottom: 4px;">
+            ${maxLikeRate.value.toFixed(2)}% | 시청자 만족도 최고
+          </div>
+          <div style="font-size: 14px; color: #64748b; padding-left: 20px;">
+            └ 짧고 유익한 콘텐츠가 효과적
+          </div>
+        </div>
+        ` : ''}
+        
+        ${maxCommentPositive.video ? `
+        <div style="background: white; padding: 20px; border-radius: 12px; border-left: 4px solid #f59e0b;">
+          <div style="font-size: 20px; margin-bottom: 8px;">👑 <strong>댓글 참여 챔피언</strong>: 영상 ${maxCommentPositive.index + 1}</div>
+          <div style="font-size: 16px; color: #d97706; font-weight: 600; margin-bottom: 4px;">
+            댓글 ${maxCommentPositive.value}% 긍정 | 참여도 최고
+          </div>
+          <div style="font-size: 14px; color: #64748b; padding-left: 20px;">
+            └ 공감 가는 스토리텔링이 강점
+          </div>
+        </div>
+        ` : ''}
+        
+        ${minDuration.video && minDuration.value < Infinity ? `
+        <div style="background: white; padding: 20px; border-radius: 12px; border-left: 4px solid #8b5cf6;">
+          <div style="font-size: 20px; margin-bottom: 8px;">👑 <strong>완주율 챔피언</strong>: 영상 ${minDuration.index + 1}</div>
+          <div style="font-size: 16px; color: #7c3aed; font-weight: 600; margin-bottom: 4px;">
+            ${minDuration.video.displayDuration || '짧은 길이'} | 이탈률 최저
+          </div>
+          <div style="font-size: 14px; color: #64748b; padding-left: 20px;">
+            └ 숏폼 전략이 효과적
+          </div>
+        </div>
+        ` : ''}
+      </div>
+      
+      <div style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 12px; padding: 20px; margin-top: 24px; border: 2px solid #22c55e;">
+        <div style="text-align: center;">
+          <div style="font-size: 18px; font-weight: 700; color: #166534; margin-bottom: 8px;">
+            💡 한줄 결론
+          </div>
+          <div style="font-size: 16px; color: #15803d; line-height: 1.6;">
+            영상 ${maxViews.index + 1}의 바이럴 전략 + 영상 ${minDuration.index + 1}의 짧은 길이 + 영상 ${maxCommentPositive.index + 1}의<br>
+            스토리텔링을 결합하면 완벽한 공식 완성
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 /**
