@@ -1012,6 +1012,10 @@ function closeVideoDetailModal() {
 
   modal.classList.add('hidden');
   document.body.style.overflow = ''; // 배경 스크롤 복원
+  
+  // ⭐ 비교 분석 선택 초기화 (캐시 문제 해결)
+  // selectedCompareVideos = [];  // 주석 처리 - 선택 유지
+  // updateCompareButton();
 }
 
 // 단일 영상 분석
@@ -4213,6 +4217,23 @@ function generateVisualizationDashboard(videosInfo, analysisText) {
  * AI 비교 분석 생성
  */
 async function generateCompareAIAnalysis() {
+  // ⭐ 체크박스 상태에서 선택된 영상 재수집 (캐시 문제 해결)
+  const checkedBoxes = document.querySelectorAll('.video-compare-checkbox:checked');
+  selectedCompareVideos = [];
+  
+  checkedBoxes.forEach(checkbox => {
+    const videoId = checkbox.dataset.videoId;
+    const video = filteredMarketVideos.find(v => {
+      const vId = (typeof v.id === 'string' ? v.id : v.id?.videoId) || v.videoId || String(v.id);
+      return String(vId) === String(videoId);
+    });
+    if (video) {
+      selectedCompareVideos.push(video);
+    }
+  });
+  
+  console.log('🔄 [캐시 해결] 체크박스에서 재수집:', selectedCompareVideos.length, '개');
+  
   if (selectedCompareVideos.length < 2) {
     alert('최소 2개 이상의 영상을 선택해주세요.');
     return;
@@ -4268,7 +4289,11 @@ async function generateCompareAIAnalysis() {
         displayDuration: video.displayDuration || formatDuration(video.duration),
         category: video.category,
         language: video.language,
-        performance: Number(video.performance?.ratio || 0)
+        performance: {
+          ratio: Number(video.performance?.ratio || 0),
+          likeRate: Number(video.performance?.likeRate || 0),
+          viralScore: Number(video.performance?.viralScore || 0)
+        }
       };
     });
     
@@ -4281,8 +4306,8 @@ ${videosInfo.map(v => `
 - 채널: ${v.channelTitle}
 - 조회수: ${formatNumber(v.views)}
 - 구독자: ${formatNumber(v.subscribers)}
-- 성과도: ${v.performance}%
-- 좋아요율: ${v.likeRate}%
+- 성과도: ${v.performance?.ratio || 0}%
+- 좋아요율: ${v.performance?.likeRate || 0}%
 - 댓글 수: ${formatNumber(v.comments)}
 `).join('\n')}
 
@@ -4541,7 +4566,7 @@ function generateCrownSection(videosInfo) {
         <div style="background: white; padding: 20px; border-radius: 12px; border-left: 4px solid #3b82f6;">
           <div style="font-size: 20px; margin-bottom: 8px;">👑 <strong>조회수 챔피언</strong>: 영상 ${maxViews.index + 1}</div>
           <div style="font-size: 16px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">
-            ${maxViews.value.toLocaleString()}회 | 바이럴 ${Math.round(maxViral.value)}%
+            ${maxViews.value.toLocaleString()}회 | 바이럴 ${Math.round(maxViews.video.performance?.viralScore || 0)}%
           </div>
           <div style="font-size: 14px; color: #64748b; padding-left: 20px;">
             └ 외부 유입 전략이 탁월함
@@ -4592,7 +4617,9 @@ function generateCrownSection(videosInfo) {
             💡 한줄 결론
           </div>
           <div style="font-size: 16px; color: #15803d; line-height: 1.6;">
-            영상 ${maxViews.index + 1}의 바이럴 전략 + 영상 ${minDuration.index + 1}의 짧은 길이 + 영상 ${maxCommentPositive.index + 1}의<br>
+            ${maxViews.index >= 0 ? `영상 ${maxViews.index + 1}` : '조회수 챔피언'}의 바이럴 전략 + 
+            ${minDuration.index >= 0 ? `영상 ${minDuration.index + 1}` : '짧은 영상'}의 길이 + 
+            ${maxCommentPositive.index >= 0 ? `영상 ${maxCommentPositive.index + 1}` : '인기 영상'}의<br>
             스토리텔링을 결합하면 완벽한 공식 완성
           </div>
         </div>
