@@ -4521,37 +4521,46 @@ function generateStructuredAnalysis(videosInfo, strategyData) {
     let sentimentHtml = '';
     if (videoInfo.commentSentiment) {
       const sent = videoInfo.commentSentiment;
-      const positiveCount = Math.round(sent.total * sent.positive / 100);
-      const negativeCount = Math.round(sent.total * sent.negative / 100);
-      const neutralCount = sent.total - positiveCount - negativeCount;
+      const pos = parseInt(sent.positive) || 0;
+      const neg = parseInt(sent.negative) || 0;
+      const neu = parseInt(sent.neutral) || 0;
+      const total = sent.total || 20;
+      
+      const posCount = Math.round(total * pos / 100);
+      const negCount = Math.round(total * neg / 100);
+      const neuCount = total - posCount - negCount;
       
       sentimentHtml = `
         <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 5px solid #f59e0b; padding: 20px; border-radius: 12px; margin: 20px 0; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);">
-          <h4 style="margin: 0 0 16px 0; color: #92400e; font-size: 18px; font-weight: 700;">💬 댓글 감정 분석 (${sent.total}개 댓글 기반)</h4>
-          <div style="font-size: 13px; color: #78350f; margin-bottom: 12px;">※ 영상 ${video.videoIndex}: ${videoInfo.title.substring(0, 30)}...</div>
+          <h4 style="margin: 0 0 16px 0; color: #92400e; font-size: 18px; font-weight: 700;">💬 댓글 감정 분석 (실제 댓글 ${total}개 기반)</h4>
+          
           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-            <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">긍정</span>
-            <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
-              <div style="background: #10b981; height: 100%; width: ${sent.positive}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; transition: width 1s ease;">${sent.positive}%</div>
+            <span style="width: 60px; font-size: 14px; color: #78350f; font-weight: 600;">긍정</span>
+            <div style="flex: 1; background: rgba(255,255,255,0.5); height: 24px; border-radius: 12px; overflow: hidden;">
+              <div style="background: #10b981; height: 100%; width: ${pos}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; min-width: 40px;">${pos}%</div>
             </div>
-            <span style="font-size: 14px; color: #78350f; font-weight: 600;">${positiveCount}건</span>
+            <span style="font-size: 14px; color: #78350f; font-weight: 600;">${posCount}건</span>
           </div>
+          
           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-            <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">부정</span>
-            <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
-              <div style="background: #ef4444; height: 100%; width: ${sent.negative}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; transition: width 1s ease;">${sent.negative}%</div>
+            <span style="width: 60px; font-size: 14px; color: #78350f; font-weight: 600;">부정</span>
+            <div style="flex: 1; background: rgba(255,255,255,0.5); height: 24px; border-radius: 12px; overflow: hidden;">
+              <div style="background: #ef4444; height: 100%; width: ${neg}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; min-width: 40px;">${neg}%</div>
             </div>
-            <span style="font-size: 14px; color: #78350f; font-weight: 600;">${negativeCount}건</span>
+            <span style="font-size: 14px; color: #78350f; font-weight: 600;">${negCount}건</span>
           </div>
+          
           <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">중립</span>
-            <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
-              <div style="background: #6b7280; height: 100%; width: ${sent.neutral}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; transition: width 1s ease;">${sent.neutral}%</div>
+            <span style="width: 60px; font-size: 14px; color: #78350f; font-weight: 600;">중립</span>
+            <div style="flex: 1; background: rgba(255,255,255,0.5); height: 24px; border-radius: 12px; overflow: hidden;">
+              <div style="background: #6b7280; height: 100%; width: ${neu}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; min-width: 40px;">${neu}%</div>
             </div>
-            <span style="font-size: 14px; color: #78350f; font-weight: 600;">${neutralCount}건</span>
+            <span style="font-size: 14px; color: #78350f; font-weight: 600;">${neuCount}건</span>
           </div>
         </div>
       `;
+    } else {
+      sentimentHtml = ''; // 데이터 없으면 아예 표시 안함
     }
     
     return `
@@ -4573,47 +4582,63 @@ function generateStructuredAnalysis(videosInfo, strategyData) {
   
   // 비교 분석 (카드 형식)
   let comparisonHtml = '';
-  if (strategyData.videoCards && strategyData.videoCards.length > 0) {
+  
+  // videoCards 데이터가 있으면 카드 형식으로 렌더링
+  if (strategyData.videoCards && Array.isArray(strategyData.videoCards)) {
     comparisonHtml = `
       <h3 style="color: #1f2937; font-size: 22px; font-weight: 700; margin: 40px 0 20px 0;">📊 영상별 성과 카드</h3>
       <div style="display: grid; gap: 20px; margin-bottom: 30px;">
-        ${strategyData.videoCards.map(card => `
+        ${strategyData.videoCards.map((card, idx) => `
           <div style="background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%); border: 2px solid #e5e7eb; border-radius: 16px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
-            <h4 style="font-size: 20px; font-weight: 700; color: #1f2937; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
-              📺 영상 ${card.videoIndex}: ${card.nickname}
+            <h4 style="font-size: 20px; font-weight: 700; color: #1f2937; margin: 0 0 16px 0;">
+              📺 영상 ${idx + 1}: ${card.nickname || '분석 결과'}
             </h4>
             
-            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 15px; color: #4b5563;">
+            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 15px; color: #374151;">
               <div style="padding: 10px; background: #f0fdf4; border-left: 4px solid #10b981; border-radius: 6px;">
-                <strong style="color: #059669;">✅ 성과:</strong> ${card.performance}
+                <strong style="color: #059669;">✅ 성과:</strong> ${card.performance || '-'}
               </div>
               
-              <div style="padding: 10px; background: #fefce8; border-left: 4px solid #eab308; border-radius: 6px;">
-                <strong style="color: #ca8a04;">⭐ 강점:</strong> ${card.strength}
-              </div>
+              ${card.strength ? `
+                <div style="padding: 10px; background: #fefce8; border-left: 4px solid #eab308; border-radius: 6px;">
+                  <strong style="color: #ca8a04;">⭐ 강점:</strong> ${card.strength}
+                </div>
+              ` : ''}
               
-              <div style="padding: 10px; background: #fef2f2; border-left: 4px solid #ef4444; border-radius: 6px;">
-                <strong style="color: #dc2626;">⚠️ 문제:</strong> ${card.weakness}
-              </div>
+              ${card.weakness ? `
+                <div style="padding: 10px; background: #fef2f2; border-left: 4px solid #ef4444; border-radius: 6px;">
+                  <strong style="color: #dc2626;">⚠️ 문제:</strong> ${card.weakness}
+                </div>
+              ` : ''}
               
               <div style="padding: 10px; background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 6px;">
-                <strong style="color: #2563eb;">💭 평가:</strong> ${card.rating}
+                <strong style="color: #2563eb;">💭 평가:</strong> ${card.rating || '-'}
               </div>
               
               <div style="padding: 10px; background: #f5f3ff; border-left: 4px solid #8b5cf6; border-radius: 6px;">
-                <strong style="color: #7c3aed;">🎯 전략:</strong> ${card.strategy}
+                <strong style="color: #7c3aed;">🎯 전략:</strong> ${card.strategy || '-'}
               </div>
             </div>
           </div>
         `).join('')}
       </div>
-      
-      ${strategyData.finalConclusion ? `
-        <div style="background: linear-gradient(135deg, #00B87D 0%, #059669 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 30px;">
-          <h4 style="margin: 0 0 10px 0; font-size: 18px; font-weight: 700;">💡 종합 결론</h4>
-          <p style="margin: 0; font-size: 15px; line-height: 1.7;">${strategyData.finalConclusion}</p>
-        </div>
-      ` : ''}
+    `;
+  } else {
+    // Fallback: 백엔드가 아직 구식 데이터를 보내는 경우
+    comparisonHtml = `
+      <div style="padding: 20px; background: #fee2e2; color: #b91c1c; border-radius: 8px; margin: 20px 0;">
+        ⚠️ 카드 데이터가 없습니다. 백엔드에서 videoCards 형식으로 데이터를 보내야 합니다.
+      </div>
+    `;
+  }
+  
+  // 종합 결론 추가
+  if (strategyData.finalConclusion) {
+    comparisonHtml += `
+      <div style="background: linear-gradient(135deg, #00B87D 0%, #059669 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);">
+        <h4 style="margin: 0 0 10px 0; font-size: 18px; font-weight: 700;">💡 종합 결론</h4>
+        <p style="margin: 0; font-size: 15px; line-height: 1.7;">${strategyData.finalConclusion}</p>
+      </div>
     `;
   }
   
