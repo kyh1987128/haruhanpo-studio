@@ -8840,7 +8840,7 @@ async function generateSingleContent(contentIndex) {
       contentBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
     
-    showToast(`✅ 콘텐츠 #${contentIndex + 1} 생성 완료!\n💡 이어서 다음 작업을 진행해보세요 (예: 이미지 생성, 영상 생성 등)`, 'success');
+    showToast(`✅ 콘텐츠 #${contentIndex + 1} 생성 완료!`, 'success');
     
   } catch (error) {
     console.error(`❌ [콘텐츠 #${contentIndex + 1}] 생성 오류:`, error);
@@ -8920,6 +8920,9 @@ function displaySingleContentResult(contentIndex, result, platforms) {
         <h3 class="text-xl font-bold text-gray-800">
           <i class="fas fa-check-circle text-green-600 mr-2"></i>
           콘텐츠 #${contentIndex + 1} 생성 완료
+          <span style="color: #667eea; font-size: 14px; font-weight: normal; margin-left: 8px;">
+            💡 이어서 다음 작업을 진행해보세요 (예: 이미지 생성, 영상 생성 등)
+          </span>
         </h3>
         <button
           type="button"
