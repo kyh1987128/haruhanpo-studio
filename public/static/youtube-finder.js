@@ -3857,6 +3857,13 @@ function openCompareModal() {
   console.log('✅ formatDuration("PT3M19S") =', formatDuration('PT3M19S'), '(기대값: 3:19)');
   console.log('🔍 비교 분석 데이터:', window.comparisonVideosData?.[0]);
   
+  // ⭐ 이전 AI 분석 결과 숨김
+  const resultDiv = document.getElementById('compare-ai-result');
+  if (resultDiv) {
+    resultDiv.classList.add('hidden');
+    console.log('✅ [비교] 이전 AI 분석 결과 숨김');
+  }
+  
   // 모달 표시
   const modal = document.getElementById('compare-modal');
   if (modal) {
@@ -4292,7 +4299,7 @@ async function generateCompareAIAnalysis() {
         performance: {
           ratio: Number(video.performance?.ratio || 0),
           likeRate: Number(video.performance?.likeRate || 0),
-          viralScore: Number(video.performance?.viralScore || 0)
+          viralScore: Number(video.performance?.ratio || 0)  // ⭐ ratio를 viralScore로 사용
         }
       };
     });
@@ -4420,10 +4427,11 @@ ${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
     }
     
     // videosInfo에 댓글 감정 데이터 추가
-    videosInfo.forEach(video => {
+    videosInfo.forEach((video, i) => {
       if (commentSentiments[video.videoId]) {
         video.commentSentiment = commentSentiments[video.videoId];
       }
+      console.log(`🔍 [영상 ${i + 1}] videoId: ${video.videoId}, title: ${video.title.substring(0, 30)}...`);
     });
     
     let finalHtml = '';
@@ -4485,6 +4493,9 @@ ${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
     contentDiv.innerHTML = finalHtml;
     resultDiv.classList.remove('hidden');
     
+    // ⭐ 복사하기 버튼 추가
+    addCopyButton(contentDiv);
+    
     console.log('✅ [AI 비교 분석] 완료');
     
   } catch (error) {
@@ -4506,6 +4517,74 @@ ${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
     btn.innerHTML = '<i class="fas fa-robot mr-2"></i>AI 비교 분석 생성';
   }
 }
+
+/**
+ * 복사하기 버튼 추가
+ */
+function addCopyButton(contentDiv) {
+  // 이미 버튼이 있으면 제거
+  const existingBtn = contentDiv.querySelector('.copy-analysis-btn');
+  if (existingBtn) {
+    existingBtn.remove();
+  }
+  
+  // 복사 버튼 생성
+  const copyBtn = document.createElement('div');
+  copyBtn.className = 'copy-analysis-btn';
+  copyBtn.style.cssText = 'margin-top: 20px; text-align: right;';
+  copyBtn.innerHTML = `
+    <button onclick="copyAIAnalysisContent()" style="
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      transition: all 0.3s ease;
+    " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(102, 126, 234, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.3)'">
+      <i class="fas fa-copy" style="margin-right: 8px;"></i>분석 내용 복사하기
+    </button>
+  `;
+  
+  contentDiv.appendChild(copyBtn);
+}
+
+/**
+ * AI 분석 내용 복사
+ */
+function copyAIAnalysisContent() {
+  const contentDiv = document.getElementById('compare-ai-content');
+  if (!contentDiv) {
+    alert('복사할 내용이 없습니다.');
+    return;
+  }
+  
+  // HTML을 텍스트로 변환
+  const textContent = contentDiv.innerText;
+  
+  // 클립보드에 복사
+  navigator.clipboard.writeText(textContent).then(() => {
+    // 성공 알림
+    const btn = event.target.closest('button');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check" style="margin-right: 8px;"></i>복사 완료!';
+    btn.style.background = 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)';
+    
+    setTimeout(() => {
+      btn.innerHTML = originalHTML;
+      btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    }, 2000);
+  }).catch(err => {
+    console.error('복사 실패:', err);
+    alert('복사에 실패했습니다. 다시 시도해주세요.');
+  });
+}
+
+// 전역 함수로 노출
+window.copyAIAnalysisContent = copyAIAnalysisContent;
 
 /**
  * 왕관 섹션 생성 (최고 성과 영상 분석)
