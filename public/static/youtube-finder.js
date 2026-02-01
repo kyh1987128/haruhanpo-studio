@@ -4624,12 +4624,106 @@ function generateCrownSection(videosInfo) {
     }
   });
   
-  // 바이럴 지수 계산
-  const viralScores = videosInfo.map((v, i) => {
-    const viral = parseFloat(v.performance?.viralScore) || 0;
-    return { video: v, index: i, value: viral };
+  // 각 영상의 트로피 생성
+  const videoCards = videosInfo.map((video, i) => {
+    const trophies = [];
+    
+    // 조회수 1위
+    if (i === maxViews.index) {
+      trophies.push({
+        icon: '📊',
+        title: '조회수 1위',
+        value: `${maxViews.value.toLocaleString()}회`,
+        color: '#3b82f6'
+      });
+    }
+    
+    // 좋아요율 1위
+    if (i === maxLikeRate.index) {
+      trophies.push({
+        icon: '👍',
+        title: '좋아요율 1위',
+        value: `${maxLikeRate.value.toFixed(2)}%`,
+        color: '#10b981'
+      });
+    }
+    
+    // 댓글 참여 1위
+    if (i === maxCommentPositive.index) {
+      trophies.push({
+        icon: '💬',
+        title: '댓글 참여 1위',
+        value: `긍정 ${maxCommentPositive.value}%`,
+        color: '#f59e0b'
+      });
+    }
+    
+    // 완주율 1위 (짧은 길이)
+    if (minDuration.index >= 0 && i === minDuration.index) {
+      trophies.push({
+        icon: '⚡',
+        title: '완주율 1위',
+        value: video.displayDuration || '짧은 길이',
+        color: '#8b5cf6'
+      });
+    }
+    
+    return {
+      video,
+      index: i,
+      trophies
+    };
   });
-  const maxViral = viralScores.reduce((max, current) => current.value > max.value ? current : max, viralScores[0]);
+  
+  // HTML 생성
+  const cardsHtml = videoCards.map(card => {
+    const hasTrophy = card.trophies.length > 0;
+    const borderColor = hasTrophy ? '#fb923c' : '#d1d5db';
+    const bgGradient = hasTrophy 
+      ? 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)'
+      : 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)';
+    
+    return `
+      <div style="background: ${bgGradient}; border: 2px solid ${borderColor}; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+          <div style="font-size: 24px; font-weight: 800; color: #1f2937;">
+            영상 ${card.index + 1}
+          </div>
+          ${hasTrophy ? '<div style="font-size: 24px;">🏆</div>' : ''}
+        </div>
+        
+        <div style="font-size: 14px; color: #6b7280; margin-bottom: 12px; line-height: 1.4;">
+          ${card.video.title.substring(0, 50)}${card.video.title.length > 50 ? '...' : ''}
+        </div>
+        
+        ${card.trophies.length > 0 ? `
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            ${card.trophies.map(trophy => `
+              <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: white; border-radius: 8px; border-left: 3px solid ${trophy.color};">
+                <span style="font-size: 16px;">${trophy.icon}</span>
+                <span style="font-size: 14px; font-weight: 600; color: #374151;">${trophy.title}</span>
+                <span style="margin-left: auto; font-size: 13px; color: #6b7280;">${trophy.value}</span>
+              </div>
+            `).join('')}
+          </div>
+        ` : `
+          <div style="padding: 12px; background: white; border-radius: 8px; text-align: center; color: #9ca3af; font-size: 13px;">
+            이번 비교에서는 수상 없음
+          </div>
+        `}
+      </div>
+    `;
+  }).join('');
+  
+  // 한줄 결론 생성
+  const conclusionParts = [];
+  if (maxViews.index >= 0) conclusionParts.push(`영상 ${maxViews.index + 1}의 바이럴 전략`);
+  if (minDuration.index >= 0) conclusionParts.push(`영상 ${minDuration.index + 1}의 짧은 길이`);
+  if (maxCommentPositive.index >= 0) conclusionParts.push(`영상 ${maxCommentPositive.index + 1}의 스토리텔링`);
+  
+  const conclusion = conclusionParts.length > 0 
+    ? conclusionParts.join(' + ') + '을 결합하면 완벽한 공식 완성'
+    : '각 영상의 강점을 분석하여 최적의 전략을 수립하세요';
   
   return `
     <div style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border: 2px solid #fb923c; border-radius: 16px; padding: 32px; margin: 30px 0; box-shadow: 0 8px 24px rgba(251, 146, 60, 0.15);">
@@ -4637,69 +4731,20 @@ function generateCrownSection(videosInfo) {
         <h2 style="margin: 0; font-size: 28px; color: #ea580c; font-weight: 800;">
           🏆 최고 성과 영상 분석
         </h2>
-        <p style="margin: 8px 0 0 0; font-size: 14px; color: #9a3412;">한눈에 보는 핵심 성과 지표</p>
+        <p style="margin: 8px 0 0 0; font-size: 14px; color: #9a3412;">각 영상의 수상 내역</p>
       </div>
       
-      <div style="display: grid; gap: 16px;">
-        ${maxViews.video ? `
-        <div style="background: white; padding: 20px; border-radius: 12px; border-left: 4px solid #3b82f6;">
-          <div style="font-size: 20px; margin-bottom: 8px;">👑 <strong>조회수 챔피언</strong>: 영상 ${maxViews.index + 1}</div>
-          <div style="font-size: 16px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">
-            ${maxViews.value.toLocaleString()}회 | 바이럴 ${Math.round(maxViews.video.performance?.viralScore || 0)}%
-          </div>
-          <div style="font-size: 14px; color: #64748b; padding-left: 20px;">
-            └ 외부 유입 전략이 탁월함
-          </div>
-        </div>
-        ` : ''}
-        
-        ${maxLikeRate.video ? `
-        <div style="background: white; padding: 20px; border-radius: 12px; border-left: 4px solid #10b981;">
-          <div style="font-size: 20px; margin-bottom: 8px;">👑 <strong>좋아요율 챔피언</strong>: 영상 ${maxLikeRate.index + 1}</div>
-          <div style="font-size: 16px; color: #059669; font-weight: 600; margin-bottom: 4px;">
-            ${maxLikeRate.value.toFixed(2)}% | 시청자 만족도 최고
-          </div>
-          <div style="font-size: 14px; color: #64748b; padding-left: 20px;">
-            └ 짧고 유익한 콘텐츠가 효과적
-          </div>
-        </div>
-        ` : ''}
-        
-        ${maxCommentPositive.video ? `
-        <div style="background: white; padding: 20px; border-radius: 12px; border-left: 4px solid #f59e0b;">
-          <div style="font-size: 20px; margin-bottom: 8px;">👑 <strong>댓글 참여 챔피언</strong>: 영상 ${maxCommentPositive.index + 1}</div>
-          <div style="font-size: 16px; color: #d97706; font-weight: 600; margin-bottom: 4px;">
-            댓글 ${maxCommentPositive.value}% 긍정 | 참여도 최고
-          </div>
-          <div style="font-size: 14px; color: #64748b; padding-left: 20px;">
-            └ 공감 가는 스토리텔링이 강점
-          </div>
-        </div>
-        ` : ''}
-        
-        ${minDuration.video && minDuration.value < Infinity ? `
-        <div style="background: white; padding: 20px; border-radius: 12px; border-left: 4px solid #8b5cf6;">
-          <div style="font-size: 20px; margin-bottom: 8px;">👑 <strong>완주율 챔피언</strong>: 영상 ${minDuration.index + 1}</div>
-          <div style="font-size: 16px; color: #7c3aed; font-weight: 600; margin-bottom: 4px;">
-            ${minDuration.video.displayDuration || '짧은 길이'} | 이탈률 최저
-          </div>
-          <div style="font-size: 14px; color: #64748b; padding-left: 20px;">
-            └ 숏폼 전략이 효과적
-          </div>
-        </div>
-        ` : ''}
+      <div style="display: grid; gap: 16px; margin-bottom: 24px;">
+        ${cardsHtml}
       </div>
       
-      <div style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 12px; padding: 20px; margin-top: 24px; border: 2px solid #22c55e;">
+      <div style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 12px; padding: 20px; border: 2px solid #22c55e;">
         <div style="text-align: center;">
           <div style="font-size: 18px; font-weight: 700; color: #166534; margin-bottom: 8px;">
             💡 한줄 결론
           </div>
           <div style="font-size: 16px; color: #15803d; line-height: 1.6;">
-            ${maxViews.index >= 0 ? `영상 ${maxViews.index + 1}` : '조회수 챔피언'}의 바이럴 전략 + 
-            ${minDuration.index >= 0 ? `영상 ${minDuration.index + 1}` : '짧은 영상'}의 길이 + 
-            ${maxCommentPositive.index >= 0 ? `영상 ${maxCommentPositive.index + 1}` : '인기 영상'}의<br>
-            스토리텔링을 결합하면 완벽한 공식 완성
+            ${conclusion}
           </div>
         </div>
       </div>
