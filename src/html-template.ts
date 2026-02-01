@@ -945,7 +945,12 @@ export const htmlTemplate = `
         <!-- 결과 표시 -->
         <div id="resultArea" class="hidden bg-white rounded-2xl shadow-xl p-8 mb-24">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">생성 결과</h2>
+                <h2 class="text-2xl font-bold text-gray-800">
+                    생성 결과
+                    <span style="color: #667eea; font-size: 14px; font-weight: normal; margin-left: 8px;">
+                        💡 이어서 다음 작업을 진행해보세요 (예: 이미지 생성, 영상 생성 등)
+                    </span>
+                </h2>
                 <button
                     onclick="downloadAllAsExcel()"
                     class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold flex items-center gap-2"

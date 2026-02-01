@@ -8840,7 +8840,7 @@ async function generateSingleContent(contentIndex) {
       contentBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
     
-    showToast(`✅ 콘텐츠 #${contentIndex + 1} 생성 완료!`, 'success');
+    showToast(`✅ 콘텐츠 #${contentIndex + 1} 생성 완료!\n💡 이어서 다음 작업을 진행해보세요 (예: 이미지 생성, 영상 생성 등)`, 'success');
     
   } catch (error) {
     console.error(`❌ [콘텐츠 #${contentIndex + 1}] 생성 오류:`, error);
