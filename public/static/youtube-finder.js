@@ -4531,14 +4531,51 @@ function generateStructuredAnalysis(videosInfo, strategyData) {
     `;
   }).join('');
   
-  // 비교 분석
-  const comparisonHtml = `
-    <h3 style="color: #1f2937; font-size: 22px; font-weight: 700; margin: 40px 0 20px 0;">📊 비교 분석</h3>
-    <div style="background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-      <pre style="white-space: pre-wrap; font-family: monospace; margin: 0;">${strategyData.comparisonTable || ''}</pre>
-      ${strategyData.keyFindings ? `<p style="margin-top: 20px; font-weight: 600; color: #1f2937;">💡 ${strategyData.keyFindings}</p>` : ''}
-    </div>
-  `;
+  // 비교 분석 (카드 형식)
+  let comparisonHtml = '';
+  if (strategyData.videoCards && strategyData.videoCards.length > 0) {
+    comparisonHtml = `
+      <h3 style="color: #1f2937; font-size: 22px; font-weight: 700; margin: 40px 0 20px 0;">📊 영상별 성과 카드</h3>
+      <div style="display: grid; gap: 20px; margin-bottom: 30px;">
+        ${strategyData.videoCards.map(card => `
+          <div style="background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%); border: 2px solid #e5e7eb; border-radius: 16px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+            <h4 style="font-size: 20px; font-weight: 700; color: #1f2937; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+              📺 영상 ${card.videoIndex}: ${card.nickname}
+            </h4>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 15px; color: #4b5563;">
+              <div style="padding: 10px; background: #f0fdf4; border-left: 4px solid #10b981; border-radius: 6px;">
+                <strong style="color: #059669;">✅ 성과:</strong> ${card.performance}
+              </div>
+              
+              <div style="padding: 10px; background: #fefce8; border-left: 4px solid #eab308; border-radius: 6px;">
+                <strong style="color: #ca8a04;">⭐ 강점:</strong> ${card.strength}
+              </div>
+              
+              <div style="padding: 10px; background: #fef2f2; border-left: 4px solid #ef4444; border-radius: 6px;">
+                <strong style="color: #dc2626;">⚠️ 문제:</strong> ${card.weakness}
+              </div>
+              
+              <div style="padding: 10px; background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 6px;">
+                <strong style="color: #2563eb;">💭 평가:</strong> ${card.rating}
+              </div>
+              
+              <div style="padding: 10px; background: #f5f3ff; border-left: 4px solid #8b5cf6; border-radius: 6px;">
+                <strong style="color: #7c3aed;">🎯 전략:</strong> ${card.strategy}
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      
+      ${strategyData.finalConclusion ? `
+        <div style="background: linear-gradient(135deg, #00B87D 0%, #059669 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 30px;">
+          <h4 style="margin: 0 0 10px 0; font-size: 18px; font-weight: 700;">💡 종합 결론</h4>
+          <p style="margin: 0; font-size: 15px; line-height: 1.7;">${strategyData.finalConclusion}</p>
+        </div>
+      ` : ''}
+    `;
+  }
   
   // 액션 플랜
   let actionPlanHtml = '';
