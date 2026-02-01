@@ -1001,7 +1001,14 @@ ${videosWithComments.map((v: any, i: number) => {
 • 체크박스(✅❌)로 긍정/부정 표시
 • 불렛 포인트(-) 사용으로 가독성 확보
 
-다음 형식으로 JSON 응답해주세요:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ CRITICAL - JSON 응답 형식 (필수)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+반드시 아래 JSON 구조로만 응답하세요. Markdown 텍스트는 절대 금지입니다.
+
+videoCards 필드가 없으면 응답이 거부됩니다. 반드시 3개 영상 모두 포함하세요.
+
 {
   "individualAnalysis": [
     {
@@ -1017,15 +1024,33 @@ ${videosWithComments.map((v: any, i: number) => {
   "videoCards": [
     {
       "videoIndex": 1,
-      "nickname": "특징 한마디 (예: 어그로 마스터)",
-      "performance": "조회수/좋아요율/바이럴 요약",
-      "strength": "강점 1-2문장",
-      "weakness": "문제점 1-2문장",
-      "rating": "한 줄 평가",
-      "strategy": "개선 전략 1개"
+      "nickname": "어그로 마스터",
+      "performance": "조회수 702만, 좋아요율 0%, 바이럴 1738%",
+      "strength": "조회수 폭발적 증가로 외부 유입 많음",
+      "weakness": "시청자 불만 다수, 좋아요율 0%로 만족도 최저",
+      "rating": "욕먹으면서 터진 어그로성 영상",
+      "strategy": "콘텐츠 품질 개선으로 만족도 향상 필요"
+    },
+    {
+      "videoIndex": 2,
+      "nickname": "균형잡힌 올라운더",
+      "performance": "조회수 177만, 좋아요율 0.76%, 댓글 긍정적",
+      "strength": "모든 지표가 안정적이고 균형잡힘",
+      "weakness": "특별한 약점 없음",
+      "rating": "가장 성공적인 레퍼런스 콘텐츠",
+      "strategy": "이 방향으로 시리즈 확대 권장"
+    },
+    {
+      "videoIndex": 3,
+      "nickname": "잠재력형",
+      "performance": "좋아요율 1.11% (최고), 제목 클릭 유도 우수",
+      "strength": "제목 전략이 우수하여 클릭률 높음",
+      "weakness": "21분으로 너무 길어 이탈률 높음",
+      "rating": "제목은 좋지만 내용이 기대에 못 미침",
+      "strategy": "10분 이내로 재편집하여 집중도 향상"
     }
   ],
-  "finalConclusion": "종합 결론 2-3문장",
+  "finalConclusion": "영상 2가 가장 균형잡힌 성공작입니다. 영상 1은 어그로성을 줄이고 품질을 높이며, 영상 3은 길이를 단축해야 합니다.",
   "actionPlan": [
     {
       "priority": 1,
@@ -1035,7 +1060,9 @@ ${videosWithComments.map((v: any, i: number) => {
       "timeRequired": "소요 시간"
     }
   ]
-}`
+}
+
+⚠️ 주의: videoCards 배열은 반드시 영상 개수만큼 포함하세요 (예: 3개 영상 → 3개 카드)`
 
     const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -1048,7 +1075,7 @@ ${videosWithComments.map((v: any, i: number) => {
         messages: [
           {
             role: 'system',
-            content: '당신은 YouTube 콘텐츠 전략 전문가입니다. 데이터 기반 인사이트를 제공하고 실행 가능한 전략을 제안합니다.'
+            content: '당신은 YouTube 콘텐츠 전략 전문가입니다. 데이터 기반 인사이트를 제공하고 실행 가능한 전략을 제안합니다. 반드시 JSON 형식으로만 응답하며, videoCards 필드를 포함해야 합니다.'
           },
           {
             role: 'user',

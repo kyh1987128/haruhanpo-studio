@@ -4450,7 +4450,7 @@ ${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
         }
       });
       
-      finalHtml = dashboardHtml + '<div style="margin-top: 30px;">' + html + '</div>' + sentimentHtmlAll;
+      finalHtml = dashboardHtml + sentimentHtmlAll + '<div style="margin-top: 30px;">' + html + '</div>';
     }
     
     // 결과 표시
