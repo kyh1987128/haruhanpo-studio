@@ -127,8 +127,14 @@ function checkRateLimit(
 /**
  * Rate Limit 저장소 정리 (메모리 관리)
  * 주기적으로 만료된 기록 삭제
+ * 
+ * 주의: Cloudflare Workers에서는 setInterval 사용 불가
+ * 대신 각 요청 시마다 확률적으로 정리 수행
  */
 export function cleanupRateLimitStore() {
+  // 1% 확률로 정리 수행 (평균 100회 요청당 1회)
+  if (Math.random() > 0.01) return;
+  
   const now = Date.now();
   let cleaned = 0;
   
@@ -144,15 +150,14 @@ export function cleanupRateLimitStore() {
   }
 }
 
-// 5분마다 자동 정리
-setInterval(cleanupRateLimitStore, 300000);
-
 /**
  * Export rate limiters for different endpoints
  */
 export const rateLimiters = {
   // 인증 API: 5분당 10회
   auth: async (c: Context, next: Next) => {
+    cleanupRateLimitStore(); // 확률적 정리
+    
     const config = { maxRequests: 10, windowMs: 300000 };
     const ip = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || 'unknown';
     const path = new URL(c.req.url).pathname;
@@ -170,6 +175,8 @@ export const rateLimiters = {
   
   // 콘텐츠 생성: 분당 5회
   generate: async (c: Context, next: Next) => {
+    cleanupRateLimitStore(); // 확률적 정리
+    
     const config = { maxRequests: 5, windowMs: 60000 };
     const ip = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || 'unknown';
     const path = new URL(c.req.url).pathname;
@@ -187,6 +194,8 @@ export const rateLimiters = {
   
   // YouTube API: 분당 20회
   youtube: async (c: Context, next: Next) => {
+    cleanupRateLimitStore(); // 확률적 정리
+    
     const config = { maxRequests: 20, windowMs: 60000 };
     const ip = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || 'unknown';
     const path = new URL(c.req.url).pathname;
@@ -204,6 +213,8 @@ export const rateLimiters = {
   
   // 일반 API: 분당 60회
   api: async (c: Context, next: Next) => {
+    cleanupRateLimitStore(); // 확률적 정리
+    
     const config = { maxRequests: 60, windowMs: 60000 };
     const ip = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || 'unknown';
     const path = new URL(c.req.url).pathname;
