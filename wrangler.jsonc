@@ -17,13 +17,26 @@
   ]
   
   // 환경 변수는 Cloudflare Pages Dashboard에서 설정:
+  // 
+  // 필수 환경 변수:
   // - YOUTUBE_API_KEY
   // - OPENAI_API_KEY
+  // - GEMINI_API_KEY
   // - SUPABASE_URL
-  // - SUPABASE_SERVICE_ROLE_KEY
+  // - SUPABASE_SERVICE_KEY (또는 SUPABASE_SERVICE_ROLE_KEY)
+  // 
+  // 선택적 환경 변수 (보안 강화):
+  // - TURNSTILE_SECRET_KEY: Cloudflare Turnstile 비공개 키 (봇 방어)
+  // - TURNSTILE_ENABLED: true/false (기본값: production 환경에서만 true)
   // 
   // 주의: 환경 변수는 wrangler.jsonc에 직접 작성하지 말고
   // Cloudflare Dashboard > Pages > Settings > Environment variables에서 설정
+  // 
+  // Turnstile 설정 방법:
+  // 1. Cloudflare Dashboard > Turnstile 접속
+  // 2. "Add Site" 클릭
+  // 3. 생성된 Secret Key를 TURNSTILE_SECRET_KEY에 설정
+  // 4. Site Key는 프론트엔드에서 사용 (TURNSTILE_INTEGRATION_GUIDE.js 참고)
   
   // 트렌드 데이터는 별도 Cloudflare Worker에서 Cron으로 수집됩니다
   // Worker 프로젝트: /home/user/youtube-trends-worker

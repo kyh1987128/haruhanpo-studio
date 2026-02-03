@@ -15,6 +15,8 @@ import images, { fetchSmartImages } from './routes/images';
 import youtubeApi from './routes/api/youtube';
 import channelsApi from './routes/api/channels';
 import { injectImagesIntoBlogContent, injectImagesIntoBrunchContent, convertHtmlToNaverText, addInstagramImageMetadata, injectBlogImageGuide, injectBrunchImageGuide, injectYoutubeThumbnailGuide } from './image-injection';
+import { rateLimiters } from './middleware/rate-limit';
+import { verifyTurnstile, getTurnstileErrorMessage, isTurnstileEnabled } from './utils/turnstile';
 import './styles.css'; // ✅ Tailwind CSS import
 
 type Bindings = {
@@ -25,6 +27,9 @@ type Bindings = {
   SUPABASE_SERVICE_KEY: string;
   UNSPLASH_ACCESS_KEY?: string;
   YOUTUBE_API_KEY: string;
+  TURNSTILE_SECRET_KEY?: string;
+  TURNSTILE_ENABLED?: string | boolean;
+  ENVIRONMENT?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -53,8 +58,18 @@ const COSTS: Record<string, number> = {
 
 const EXCHANGE_RATE = 1300; // 1 USD = 1300 KRW
 
+// ========================================
+// 미들웨어 설정
+// ========================================
+
 // CORS 설정
 app.use('/api/*', cors());
+
+// Rate Limiting 적용
+app.use('/api/auth/*', rateLimiters.auth); // 인증 API: 분당 10회
+app.use('/api/generate*', rateLimiters.generate); // 콘텐츠 생성: 분당 5회
+app.use('/api/youtube/*', rateLimiters.youtube); // YouTube API: 분당 20회
+app.use('/api/*', rateLimiters.api); // 일반 API: 분당 60회
 
 // 정적 파일 서빙 (결제 페이지 포함)
 app.use('/static/*', serveStatic({ root: './public' }));
@@ -1549,7 +1564,7 @@ app.post('/api/auth/signup', async (c) => {
   try {
     console.log('📝 /api/auth/signup 요청 받음');
     
-    const { email, password } = await c.req.json();
+    const { email, password, turnstileToken } = await c.req.json();
     const ip = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown';
     const userAgent = c.req.header('user-agent') || 'unknown';
     
@@ -1560,6 +1575,32 @@ app.post('/api/auth/signup', async (c) => {
         success: false, 
         error: '이메일과 비밀번호는 필수입니다' 
       }, 400);
+    }
+
+    // 🤖 Turnstile 봇 검증 (활성화된 경우에만)
+    if (isTurnstileEnabled(c.env) && c.env.TURNSTILE_SECRET_KEY) {
+      if (!turnstileToken) {
+        return c.json({
+          success: false,
+          error: '봇 검증이 필요합니다.'
+        }, 400);
+      }
+
+      const turnstileResult = await verifyTurnstile(
+        turnstileToken,
+        c.env.TURNSTILE_SECRET_KEY,
+        ip
+      );
+
+      if (!turnstileResult.success) {
+        console.warn('🤖 Turnstile 검증 실패:', turnstileResult['error-codes']);
+        return c.json({
+          success: false,
+          error: getTurnstileErrorMessage(turnstileResult['error-codes'])
+        }, 403);
+      }
+
+      console.log('✅ Turnstile 검증 성공');
     }
     
     const supabase = createSupabaseAdmin(
