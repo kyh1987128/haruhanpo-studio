@@ -25,6 +25,13 @@ export function createRateLimiter(config: RateLimitConfig) {
   } = config;
 
   return async (c: Context, next: Next) => {
+    // 만료된 레코드 정리 (메모리 관리)
+    // Cloudflare Workers에서는 setInterval 사용 불가하므로
+    // 각 요청마다 정리 (10% 확률로 실행)
+    if (Math.random() < 0.1) {
+      cleanupRateLimitRecords();
+    }
+
     // IP 주소 가져오기 (Cloudflare 헤더 우선)
     const ip = c.req.header('CF-Connecting-IP') 
       || c.req.header('X-Forwarded-For')?.split(',')[0]
@@ -90,8 +97,9 @@ export function cleanupRateLimitRecords() {
   }
 }
 
-// 5분마다 자동 정리
-setInterval(cleanupRateLimitRecords, 5 * 60 * 1000);
+// 주의: Cloudflare Workers에서는 setInterval 사용 불가
+// 대신 각 요청 시 자동으로 만료된 레코드 정리
+// (createRateLimiter 내부에서 처리)
 
 /**
  * 미리 정의된 Rate Limiter들
