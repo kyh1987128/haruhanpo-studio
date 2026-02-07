@@ -92,7 +92,7 @@ export async function generateContentWithGemini(
       }],
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 4000,
+        maxOutputTokens: 16000,
       }
     })
   });
