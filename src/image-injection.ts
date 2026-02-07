@@ -16,8 +16,8 @@ export function injectImagesIntoBlogContent(
     return content;
   }
   
-  // 문단 구분 (##로 시작하는 소제목 기준)
-  const sections = content.split(/(?=##\s)/g);
+  // 문단 구분 (대괄호 라벨 기준: [제목], [들어가며], [소제목], [마무리] 등)
+  const sections = content.split(/(?=\[(?:제목|들어가며|소제목|마무리|도입부|전개부|심화부|부제목)\])/g);
   
   // 이미지가 배치될 위치 계산
   const totalSections = sections.length;
@@ -63,8 +63,8 @@ export function injectImagesIntoBrunchContent(
     return content;
   }
   
-  // 문단 구분 (##로 시작하는 소제목 기준)
-  const sections = content.split(/(?=##\s)/g);
+  // 문단 구분 (대괄호 라벨 기준: [제목], [도입부], [전개부], [심화부], [마무리] 등)
+  const sections = content.split(/(?=\[(?:제목|들어가며|소제목|마무리|도입부|전개부|심화부|부제목)\])/g);
   
   // 이미지가 배치될 위치 계산
   const totalSections = sections.length;
@@ -78,7 +78,7 @@ export function injectImagesIntoBrunchContent(
     // 섹션 추가
     result += section;
     
-    // 이미지 배치 가이드 삽입 (마크다운 형식)
+    // 이미지 배치 가이드 삽입 (대괄호 라벨 기준)
     if (
       imageIndex < imageCount && 
       (index + 1) % imageInterval === 0
