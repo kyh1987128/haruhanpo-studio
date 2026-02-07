@@ -7,7 +7,7 @@ import { createClient } from '@supabase/supabase-js'
 import { authMiddleware, adminMiddleware } from '../../middleware/auth'
 import { extractVideoId, buildYouTubeUrl } from '../../utils/youtube-url'
 import { getVideoInfo, getVideoComments } from '../../services/youtube-api'
-import { analyzeVideo } from '../../services/openai'
+import { analyzeVideo, callGemini } from '../../services/openai'
 import { getCachedAnalysis, saveCacheAnalysis, getTTLByAnalysisType, getCacheStats } from '../../services/cache'
 import { saveAnalysisHistory, getAnalysisHistory, getHistoryById, deleteHistory, getUserAnalysisStats } from '../../services/history'
 
@@ -254,14 +254,14 @@ app.post('/api/youtube/analyze', async (c) => {
     // 8. GPT-4 분석
     let analysisResult, aiSummary
     try {
-      const result = await analyzeVideo(videoInfo, analysisType, c.env.OPENAI_API_KEY)
+      const result = await analyzeVideo(videoInfo, analysisType, c.env.GEMINI_API_KEY)
       analysisResult = result.analysisResult
       aiSummary = result.aiSummary
     } catch (error: any) {
       return c.json<ApiResponse<null>>({
         success: false,
         error: {
-          code: 'OPENAI_API_ERROR',
+          code: 'AI_API_ERROR',
           message: error.message || 'AI 분석을 수행할 수 없습니다.'
         }
       }, error.statusCode || 500)
@@ -525,7 +525,7 @@ app.post('/api/youtube/search', async (c) => {
     // 🔍 디버깅: 환경 변수 전체 확인
     console.log('🔍 [Environment Check]', {
       YOUTUBE_API_KEY: youtubeApiKey ? `${youtubeApiKey.substring(0, 10)}...` : '❌ MISSING',
-      OPENAI_API_KEY: c.env.OPENAI_API_KEY ? 'OK' : '❌ MISSING',
+      GEMINI_API_KEY: c.env.GEMINI_API_KEY ? 'OK' : '❌ MISSING',
       SUPABASE_URL: c.env.SUPABASE_URL ? 'OK' : '❌ MISSING',
       SUPABASE_SERVICE_KEY: c.env.SUPABASE_SERVICE_KEY ? 'OK' : '❌ MISSING',
       allEnvKeys: Object.keys(c.env)
@@ -545,7 +545,7 @@ app.post('/api/youtube/search', async (c) => {
     const originalKeyword = keyword
     if (regionCode && regionCode !== 'all') {
       const { translateKeyword } = await import('../../services/youtube-api')
-      keyword = await translateKeyword(keyword, regionCode, c.env.OPENAI_API_KEY)
+      keyword = await translateKeyword(keyword, regionCode, c.env.GEMINI_API_KEY)
     }
 
     // 4. 검색 실행
@@ -802,15 +802,15 @@ app.post('/api/youtube/strategy', async (c) => {
     }
 
     // 2. API 키 확인
-    const openaiApiKey = c.env.OPENAI_API_KEY
+    const geminiApiKey = c.env.GEMINI_API_KEY
     const youtubeApiKey = c.env.YOUTUBE_API_KEY
     
-    if (!openaiApiKey) {
+    if (!geminiApiKey) {
       return c.json<ApiResponse<null>>({
         success: false,
         error: {
           code: 'API_KEY_MISSING',
-          message: 'OpenAI API 키가 설정되지 않았습니다.'
+          message: 'Gemini API 키가 설정되지 않았습니다.'
         }
       }, 500)
     }
@@ -840,7 +840,7 @@ app.post('/api/youtube/strategy', async (c) => {
 
     const goalText = goalDescriptions[goal as keyof typeof goalDescriptions] || '조회수 증가'
 
-    // OpenAI API 호출 - 완전히 재설계된 3단계 구조
+    // Gemini API 호출 - 완전히 재설계된 3단계 구조
     const prompt = `당신은 YouTube 콘텐츠 전략 전문가입니다. 다음 분석된 영상 데이터를 기반으로 "${goalText}"를 목표로 하는 전문가 리포트를 작성해주세요.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1064,35 +1064,14 @@ videoCards 필드가 없으면 응답이 거부됩니다. 반드시 3개 영상 
 
 ⚠️ 주의: videoCards 배열은 반드시 영상 개수만큼 포함하세요 (예: 3개 영상 → 3개 카드)`
 
-    const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openaiApiKey}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: '당신은 YouTube 콘텐츠 전략 전문가입니다. 데이터 기반 인사이트를 제공하고 실행 가능한 전략을 제안합니다. 반드시 JSON 형식으로만 응답하며, videoCards 필드를 포함해야 합니다.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        response_format: { type: 'json_object' }
-      })
-    })
+    const strategyContent = await callGemini(
+      geminiApiKey,
+      '당신은 YouTube 콘텐츠 전략 전문가입니다. 데이터 기반 인사이트를 제공하고 실행 가능한 전략을 제안합니다. 반드시 JSON 형식으로만 응답하며, videoCards 필드를 포함해야 합니다.',
+      prompt,
+      { temperature: 0.7, maxTokens: 4000, jsonMode: true }
+    )
 
-    if (!aiResponse.ok) {
-      throw new Error('OpenAI API 호출 실패')
-    }
-
-    const aiResult = await aiResponse.json()
-    const strategyData = JSON.parse(aiResult.choices[0].message.content)
+    const strategyData = JSON.parse(strategyContent)
     
     // ⭐ 프론트엔드 호환성을 위해 Markdown 텍스트로 변환 (3단계 구조)
     let strategyText = ''
@@ -1643,11 +1622,11 @@ app.post('/api/youtube/predict', async (c) => {
       }, 400)
     }
 
-    const openaiApiKey = c.env.OPENAI_API_KEY
-    if (!openaiApiKey) {
+    const geminiApiKey = c.env.GEMINI_API_KEY
+    if (!geminiApiKey) {
       return c.json({
         success: false,
-        error: { code: 'API_KEY_MISSING', message: 'OpenAI API 키가 설정되지 않았습니다.' }
+        error: { code: 'API_KEY_MISSING', message: 'Gemini API 키가 설정되지 않았습니다.' }
       }, 500)
     }
 
@@ -1719,33 +1698,16 @@ Return JSON format:
   }
 }`
 
-    // OpenAI API 호출
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openaiApiKey}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4',
-        messages: [
-          { role: 'system', content: 'You are a YouTube analytics expert. Always respond in valid JSON format.' },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 1500
-      })
-    })
-
-    if (!openaiResponse.ok) {
-      throw new Error('AI 분석 중 오류가 발생했습니다.')
-    }
-
-    const openaiData = await openaiResponse.json()
-    const aiResponse = openaiData.choices?.[0]?.message?.content
+    // Gemini API 호출
+    const aiResponseContent = await callGemini(
+      geminiApiKey,
+      'You are a YouTube analytics expert. Always respond in valid JSON format.',
+      prompt,
+      { temperature: 0.7, maxTokens: 1500, jsonMode: true }
+    )
 
     try {
-      const result = JSON.parse(aiResponse)
+      const result = JSON.parse(aiResponseContent)
       return c.json({
         success: true,
         data: result
@@ -2114,14 +2076,14 @@ app.post('/api/youtube/deep-analyze', async (c) => {
       }, 500)
     }
     
-    // OpenAI API 키 확인
-    const openaiApiKey = c.env?.OPENAI_API_KEY
-    if (!openaiApiKey) {
+    // Gemini API 키 확인
+    const geminiApiKey = c.env?.GEMINI_API_KEY
+    if (!geminiApiKey) {
       return c.json<ApiResponse<null>>({
         success: false,
         error: {
           code: 'API_KEY_MISSING',
-          message: 'OpenAI API 키가 설정되지 않았습니다.'
+          message: 'Gemini API 키가 설정되지 않았습니다.'
         }
       }, 500)
     }
@@ -2186,7 +2148,7 @@ app.post('/api/youtube/deep-analyze', async (c) => {
     else if (performance >= 100) performanceLevel = 'algorithm'
     else if (performance < 50) performanceLevel = 'low'
     
-    // 4. GPT-4 분석 요청
+    // 4. Gemini 분석 요청
     const analysisPrompt = `다음 YouTube 영상을 전문적으로 분석해주세요:
 
 제목: ${snippet.title}
@@ -2214,35 +2176,14 @@ app.post('/api/youtube/deep-analyze', async (c) => {
   "engagementTips": ["팁 1", "팁 2", "팁 3"]
 }`
 
-    const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openaiApiKey}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: '당신은 YouTube 콘텐츠 전략 전문가입니다. SWOT 분석과 실행 가능한 인사이트를 제공합니다.'
-          },
-          {
-            role: 'user',
-            content: analysisPrompt
-          }
-        ],
-        temperature: 0.7,
-        response_format: { type: 'json_object' }
-      })
-    })
+    const aiContent = await callGemini(
+      geminiApiKey,
+      '당신은 YouTube 콘텐츠 전략 전문가입니다. SWOT 분석과 실행 가능한 인사이트를 제공합니다.',
+      analysisPrompt,
+      { temperature: 0.7, maxTokens: 2000, jsonMode: true }
+    )
     
-    if (!aiResponse.ok) {
-      throw new Error('OpenAI API 호출 실패')
-    }
-    
-    const aiResult = await aiResponse.json()
-    const analysis = JSON.parse(aiResult.choices[0].message.content)
+    const analysis = JSON.parse(aiContent)
     
     // 5. 결과 반환
     return c.json({
@@ -2479,8 +2420,8 @@ app.post('/api/youtube/ab-test', async (c) => {
       }, 400)
     }
     
-    // OpenAI API 키 확인
-    const openaiApiKey = c.env?.OPENAI_API_KEY
+    // Gemini API 키 확인
+    const geminiApiKey = c.env?.GEMINI_API_KEY
     
     // ========================================
     // A/B 테스트 시뮬레이션 알고리즘
@@ -2559,9 +2500,9 @@ app.post('/api/youtube/ab-test', async (c) => {
     const winner = scoreA.overall > scoreB.overall ? 'A' : 'B'
     const improvement = Math.abs(scoreA.overall - scoreB.overall)
     
-    // 8. AI 분석 (OpenAI 사용 가능 시)
+    // 8. AI 분석 (Gemini 사용 가능 시)
     let aiInsights = null
-    if (openaiApiKey) {
+    if (geminiApiKey) {
       try {
         const aiPrompt = `다음 두 YouTube 제목을 비교 분석해주세요:
 
@@ -2576,27 +2517,14 @@ JSON 형식으로 다음을 제공해주세요:
   "improvements": ["개선 제안 1", "개선 제안 2"]
 }`
 
-        const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${openaiApiKey}`
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o-mini',
-            messages: [
-              { role: 'system', content: 'YouTube 제목 최적화 전문가입니다.' },
-              { role: 'user', content: aiPrompt }
-            ],
-            temperature: 0.7,
-            response_format: { type: 'json_object' }
-          })
-        })
+        const aiContent = await callGemini(
+          geminiApiKey,
+          'YouTube 제목 최적화 전문가입니다.',
+          aiPrompt,
+          { temperature: 0.7, maxTokens: 500, jsonMode: true }
+        )
         
-        if (aiResponse.ok) {
-          const aiResult = await aiResponse.json()
-          aiInsights = JSON.parse(aiResult.choices[0].message.content)
-        }
+        aiInsights = JSON.parse(aiContent)
       } catch (error) {
         console.error('AI insights error:', error)
       }
@@ -2750,36 +2678,13 @@ app.post('/api/youtube/summarize', authMiddleware, async (c) => {
     
     console.log('📹 [영상 정보]', { videoId, title, descriptionLength: description.length })
     
-    // GPT-4로 요약 생성
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${c.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: '당신은 YouTube 영상을 분석하는 전문가입니다. 영상의 제목과 설명을 바탕으로 핵심 내용을 간결하고 명확하게 요약해주세요.'
-          },
-          {
-            role: 'user',
-            content: `다음 YouTube 영상을 요약해주세요:\n\n제목: ${title}\n\n설명: ${description}\n\n요약 형식:\n1. 핵심 주제 (1-2문장)\n2. 주요 내용 (3-5개 불릿 포인트)\n3. 대상 시청자 (1문장)\n4. 시청 추천도 (1문장)`
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000
-      })
-    })
-    
-    if (!openaiResponse.ok) {
-      throw new Error('OpenAI API 호출 실패')
-    }
-    
-    const openaiData = await openaiResponse.json()
-    const summary = openaiData.choices[0].message.content
+    // Gemini로 요약 생성
+    const summary = await callGemini(
+      c.env.GEMINI_API_KEY,
+      '당신은 YouTube 영상을 분석하는 전문가입니다. 영상의 제목과 설명을 바탕으로 핵심 내용을 간결하고 명확하게 요약해주세요.',
+      `다음 YouTube 영상을 요약해주세요:\n\n제목: ${title}\n\n설명: ${description}\n\n요약 형식:\n1. 핵심 주제 (1-2문장)\n2. 주요 내용 (3-5개 불릿 포인트)\n3. 대상 시청자 (1문장)\n4. 시청 추천도 (1문장)`,
+      { temperature: 0.7, maxTokens: 1000 }
+    )
     
     // 크레딧 차감 (DB 연동 필요 시 여기서 처리)
     const remainingCredit = user.credit - 1
@@ -2856,36 +2761,13 @@ app.post('/api/youtube/transcript', authMiddleware, async (c) => {
     
     console.log('📹 [영상 정보]', { videoId, title, descriptionLength: description.length })
     
-    // GPT-4로 스크립트 생성
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${c.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: '당신은 YouTube 영상 스크립트 작성 전문가입니다. 영상의 제목과 설명을 바탕으로 전체 스크립트를 생성해주세요.'
-          },
-          {
-            role: 'user',
-            content: `다음 YouTube 영상의 전체 스크립트를 작성해주세요:\n\n제목: ${title}\n\n설명: ${description}\n\n스크립트 형식:\n[00:00] 인트로\n- 인사말\n- 영상 주제 소개\n\n[00:30] 본론 1\n- 핵심 포인트 설명\n\n[01:00] 본론 2\n- 추가 설명 및 예시\n\n[02:00] 결론\n- 요약 및 마무리\n\n각 섹션에 대해 구체적인 대사를 작성해주세요.`
-          }
-        ],
-        temperature: 0.8,
-        max_tokens: 2000
-      })
-    })
-    
-    if (!openaiResponse.ok) {
-      throw new Error('OpenAI API 호출 실패')
-    }
-    
-    const openaiData = await openaiResponse.json()
-    const transcript = openaiData.choices[0].message.content
+    // Gemini로 스크립트 생성
+    const transcript = await callGemini(
+      c.env.GEMINI_API_KEY,
+      '당신은 YouTube 영상 스크립트 작성 전문가입니다. 영상의 제목과 설명을 바탕으로 전체 스크립트를 생성해주세요.',
+      `다음 YouTube 영상의 전체 스크립트를 작성해주세요:\n\n제목: ${title}\n\n설명: ${description}\n\n스크립트 형식:\n[00:00] 인트로\n- 인사말\n- 영상 주제 소개\n\n[00:30] 본론 1\n- 핵심 포인트 설명\n\n[01:00] 본론 2\n- 추가 설명 및 예시\n\n[02:00] 결론\n- 요약 및 마무리\n\n각 섹션에 대해 구체적인 대사를 작성해주세요.`,
+      { temperature: 0.8, maxTokens: 2000 }
+    )
     
     // 크레딧 차감 제거 (무료 제공)
     // const remainingCredit = user.credit - 1
@@ -2940,7 +2822,7 @@ app.get('/api/youtube/test-env', async (c) => {
     success: true,
     data: {
       YOUTUBE_API_KEY: c.env.YOUTUBE_API_KEY ? `${c.env.YOUTUBE_API_KEY.substring(0, 15)}...` : '❌ MISSING',
-      OPENAI_API_KEY: c.env.OPENAI_API_KEY ? 'EXISTS' : '❌ MISSING',
+      GEMINI_API_KEY: c.env.GEMINI_API_KEY ? 'EXISTS' : '❌ MISSING',
       SUPABASE_URL: c.env.SUPABASE_URL || '❌ MISSING',
       SUPABASE_SERVICE_KEY: c.env.SUPABASE_SERVICE_KEY ? 'EXISTS' : '❌ MISSING',
       allEnvKeys: Object.keys(c.env),
