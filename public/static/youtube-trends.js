@@ -5,6 +5,7 @@
 console.log('🔥 [YouTube Trends] 스크립트 로드');
 
 let currentCategory = 'all';
+let trendAbortController = null;
 let trendsData = {
   keywords: [],
   videos: []
@@ -56,18 +57,24 @@ async function initTrendsInsights() {
 async function loadTrendVideos(category = 'all') {
   console.log(`📹 [Trends] 인기 영상 로드 시작 (카테고리: ${category})`);
   
+  // 이전 요청 취소
+  if (trendAbortController) {
+    trendAbortController.abort();
+  }
+  trendAbortController = new AbortController();
+  const signal = trendAbortController.signal;
+  
   const loadingEl = document.getElementById('videos-loading');
   const listEl = document.getElementById('videos-list');
   const emptyEl = document.getElementById('videos-empty');
   const updateEl = document.getElementById('videos-last-update');
   
-  // 로딩 표시
+  // 로딩 표시 + 기존 결과 숨김
   loadingEl?.classList.remove('hidden');
   listEl?.classList.add('hidden');
   emptyEl?.classList.add('hidden');
   
   try {
-    // YouTube Trending API 직접 호출 (Supabase 불필요)
     const response = await fetch('/api/youtube/trending', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -75,7 +82,8 @@ async function loadTrendVideos(category = 'all') {
         regionCode: 'KR', 
         maxResults: 20,
         videoCategoryId: category !== 'all' ? category : undefined
-      })
+      }),
+      signal: signal
     });
     
     if (!response.ok) {
@@ -88,7 +96,6 @@ async function loadTrendVideos(category = 'all') {
       throw new Error(result.error?.message || '데이터 없음');
     }
     
-    // 데이터 변환
     const videos = result.data.videos.map(v => ({
       video_id: v.videoId || v.id,
       title: v.title || v.snippet?.title || '',
@@ -103,23 +110,37 @@ async function loadTrendVideos(category = 'all') {
     console.log(`✅ [Trends] ${videos.length}개 영상 로드 완료`);
     
     trendsData.videos = videos;
-    window.trendingVideos = videos; // 전역 변수 저장
+    window.trendingVideos = videos;
     
-    // UI 업데이트
     if (videos && videos.length > 0) {
       renderVideos(videos);
       listEl?.classList.remove('hidden');
-      
-      // 마지막 업데이트 시간
-      updateEl.textContent = `마지막 업데이트: 방금 전`;
+      if (updateEl) updateEl.textContent = `마지막 업데이트: 방금 전`;
     } else {
-      emptyEl?.classList.remove('hidden');
-      updateEl.textContent = '데이터 없음';
+      // 빈 결과: 카테고리별 메시지 구분
+      if (emptyEl) {
+        const noDataCategories = ['1', '2', '15', '17', '19', '26', '29'];
+        if (noDataCategories.includes(category)) {
+          emptyEl.innerHTML = '<i class="fas fa-info-circle text-4xl mb-3 text-blue-300"></i><p>이 카테고리는 현재 인기 영상 데이터가 제공되지 않습니다.</p>';
+        } else {
+          emptyEl.innerHTML = '<i class="fas fa-video-slash text-4xl mb-3 text-gray-300"></i><p>인기 영상이 없습니다.</p>';
+          console.warn(`⚠️ [기본 카테고리 ${category}] 빈 배열 반환됨`);
+        }
+        emptyEl.classList.remove('hidden');
+      }
+      if (updateEl) updateEl.textContent = '데이터 없음';
     }
   } catch (error) {
+    if (error.name === 'AbortError') {
+      console.log('🚫 [Trends] 이전 요청 취소됨');
+      return;
+    }
     console.error('❌ [Trends] 영상 로드 실패:', error);
     showError('영상을 불러오는 데 실패했습니다.');
-    emptyEl?.classList.remove('hidden');
+    if (emptyEl) {
+      emptyEl.innerHTML = '<i class="fas fa-exclamation-triangle text-4xl mb-3 text-red-300"></i><p>영상을 불러오는 데 실패했습니다.</p>';
+      emptyEl.classList.remove('hidden');
+    }
   } finally {
     loadingEl?.classList.add('hidden');
   }

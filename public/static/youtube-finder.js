@@ -1040,6 +1040,7 @@ async function handleAnalyzeSingleVideo(videoId) {
 // 현재 분석 중인 채널 ID 저장
 let currentAnalyzedChannelId = '';
 let currentChannelVideoSort = 'popular';
+let currentChannelSubscribers = 0;
 
 // 채널 분석 실행
 async function handleChannelAnalysis() {
@@ -1075,9 +1076,10 @@ async function handleChannelAnalysis() {
 
     console.log('✅ 채널 분석 완료:', result.data);
 
-    // 채널 ID 저장
+    // 채널 ID 및 구독자 수 저장
     currentAnalyzedChannelId = result.data.channel?.channelId || '';
     currentChannelVideoSort = 'popular';
+    currentChannelSubscribers = result.data.channel?.subscriberCount || 0;
 
     // 결과 표시
     displayChannelInfo(result.data.channel, result.data.growthStatus, result.data.growthRatio);
@@ -1361,12 +1363,13 @@ function updateChannelDetailPanel(video) {
   const likeRate = video.views > 0 ? (video.likes / video.views) * 100 : 0;
   
   // 구독자 대비 조회수 비율 계산
-  const subscriberCount = video.subscriberCount || video.channelInfo?.subscriberCount || 0;
+  const subscriberCount = video.subscriberCount || video.channelInfo?.subscriberCount || currentChannelSubscribers || 0;
   const subViewRatio = subscriberCount > 0 ? (video.views / subscriberCount) * 100 : 0;
   
   // 댓글 참여도 계산 (댓글수/조회수)
-  const commentCount = video.comments || 0;
-  const commentEngagement = video.views > 0 ? (commentCount / video.views) * 100 : 0;
+  const commentCount = video.comments || video.statistics?.commentCount || 0;
+  const hasCommentData = commentCount > 0;
+  const commentEngagement = (hasCommentData && video.views > 0) ? (commentCount / video.views) * 100 : 0;
   
   // Good/Normal/Bad 라벨 생성 함수
   function getPerformanceLabel(value, thresholds) {
@@ -1376,8 +1379,8 @@ function updateChannelDetailPanel(video) {
   }
   
   const likeRateLabel = getPerformanceLabel(likeRate, { good: 3, normal: 1 });
-  const subViewLabel = getPerformanceLabel(subViewRatio, { good: 100, normal: 30 });
-  const commentLabel = getPerformanceLabel(commentEngagement, { good: 0.5, normal: 0.1 });
+  const subViewLabel = subscriberCount > 0 ? getPerformanceLabel(subViewRatio, { good: 100, normal: 30 }) : '';
+  const commentLabel = hasCommentData ? getPerformanceLabel(commentEngagement, { good: 0.5, normal: 0.1 }) : '';
   
   // 트렌드 배지 결정
   let trendBadge = '';
@@ -1478,11 +1481,11 @@ function updateChannelDetailPanel(video) {
           </div>
           <div class="flex items-center justify-between">
             <span class="text-sm text-gray-600">구독자 대비 조회수</span>
-            <span class="text-sm font-semibold text-gray-900">${subViewRatio.toFixed(1)}%${subViewLabel}</span>
+            <span class="text-sm font-semibold text-gray-900">${subscriberCount > 0 ? subViewRatio.toFixed(1) + '%' + subViewLabel : '<span class="text-gray-400">데이터 없음</span>'}</span>
           </div>
           <div class="flex items-center justify-between">
             <span class="text-sm text-gray-600">댓글 참여도</span>
-            <span class="text-sm font-semibold text-gray-900">${commentEngagement.toFixed(3)}%${commentLabel}</span>
+            <span class="text-sm font-semibold text-gray-900">${hasCommentData ? commentEngagement.toFixed(3) + '%' + commentLabel : '<span class="text-gray-400">데이터 없음</span>'}</span>
           </div>
           <div class="flex items-center justify-between">
             <span class="text-sm text-gray-600">게시일</span>
@@ -4577,45 +4580,8 @@ ${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
       console.log('⚠️ JSON 파싱 실패, Markdown 모드로 전환');
     }
     
-    // ⭐ 댓글 감정 분석 실행 (실제 데이터 기반)
-    console.log('📊 [댓글 감정 분석] 시작...');
-    let commentSentiments = {};
-    try {
-      const videoIds = videosInfo.map(v => v.videoId);
-      const sentimentResponse = await fetch('/api/youtube/comment-sentiment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ videoIds })
-      });
-      
-      if (sentimentResponse.ok) {
-        const sentimentResult = await sentimentResponse.json();
-        if (sentimentResult.success && sentimentResult.data?.results) {
-          sentimentResult.data.results.forEach(result => {
-            if (result.isRealData) {
-              commentSentiments[result.videoId] = {
-                positive: result.positive,
-                negative: result.negative,
-                neutral: result.neutral,
-                total: result.total,
-                sampleComments: result.sampleComments || []
-              };
-              console.log(`✅ [댓글 분석] ${result.videoId}: 긍정 ${result.positive}%, 부정 ${result.negative}%, 중립 ${result.neutral}%`);
-            }
-          });
-        }
-      }
-    } catch (error) {
-      console.error('⚠️ [댓글 감정 분석] 오류:', error);
-    }
-    
-    // videosInfo에 댓글 감정 데이터 추가
+    // videosInfo 로깅
     videosInfo.forEach((video, i) => {
-      if (commentSentiments[video.videoId]) {
-        video.commentSentiment = commentSentiments[video.videoId];
-      }
       console.log(`🔍 [영상 ${i + 1}] videoId: ${video.videoId}, title: ${video.title.substring(0, 30)}...`);
     });
     
@@ -4625,53 +4591,14 @@ ${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
       // JSON 모드: 구조화된 데이터
       finalHtml = generateStructuredAnalysis(videosInfo, strategyData);
     } else {
-      // Markdown 모드: 기존 방식 + 댓글 감정 분석 추가
+      // Markdown 모드
       const html = markdownToHtml(analysis);
       const dashboardHtml = generateVisualizationDashboard(videosInfo, analysis);
-      
-      // Markdown 모드에서도 댓글 감정 분석 표시
-      let sentimentHtmlAll = '';
-      videosInfo.forEach((videoInfo, i) => {
-        if (videoInfo.commentSentiment) {
-          const sent = videoInfo.commentSentiment;
-          const positiveCount = Math.round(sent.total * sent.positive / 100);
-          const negativeCount = Math.round(sent.total * sent.negative / 100);
-          const neutralCount = sent.total - positiveCount - negativeCount;
-          
-          sentimentHtmlAll += `
-            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 5px solid #f59e0b; padding: 20px; border-radius: 12px; margin: 20px 0; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);">
-              <h4 style="margin: 0 0 16px 0; color: #92400e; font-size: 18px; font-weight: 700;">💬 댓글 감정 분석 (${sent.total}개 댓글 기반)</h4>
-              <div style="font-size: 13px; color: #78350f; margin-bottom: 12px;">※ 영상 ${i + 1}: ${videoInfo.title.substring(0, 30)}...</div>
-              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-                <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">긍정</span>
-                <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
-                  <div style="background: #10b981; height: 100%; width: ${sent.positive}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700;">${sent.positive}%</div>
-                </div>
-                <span style="font-size: 14px; color: #78350f; font-weight: 600;">${positiveCount}건</span>
-              </div>
-              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-                <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">부정</span>
-                <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
-                  <div style="background: #ef4444; height: 100%; width: ${sent.negative}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700;">${sent.negative}%</div>
-                </div>
-                <span style="font-size: 14px; color: #78350f; font-weight: 600;">${negativeCount}건</span>
-              </div>
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <span style="width: 80px; font-size: 14px; color: #78350f; font-weight: 600;">중립</span>
-                <div style="flex: 1; background: rgba(0,0,0,0.1); height: 24px; border-radius: 12px; overflow: hidden;">
-                  <div style="background: #6b7280; height: 100%; width: ${sent.neutral}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700;">${sent.neutral}%</div>
-                </div>
-                <span style="font-size: 14px; color: #78350f; font-weight: 600;">${neutralCount}건</span>
-              </div>
-            </div>
-          `;
-        }
-      });
       
       // 왕관 섹션 생성
       const crownSectionHtml = generateCrownSection(videosInfo);
       
-      finalHtml = dashboardHtml + sentimentHtmlAll + crownSectionHtml + '<div style="margin-top: 30px;">' + html + '</div>';
+      finalHtml = dashboardHtml + crownSectionHtml + '<div style="margin-top: 30px;">' + html + '</div>';
     }
     
     // 결과 표시
@@ -4778,7 +4705,6 @@ function generateCrownSection(videosInfo) {
   // 최고 조회수 찾기
   let maxViews = { video: null, index: -1, value: 0 };
   let maxLikeRate = { video: null, index: -1, value: 0 };
-  let maxCommentPositive = { video: null, index: -1, value: 0 };
   let minDuration = { video: null, index: -1, value: Infinity };
   
   videosInfo.forEach((video, i) => {
@@ -4792,14 +4718,6 @@ function generateCrownSection(videosInfo) {
     const likeRate = parseFloat(video.performance?.likeRate) || 0;
     if (likeRate > maxLikeRate.value) {
       maxLikeRate = { video, index: i, value: likeRate };
-    }
-    
-    // 댓글 긍정도
-    if (video.commentSentiment) {
-      const positive = parseInt(video.commentSentiment.positive) || 0;
-      if (positive > maxCommentPositive.value) {
-        maxCommentPositive = { video, index: i, value: positive };
-      }
     }
     
     // 영상 길이 (짧은 것이 우승)
@@ -4830,16 +4748,6 @@ function generateCrownSection(videosInfo) {
         title: '좋아요율 1위',
         value: `${maxLikeRate.value.toFixed(2)}%`,
         color: '#10b981'
-      });
-    }
-    
-    // 댓글 참여 1위
-    if (i === maxCommentPositive.index) {
-      trophies.push({
-        icon: '💬',
-        title: '댓글 참여 1위',
-        value: `긍정 ${maxCommentPositive.value}%`,
-        color: '#f59e0b'
       });
     }
     
@@ -4904,7 +4812,6 @@ function generateCrownSection(videosInfo) {
   const conclusionParts = [];
   if (maxViews.index >= 0) conclusionParts.push(`영상 ${maxViews.index + 1}의 바이럴 전략`);
   if (minDuration.index >= 0) conclusionParts.push(`영상 ${minDuration.index + 1}의 짧은 길이`);
-  if (maxCommentPositive.index >= 0) conclusionParts.push(`영상 ${maxCommentPositive.index + 1}의 스토리텔링`);
   
   const conclusion = conclusionParts.length > 0 
     ? conclusionParts.join(' + ') + '을 결합하면 완벽한 공식 완성'
@@ -4948,52 +4855,6 @@ function generateStructuredAnalysis(videosInfo, strategyData) {
   let individualHtml = strategyData.individualAnalysis.map((video, i) => {
     const videoInfo = videosInfo[i];
     
-    // 댓글 감정 분석 HTML (videoInfo에서 가져오기)
-    let sentimentHtml = '';
-    if (videoInfo.commentSentiment) {
-      const sent = videoInfo.commentSentiment;
-      const pos = parseInt(sent.positive) || 0;
-      const neg = parseInt(sent.negative) || 0;
-      const neu = parseInt(sent.neutral) || 0;
-      const total = sent.total || 20;
-      
-      const posCount = Math.round(total * pos / 100);
-      const negCount = Math.round(total * neg / 100);
-      const neuCount = total - posCount - negCount;
-      
-      sentimentHtml = `
-        <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 5px solid #f59e0b; padding: 20px; border-radius: 12px; margin: 20px 0; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);">
-          <h4 style="margin: 0 0 16px 0; color: #92400e; font-size: 18px; font-weight: 700;">💬 댓글 감정 분석 (실제 댓글 ${total}개 기반)</h4>
-          
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-            <span style="width: 60px; font-size: 14px; color: #78350f; font-weight: 600;">긍정</span>
-            <div style="flex: 1; background: rgba(255,255,255,0.5); height: 24px; border-radius: 12px; overflow: hidden;">
-              <div style="background: #10b981; height: 100%; width: ${pos}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; min-width: 40px;">${pos}%</div>
-            </div>
-            <span style="font-size: 14px; color: #78350f; font-weight: 600;">${posCount}건</span>
-          </div>
-          
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
-            <span style="width: 60px; font-size: 14px; color: #78350f; font-weight: 600;">부정</span>
-            <div style="flex: 1; background: rgba(255,255,255,0.5); height: 24px; border-radius: 12px; overflow: hidden;">
-              <div style="background: #ef4444; height: 100%; width: ${neg}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; min-width: 40px;">${neg}%</div>
-            </div>
-            <span style="font-size: 14px; color: #78350f; font-weight: 600;">${negCount}건</span>
-          </div>
-          
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="width: 60px; font-size: 14px; color: #78350f; font-weight: 600;">중립</span>
-            <div style="flex: 1; background: rgba(255,255,255,0.5); height: 24px; border-radius: 12px; overflow: hidden;">
-              <div style="background: #6b7280; height: 100%; width: ${neu}%; display: flex; align-items: center; padding: 0 10px; color: white; font-size: 12px; font-weight: 700; min-width: 40px;">${neu}%</div>
-            </div>
-            <span style="font-size: 14px; color: #78350f; font-weight: 600;">${neuCount}건</span>
-          </div>
-        </div>
-      `;
-    } else {
-      sentimentHtml = ''; // 데이터 없으면 아예 표시 안함
-    }
-    
     return `
       <h3 style="color: #1f2937; font-size: 20px; font-weight: 700; margin: 30px 0 15px 0; border-bottom: 3px solid #00B87D; padding-bottom: 8px;">
         🎬 영상 ${video.videoIndex}: ${videoInfo.title}
@@ -5006,8 +4867,6 @@ function generateStructuredAnalysis(videosInfo, strategyData) {
         <p style="margin-bottom: 15px;"><strong>💬 실제 댓글 반응 분석:</strong><br>${video.commentAnalysis}</p>
         <p style="margin-bottom: 0;"><strong>⏱️ 영상 길이 분석:</strong><br>${video.durationAnalysis}</p>
       </div>
-      
-      ${sentimentHtml}
     `;
   }).join('');
   
