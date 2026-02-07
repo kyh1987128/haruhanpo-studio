@@ -39,17 +39,7 @@ export function injectImagesIntoBlogContent(
       const img = images[imageIndex];
       const imageNumber = imageIndex + 1;
       
-      result += `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      result += `📸 이미지 ${imageNumber} 배치 위치\n`;
-      result += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-      result += `👉 파일명: ${img.filename || img.alt || `이미지${imageNumber}`}\n`;
-      if (img.size) {
-        const sizeMB = (img.size / (1024 * 1024)).toFixed(1);
-        result += `👉 크기: ${sizeMB}MB\n`;
-      }
-      result += `👉 출처: ${img.source === 'user_upload' ? '사용자 업로드' : img.source === 'unsplash' ? 'Unsplash' : img.source === 'pexels' ? 'Pexels' : img.source === 'pixabay' ? 'Pixabay' : 'AI 생성'}\n`;
-      result += `\n💡 여기에 위 이미지를 삽입하세요\n`;
-      result += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+      result += `\n\n[이미지 ${imageNumber}: ${img.filename || img.alt || `이미지${imageNumber}`}]\n\n`;
       
       imageIndex++;
     }
@@ -96,20 +86,7 @@ export function injectImagesIntoBrunchContent(
       const img = images[imageIndex];
       const imageNumber = imageIndex + 1;
       
-      result += `\n\n---\n`;
-      result += `📸 **이미지 ${imageNumber} 배치 위치**\n\n`;
-      result += `- **파일명**: ${img.filename || img.alt || `이미지${imageNumber}`}\n`;
-      if (img.size) {
-        const sizeMB = (img.size / (1024 * 1024)).toFixed(1);
-        result += `- **크기**: ${sizeMB}MB\n`;
-      }
-      result += `- **출처**: ${img.source === 'user_upload' ? '사용자 업로드' : img.source === 'unsplash' ? 'Unsplash' : img.source === 'pexels' ? 'Pexels' : img.source === 'pixabay' ? 'Pixabay' : 'AI 생성'}\n`;
-      result += `\n💡 **마크다운 삽입 예시**:\n`;
-      result += `\`\`\`\n`;
-      result += `![${img.filename || img.alt || '이미지'}](이미지_URL_입력)\n`;
-      result += `*${img.filename || img.caption || '이미지'}*\n`;
-      result += `\`\`\`\n`;
-      result += `---\n\n`;
+      result += `\n\n[이미지 ${imageNumber}: ${img.filename || img.alt || `이미지${imageNumber}`}]\n\n`;
       
       imageIndex++;
     }
@@ -134,17 +111,13 @@ export function addInstagramImageMetadata(
   }
   
   // 인스타그램은 이미지를 별도로 업로드하므로
-  // 콘텐츠에는 이미지 설명만 추가
+  // 콘텐츠에는 이미지 정보를 간단히 추가
   let result = content;
   
-  // 이미지 정보를 콘텐츠 하단에 메모로 추가
-  result += '\n\n---\n📸 이미지 정보:\n';
+  // 이미지 정보를 간결하게 추가
+  result += '\n\n--- 이미지 정보:\n';
   images.forEach((img, index) => {
-    result += `${index + 1}. ${img.alt}\n`;
-    result += `   출처: ${img.source === 'user_upload' ? '사용자 업로드' : img.source === 'unsplash' ? 'Unsplash' : 'AI 생성'}\n`;
-    if (img.caption) {
-      result += `   캡션: ${img.caption}\n`;
-    }
+    result += `${index + 1}. ${img.filename || img.alt || `이미지${index + 1}`}\n`;
   });
   
   return result;
