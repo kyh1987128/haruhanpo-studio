@@ -246,39 +246,81 @@ app.post('/api/suggest-keywords', async (c) => {
       );
     }
 
-    const apiKey = c.env.OPENAI_API_KEY;
-    if (!apiKey) {
+    // 🚀 Gemini 우선, OpenAI 폴백
+    const geminiApiKey = c.env.GEMINI_API_KEY;
+    const openaiApiKey = c.env.OPENAI_API_KEY;
+    
+    if (!geminiApiKey && !openaiApiKey) {
       return c.json(
-        { success: false, error: 'OpenAI API 키가 설정되지 않았습니다.' },
+        { success: false, error: 'API 키가 설정되지 않았습니다.' },
         500
       );
     }
 
-    const openai = new OpenAI({ apiKey });
+    let content = '[]';
 
-    // 이미지 분석 후 키워드 추출
-    const imageContent = images.map((img: any, idx: number) => {
-      // 안전하게 base64 문자열 추출
-      const imageUrl = typeof img === 'string' ? img : (img.base64 || String(img));
-      return {
-        type: 'image_url' as const,
-        image_url: { url: imageUrl }
-      };
-    });
+    if (geminiApiKey) {
+      // Gemini Flash 우선 (70% 비용 절감)
+      console.log('🔑 키워드 추천: Gemini Flash 사용');
+      
+      // 이미지 분석 후 키워드 추출
+      const imageDescriptions = await Promise.all(
+        images.map(async (img: any, idx: number) => {
+          const imageUrl = typeof img === 'string' ? img : (img.base64 || String(img));
+          try {
+            return await analyzeImageWithGemini(geminiApiKey, imageUrl);
+          } catch (e) {
+            return `이미지 ${idx + 1} 분석 실패`;
+          }
+        })
+      );
+      
+      const combinedDescription = imageDescriptions.join('\n\n');
+      const keywordPrompt = `다음 이미지 분석 결과를 기반으로 마케팅에 효과적인 핵심 키워드 10개를 추천해주세요.
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: '당신은 마케팅 키워드 전문가입니다. 이미지를 분석하여 SEO 최적화된 핵심 키워드를 추천하세요.'
-        },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `다음 이미지를 분석하여 마케팅에 효과적인 핵심 키워드 10개를 추천해주세요.
+이미지 분석:
+${combinedDescription}
+
+${brand ? `브랜드: ${brand}` : ''}
+${industry ? `산업분야: ${industry}` : ''}
+
+요구사항:
+- 이미지 분석 결과를 기반으로 추천
+- SEO에 효과적인 키워드
+- 한글로 작성
+- 2-4단어 조합 가능
+- JSON 배열로만 응답: ["키워드1", "키워드2", ...]
+
+예시: ["스킨케어", "보습크림", "민감성피부", "수분공급", "천연성분"]`;
+
+      content = await generateContentWithGemini(geminiApiKey, keywordPrompt);
+    } else {
+      // OpenAI 폴백
+      console.log('🔑 키워드 추천: GPT-4o 사용 (Gemini 키 없음)');
+      
+      const openai = new OpenAI({ apiKey: openaiApiKey });
+      
+      const imageContent = images.map((img: any, idx: number) => {
+        const imageUrl = typeof img === 'string' ? img : (img.base64 || String(img));
+        return {
+          type: 'image_url' as const,
+          image_url: { url: imageUrl }
+        };
+      });
+
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: '당신은 마케팅 키워드 전문가입니다. 이미지를 분석하여 SEO 최적화된 핵심 키워드를 추천하세요.'
+          },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `다음 이미지를 분석하여 마케팅에 효과적인 핵심 키워드 10개를 추천해주세요.
 
 ${brand ? `브랜드: ${brand}` : ''}
 ${industry ? `산업분야: ${industry}` : ''}
@@ -291,16 +333,17 @@ ${industry ? `산업분야: ${industry}` : ''}
 - JSON 배열로만 응답: ["키워드1", "키워드2", ...]
 
 예시: ["스킨케어", "보습크림", "민감성피부", "수분공급", "천연성분"]`
-            },
-            ...imageContent
-          ]
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 500
-    });
+              },
+              ...imageContent
+            ]
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 500
+      });
 
-    const content = response.choices[0].message.content || '[]';
+      content = response.choices[0].message.content || '[]';
+    }
     
     // JSON 파싱 (코드블록 제거)
     let keywords = [];
@@ -359,37 +402,49 @@ app.post('/api/generate/batch', async (c) => {
 
     const openai = new OpenAI({ apiKey });
 
-    // 이미지 분석 (공통)
+    // 🚀 하이브리드: Gemini API 키 확인
+    const geminiApiKey = c.env.GEMINI_API_KEY;
+
+    // 이미지 분석 (공통) - Gemini 우선, OpenAI 폴백
     let combinedImageDescription = '';
     if (images && images.length > 0) {
       const imageAnalyses = await Promise.all(
         images.map(async (img: any, index: number) => {
           try {
-            // 안전하게 base64 문자열 추출
             const imageBase64 = typeof img === 'string' ? img : (img.base64 || String(img));
-            const analysis = await openai.chat.completions.create({
-              model: 'gpt-4o',
-              messages: [
-                {
-                  role: 'user',
-                  content: [
-                    {
-                      type: 'text',
-                      text: `이미지 ${index + 1}을 상세히 분석해주세요. 주요 피사체, 색상 톤, 분위기, 구도, 감정을 300-500자로 설명해주세요.`,
-                    },
-                    {
-                      type: 'image_url',
-                      image_url: { url: imageBase64 },
-                    },
-                  ],
-                },
-              ],
-              max_tokens: 1000,
-            });
-            return {
-              index: index + 1,
-              description: analysis.choices[0].message.content || '이미지 분석 실패',
-            };
+            
+            if (geminiApiKey) {
+              // Gemini Flash 우선 (70% 비용 절감)
+              console.log(`  📸 배치 이미지 ${index + 1}: Gemini Flash 분석`);
+              const description = await analyzeImageWithGemini(geminiApiKey, imageBase64);
+              return { index: index + 1, description };
+            } else {
+              // OpenAI 폴백
+              console.log(`  📸 배치 이미지 ${index + 1}: GPT-4o 분석 (Gemini 키 없음)`);
+              const analysis = await openai.chat.completions.create({
+                model: 'gpt-4o',
+                messages: [
+                  {
+                    role: 'user',
+                    content: [
+                      {
+                        type: 'text',
+                        text: `이미지 ${index + 1}을 상세히 분석해주세요. 주요 피사체, 색상 톤, 분위기, 구도, 감정을 300-500자로 설명해주세요.`,
+                      },
+                      {
+                        type: 'image_url',
+                        image_url: { url: imageBase64 },
+                      },
+                    ],
+                  },
+                ],
+                max_tokens: 1000,
+              });
+              return {
+                index: index + 1,
+                description: analysis.choices[0].message.content || '이미지 분석 실패',
+              };
+            }
           } catch (error: any) {
             return {
               index: index + 1,
@@ -442,65 +497,57 @@ app.post('/api/generate/batch', async (c) => {
 
           const generationTasks = [];
 
+          // 배치 생성 헬퍼: Gemini 우선, OpenAI 폴백
+          const batchGenerate = (platform: string, prompt: string) => {
+            if (geminiApiKey) {
+              return generateContentWithGemini(geminiApiKey, prompt)
+                .then(content => ({ platform, content }));
+            } else {
+              return generateContent(openai, platform, prompt, aiModel);
+            }
+          };
+
           if (platforms.includes('blog')) {
-            generationTasks.push(
-              generateContent(openai, 'blog', getBlogPrompt(promptParams), aiModel)
-            );
+            generationTasks.push(batchGenerate('blog', getBlogPrompt(promptParams)));
           }
 
           if (platforms.includes('instagram') || platforms.includes('instagram_feed')) {
-            generationTasks.push(
-              generateContent(openai, 'instagram', getInstagramPrompt(promptParams), aiModel)
-            );
+            generationTasks.push(batchGenerate('instagram', getInstagramPrompt(promptParams)));
           }
 
           if (platforms.includes('threads')) {
-            generationTasks.push(
-              generateContent(openai, 'threads', getThreadsPrompt(promptParams), aiModel)
-            );
+            generationTasks.push(batchGenerate('threads', getThreadsPrompt(promptParams)));
           }
 
           if (platforms.includes('youtube') || platforms.includes('youtube_shorts')) {
             console.log('🎬 YouTube Shorts 생성 시작...');
-            generationTasks.push(
-              generateContent(openai, 'youtube_shorts', getYouTubePrompt(promptParams), aiModel)
-            );
+            generationTasks.push(batchGenerate('youtube_shorts', getYouTubePrompt(promptParams)));
             console.log('✅ YouTube Shorts 태스크 추가 완료');
           }
           
-          // 새로운 플랫폼: 유튜브 롱폼
+          // 유튜브 롱폼
           if (platforms.includes('youtube_longform')) {
-            generationTasks.push(
-              generateContent(openai, 'youtube_longform', getYoutubeLongformPrompt(promptParams), aiModel)
-            );
+            generationTasks.push(batchGenerate('youtube_longform', getYoutubeLongformPrompt(promptParams)));
           }
           
           // 틱톡
           if (platforms.includes('tiktok')) {
-            generationTasks.push(
-              generateContent(openai, 'tiktok', getShortformPrompt(promptParams), aiModel)
-            );
+            generationTasks.push(batchGenerate('tiktok', getShortformPrompt(promptParams)));
           }
           
           // 인스타그램 릴스
           if (platforms.includes('instagram_reels')) {
-            generationTasks.push(
-              generateContent(openai, 'instagram_reels', getShortformPrompt(promptParams), aiModel)
-            );
+            generationTasks.push(batchGenerate('instagram_reels', getShortformPrompt(promptParams)));
           }
           
-          // 새로운 플랫폼: 메타데이터 생성
+          // 메타데이터 생성
           if (platforms.includes('metadata_generation')) {
-            generationTasks.push(
-              generateContent(openai, 'metadata', getMetadataPrompt(promptParams), aiModel)
-            );
+            generationTasks.push(batchGenerate('metadata', getMetadataPrompt(promptParams)));
           }
           
           // 브런치
           if (platforms.includes('brunch')) {
-            generationTasks.push(
-              generateContent(openai, 'brunch', getBrunchPrompt(promptParams), aiModel)
-            );
+            generationTasks.push(batchGenerate('brunch', getBrunchPrompt(promptParams)));
           }
 
           const results = await Promise.all(generationTasks);
@@ -1066,15 +1113,26 @@ app.post('/api/generate', async (c) => {
       }
     };
 
-    // 블로그: GPT-4o 사용 (최고 품질 필요)
+    // 블로그: Gemini Flash 우선 (비용 절감), 없으면 OpenAI 폴백
     if (platforms.includes('blog')) {
-      console.log('  📝 블로그: GPT-4o (최고 품질)');
-      generationTasks.push(
-        generateContent(openai, 'blog', getPromptForPlatform('blog'), aiModel).then(result => {
-          totalCost.openai += 0.052; // 약 52원
-          return result;
-        })
-      );
+      if (geminiApiKey) {
+        console.log('  📝 블로그: Gemini Flash (70% 절감)');
+        generationTasks.push(
+          generateContentWithGemini(geminiApiKey, getPromptForPlatform('blog'))
+            .then(content => {
+              totalCost.gemini += 0.015; // 약 15원
+              return { platform: 'blog', content };
+            })
+        );
+      } else {
+        console.log('  📝 블로그: GPT-4o (Gemini 키 없음)');
+        generationTasks.push(
+          generateContent(openai, 'blog', getPromptForPlatform('blog'), aiModel).then(result => {
+            totalCost.openai += 0.052; // 약 52원
+            return result;
+          })
+        );
+      }
     }
 
     // 인스타그램: Gemini Flash (충분한 품질 + 저렴)
