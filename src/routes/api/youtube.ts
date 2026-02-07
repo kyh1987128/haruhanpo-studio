@@ -615,10 +615,63 @@ app.post('/api/youtube/channel', async (c) => {
     const { getChannelInfo } = await import('../../services/youtube-api')
     const result = await getChannelInfo(channelIdOrUrl, youtubeApiKey)
 
-    // 4. 결과 반환
+    // 4. 채널 성장 추세 계산
+    let growthStatus = 'stable' // 기본값: 유지
+    let growthRatio = 0
+    try {
+      // 최근 10개 영상 조회 (날짜순)
+      const recentSearchUrl = `https://www.googleapis.com/youtube/v3/search?channelId=${result.channel.channelId}&key=${youtubeApiKey}&part=snippet&type=video&order=date&maxResults=10`
+      const recentSearchResponse = await fetch(recentSearchUrl)
+      
+      if (recentSearchResponse.ok) {
+        const recentSearchData = await recentSearchResponse.json()
+        const recentVideoIds = (recentSearchData.items || []).map((item: any) => item.id.videoId).filter(Boolean).join(',')
+        
+        if (recentVideoIds) {
+          const recentDetailsUrl = `https://www.googleapis.com/youtube/v3/videos?id=${recentVideoIds}&key=${youtubeApiKey}&part=statistics`
+          const recentDetailsResponse = await fetch(recentDetailsUrl)
+          
+          if (recentDetailsResponse.ok) {
+            const recentDetailsData = await recentDetailsResponse.json()
+            const recentViews = (recentDetailsData.items || []).map((v: any) => parseInt(v.statistics.viewCount || '0'))
+            
+            // 인기 TOP 10 평균 조회수
+            const topAvg = result.topVideos.length > 0 
+              ? result.topVideos.reduce((sum: number, v: any) => sum + v.views, 0) / result.topVideos.length 
+              : 0
+            
+            // 최근 10개 평균 조회수
+            const recentAvg = recentViews.length > 0 
+              ? recentViews.reduce((sum: number, v: number) => sum + v, 0) / recentViews.length 
+              : 0
+            
+            // 비율 계산
+            growthRatio = topAvg > 0 ? (recentAvg / topAvg) * 100 : 0
+            
+            if (growthRatio >= 80) {
+              growthStatus = 'growing'
+            } else if (growthRatio >= 40) {
+              growthStatus = 'stable'
+            } else {
+              growthStatus = 'declining'
+            }
+            
+            console.log(`📊 [성장 추세] 최근 평균: ${Math.round(recentAvg)}, TOP 평균: ${Math.round(topAvg)}, 비율: ${growthRatio.toFixed(1)}%, 상태: ${growthStatus}`)
+          }
+        }
+      }
+    } catch (growthError) {
+      console.warn('⚠️ 성장 추세 계산 중 오류 (무시):', growthError)
+    }
+
+    // 5. 결과 반환
     return c.json({
       success: true,
-      data: result
+      data: {
+        ...result,
+        growthStatus,
+        growthRatio: Math.round(growthRatio * 10) / 10
+      }
     })
 
   } catch (error: any) {

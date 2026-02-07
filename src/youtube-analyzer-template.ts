@@ -1370,7 +1370,18 @@ export function youtubeAnalyzerTemplate() {
 
             <!-- 인기 영상 TOP 10 -->
             <div id="channel-top-videos" class="hidden bg-white rounded-xl shadow-sm border p-6">
-              <h3 class="text-lg font-bold text-gray-800 mb-4">
+              <!-- 인기/최근 전환 버튼 -->
+              <div class="flex gap-2 mb-4">
+                <button id="btn-popular-videos" onclick="switchChannelVideoSort('popular')" 
+                  class="px-4 py-2 text-sm font-semibold rounded-lg bg-orange-500 text-white transition hover:bg-orange-600">
+                  🔥 인기 영상
+                </button>
+                <button id="btn-recent-videos" onclick="switchChannelVideoSort('recent')" 
+                  class="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-200 text-gray-700 transition hover:bg-gray-300">
+                  🕐 최근 영상
+                </button>
+              </div>
+              <h3 id="channel-videos-title" class="text-lg font-bold text-gray-800 mb-4">
                 <i class="fas fa-fire mr-2 text-orange-500"></i>
                 인기 영상 TOP 10
               </h3>
