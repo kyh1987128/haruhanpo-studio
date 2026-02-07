@@ -1041,6 +1041,7 @@ async function handleAnalyzeSingleVideo(videoId) {
 let currentAnalyzedChannelId = '';
 let currentChannelVideoSort = 'popular';
 let currentChannelSubscribers = 0;
+let currentChannelAvgViews = 0;
 
 // 채널 분석 실행
 async function handleChannelAnalysis() {
@@ -1080,6 +1081,13 @@ async function handleChannelAnalysis() {
     currentAnalyzedChannelId = result.data.channel?.channelId || '';
     currentChannelVideoSort = 'popular';
     currentChannelSubscribers = result.data.channel?.subscriberCount || 0;
+
+    // 채널 평균 조회수 저장
+    currentChannelAvgViews = result.data.channel?.averageViews || result.data.averageViews || 0;
+    if (!currentChannelAvgViews && result.data.topVideos?.length > 0) {
+      const totalViews = result.data.topVideos.reduce((sum, v) => sum + (v.views || v.viewCount || 0), 0);
+      currentChannelAvgViews = Math.round(totalViews / result.data.topVideos.length);
+    }
 
     // 결과 표시
     displayChannelInfo(result.data.channel, result.data.growthStatus, result.data.growthRatio);
@@ -1366,10 +1374,8 @@ function updateChannelDetailPanel(video) {
   const subscriberCount = video.subscriberCount || video.channelInfo?.subscriberCount || currentChannelSubscribers || 0;
   const subViewRatio = subscriberCount > 0 ? (video.views / subscriberCount) * 100 : 0;
   
-  // 댓글 참여도 계산 (댓글수/조회수)
-  const commentCount = video.comments || video.statistics?.commentCount || 0;
-  const hasCommentData = commentCount > 0;
-  const commentEngagement = (hasCommentData && video.views > 0) ? (commentCount / video.views) * 100 : 0;
+  // 채널 기여도 계산 (해당 영상 조회수 / 채널 평균 조회수)
+  const channelContribution = currentChannelAvgViews > 0 ? (video.views / currentChannelAvgViews) * 100 : 0;
   
   // Good/Normal/Bad 라벨 생성 함수
   function getPerformanceLabel(value, thresholds) {
@@ -1380,7 +1386,7 @@ function updateChannelDetailPanel(video) {
   
   const likeRateLabel = getPerformanceLabel(likeRate, { good: 3, normal: 1 });
   const subViewLabel = subscriberCount > 0 ? getPerformanceLabel(subViewRatio, { good: 100, normal: 30 }) : '';
-  const commentLabel = hasCommentData ? getPerformanceLabel(commentEngagement, { good: 0.5, normal: 0.1 }) : '';
+  const contributionLabel = currentChannelAvgViews > 0 ? getPerformanceLabel(channelContribution, { good: 200, normal: 80 }) : '';
   
   // 트렌드 배지 결정
   let trendBadge = '';
@@ -1484,8 +1490,8 @@ function updateChannelDetailPanel(video) {
             <span class="text-sm font-semibold text-gray-900">${subscriberCount > 0 ? subViewRatio.toFixed(1) + '%' + subViewLabel : '<span class="text-gray-400">데이터 없음</span>'}</span>
           </div>
           <div class="flex items-center justify-between">
-            <span class="text-sm text-gray-600">댓글 참여도</span>
-            <span class="text-sm font-semibold text-gray-900">${hasCommentData ? commentEngagement.toFixed(3) + '%' + commentLabel : '<span class="text-gray-400">데이터 없음</span>'}</span>
+            <span class="text-sm text-gray-600">채널 기여도</span>
+            <span class="text-sm font-semibold text-gray-900">${currentChannelAvgViews > 0 ? channelContribution.toFixed(1) + '%' + contributionLabel : '<span class="text-gray-400">데이터 없음</span>'}</span>
           </div>
           <div class="flex items-center justify-between">
             <span class="text-sm text-gray-600">게시일</span>
@@ -4212,25 +4218,23 @@ function renderCompareChart() {
     }
   }
   
-  // 한줄 해석 생성 (첫 번째 영상 기준, 또는 평균)
+  // 한줄 해석 생성 (정규화된 데이터 기준 — 모든 영상 평균)
   let interpretationText = '';
   if (normalizedValues.length > 0) {
-    const avgNormalized = [0, 0, 0, 0, 0];
-    for (const nv of normalizedValues) {
-      for (let m = 0; m < numMetrics; m++) avgNormalized[m] += nv[m];
-    }
-    for (let m = 0; m < numMetrics; m++) avgNormalized[m] /= normalizedValues.length;
+    const axisAverages = labelNames.map((label, axisIdx) => {
+      const values = normalizedValues.map(nv => nv[axisIdx]);
+      return { label, avg: values.reduce((a, b) => a + b, 0) / values.length };
+    });
+    const sorted = [...axisAverages].sort((a, b) => b.avg - a.avg);
+    const highest = sorted[0];
+    const lowest = sorted[sorted.length - 1];
     
-    let maxIdx = 0, minIdx = 0;
-    for (let m = 1; m < numMetrics; m++) {
-      if (avgNormalized[m] > avgNormalized[maxIdx]) maxIdx = m;
-      if (avgNormalized[m] < avgNormalized[minIdx]) minIdx = m;
-    }
-    
-    if (maxIdx !== minIdx) {
-      interpretationText = selectedCompareVideos.length === 1 
-        ? '단일 영상 분석 시 모든 지표가 균등하게 표시됩니다.'
-        : '이 영상들은 ' + labelNames[maxIdx] + '에서 강하고, ' + labelNames[minIdx] + '에서 개선이 필요합니다.';
+    if (selectedCompareVideos.length === 1) {
+      interpretationText = '단일 영상 분석 시 모든 지표가 균등하게 표시됩니다.';
+    } else if (highest.avg - lowest.avg < 20) {
+      interpretationText = '이 영상들은 전반적으로 균형 잡힌 성과를 보입니다.';
+    } else {
+      interpretationText = '이 영상들은 ' + highest.label + '에서 강하고, ' + lowest.label + '에서 개선이 필요합니다.';
     }
   }
   
@@ -4768,42 +4772,31 @@ function generateCrownSection(videosInfo) {
     };
   });
   
-  // HTML 생성
-  const cardsHtml = videoCards.map(card => {
-    const hasTrophy = card.trophies.length > 0;
-    const borderColor = hasTrophy ? '#fb923c' : '#d1d5db';
-    const bgGradient = hasTrophy 
-      ? 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)'
-      : 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)';
-    
+  // HTML 생성 — 수상(trophies)이 있는 영상만 카드 렌더링
+  const cardsWithTrophies = videoCards.filter(card => card.trophies.length > 0);
+  const cardsHtml = cardsWithTrophies.map(card => {
     return `
-      <div style="background: ${bgGradient}; border: 2px solid ${borderColor}; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+      <div style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border: 2px solid #fb923c; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
           <div style="font-size: 24px; font-weight: 800; color: #1f2937;">
             영상 ${card.index + 1}
           </div>
-          ${hasTrophy ? '<div style="font-size: 24px;">🏆</div>' : ''}
+          <div style="font-size: 24px;">🏆</div>
         </div>
         
         <div style="font-size: 14px; color: #6b7280; margin-bottom: 12px; line-height: 1.4;">
           ${card.video.title.substring(0, 50)}${card.video.title.length > 50 ? '...' : ''}
         </div>
         
-        ${card.trophies.length > 0 ? `
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            ${card.trophies.map(trophy => `
-              <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: white; border-radius: 8px; border-left: 3px solid ${trophy.color};">
-                <span style="font-size: 16px;">${trophy.icon}</span>
-                <span style="font-size: 14px; font-weight: 600; color: #374151;">${trophy.title}</span>
-                <span style="margin-left: auto; font-size: 13px; color: #6b7280;">${trophy.value}</span>
-              </div>
-            `).join('')}
-          </div>
-        ` : `
-          <div style="padding: 12px; background: white; border-radius: 8px; text-align: center; color: #9ca3af; font-size: 13px;">
-            이번 비교에서는 수상 없음
-          </div>
-        `}
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          ${card.trophies.map(trophy => `
+            <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: white; border-radius: 8px; border-left: 3px solid ${trophy.color};">
+              <span style="font-size: 16px;">${trophy.icon}</span>
+              <span style="font-size: 14px; font-weight: 600; color: #374151;">${trophy.title}</span>
+              <span style="margin-left: auto; font-size: 13px; color: #6b7280;">${trophy.value}</span>
+            </div>
+          `).join('')}
+        </div>
       </div>
     `;
   }).join('');
@@ -4817,6 +4810,13 @@ function generateCrownSection(videosInfo) {
     ? conclusionParts.join(' + ') + '을 결합하면 완벽한 공식 완성'
     : '각 영상의 강점을 분석하여 최적의 전략을 수립하세요';
   
+  // 수상 카드가 없으면 카드 그리드 숨김, 한줄 결론은 항상 표시
+  const cardsGridHtml = cardsWithTrophies.length > 0 ? `
+      <div style="display: grid; gap: 16px; margin-bottom: 24px;">
+        ${cardsHtml}
+      </div>
+  ` : '';
+
   return `
     <div style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border: 2px solid #fb923c; border-radius: 16px; padding: 32px; margin: 30px 0; box-shadow: 0 8px 24px rgba(251, 146, 60, 0.15);">
       <div style="text-align: center; margin-bottom: 24px;">
@@ -4826,9 +4826,7 @@ function generateCrownSection(videosInfo) {
         <p style="margin: 8px 0 0 0; font-size: 14px; color: #9a3412;">각 영상의 수상 내역</p>
       </div>
       
-      <div style="display: grid; gap: 16px; margin-bottom: 24px;">
-        ${cardsHtml}
-      </div>
+      ${cardsGridHtml}
       
       <div style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 12px; padding: 20px; border: 2px solid #22c55e;">
         <div style="text-align: center;">
@@ -5857,24 +5855,23 @@ function renderCompetitorResults(data) {
     }
   }
   
-  // 한줄 해석
+  // 한줄 해석 (정규화된 데이터 기준)
   let compInterpretation = '';
   if (competitorNormalized.length > 0) {
-    const avgNorm = [0, 0, 0, 0, 0, 0];
-    for (const nv of competitorNormalized) {
-      for (let m = 0; m < numCompMetrics; m++) avgNorm[m] += nv[m];
-    }
-    for (let m = 0; m < numCompMetrics; m++) avgNorm[m] /= competitorNormalized.length;
+    const axisAverages = competitorLabels.map((label, axisIdx) => {
+      const values = competitorNormalized.map(nv => nv[axisIdx]);
+      return { label, avg: values.reduce((a, b) => a + b, 0) / values.length };
+    });
+    const sorted = [...axisAverages].sort((a, b) => b.avg - a.avg);
+    const highest = sorted[0];
+    const lowest = sorted[sorted.length - 1];
     
-    let maxIdx = 0, minIdx = 0;
-    for (let m = 1; m < numCompMetrics; m++) {
-      if (avgNorm[m] > avgNorm[maxIdx]) maxIdx = m;
-      if (avgNorm[m] < avgNorm[minIdx]) minIdx = m;
-    }
-    if (maxIdx !== minIdx) {
-      compInterpretation = channels.length === 1
-        ? '단일 채널 분석 시 모든 지표가 균등하게 표시됩니다.'
-        : '이 채널들은 ' + competitorLabels[maxIdx] + '에서 강하고, ' + competitorLabels[minIdx] + '에서 개선이 필요합니다.';
+    if (channels.length === 1) {
+      compInterpretation = '단일 채널 분석 시 모든 지표가 균등하게 표시됩니다.';
+    } else if (highest.avg - lowest.avg < 20) {
+      compInterpretation = '이 채널들은 전반적으로 균형 잡힌 성과를 보입니다.';
+    } else {
+      compInterpretation = '이 채널들은 ' + highest.label + '에서 강하고, ' + lowest.label + '에서 개선이 필요합니다.';
     }
   }
   
