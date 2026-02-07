@@ -129,6 +129,34 @@ type Bindings = {
 const trendCache: Record<string, { timestamp: number; data: Record<string, any[]> }> = {};
 const TREND_CACHE_TTL = 60 * 60 * 1000; // 1시간 (밀리초)
 
+// AI 응답 JSON 파싱 (폴백 포함)
+function parseAIResponse(responseText: string): any {
+  // 1차: 순수 JSON 파싱 시도
+  try {
+    return JSON.parse(responseText);
+  } catch (e) {}
+  
+  // 2차: 코드블록 내부 JSON 추출
+  const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (jsonMatch) {
+    try {
+      return JSON.parse(jsonMatch[1].trim());
+    } catch (e) {}
+  }
+  
+  // 3차: 첫 번째 { 부터 마지막 } 까지 추출
+  const firstBrace = responseText.indexOf('{');
+  const lastBrace = responseText.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1) {
+    try {
+      return JSON.parse(responseText.substring(firstBrace, lastBrace + 1));
+    } catch (e) {}
+  }
+  
+  // 실패 시 null 반환 — 프런트엔드에서 기존 마크다운 렌더링으로 폴백
+  return null;
+}
+
 const app = new Hono<{ Bindings: Bindings }>()
 
 // CORS 설정
@@ -1083,95 +1111,185 @@ ${videosWithComments.map((v: any, i: number) => {
 
 ## JSON 응답 형식 (필수)
 
-반드시 아래 JSON 구조로만 응답하세요. videoCards 필드가 없으면 응답이 거부됩니다.
+반드시 아래 JSON 구조로만 응답하세요. JSON 외의 텍스트, 마크다운, 설명을 절대 포함하지 마세요.
+코드블록(\`\`\`)도 사용하지 마세요. 순수 JSON만 반환하세요.
 
 {
-  "individualAnalysis": [
+  "videos": [
     {
       "videoIndex": 1,
-      "videoTitle": "영상 제목",
-      "performanceAnalysis": "성과 지표 분석 (왜 잘 됐는지/안 됐는지 원인 포함)",
-      "titleStrategy": "제목 구조, 길이, 키워드 배치 분석",
-      "thumbnailStrategy": "썸네일 시각 요소 분석",
-      "commentAnalysis": "실제 댓글 기반 반응 분석 (데이터 없으면 '데이터 없음' 명시)",
-      "durationAnalysis": "영상 길이와 참여도 상관관계",
-      "comparisonNote": "다른 영상과 비교한 이 영상의 차별점"
+      "title": "영상 제목",
+      "channel": "채널명",
+      "metrics": {
+        "subscribers": "610만",
+        "subscribersRaw": 6100000,
+        "views": "63만",
+        "viewsRaw": 630000,
+        "subscriberViewRatio": 10.3,
+        "subscriberViewRatioLabel": "Bad",
+        "likeRate": 0.95,
+        "likeRateLabel": "Low",
+        "commentCount": "1,234",
+        "duration": "2:30",
+        "durationSeconds": 150,
+        "durationCategory": "짧음",
+        "durationFit": "뉴스 적정"
+      },
+      "metricsComment": "구독자 대비 조회수 10.3%로 낮으나 AI 이슈 관심도로 63만 조회 달성",
+      "titleStrategy": {
+        "score": 75,
+        "keywords": ["AI", "클로드"],
+        "techniques": ["질문형", "자극적 표현"],
+        "comment": "자극적 표현으로 클릭 유도, SEO 키워드 적절"
+      },
+      "thumbnailStrategy": {
+        "score": 55,
+        "checklist": [
+          {"item": "인물 포함", "pass": true},
+          {"item": "텍스트 간결", "pass": true},
+          {"item": "주제 시각 요소", "pass": false},
+          {"item": "강렬한 색상 대비", "pass": false},
+          {"item": "브랜드 일관성", "pass": true}
+        ],
+        "comment": "AI 관련 아이콘 추가 시 클릭률 개선 가능"
+      },
+      "commentReaction": {
+        "keywords": ["일자리 감소", "AI 공정성"],
+        "topComments": [
+          {"text": "대표적 긍정/부정 댓글 인용", "likes": 328}
+        ],
+        "tone": "부정적",
+        "comment": "AI 일자리 대체 우려가 지배적"
+      },
+      "durationAnalysis": "이 길이가 해당 카테고리에서 적절한지, 참여도와의 상관관계 분석"
     }
   ],
-  "videoCards": [
-    {
-      "videoIndex": 1,
-      "nickname": "특징을 반영한 별명",
-      "performance": "실제 지표 기반 요약",
-      "strength": "구체적 강점",
-      "weakness": "구체적 약점",
-      "rating": "한줄 평가",
-      "strategy": "바로 실행 가능한 구체적 개선안 (키워드/숫자/시간 포함)"
-    }
-  ],
-  "finalConclusion": "바로 실행 가능한 구체적 행동 제안 1문장 (예: '다음 영상 제목에 숫자를 포함하고, 영상 길이를 8분 이내로 편집하세요')",
+  "comparison": {
+    "table": [
+      {"label": "포커스", "values": ["사회적 영향", "기술 리뷰"]},
+      {"label": "제목 전략", "values": ["자극형", "경험 공유형"]},
+      {"label": "구독자 대비 조회수", "values": ["10.3% Bad", "113% Good"]},
+      {"label": "좋아요율", "values": ["0.95% Low", "2.52% High"]},
+      {"label": "댓글 톤", "values": ["부정적", "긍정적"]}
+    ],
+    "comment": "비교 분석 한줄 해석"
+  },
+  "conclusion": "바로 실행 가능한 구체적 행동 제안",
   "actionPlan": [
     {
       "priority": 1,
-      "action": "키워드/숫자/시간을 포함한 구체적 행동 (예: '제목에 2026을 넣고 첫 15초에 결론 배치')",
-      "effect": "높음/중간/낮음",
-      "difficulty": "쉬움/보통/어려움",
-      "timeRequired": "소요 시간"
+      "action": "구체적 행동 (키워드/숫자/시간 포함)",
+      "effect": "높음",
+      "difficulty": "보통",
+      "time": "3시간"
     }
   ]
 }
 
-videoCards 배열은 반드시 영상 개수만큼 포함하세요.`
+점수 기준:
+- subscriberViewRatioLabel: 100% 이상 "Good", 30~100% "Normal", 30% 미만 "Bad"
+- likeRateLabel: 2% 이상 "High", 1~2% "Normal", 1% 미만 "Low"
+- titleStrategy.score: 0~100 (키워드 포함도, 호기심 유발, SEO 적합성, 길이 적절성 종합)
+- thumbnailStrategy.score: 0~100 (인물, 텍스트, 시각 요소, 색상 대비, 브랜딩 종합)
+- checklist 항목: 인물 포함, 텍스트 간결, 주제 시각 요소, 강렬한 색상 대비, 브랜드 일관성
+- commentReaction.tone: "긍정적", "부정적", "혼재", "중립적" 중 택1
+- durationCategory: "짧음"(5분 미만), "적정"(5~15분), "긴 편"(15분 초과)
+
+이모지 사용 금지. 강조는 JSON 필드로 구분.
+videos 배열은 반드시 영상 개수만큼 포함하세요.
+comparison.table의 각 values 배열은 영상 개수만큼 포함하세요.
+actionPlan은 3개를 포함하세요.`
 
     const strategyContent = await callGemini(
       geminiApiKey,
-      '당신은 YouTube 콘텐츠 전략 전문가입니다. 데이터 기반 인사이트를 제공하고 실행 가능한 전략을 제안합니다. 반드시 JSON 형식으로만 응답하며, videoCards 필드를 포함해야 합니다.',
+      '당신은 YouTube 콘텐츠 전략 전문가입니다. 데이터 기반 인사이트를 제공하고 실행 가능한 전략을 제안합니다. 반드시 JSON 형식으로만 응답하며, videos 배열과 comparison 필드를 반드시 포함해야 합니다.',
       prompt,
       { temperature: 0.7, maxTokens: 4000, jsonMode: true }
     )
 
-    const strategyData = JSON.parse(strategyContent)
+    const strategyData = parseAIResponse(strategyContent)
     
-    // ⭐ 프론트엔드 호환성을 위해 Markdown 텍스트로 변환 (3단계 구조)
+    if (!strategyData) {
+      // 파싱 실패 시 원본 텍스트를 마크다운으로 반환
+      return c.json({
+        success: true,
+        data: {
+          strategy: strategyContent,
+          analysis: strategyContent,
+          raw: null,
+          visualData: null
+        }
+      })
+    }
+
+    // videos 배열 또는 individualAnalysis 호환 처리
+    const videoAnalyses = strategyData.videos || strategyData.individualAnalysis || []
+    
+    // ⭐ 프론트엔드 호환성을 위해 Markdown 텍스트로 변환 (폴백용)
     let strategyText = ''
     
     // [1단계] 영상별 심층 분석
-    strategyText += `## 📊 영상별 심층 분석\n\n`
+    strategyText += `## 영상별 심층 분석\n\n`
     
-    if (strategyData.individualAnalysis && strategyData.individualAnalysis.length > 0) {
-      strategyData.individualAnalysis.forEach((item: any, idx: number) => {
+    if (videoAnalyses.length > 0) {
+      videoAnalyses.forEach((item: any, idx: number) => {
         const videoData = videosWithComments[idx]
-        strategyText += `### 영상 ${item.videoIndex}: ${videoData?.title || ''}\n\n`
+        const videoTitle = item.title || videoData?.title || ''
+        strategyText += `### 영상 ${item.videoIndex || idx + 1}: ${videoTitle}\n\n`
         
-        if (item.performanceAnalysis) {
-          strategyText += `📈 **성과 지표 분석**\n${item.performanceAnalysis}\n\n`
+        // 새 JSON 구조 (videos 배열) 처리
+        if (item.metricsComment) {
+          strategyText += `**성과 지표 분석**\n${item.metricsComment}\n\n`
+        } else if (item.performanceAnalysis) {
+          strategyText += `**성과 지표 분석**\n${item.performanceAnalysis}\n\n`
         }
         
         if (item.titleStrategy) {
-          strategyText += `🎯 **제목 전략 분석**\n${item.titleStrategy}\n\n`
+          const ts = item.titleStrategy
+          if (typeof ts === 'object' && ts.comment) {
+            strategyText += `**제목 전략 분석** (점수: ${ts.score || '-'}/100)\n${ts.comment}\n\n`
+          } else {
+            strategyText += `**제목 전략 분석**\n${ts}\n\n`
+          }
         }
         
         if (item.thumbnailStrategy) {
-          strategyText += `🎨 **썸네일 전략 분석**\n${item.thumbnailStrategy}\n\n`
+          const ths = item.thumbnailStrategy
+          if (typeof ths === 'object' && ths.comment) {
+            strategyText += `**썸네일 전략 분석** (점수: ${ths.score || '-'}/100)\n${ths.comment}\n\n`
+          } else {
+            strategyText += `**썸네일 전략 분석**\n${ths}\n\n`
+          }
         }
         
-        if (item.commentAnalysis) {
-          strategyText += `💬 **실제 댓글 반응 분석**\n${item.commentAnalysis}\n\n`
+        if (item.commentReaction) {
+          const cr = item.commentReaction
+          if (typeof cr === 'object' && cr.comment) {
+            strategyText += `**실제 댓글 반응 분석** (톤: ${cr.tone || '-'})\n${cr.comment}\n\n`
+          } else if (item.commentAnalysis) {
+            strategyText += `**실제 댓글 반응 분석**\n${item.commentAnalysis}\n\n`
+          }
+        } else if (item.commentAnalysis) {
+          strategyText += `**실제 댓글 반응 분석**\n${item.commentAnalysis}\n\n`
         }
         
         if (item.durationAnalysis) {
-          strategyText += `⏱️ **영상 길이 분석**\n${item.durationAnalysis}\n\n`
+          strategyText += `**영상 길이 분석**\n${item.durationAnalysis}\n\n`
         }
 
         if (item.comparisonNote) {
-          strategyText += `🔍 **비교 분석**\n${item.comparisonNote}\n\n`
+          strategyText += `**비교 분석**\n${item.comparisonNote}\n\n`
         }
       })
     }
     
     // [2단계] 비교 분석
-    if (strategyData.comparisonTable) {
-      strategyText += `## 🔍 비교 분석\n\n${strategyData.comparisonTable}\n\n`
+    if (strategyData.comparison) {
+      if (strategyData.comparison.comment) {
+        strategyText += `## 비교 분석\n\n${strategyData.comparison.comment}\n\n`
+      }
+    } else if (strategyData.comparisonTable) {
+      strategyText += `## 비교 분석\n\n${strategyData.comparisonTable}\n\n`
     }
     
     if (strategyData.keyFindings) {
@@ -1179,36 +1297,42 @@ videoCards 배열은 반드시 영상 개수만큼 포함하세요.`
     }
     
     // 한줄 결론
-    if (strategyData.finalConclusion) {
-      strategyText += `## 💡 결론\n\n${strategyData.finalConclusion}\n\n`
+    const conclusion = strategyData.conclusion || strategyData.finalConclusion
+    if (conclusion) {
+      strategyText += `## 결론\n\n${conclusion}\n\n`
     }
     
     // [3단계] 즉시 실행 가능한 액션 플랜
-    strategyText += `## 🎯 즉시 실행 가능한 액션 플랜\n\n`
-    
     if (strategyData.actionPlan && strategyData.actionPlan.length > 0) {
+      strategyText += `## 즉시 실행 가능한 액션 플랜\n\n`
       strategyData.actionPlan.forEach((action: any) => {
-        strategyText += `✅ **${action.priority}순위**: ${action.action}\n`
+        strategyText += `**${action.priority}순위**: ${action.action}\n`
         if (action.effect) {
-          strategyText += `   └ 📈 효과: ${action.effect}\n`
+          strategyText += `   효과: ${action.effect}\n`
         }
         if (action.difficulty) {
-          strategyText += `   └ 🎯 난이도: ${action.difficulty}\n`
+          strategyText += `   난이도: ${action.difficulty}\n`
         }
-        if (action.timeRequired) {
-          strategyText += `   └ ⏰ 소요: ${action.timeRequired}\n`
+        if (action.timeRequired || action.time) {
+          strategyText += `   소요: ${action.timeRequired || action.time}\n`
         }
         strategyText += `\n`
       })
     }
 
-    // 5. 결과 반환
+    // 5. 결과 반환 — visualData로 원본 JSON 구조 전달
     return c.json({
       success: true,
       data: {
-        strategy: strategyText,  // ⭐ 프론트엔드가 기대하는 필드
-        analysis: strategyText,  // ⭐ 대체 필드명
-        raw: strategyData        // 원본 데이터도 포함
+        strategy: strategyText,    // 폴백용 마크다운 텍스트
+        analysis: strategyText,    // 대체 필드명
+        raw: strategyData,         // 원본 JSON 전체
+        visualData: {              // 시각화 전용 구조화 데이터
+          videos: videoAnalyses,
+          comparison: strategyData.comparison || null,
+          conclusion: conclusion || '',
+          actionPlan: strategyData.actionPlan || []
+        }
       }
     })
 

@@ -4571,37 +4571,37 @@ ${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
     }
     
     const analysis = result.data?.analysis || result.data?.strategy || '';
+    const visualData = result.data?.visualData || null;
+    const rawData = result.data?.raw || null;
     
-    if (!analysis) {
+    if (!analysis && !visualData) {
       throw new Error('AI 분석 결과가 비어있습니다');
-    }
-    
-    // JSON 파싱 시도
-    let strategyData = null;
-    try {
-      strategyData = JSON.parse(analysis);
-    } catch (e) {
-      console.log('⚠️ JSON 파싱 실패, Markdown 모드로 전환');
     }
     
     // videosInfo 로깅
     videosInfo.forEach((video, i) => {
-      console.log(`🔍 [영상 ${i + 1}] videoId: ${video.videoId}, title: ${video.title.substring(0, 30)}...`);
+      console.log(`[영상 ${i + 1}] videoId: ${video.videoId}, title: ${video.title.substring(0, 30)}...`);
     });
     
     let finalHtml = '';
     
-    if (strategyData && strategyData.individualAnalysis) {
-      // JSON 모드: 구조화된 데이터
-      finalHtml = generateStructuredAnalysis(videosInfo, strategyData);
+    if (visualData && visualData.videos && visualData.videos.length > 0) {
+      // 시각화 모드: 구조화된 JSON 데이터로 카드/차트/테이블 렌더링
+      console.log('[AI 분석] 시각화 모드 활성화 — videos:', visualData.videos.length);
+      const dashboardHtml = generateVisualizationDashboard(videosInfo, '');
+      const crownSectionHtml = generateCrownSection(videosInfo);
+      const visualHtml = renderVisualAnalysis(videosInfo, visualData);
+      finalHtml = dashboardHtml + crownSectionHtml + visualHtml;
+    } else if (rawData && (rawData.individualAnalysis || rawData.videos)) {
+      // 레거시 JSON 모드 (호환성)
+      console.log('[AI 분석] 레거시 JSON 모드');
+      finalHtml = generateStructuredAnalysis(videosInfo, rawData);
     } else {
-      // Markdown 모드
+      // Markdown 모드 (폴백)
+      console.log('[AI 분석] Markdown 폴백 모드');
       const html = markdownToHtml(analysis);
       const dashboardHtml = generateVisualizationDashboard(videosInfo, analysis);
-      
-      // 왕관 섹션 생성
       const crownSectionHtml = generateCrownSection(videosInfo);
-      
       finalHtml = dashboardHtml + crownSectionHtml + '<div style="margin-top: 30px;">' + html + '</div>';
     }
     
@@ -4842,8 +4842,502 @@ function generateCrownSection(videosInfo) {
   `;
 }
 
+// ============================================================
+// 시각화 렌더링 시스템 (Visual Analysis Rendering)
+// ============================================================
+
 /**
- * 구조화된 분석 렌더링 (JSON 모드)
+ * 메인 시각화 렌더링 — AI JSON 응답을 카드/차트/테이블로 변환
+ */
+function renderVisualAnalysis(videosInfo, visualData) {
+  const videos = visualData.videos || [];
+  const comparison = visualData.comparison || null;
+  const conclusion = visualData.conclusion || '';
+  const actionPlan = visualData.actionPlan || [];
+
+  let html = '';
+
+  // 섹션 1: 성과 비교 차트 (Bar Chart)
+  html += renderMetricsComparisonChart(videos, videosInfo);
+
+  // 섹션 2: 영상별 심층 분석 카드
+  videos.forEach((video, i) => {
+    html += renderVideoAnalysisCard(video, videosInfo[i], i);
+  });
+
+  // 섹션 3: 비교 분석 테이블
+  if (comparison && comparison.table) {
+    html += renderComparisonTable(comparison, videos);
+  }
+
+  // 섹션 4: 영상 길이 비교 타임라인
+  html += renderDurationTimeline(videos, videosInfo);
+
+  // 섹션 5: 결론 카드
+  if (conclusion) {
+    html += renderConclusion(conclusion);
+  }
+
+  // 섹션 6: 액션 플랜 카드
+  if (actionPlan.length > 0) {
+    html += renderActionPlan(actionPlan);
+  }
+
+  return html;
+}
+
+/**
+ * 섹션 1: 성과 비교 차트 (구독자 대비 조회수, 좋아요율 비교 바 차트)
+ */
+function renderMetricsComparisonChart(videos, videosInfo) {
+  const chartId = 'metrics-compare-chart-' + Date.now();
+  
+  // 영상별 라벨 (앞 15자)
+  const labels = videos.map((v, i) => {
+    const title = v.title || videosInfo[i]?.title || `영상 ${i + 1}`;
+    return title.length > 15 ? title.substring(0, 15) + '...' : title;
+  });
+
+  // 데이터 추출
+  const subViewRatios = videos.map(v => v.metrics?.subscriberViewRatio || 0);
+  const likeRates = videos.map(v => v.metrics?.likeRate || 0);
+  const viewsRaw = videos.map((v, i) => v.metrics?.viewsRaw || videosInfo[i]?.views || 0);
+
+  return `
+    <div style="background: white; border-radius: 16px; padding: 28px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);">
+      <h3 style="font-size: 20px; font-weight: 700; color: #1f2937; margin: 0 0 20px 0; display: flex; align-items: center; gap: 8px;">
+        <span style="background: #00B87D; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800;">1</span>
+        성과 비교 차트
+      </h3>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div style="position: relative; height: 280px;">
+          <canvas id="${chartId}-bar"></canvas>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          ${videos.map((v, i) => {
+            const svr = v.metrics?.subscriberViewRatio || 0;
+            const svrLabel = v.metrics?.subscriberViewRatioLabel || (svr >= 100 ? 'Good' : svr >= 30 ? 'Normal' : 'Bad');
+            const svrColor = svrLabel === 'Good' ? '#10b981' : svrLabel === 'Normal' ? '#f59e0b' : '#ef4444';
+            const lr = v.metrics?.likeRate || 0;
+            const lrLabel = v.metrics?.likeRateLabel || (lr >= 2 ? 'High' : lr >= 1 ? 'Normal' : 'Low');
+            const lrColor = lrLabel === 'High' ? '#10b981' : lrLabel === 'Normal' ? '#f59e0b' : '#ef4444';
+            const title = v.title || videosInfo[i]?.title || `영상 ${i + 1}`;
+            return `
+              <div style="background: #f9fafb; border-radius: 12px; padding: 14px;">
+                <div style="font-size: 13px; font-weight: 600; color: #6b7280; margin-bottom: 8px;">${title.substring(0, 25)}${title.length > 25 ? '...' : ''}</div>
+                <div style="display: flex; gap: 10px;">
+                  <div style="flex: 1; text-align: center;">
+                    <div style="font-size: 11px; color: #9ca3af;">구독자 대비 조회수</div>
+                    <div style="font-size: 20px; font-weight: 800; color: ${svrColor};">${svr.toFixed(1)}%</div>
+                    <span style="font-size: 11px; padding: 2px 8px; border-radius: 10px; background: ${svrColor}15; color: ${svrColor}; font-weight: 600;">${svrLabel}</span>
+                  </div>
+                  <div style="width: 1px; background: #e5e7eb;"></div>
+                  <div style="flex: 1; text-align: center;">
+                    <div style="font-size: 11px; color: #9ca3af;">좋아요율</div>
+                    <div style="font-size: 20px; font-weight: 800; color: ${lrColor};">${lr.toFixed(2)}%</div>
+                    <span style="font-size: 11px; padding: 2px 8px; border-radius: 10px; background: ${lrColor}15; color: ${lrColor}; font-weight: 600;">${lrLabel}</span>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+    <script>
+    (function() {
+      const ctx = document.getElementById('${chartId}-bar');
+      if (!ctx) return;
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ${JSON.stringify(labels)},
+          datasets: [
+            {
+              label: '구독자 대비 조회수 (%)',
+              data: ${JSON.stringify(subViewRatios)},
+              backgroundColor: 'rgba(16, 185, 129, 0.7)',
+              borderColor: '#10b981',
+              borderWidth: 1,
+              borderRadius: 6,
+              yAxisID: 'y1'
+            },
+            {
+              label: '좋아요율 (%)',
+              data: ${JSON.stringify(likeRates)},
+              backgroundColor: 'rgba(59, 130, 246, 0.7)',
+              borderColor: '#3b82f6',
+              borderWidth: 1,
+              borderRadius: 6,
+              yAxisID: 'y2'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'top', labels: { font: { size: 12 } } } },
+          scales: {
+            y1: { type: 'linear', position: 'left', title: { display: true, text: '구독자 대비 조회수 (%)' }, beginAtZero: true },
+            y2: { type: 'linear', position: 'right', title: { display: true, text: '좋아요율 (%)' }, beginAtZero: true, grid: { drawOnChartArea: false } }
+          }
+        }
+      });
+    })();
+    </script>
+  `;
+}
+
+/**
+ * 섹션 2: 영상별 심층 분석 카드
+ */
+function renderVideoAnalysisCard(video, videoInfo, index) {
+  const title = video.title || videoInfo?.title || `영상 ${index + 1}`;
+  const channel = video.channel || videoInfo?.channel || '';
+  const m = video.metrics || {};
+
+  // KPI 카드 4개
+  const kpiData = [
+    {
+      label: '조회수',
+      value: m.views || (videoInfo?.views ? videoInfo.views.toLocaleString() + '회' : '-'),
+      sub: `구독자 대비 ${m.subscriberViewRatio ? m.subscriberViewRatio.toFixed(1) + '%' : '-'}`,
+      badge: m.subscriberViewRatioLabel || '',
+      color: (m.subscriberViewRatioLabel === 'Good') ? '#10b981' : (m.subscriberViewRatioLabel === 'Normal') ? '#f59e0b' : '#ef4444'
+    },
+    {
+      label: '좋아요율',
+      value: m.likeRate ? m.likeRate.toFixed(2) + '%' : '-',
+      sub: m.commentCount ? `댓글 ${m.commentCount}개` : '',
+      badge: m.likeRateLabel || '',
+      color: (m.likeRateLabel === 'High') ? '#10b981' : (m.likeRateLabel === 'Normal') ? '#f59e0b' : '#ef4444'
+    },
+    {
+      label: '영상 길이',
+      value: m.duration || videoInfo?.displayDuration || '-',
+      sub: m.durationCategory || '',
+      badge: m.durationFit || '',
+      color: '#6366f1'
+    },
+    {
+      label: '구독자',
+      value: m.subscribers || (videoInfo?.subscriberCount ? videoInfo.subscriberCount.toLocaleString() + '명' : '-'),
+      sub: channel,
+      badge: '',
+      color: '#8b5cf6'
+    }
+  ];
+
+  // 제목 전략 게이지
+  const ts = video.titleStrategy || {};
+  const tsScore = ts.score || 0;
+
+  // 썸네일 전략 게이지
+  const ths = video.thumbnailStrategy || {};
+  const thsScore = ths.score || 0;
+
+  // 댓글 반응
+  const cr = video.commentReaction || {};
+
+  // 체크리스트
+  const checklist = ths.checklist || [];
+
+  return `
+    <div style="background: white; border-radius: 16px; padding: 28px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border-left: 5px solid ${['#00B87D', '#3b82f6', '#f59e0b'][index % 3]};">
+      <h3 style="font-size: 20px; font-weight: 700; color: #1f2937; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
+        <span style="background: ${['#00B87D', '#3b82f6', '#f59e0b'][index % 3]}; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800;">2</span>
+        영상 ${video.videoIndex || index + 1}: ${title}
+      </h3>
+      <p style="font-size: 13px; color: #9ca3af; margin: 0 0 18px 0;">${channel}</p>
+
+      <!-- KPI 카드 4개 -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
+        ${kpiData.map(kpi => `
+          <div style="background: #f9fafb; border-radius: 12px; padding: 14px; text-align: center;">
+            <div style="font-size: 11px; color: #9ca3af; margin-bottom: 4px;">${kpi.label}</div>
+            <div style="font-size: 18px; font-weight: 800; color: #1f2937;">${kpi.value}</div>
+            ${kpi.sub ? `<div style="font-size: 11px; color: #6b7280; margin-top: 2px;">${kpi.sub}</div>` : ''}
+            ${kpi.badge ? `<span style="display: inline-block; margin-top: 4px; font-size: 11px; padding: 2px 8px; border-radius: 10px; background: ${kpi.color}15; color: ${kpi.color}; font-weight: 600;">${kpi.badge}</span>` : ''}
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- 한줄 해석 -->
+      ${video.metricsComment ? `
+        <div style="background: #f0fdf4; border-left: 4px solid #10b981; padding: 12px 16px; border-radius: 0 8px 8px 0; margin-bottom: 20px; font-size: 14px; color: #374151; line-height: 1.6;">
+          ${video.metricsComment}
+        </div>
+      ` : ''}
+
+      <!-- 제목/썸네일 전략 게이지 -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+        <!-- 제목 전략 -->
+        <div style="background: #f9fafb; border-radius: 12px; padding: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <span style="font-size: 14px; font-weight: 700; color: #1f2937;">제목 전략</span>
+            <span style="font-size: 22px; font-weight: 800; color: ${tsScore >= 70 ? '#10b981' : tsScore >= 40 ? '#f59e0b' : '#ef4444'};">${tsScore}<span style="font-size: 13px; font-weight: 400; color: #9ca3af;">/100</span></span>
+          </div>
+          <div style="height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; margin-bottom: 10px;">
+            <div style="height: 100%; width: ${tsScore}%; background: ${tsScore >= 70 ? '#10b981' : tsScore >= 40 ? '#f59e0b' : '#ef4444'}; border-radius: 4px; transition: width 0.5s;"></div>
+          </div>
+          ${ts.keywords && ts.keywords.length > 0 ? `
+            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;">
+              ${ts.keywords.map(kw => `<span style="font-size: 11px; padding: 2px 8px; background: #dbeafe; color: #2563eb; border-radius: 10px;">${kw}</span>`).join('')}
+            </div>
+          ` : ''}
+          ${ts.techniques && ts.techniques.length > 0 ? `
+            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;">
+              ${ts.techniques.map(t => `<span style="font-size: 11px; padding: 2px 8px; background: #fef3c7; color: #92400e; border-radius: 10px;">${t}</span>`).join('')}
+            </div>
+          ` : ''}
+          ${ts.comment ? `<p style="font-size: 13px; color: #6b7280; margin: 0; line-height: 1.5;">${ts.comment}</p>` : ''}
+        </div>
+
+        <!-- 썸네일 전략 -->
+        <div style="background: #f9fafb; border-radius: 12px; padding: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <span style="font-size: 14px; font-weight: 700; color: #1f2937;">썸네일 전략</span>
+            <span style="font-size: 22px; font-weight: 800; color: ${thsScore >= 70 ? '#10b981' : thsScore >= 40 ? '#f59e0b' : '#ef4444'};">${thsScore}<span style="font-size: 13px; font-weight: 400; color: #9ca3af;">/100</span></span>
+          </div>
+          <div style="height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; margin-bottom: 10px;">
+            <div style="height: 100%; width: ${thsScore}%; background: ${thsScore >= 70 ? '#10b981' : thsScore >= 40 ? '#f59e0b' : '#ef4444'}; border-radius: 4px; transition: width 0.5s;"></div>
+          </div>
+          ${checklist.length > 0 ? `
+            <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px;">
+              ${checklist.map(c => `
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 12px;">
+                  <span style="color: ${c.pass ? '#10b981' : '#ef4444'}; font-weight: 700;">${c.pass ? 'V' : 'X'}</span>
+                  <span style="color: ${c.pass ? '#374151' : '#9ca3af'};">${c.item}</span>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+          ${ths.comment ? `<p style="font-size: 13px; color: #6b7280; margin: 0; line-height: 1.5;">${ths.comment}</p>` : ''}
+        </div>
+      </div>
+
+      <!-- 댓글 반응 -->
+      ${cr.tone || cr.keywords ? `
+        <div style="background: #f9fafb; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+            <span style="font-size: 14px; font-weight: 700; color: #1f2937;">댓글 반응</span>
+            ${cr.tone ? `<span style="font-size: 12px; padding: 3px 10px; border-radius: 10px; font-weight: 600; background: ${cr.tone === '긍정적' ? '#dcfce7' : cr.tone === '부정적' ? '#fef2f2' : '#fefce8'}; color: ${cr.tone === '긍정적' ? '#166534' : cr.tone === '부정적' ? '#991b1b' : '#92400e'};">${cr.tone}</span>` : ''}
+          </div>
+          ${cr.keywords && cr.keywords.length > 0 ? `
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;">
+              ${cr.keywords.map(kw => `<span style="font-size: 12px; padding: 3px 10px; background: #ede9fe; color: #5b21b6; border-radius: 10px;">${kw}</span>`).join('')}
+            </div>
+          ` : ''}
+          ${cr.topComments && cr.topComments.length > 0 ? `
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              ${cr.topComments.map(tc => `
+                <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #374151; display: flex; justify-content: space-between; align-items: flex-start;">
+                  <span style="flex: 1; line-height: 1.5;">"${typeof tc === 'object' ? tc.text : tc}"</span>
+                  ${typeof tc === 'object' && tc.likes != null ? `<span style="font-size: 11px; color: #9ca3af; white-space: nowrap; margin-left: 8px;">+${tc.likes}</span>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+          ${cr.comment ? `<p style="font-size: 13px; color: #6b7280; margin: 10px 0 0 0; line-height: 1.5;">${cr.comment}</p>` : ''}
+        </div>
+      ` : ''}
+
+      <!-- 영상 길이 분석 -->
+      ${video.durationAnalysis ? `
+        <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 12px 16px; border-radius: 0 8px 8px 0; font-size: 14px; color: #374151; line-height: 1.6;">
+          <strong style="color: #1e40af;">영상 길이 분석:</strong> ${video.durationAnalysis}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+/**
+ * 섹션 3: 비교 분석 테이블
+ */
+function renderComparisonTable(comparison, videos) {
+  const table = comparison.table || [];
+  if (table.length === 0) return '';
+
+  const colorMap = {
+    'Good': '#10b981', 'High': '#10b981', 'Bad': '#ef4444', 'Low': '#ef4444',
+    'Normal': '#f59e0b', '긍정적': '#10b981', '부정적': '#ef4444', '혼재': '#f59e0b', '중립적': '#6b7280'
+  };
+
+  function cellColor(text) {
+    for (const [key, color] of Object.entries(colorMap)) {
+      if (String(text).includes(key)) return color;
+    }
+    return '#374151';
+  }
+
+  // 영상 제목 헤더
+  const headers = videos.map((v, i) => {
+    const title = v.title || `영상 ${i + 1}`;
+    return title.length > 12 ? title.substring(0, 12) + '...' : title;
+  });
+
+  return `
+    <div style="background: white; border-radius: 16px; padding: 28px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);">
+      <h3 style="font-size: 20px; font-weight: 700; color: #1f2937; margin: 0 0 20px 0; display: flex; align-items: center; gap: 8px;">
+        <span style="background: #8b5cf6; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800;">3</span>
+        비교 분석
+      </h3>
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px;">
+          <thead>
+            <tr>
+              <th style="padding: 12px 16px; background: #f3f4f6; text-align: left; font-weight: 700; color: #374151; border-radius: 8px 0 0 0;">항목</th>
+              ${headers.map((h, i) => `
+                <th style="padding: 12px 16px; background: #f3f4f6; text-align: center; font-weight: 700; color: #374151; ${i === headers.length - 1 ? 'border-radius: 0 8px 0 0;' : ''}">${h}</th>
+              `).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${table.map((row, ri) => `
+              <tr style="background: ${ri % 2 === 0 ? 'white' : '#fafafa'};">
+                <td style="padding: 10px 16px; font-weight: 600; color: #1f2937; border-bottom: 1px solid #f3f4f6;">${row.label}</td>
+                ${(row.values || []).map(val => `
+                  <td style="padding: 10px 16px; text-align: center; color: ${cellColor(val)}; font-weight: 500; border-bottom: 1px solid #f3f4f6;">${val}</td>
+                `).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      ${comparison.comment ? `
+        <div style="margin-top: 16px; background: #faf5ff; border-left: 4px solid #8b5cf6; padding: 12px 16px; border-radius: 0 8px 8px 0; font-size: 14px; color: #374151; line-height: 1.6;">
+          ${comparison.comment}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+/**
+ * 섹션 4: 영상 길이 비교 타임라인
+ */
+function renderDurationTimeline(videos, videosInfo) {
+  // 초 단위 추출
+  const durations = videos.map((v, i) => {
+    if (v.metrics?.durationSeconds) return v.metrics.durationSeconds;
+    // fallback: displayDuration 파싱
+    const dur = v.metrics?.duration || videosInfo[i]?.displayDuration || '0:00';
+    const parts = String(dur).split(':').map(Number);
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    return 0;
+  });
+
+  const maxDur = Math.max(...durations, 1);
+  const barColors = ['#00B87D', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
+
+  return `
+    <div style="background: white; border-radius: 16px; padding: 28px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);">
+      <h3 style="font-size: 20px; font-weight: 700; color: #1f2937; margin: 0 0 20px 0; display: flex; align-items: center; gap: 8px;">
+        <span style="background: #f59e0b; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800;">4</span>
+        영상 길이 비교
+      </h3>
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        ${videos.map((v, i) => {
+          const title = v.title || videosInfo[i]?.title || `영상 ${i + 1}`;
+          const pct = durations[i] > 0 ? Math.round((durations[i] / maxDur) * 100) : 0;
+          const displayDur = v.metrics?.duration || videosInfo[i]?.displayDuration || '-';
+          const cat = v.metrics?.durationCategory || '';
+          const fit = v.metrics?.durationFit || '';
+          const color = barColors[i % barColors.length];
+          return `
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 13px; font-weight: 600; color: #374151;">${title.substring(0, 30)}${title.length > 30 ? '...' : ''}</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 15px; font-weight: 800; color: #1f2937;">${displayDur}</span>
+                  ${cat ? `<span style="font-size: 11px; padding: 2px 8px; background: ${color}15; color: ${color}; border-radius: 10px; font-weight: 600;">${cat}</span>` : ''}
+                  ${fit ? `<span style="font-size: 11px; padding: 2px 8px; background: #f3f4f6; color: #6b7280; border-radius: 10px;">${fit}</span>` : ''}
+                </div>
+              </div>
+              <div style="height: 12px; background: #f3f4f6; border-radius: 6px; overflow: hidden;">
+                <div style="height: 100%; width: ${pct}%; background: ${color}; border-radius: 6px; transition: width 0.5s;"></div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      ${videos.some(v => v.durationAnalysis) ? `
+        <div style="margin-top: 16px; background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 0 8px 8px 0; font-size: 13px; color: #78350f; line-height: 1.6;">
+          ${videos.find(v => v.durationAnalysis)?.durationAnalysis || ''}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+/**
+ * 섹션 5: 결론 카드
+ */
+function renderConclusion(conclusion) {
+  return `
+    <div style="background: linear-gradient(135deg, #00B87D 0%, #059669 100%); border-radius: 16px; padding: 28px; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(5, 150, 105, 0.25);">
+      <h3 style="font-size: 20px; font-weight: 700; color: white; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
+        <span style="background: rgba(255,255,255,0.2); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800;">5</span>
+        결론
+      </h3>
+      <p style="margin: 0; font-size: 16px; line-height: 1.8; color: white;">${conclusion}</p>
+    </div>
+  `;
+}
+
+/**
+ * 섹션 6: 액션 플랜 카드
+ */
+function renderActionPlan(actionPlan) {
+  const priorityStyles = {
+    1: { bg: 'linear-gradient(135deg, #ef4444, #dc2626)', label: '긴급' },
+    2: { bg: 'linear-gradient(135deg, #f59e0b, #d97706)', label: '중요' },
+    3: { bg: 'linear-gradient(135deg, #10b981, #059669)', label: '장기' }
+  };
+
+  return `
+    <div style="margin-bottom: 24px;">
+      <h3 style="font-size: 20px; font-weight: 700; color: #1f2937; margin: 0 0 20px 0; display: flex; align-items: center; gap: 8px;">
+        <span style="background: #ef4444; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800;">6</span>
+        즉시 실행 가능한 액션 플랜
+      </h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+        ${actionPlan.map(action => {
+          const p = action.priority || 3;
+          const style = priorityStyles[p] || priorityStyles[3];
+          return `
+            <div style="background: ${style.bg}; color: white; padding: 24px; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.15);">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                <span style="font-size: 24px; font-weight: 900;">${p}</span>
+                <span style="font-size: 13px; padding: 2px 10px; background: rgba(255,255,255,0.2); border-radius: 10px; font-weight: 600;">${style.label}</span>
+              </div>
+              <div style="font-size: 17px; font-weight: 700; margin-bottom: 16px; line-height: 1.4;">${action.action}</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; font-size: 12px;">
+                <div style="background: rgba(255,255,255,0.15); padding: 8px; border-radius: 8px; text-align: center;">
+                  <div style="opacity: 0.8; margin-bottom: 2px;">효과</div>
+                  <div style="font-weight: 700;">${action.effect || '-'}</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.15); padding: 8px; border-radius: 8px; text-align: center;">
+                  <div style="opacity: 0.8; margin-bottom: 2px;">난이도</div>
+                  <div style="font-weight: 700;">${action.difficulty || '-'}</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.15); padding: 8px; border-radius: 8px; text-align: center;">
+                  <div style="opacity: 0.8; margin-bottom: 2px;">소요</div>
+                  <div style="font-weight: 700;">${action.timeRequired || action.time || '-'}</div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * 구조화된 분석 렌더링 (레거시 JSON 모드 — 호환성 유지)
  */
 function generateStructuredAnalysis(videosInfo, strategyData) {
   // 대시보드 생성
