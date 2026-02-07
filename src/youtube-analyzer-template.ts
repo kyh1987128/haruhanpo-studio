@@ -1245,17 +1245,44 @@ export function youtubeAnalyzerTemplate() {
               <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="20">
                 게임
               </button>
+              <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="27">
+                교육
+              </button>
+              <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="28">
+                과학기술
+              </button>
+              <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="26">
+                노하우/스타일
+              </button>
               <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="22">
                 브이로그
-              </button>
-              <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="23">
-                코미디
               </button>
               <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="24">
                 엔터테인먼트
               </button>
+              <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="23">
+                코미디
+              </button>
               <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="25">
                 뉴스
+              </button>
+              <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="17">
+                스포츠
+              </button>
+              <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="19">
+                여행/이벤트
+              </button>
+              <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="1">
+                영화/애니메이션
+              </button>
+              <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="2">
+                자동차
+              </button>
+              <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="15">
+                반려동물
+              </button>
+              <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="29">
+                사회/시사
               </button>
             </div>
 

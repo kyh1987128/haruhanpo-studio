@@ -1247,6 +1247,21 @@ function updateChannelDetailPanel(video) {
   const avgViewsPerDay = daysAgo > 0 ? Math.floor(video.views / daysAgo) : video.views;
   const avgViewsPerHour = hoursAgo > 0 ? Math.floor(video.views / hoursAgo) : video.views;
   
+  // 경과 시간 한글 표시
+  function formatElapsedTime(days) {
+    if (days >= 365) {
+      const years = Math.floor(days / 365);
+      const months = Math.floor((days % 365) / 30);
+      return months > 0 ? `약 ${years}년 ${months}개월 전` : `약 ${years}년 전`;
+    } else if (days >= 30) {
+      const months = Math.floor(days / 30);
+      return `약 ${months}개월 전`;
+    } else {
+      return `${days}일 전`;
+    }
+  }
+  const elapsedText = formatElapsedTime(daysAgo);
+  
   // 좋아요율 계산
   const likeRate = video.views > 0 ? (video.likes / video.views) * 100 : 0;
   
@@ -1394,15 +1409,8 @@ function updateChannelDetailPanel(video) {
         <!-- 경과 시간 상세 -->
         <div class="border-t pt-3">
           <h4 class="text-sm font-semibold text-gray-700 mb-2">⏱️ 경과 시간</h4>
-          <div class="grid grid-cols-2 gap-2">
-            <div class="bg-purple-50 rounded-lg p-2.5 text-center">
-              <div class="text-xl font-bold text-purple-900">${daysAgo}</div>
-              <div class="text-xs text-purple-700">일</div>
-            </div>
-            <div class="bg-pink-50 rounded-lg p-2.5 text-center">
-              <div class="text-xl font-bold text-pink-900">${hoursAgo}</div>
-              <div class="text-xs text-pink-700">시간</div>
-            </div>
+          <div class="bg-purple-50 rounded-lg p-3 text-center">
+            <div class="text-lg font-bold text-purple-900">${elapsedText}</div>
           </div>
         </div>
         

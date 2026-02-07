@@ -840,229 +840,142 @@ app.post('/api/youtube/strategy', async (c) => {
 
     const goalText = goalDescriptions[goal as keyof typeof goalDescriptions] || '조회수 증가'
 
-    // Gemini API 호출 - 완전히 재설계된 3단계 구조
+    // Gemini API 호출 - 3단계 구조 (구분선 제거, 분석 깊이 강화, 액션 현실화)
     const prompt = `당신은 YouTube 콘텐츠 전략 전문가입니다. 다음 분석된 영상 데이터를 기반으로 "${goalText}"를 목표로 하는 전문가 리포트를 작성해주세요.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 분석 대상 영상 데이터
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## 분석 대상 영상 데이터
 
 ${videosWithComments.map((v: any, i: number) => {
   const likeRate = v.views > 0 ? ((v.likes / v.views) * 100).toFixed(2) : '0.00'
   const viralRatio = v.subscriberCount > 0 ? ((v.views / v.subscriberCount) * 100).toFixed(0) : '0'
   
-  // 댓글 분석 (긍정/부정/중립 간단 분류)
   let commentSummary = '댓글 비활성화 또는 데이터 없음'
   if (v.comments && v.comments.length > 0) {
     const totalComments = v.comments.length
-    const topComments = v.comments.slice(0, 5).map((c: any) => `"${c.text.substring(0, 50)}..." (👍 ${c.likeCount})`).join('\n  ')
+    const topComments = v.comments.slice(0, 5).map((c: any) => `"${c.text.substring(0, 50)}..." (좋아요 ${c.likeCount})`).join('\n  ')
     commentSummary = `총 ${totalComments}개 댓글 수집\n상위 5개:\n  ${topComments}`
   }
   
   return `
-**영상 ${i + 1}: ${v.title}**
-- 📊 기본 지표:
-  • 조회수: ${v.views?.toLocaleString()}회
-  • 좋아요: ${v.likes?.toLocaleString()}개 (좋아요율: ${likeRate}%)
-  • 댓글: ${v.comments?.toLocaleString()}개
-  • 영상 길이: ${v.displayDuration || v.duration}
-  
-- 📈 성과 분석:
-  • 채널: ${v.channel} (구독자 ${v.subscriberCount?.toLocaleString()}명)
-  • 바이럴 지수: ${viralRatio}% (구독자 대비 조회수)
-  • 카테고리: ${v.category || '미지정'}
-  • 게시일: ${v.publishedAt}
-  
-- 🎨 썸네일: ${v.thumbnailUrl || 'URL 없음'}
+### 영상 ${i + 1}: ${v.title}
 
-- 💬 실제 댓글 반응:
+기본 지표:
+- 조회수: ${v.views?.toLocaleString()}회
+- 좋아요: ${v.likes?.toLocaleString()}개 (좋아요율: ${likeRate}%)
+- 댓글: ${v.comments?.toLocaleString()}개
+- 영상 길이: ${v.displayDuration || v.duration}
+
+성과 분석:
+- 채널: ${v.channel} (구독자 ${v.subscriberCount?.toLocaleString()}명)
+- 구독자 대비 조회수: ${viralRatio}%
+- 카테고리: ${v.category || '미지정'}
+- 게시일: ${v.publishedAt}
+
+썸네일: ${v.thumbnailUrl || 'URL 없음'}
+
+실제 댓글 반응:
   ${commentSummary}
 `
 }).join('\n')}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ 분석 요구사항 (3단계 구조)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## 분석 요구사항 (3단계 구조)
 
-**[1단계] 영상별 심층 분석 (80% 비중, 각 영상당 최소 400자)** ⭐
+### [1단계] 영상별 심층 분석 (각 영상당 최소 400자)
 
-각 영상마다 반드시 다음 항목을 포함:
+각 영상마다 반드시 다음 항목을 포함하세요:
 
-**성과 지표 분석** (이모지 1개만 사용)
-- 조회수 대비 좋아요율 → 시청자 만족도 평가
-- 구독자 대비 조회수 비율 → 바이럴 효과 측정 (100% 이상 = 외부 유입 많음)
-- 댓글 수와 참여도의 상관관계
+**성과 지표 분석**
+- 좋아요율과 댓글 참여도로 시청자 만족도를 평가
+- 구독자 대비 조회수 비율로 외부 유입 여부 판단
+- 이 영상이 잘 된(또는 안 된) 핵심 원인을 구체적으로 설명
 
-**제목 전략 분석** (이모지 1개만 사용)
-- 클릭을 유도한 핵심 키워드 (숫자, 질문, 감정 자극 등)
-- 제목 길이와 가독성
-- SEO 최적화 요소
+**제목 전략 분석**
+- 제목의 구조(숫자/질문/감정/키워드 배치)를 구체적으로 분석
+- 제목 길이(글자 수)가 클릭에 미친 영향
+- SEO 관점에서 개선할 수 있는 부분
 
-**썸네일 전략 분석** (이모지 1개만 사용, 썸네일 URL 참고)
-- 시각적 구성: 인물 배치, 표정, 텍스트 요소, 색상 대비
-- 감정적 임팩트: 놀라움, 호기심, 공감 요소
-- 클릭 유도 요소: 화살표, 숫자, 대비 구조(VS, Before/After)
+**썸네일 전략 분석**
+- 인물/텍스트/색상 등 시각 요소 분석
+- 클릭을 유도한 요소 또는 부족한 요소 지적
 
-**실제 댓글 반응 분석** (이모지 1개만 사용) ⭐ 가장 중요
-- 제공된 실제 댓글 데이터 기반으로 시청자 반응 분석
-- 긍정적 반응 키워드 추출 (예: "칼군무 미쳤다", "편집 깔끔")
-- 부정적 반응 또는 개선 요청 사항 (예: "음악이 아쉽다", "자막 필요")
-- 주요 질문 또는 요청 사항 (예: "위치가 어디예요?", "튜토리얼 원해요")
-- ⚠️ 댓글 데이터가 없으면 "댓글 비활성화 또는 데이터 없음"이라고 명시
+**실제 댓글 반응 분석** (가장 중요)
+- 제공된 실제 댓글 데이터에서 긍정/부정/질문 키워드 추출
+- 댓글 데이터가 없으면 "댓글 비활성화 또는 데이터 없음"이라고만 명시
+- 절대 댓글 데이터 없이 "긍정 78%" 같은 허구 수치를 만들지 마세요
 
-**영상 길이 분석** (이모지 1개만 사용)
-- 길이와 성과의 상관관계 (숏폼 vs 롱폼)
-- 완주율 추정 (짧을수록 높음)
+**영상 길이 분석**
+- 이 길이가 해당 카테고리에서 적절한지 판단
+- 길이와 참여도의 상관관계 분석
 
-⚠️ 섹션 제목은 한 번만 표시하세요. 중복 금지!
+**비교 분석 (필수)**
+- 다른 영상과 비교할 때 이 영상이 가진 구체적 차별점
+- 비교 요소: 제목 구조, 영상 길이, 썸네일 특징, 업로드 시점, 태그/카테고리
 
-**[2단계] 영상별 성과 카드 (JSON 형식 필수)** ⭐
+### [2단계] 영상별 성과 카드 (JSON)
 
-각 영상을 다음 JSON 구조로 분석해주세요:
+각 영상을 아래 JSON 구조로 분석하세요.
 
-{
-  "videoCards": [
-    {
-      "videoIndex": 1,
-      "nickname": "어그로 마스터",
-      "performance": "조회수 702만, 좋아요율 0%, 바이럴 1738%",
-      "strength": "조회수 폭발적 증가",
-      "weakness": "시청자 불만 다수, 좋아요율 0%",
-      "rating": "욕먹으면서 터진 어그로성 영상",
-      "strategy": "콘텐츠 품질 개선으로 만족도 향상"
-    },
-    {
-      "videoIndex": 2,
-      "nickname": "균형잡힌 올라운더",
-      "performance": "조회수 177만, 좋아요율 0.76%, 댓글 긍정적",
-      "strength": "모든 지표가 안정적",
-      "weakness": "특별한 약점 없음",
-      "rating": "가장 성공적인 레퍼런스 콘텐츠",
-      "strategy": "이 방향으로 시리즈 확대"
-    },
-    {
-      "videoIndex": 3,
-      "nickname": "잠재력형",
-      "performance": "좋아요율 1.11% (최고), 제목 클릭 유도 우수",
-      "strength": "제목 전략 우수",
-      "weakness": "21분으로 너무 김, 부정적 댓글",
-      "rating": "제목은 좋지만 내용이 기대에 못 미침",
-      "strategy": "10분 이내로 재편집하여 집중도 향상"
-    }
-  ],
-  "finalConclusion": "영상 2가 가장 균형잡힌 성공작입니다. 영상 1은 어그로성을 줄이고 품질을 높이며, 영상 3은 길이를 단축해야 합니다."
-}
+### [3단계] 즉시 실행 가능한 액션 플랜 (3개)
 
-**중요**: 반드시 이 JSON 형식으로만 출력하세요. 마크다운 표나 ASCII 특수문자 사용 금지.
+각 액션은 반드시 아래 수준의 구체성을 가져야 합니다:
+- 좋은 예: "다음 영상 제목에 '2026'을 넣고, 첫 15초에 결론을 먼저 보여주세요"
+- 나쁜 예: "콘텐츠 품질을 개선하세요", "소통을 강화하세요"
 
-**[3단계] 즉시 실행 가능한 액션 플랜 (3개만)** ⭐
+각 액션마다:
+- action: 키워드, 숫자, 시간 등을 포함한 구체적 행동
+- effect: "높음/중간/낮음" (근거 없는 % 수치 금지)
+- difficulty: 쉬움/보통/어려움
+- timeRequired: 예상 소요 시간
 
-각 액션마다 반드시 다음 형식으로 작성:
+## 절대 금지 사항
 
-**1순위: [액션 제목]**
-- **액션**: 구체적 실행 내용
-- **예상 효과**: 수치 기반 효과
-- **난이도**: 쉬움/보통/어려움
-- **소요 시간**: 예상 시간
+- 실제 데이터 없이 허구 수치(클릭률 N%, 완주율 N%, 바이럴 점수, CTR 등) 생성 금지
+- "다양한 시도", "소통 강화" 같은 추상적 조언 금지
+- 댓글 데이터가 없을 때 추측으로 반응 분석 금지
+- 구분선(━━━, ---, ===) 사용 금지
+- ASCII 박스 문자(┌─┐, │, └─┘) 사용 금지
 
-**2순위: [액션 제목]**
-- **액션**: 구체적 실행 내용
-- **예상 효과**: 수치 기반 효과
-- **난이도**: 쉬움/보통/어려움
-- **소요 시간**: 예상 시간
+## JSON 응답 형식 (필수)
 
-**3순위: [액션 제목]**
-- **액션**: 구체적 실행 내용
-- **예상 효과**: 수치 기반 효과
-- **난이도**: 쉬움/보통/어려움
-- **소요 시간**: 예상 시간
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🚫 절대 금지 사항
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-❌ 실제 댓글 데이터 없이 "78% 긍정 반응" 같은 허구 수치 생성 금지
-❌ 위 표에 제공된 수치 데이터를 다시 텍스트로 나열하지 말 것
-❌ "다양한 시도", "소통 강화" 같은 뻔한 조언 금지
-❌ 시각화 없는 긴 문단 텍스트 금지
-❌ 댓글 데이터가 없을 시 추측으로 반응 분석 금지
-❌ "공통 키워드", "성공 패턴", "최적 게시 시간" 섹션 생성 금지
-❌ "콘텐츠 제안 5개" 섹션 생성 금지
-❌ ASCII 박스 문자(┌─┐, │, └─┘) 사용 금지 - Markdown만 사용
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ 필수 시각화 요소
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-• 이모지/아이콘 20개 이상 사용 (📊📈🎯💡🔍💬✅❌ 등)
-• 구분선(━━━) 10개 이상 사용
-• Markdown Table 형식 비교 분석 1개 이상 포함
-• 화살표(→)로 인과관계 명시
-• 체크박스(✅❌)로 긍정/부정 표시
-• 불렛 포인트(-) 사용으로 가독성 확보
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️ CRITICAL - JSON 응답 형식 (필수)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-반드시 아래 JSON 구조로만 응답하세요. Markdown 텍스트는 절대 금지입니다.
-
-videoCards 필드가 없으면 응답이 거부됩니다. 반드시 3개 영상 모두 포함하세요.
+반드시 아래 JSON 구조로만 응답하세요. videoCards 필드가 없으면 응답이 거부됩니다.
 
 {
   "individualAnalysis": [
     {
       "videoIndex": 1,
       "videoTitle": "영상 제목",
-      "performanceAnalysis": "성과 지표 분석",
-      "titleStrategy": "제목 전략 분석",
-      "thumbnailStrategy": "썸네일 전략 분석",
-      "commentAnalysis": "실제 댓글 반응 분석",
-      "durationAnalysis": "영상 길이 분석"
+      "performanceAnalysis": "성과 지표 분석 (왜 잘 됐는지/안 됐는지 원인 포함)",
+      "titleStrategy": "제목 구조, 길이, 키워드 배치 분석",
+      "thumbnailStrategy": "썸네일 시각 요소 분석",
+      "commentAnalysis": "실제 댓글 기반 반응 분석 (데이터 없으면 '데이터 없음' 명시)",
+      "durationAnalysis": "영상 길이와 참여도 상관관계",
+      "comparisonNote": "다른 영상과 비교한 이 영상의 차별점"
     }
   ],
   "videoCards": [
     {
       "videoIndex": 1,
-      "nickname": "어그로 마스터",
-      "performance": "조회수 702만, 좋아요율 0%, 바이럴 1738%",
-      "strength": "조회수 폭발적 증가로 외부 유입 많음",
-      "weakness": "시청자 불만 다수, 좋아요율 0%로 만족도 최저",
-      "rating": "욕먹으면서 터진 어그로성 영상",
-      "strategy": "콘텐츠 품질 개선으로 만족도 향상 필요"
-    },
-    {
-      "videoIndex": 2,
-      "nickname": "균형잡힌 올라운더",
-      "performance": "조회수 177만, 좋아요율 0.76%, 댓글 긍정적",
-      "strength": "모든 지표가 안정적이고 균형잡힘",
-      "weakness": "특별한 약점 없음",
-      "rating": "가장 성공적인 레퍼런스 콘텐츠",
-      "strategy": "이 방향으로 시리즈 확대 권장"
-    },
-    {
-      "videoIndex": 3,
-      "nickname": "잠재력형",
-      "performance": "좋아요율 1.11% (최고), 제목 클릭 유도 우수",
-      "strength": "제목 전략이 우수하여 클릭률 높음",
-      "weakness": "21분으로 너무 길어 이탈률 높음",
-      "rating": "제목은 좋지만 내용이 기대에 못 미침",
-      "strategy": "10분 이내로 재편집하여 집중도 향상"
+      "nickname": "특징을 반영한 별명",
+      "performance": "실제 지표 기반 요약",
+      "strength": "구체적 강점",
+      "weakness": "구체적 약점",
+      "rating": "한줄 평가",
+      "strategy": "바로 실행 가능한 구체적 개선안 (키워드/숫자/시간 포함)"
     }
   ],
-  "finalConclusion": "영상 2가 가장 균형잡힌 성공작입니다. 영상 1은 어그로성을 줄이고 품질을 높이며, 영상 3은 길이를 단축해야 합니다.",
+  "finalConclusion": "바로 실행 가능한 구체적 행동 제안 1문장 (예: '다음 영상 제목에 숫자를 포함하고, 영상 길이를 8분 이내로 편집하세요')",
   "actionPlan": [
     {
       "priority": 1,
-      "action": "구체적 액션",
-      "effect": "예상 효과",
+      "action": "키워드/숫자/시간을 포함한 구체적 행동 (예: '제목에 2026을 넣고 첫 15초에 결론 배치')",
+      "effect": "높음/중간/낮음",
       "difficulty": "쉬움/보통/어려움",
       "timeRequired": "소요 시간"
     }
   ]
 }
 
-⚠️ 주의: videoCards 배열은 반드시 영상 개수만큼 포함하세요 (예: 3개 영상 → 3개 카드)`
+videoCards 배열은 반드시 영상 개수만큼 포함하세요.`
 
     const strategyContent = await callGemini(
       geminiApiKey,
@@ -1076,15 +989,13 @@ videoCards 필드가 없으면 응답이 거부됩니다. 반드시 3개 영상 
     // ⭐ 프론트엔드 호환성을 위해 Markdown 텍스트로 변환 (3단계 구조)
     let strategyText = ''
     
-    // [1단계] 영상별 심층 분석 (80% 비중)
-    strategyText += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`
-    strategyText += `📊 영상별 심층 분석\n`
-    strategyText += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`
+    // [1단계] 영상별 심층 분석
+    strategyText += `## 📊 영상별 심층 분석\n\n`
     
     if (strategyData.individualAnalysis && strategyData.individualAnalysis.length > 0) {
       strategyData.individualAnalysis.forEach((item: any, idx: number) => {
         const videoData = videosWithComments[idx]
-        strategyText += `**영상 ${item.videoIndex}: ${videoData?.title || ''}**\n\n`
+        strategyText += `### 영상 ${item.videoIndex}: ${videoData?.title || ''}\n\n`
         
         if (item.performanceAnalysis) {
           strategyText += `📈 **성과 지표 분석**\n${item.performanceAnalysis}\n\n`
@@ -1105,26 +1016,29 @@ videoCards 필드가 없으면 응답이 거부됩니다. 반드시 3개 영상 
         if (item.durationAnalysis) {
           strategyText += `⏱️ **영상 길이 분석**\n${item.durationAnalysis}\n\n`
         }
-        
-        strategyText += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`
+
+        if (item.comparisonNote) {
+          strategyText += `🔍 **비교 분석**\n${item.comparisonNote}\n\n`
+        }
       })
     }
     
-    // [2단계] 비교 분석 (표 형식)
-    strategyText += `🔍 **비교 분석**\n\n`
-    
+    // [2단계] 비교 분석
     if (strategyData.comparisonTable) {
-      strategyText += `${strategyData.comparisonTable}\n\n`
+      strategyText += `## 🔍 비교 분석\n\n${strategyData.comparisonTable}\n\n`
     }
     
     if (strategyData.keyFindings) {
       strategyText += `**핵심 발견**: ${strategyData.keyFindings}\n\n`
     }
     
-    strategyText += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`
+    // 한줄 결론
+    if (strategyData.finalConclusion) {
+      strategyText += `## 💡 결론\n\n${strategyData.finalConclusion}\n\n`
+    }
     
-    // [3단계] 즉시 실행 가능한 액션 플랜 (3개만)
-    strategyText += `🎯 **즉시 실행 가능한 액션 플랜**\n\n`
+    // [3단계] 즉시 실행 가능한 액션 플랜
+    strategyText += `## 🎯 즉시 실행 가능한 액션 플랜\n\n`
     
     if (strategyData.actionPlan && strategyData.actionPlan.length > 0) {
       strategyData.actionPlan.forEach((action: any) => {
@@ -1141,8 +1055,6 @@ videoCards 필드가 없으면 응답이 거부됩니다. 반드시 3개 영상 
         strategyText += `\n`
       })
     }
-    
-    strategyText += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`
 
     // 5. 결과 반환
     return c.json({
@@ -1654,9 +1566,9 @@ app.post('/api/youtube/predict', async (c) => {
     }
 
     // AI 프롬프트 생성
-    const prompt = `You are a YouTube analytics expert. Analyze this video and predict its performance.
+    const prompt = `You are a YouTube analytics expert. Analyze this video and assess its performance trajectory.
 
-Video Information:
+## Video Information
 - Title: ${video.snippet?.title}
 - Views: ${video.statistics?.viewCount}
 - Likes: ${video.statistics?.likeCount}
@@ -1664,27 +1576,28 @@ Video Information:
 - Published: ${video.snippet?.publishedAt}
 - Channel Subscribers: ${channelInfo?.subscriberCount || 'Unknown'}
 
-Based on current metrics, predict:
-1. Views in 24 hours
-2. Views in 7 days
-3. Final estimated views
-4. Performance level (viral/algorithm/normal/low)
-5. Confidence score (0-100%)
+## Analysis Required
+
+Based on current metrics, assess:
+1. Growth trajectory (accelerating/stable/declining)
+2. Performance level (viral/algorithm-boosted/normal/low)
+3. Confidence in assessment (high/medium/low)
 
 Also provide recommendations:
-1. Optimal upload time (day of week and hour)
-2. Top 10 recommended keywords
-3. Recommended video length (min-max minutes)
-4. Thumbnail improvement suggestions
+1. Optimal upload time (day of week and hour) with reasoning
+2. Top 10 recommended keywords for similar content
+3. Recommended video length range (min-max minutes) based on category norms
+4. Specific thumbnail improvement suggestions
+
+Important: Do NOT fabricate exact view count predictions. Use qualitative assessments (e.g., "growth trajectory: accelerating") instead of made-up numbers.
 
 Return JSON format:
 {
   "predictions": {
-    "views24h": number,
-    "views7d": number,
-    "viewsFinal": number,
+    "growthTrajectory": "accelerating|stable|declining",
     "performanceLevel": "viral|algorithm|normal|low",
-    "confidence": number
+    "confidence": "high|medium|low",
+    "assessment": "Brief qualitative assessment of the video's trajectory"
   },
   "recommendations": {
     "optimalUploadTime": {
@@ -1692,9 +1605,9 @@ Return JSON format:
       "hourOfDay": number (0-23),
       "reason": "string"
     },
-    "keywords": ["keyword1", "keyword2", ...],
+    "keywords": ["keyword1", "keyword2"],
     "videoLength": { "min": number, "max": number },
-    "thumbnailSuggestions": ["suggestion1", ...]
+    "thumbnailSuggestions": ["specific suggestion 1", "specific suggestion 2"]
   }
 }`
 
@@ -1968,12 +1881,21 @@ app.post('/api/youtube/simulate', async (c) => {
     
     // 3. 카테고리 보정 계수
     const categoryMultipliers: Record<string, number> = {
+      '1': 1.0,   // 영화/애니메이션
+      '2': 1.0,   // 자동차
       '10': 1.5,  // 음악 (높은 조회수)
+      '15': 1.0,  // 반려동물
+      '17': 1.3,  // 스포츠
+      '19': 1.0,  // 여행/이벤트
       '20': 1.4,  // 게임
-      '24': 1.3,  // 엔터테인먼트
       '22': 1.2,  // 브이로그
+      '23': 1.1,  // 코미디
+      '24': 1.2,  // 엔터테인먼트
+      '25': 1.1,  // 뉴스
+      '26': 1.1,  // 노하우/스타일
       '27': 1.1,  // 교육
       '28': 1.1,  // 과학기술
+      '29': 0.9,  // 사회/시사
     }
     const categoryMultiplier = categoryId ? (categoryMultipliers[categoryId] || 1.0) : 1.0
     
@@ -2151,6 +2073,7 @@ app.post('/api/youtube/deep-analyze', async (c) => {
     // 4. Gemini 분석 요청
     const analysisPrompt = `다음 YouTube 영상을 전문적으로 분석해주세요:
 
+## 영상 정보
 제목: ${snippet.title}
 채널: ${snippet.channelTitle}
 조회수: ${statistics.viewCount}
@@ -2160,6 +2083,13 @@ app.post('/api/youtube/deep-analyze', async (c) => {
 성과도: ${performance.toFixed(2)}% (${performanceLevel})
 설명: ${snippet.description.substring(0, 500)}
 
+## 분석 규칙
+- 이 영상이 잘 된(또는 안 된) 구체적 원인을 분석하세요
+- 근거 없는 수치(클릭률 N%, CTR 등)를 만들지 마세요
+- 개선 효과는 "높음/중간/낮음"으로 표현하세요
+- 구분선(━━━, ---, ===)을 사용하지 마세요
+- strategy 필드에는 "다음 영상 제목에 숫자를 넣고 8분 이내로 편집하세요" 수준의 구체적 행동을 제시하세요
+
 다음 항목을 JSON 형식으로 분석해주세요:
 {
   "strengths": ["강점 1", "강점 2", "강점 3"],
@@ -2168,12 +2098,12 @@ app.post('/api/youtube/deep-analyze', async (c) => {
   "threats": ["위협 1", "위협 2"],
   "titleAnalysis": {
     "score": 85,
-    "feedback": "제목 분석 피드백"
+    "feedback": "제목 구조/길이/키워드 배치 분석 피드백"
   },
-  "thumbnailSuggestions": ["제안 1", "제안 2"],
-  "contentStrategy": "콘텐츠 전략 제안",
+  "thumbnailSuggestions": ["구체적 제안 1", "구체적 제안 2"],
+  "contentStrategy": "바로 실행 가능한 콘텐츠 전략 제안",
   "targetAudience": "타겟 오디언스 분석",
-  "engagementTips": ["팁 1", "팁 2", "팁 3"]
+  "engagementTips": ["구체적 팁 1", "구체적 팁 2", "구체적 팁 3"]
 }`
 
     const aiContent = await callGemini(
@@ -2509,12 +2439,17 @@ app.post('/api/youtube/ab-test', async (c) => {
 변형 A: "${variantA.title}"
 변형 B: "${variantB.title}"
 
+분석 규칙:
+- 구분선 사용 금지
+- 구체적 개선안 제시 (예: "제목에 숫자를 추가하세요")
+- 근거 없는 수치(CTR, 클릭률 등) 생성 금지
+
 JSON 형식으로 다음을 제공해주세요:
 {
   "comparison": "비교 분석 (100자)",
   "winner": "A" 또는 "B",
   "reason": "승자 선정 이유 (150자)",
-  "improvements": ["개선 제안 1", "개선 제안 2"]
+  "improvements": ["구체적 개선 제안 1", "구체적 개선 제안 2"]
 }`
 
         const aiContent = await callGemini(
@@ -2681,8 +2616,8 @@ app.post('/api/youtube/summarize', authMiddleware, async (c) => {
     // Gemini로 요약 생성
     const summary = await callGemini(
       c.env.GEMINI_API_KEY,
-      '당신은 YouTube 영상을 분석하는 전문가입니다. 영상의 제목과 설명을 바탕으로 핵심 내용을 간결하고 명확하게 요약해주세요.',
-      `다음 YouTube 영상을 요약해주세요:\n\n제목: ${title}\n\n설명: ${description}\n\n요약 형식:\n1. 핵심 주제 (1-2문장)\n2. 주요 내용 (3-5개 불릿 포인트)\n3. 대상 시청자 (1문장)\n4. 시청 추천도 (1문장)`,
+      '당신은 YouTube 영상을 분석하는 전문가입니다. 영상의 제목과 설명을 바탕으로 핵심 내용을 간결하고 명확하게 요약해주세요. 구분선(━━━, ---, ===)을 사용하지 마세요. 섹션 구분은 ## 제목으로만 하세요.',
+      `다음 YouTube 영상을 요약해주세요:\n\n제목: ${title}\n\n설명: ${description}\n\n요약 형식:\n## 핵심 주제\n1-2문장 요약\n\n## 주요 내용\n- 불릿 포인트 3-5개\n\n## 대상 시청자\n1문장\n\n## 시청 추천도\n1문장`,
       { temperature: 0.7, maxTokens: 1000 }
     )
     
@@ -2764,8 +2699,8 @@ app.post('/api/youtube/transcript', authMiddleware, async (c) => {
     // Gemini로 스크립트 생성
     const transcript = await callGemini(
       c.env.GEMINI_API_KEY,
-      '당신은 YouTube 영상 스크립트 작성 전문가입니다. 영상의 제목과 설명을 바탕으로 전체 스크립트를 생성해주세요.',
-      `다음 YouTube 영상의 전체 스크립트를 작성해주세요:\n\n제목: ${title}\n\n설명: ${description}\n\n스크립트 형식:\n[00:00] 인트로\n- 인사말\n- 영상 주제 소개\n\n[00:30] 본론 1\n- 핵심 포인트 설명\n\n[01:00] 본론 2\n- 추가 설명 및 예시\n\n[02:00] 결론\n- 요약 및 마무리\n\n각 섹션에 대해 구체적인 대사를 작성해주세요.`,
+      '당신은 YouTube 영상 스크립트 작성 전문가입니다. 영상의 제목과 설명을 바탕으로 전체 스크립트를 생성해주세요. 구분선(━━━, ---, ===)을 사용하지 마세요. 섹션 구분은 ## 제목으로만 하세요.',
+      `다음 YouTube 영상의 전체 스크립트를 작성해주세요:\n\n제목: ${title}\n\n설명: ${description}\n\n스크립트 형식:\n## [00:00] 인트로\n- 인사말\n- 영상 주제 소개\n\n## [00:30] 본론 1\n- 핵심 포인트 설명\n\n## [01:00] 본론 2\n- 추가 설명 및 예시\n\n## [02:00] 결론\n- 요약 및 마무리\n\n각 섹션에 대해 구체적인 대사를 작성해주세요.`,
       { temperature: 0.8, maxTokens: 2000 }
     )
     
