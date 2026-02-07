@@ -63,7 +63,7 @@ const LANGUAGE_NAMES: Record<string, string> = {
 export async function translateKeyword(
   keyword: string,
   regionCode: string,
-  openaiApiKey?: string
+  geminiApiKey?: string
 ): Promise<string> {
   // 전세계 선택 시 번역 안 함
   if (!regionCode || regionCode === 'all') {
@@ -77,45 +77,51 @@ export async function translateKeyword(
     return keyword
   }
   
-  // OpenAI API 키가 없으면 번역 스킵
-  if (!openaiApiKey) {
-    console.warn('⚠️ [번역] OpenAI API 키 없음 - 번역 스킵')
+  // Gemini API 키가 없으면 번역 스킵
+  if (!geminiApiKey) {
+    console.warn('⚠️ [번역] Gemini API 키 없음 - 번역 스킵')
     return keyword
   }
   
   try {
     console.log(`🌐 [번역 시작] "${keyword}" → ${LANGUAGE_NAMES[targetLang] || targetLang}`)
     
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `당신은 YouTube 검색 키워드 번역 전문가입니다. 사용자가 입력한 키워드를 ${LANGUAGE_NAMES[targetLang] || targetLang}로 자연스럽게 번역하세요. 번역된 단어만 출력하고 설명은 하지 마세요.`
-          },
-          {
-            role: 'user',
-            content: keyword
+    const systemPrompt = `당신은 YouTube 검색 키워드 번역 전문가입니다. 사용자가 입력한 키워드를 ${LANGUAGE_NAMES[targetLang] || targetLang}로 자연스럽게 번역하세요. 번역된 단어만 출력하고 설명은 하지 마세요.`
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: `${systemPrompt}\n\n${keyword}` }]
+            }
+          ],
+          generationConfig: {
+            maxOutputTokens: 20,
+            temperature: 0.3
           }
-        ],
-        max_tokens: 20,
-        temperature: 0.3
-      })
-    })
+        })
+      }
+    )
     
     if (!response.ok) {
-      console.error('❌ [번역] OpenAI API 오류:', response.statusText)
+      console.error('❌ [번역] Gemini API 오류:', response.statusText)
       return keyword
     }
     
     const data = await response.json()
-    const translated = data.choices[0].message.content.trim()
+    const translated = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim()
+    
+    if (!translated) {
+      console.warn('⚠️ [번역] Gemini 응답이 비어있음')
+      return keyword
+    }
     
     console.log(`✅ [번역 완료] "${keyword}" → "${translated}"`)
     return translated
