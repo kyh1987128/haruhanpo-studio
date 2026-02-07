@@ -111,13 +111,11 @@ export function addInstagramImageMetadata(
   }
   
   // 인스타그램은 이미지를 별도로 업로드하므로
-  // 콘텐츠에는 이미지 정보를 간단히 추가
+  // 콘텐츠에는 이미지 정보를 한 줄로 간단히 추가
   let result = content;
   
-  // 이미지 정보를 간결하게 추가
-  result += '\n\n--- 이미지 정보:\n';
   images.forEach((img, index) => {
-    result += `${index + 1}. ${img.filename || img.alt || `이미지${index + 1}`}\n`;
+    result += `\n[이미지 ${index + 1}: ${img.filename || img.alt || `이미지${index + 1}`}]`;
   });
   
   return result;
