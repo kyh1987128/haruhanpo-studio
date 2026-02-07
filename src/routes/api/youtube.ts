@@ -125,6 +125,10 @@ type Bindings = {
   GEMINI_API_KEY: string
 }
 
+// 트렌드 캐시: { "KR": { timestamp: number, data: { [categoryId: string]: any[] } } }
+const trendCache: Record<string, { timestamp: number; data: Record<string, any[]> }> = {};
+const TREND_CACHE_TTL = 60 * 60 * 1000; // 1시간 (밀리초)
+
 const app = new Hono<{ Bindings: Bindings }>()
 
 // CORS 설정
@@ -821,6 +825,89 @@ app.post('/api/youtube/trending', async (c) => {
         message: error.message || '인기 영상 조회 중 오류가 발생했습니다.'
       }
     }, 500)
+  }
+})
+
+// ========================================
+// Phase 2.6: 다국가 트렌드 일괄 조회 API
+// ========================================
+app.post('/api/youtube/trending-all', async (c) => {
+  try {
+    const body = await c.req.json()
+    const regionCode = body.regionCode || 'KR'
+
+    console.log(`🌍 [트렌딩-ALL] 요청: regionCode=${regionCode}`)
+
+    // 캐시 확인
+    const cached = trendCache[regionCode]
+    if (cached && (Date.now() - cached.timestamp) < TREND_CACHE_TTL) {
+      console.log(`✅ [트렌딩-ALL] 캐시 히트: ${regionCode}`)
+      return c.json({ success: true, data: cached.data, fromCache: true })
+    }
+
+    // YouTube API 키 확인
+    const youtubeApiKey = c.env.YOUTUBE_API_KEY
+    if (!youtubeApiKey) {
+      return c.json({ success: false, error: { code: 'API_KEY_MISSING', message: 'YouTube API 키가 설정되지 않았습니다.' } }, 500)
+    }
+
+    // 16개 카테고리 ID 목록 ('0'은 전체 — videoCategoryId 미지정)
+    const categoryIds = ['0', '1', '2', '10', '15', '17', '19', '20', '22', '23', '24', '25', '26', '27', '28', '29']
+    const result: Record<string, any[]> = {}
+
+    for (const catId of categoryIds) {
+      try {
+        const url = new URL('https://www.googleapis.com/youtube/v3/videos')
+        url.searchParams.set('part', 'snippet,statistics,contentDetails')
+        url.searchParams.set('chart', 'mostPopular')
+        url.searchParams.set('regionCode', regionCode)
+        url.searchParams.set('maxResults', '20')
+        url.searchParams.set('key', youtubeApiKey)
+
+        if (catId !== '0') {
+          url.searchParams.set('videoCategoryId', catId)
+        }
+
+        const response = await fetch(url.toString())
+
+        if (response.ok) {
+          const data: any = await response.json()
+          if (data.items && data.items.length > 0) {
+            // 평탄화된 구조로 변환
+            result[catId] = data.items.map((item: any) => ({
+              videoId: item.id,
+              title: item.snippet.title,
+              channel: item.snippet.channelTitle,
+              channelId: item.snippet.channelId,
+              thumbnailUrl: item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.high?.url || '',
+              publishedAt: item.snippet.publishedAt,
+              views: parseInt(item.statistics?.viewCount || '0'),
+              likes: parseInt(item.statistics?.likeCount || '0'),
+              comments: parseInt(item.statistics?.commentCount || '0'),
+              duration: item.contentDetails?.duration || '',
+              categoryId: item.snippet.categoryId
+            }))
+          }
+        }
+
+        // rate limit 방지: 200ms 대기
+        await new Promise(resolve => setTimeout(resolve, 200))
+
+      } catch (catError: any) {
+        console.warn(`트렌딩-ALL: regionCode=${regionCode}, catId=${catId} 실패:`, catError.message)
+      }
+    }
+
+    // 캐시 저장
+    trendCache[regionCode] = { timestamp: Date.now(), data: result }
+
+    console.log(`✅ [트렌딩-ALL] ${regionCode} 완료 — ${Object.keys(result).length}개 카테고리`)
+
+    return c.json({ success: true, data: result, fromCache: false })
+
+  } catch (error: any) {
+    console.error('trending-all 에러:', error.message)
+    return c.json({ success: false, error: { code: 'TRENDING_ALL_ERROR', message: error.message || '다국가 트렌드 조회 오류' } }, 500)
   }
 })
 

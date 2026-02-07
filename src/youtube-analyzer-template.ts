@@ -1215,8 +1215,8 @@ export function youtubeAnalyzerTemplate() {
               트렌드 인사이트
             </h1>
             <p class="text-gray-600">
-              카테고리별 인기 영상을 확인하세요 
-              <span class="text-sm text-gray-500">(4시간마다 자동 업데이트)</span>
+              국가별 카테고리 인기 영상을 확인하세요 
+              <span class="text-sm text-gray-500">(1시간마다 서버 캐시)</span>
             </p>
           </div>
 
@@ -1235,8 +1235,34 @@ export function youtubeAnalyzerTemplate() {
             </div>
 
             <!-- 카테고리 탭 -->
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;">
+              <label for="trendRegionSelect" style="font-weight: 600; font-size: 14px; color: #374151;">국가 선택:</label>
+              <select id="trendRegionSelect" style="padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; background: white; cursor: pointer; min-width: 140px;">
+                <option value="KR">🇰🇷 한국</option>
+                <option value="US">🇺🇸 미국</option>
+                <option value="JP">🇯🇵 일본</option>
+                <option value="GB">🇬🇧 영국</option>
+                <option value="FR">🇫🇷 프랑스</option>
+                <option value="DE">🇩🇪 독일</option>
+                <option value="IN">🇮🇳 인도</option>
+                <option value="BR">🇧🇷 브라질</option>
+                <option value="ID">🇮🇩 인도네시아</option>
+                <option value="TH">🇹🇭 태국</option>
+                <option value="VN">🇻🇳 베트남</option>
+                <option value="PH">🇵🇭 필리핀</option>
+                <option value="TW">🇹🇼 대만</option>
+                <option value="CA">🇨🇦 캐나다</option>
+                <option value="AU">🇦🇺 호주</option>
+                <option value="MX">🇲🇽 멕시코</option>
+                <option value="ES">🇪🇸 스페인</option>
+                <option value="IT">🇮🇹 이탈리아</option>
+                <option value="RU">🇷🇺 러시아</option>
+                <option value="TR">🇹🇷 터키</option>
+              </select>
+              <span id="trendCacheStatus" style="font-size: 12px; color: #9ca3af;"></span>
+            </div>
             <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
-              <button class="category-tab-btn active px-4 py-2 rounded-lg text-sm font-medium transition" data-category="all">
+              <button class="category-tab-btn active px-4 py-2 rounded-lg text-sm font-medium transition" data-category="0">
                 전체
               </button>
               <button class="category-tab-btn px-4 py-2 rounded-lg text-sm font-medium transition" data-category="10">

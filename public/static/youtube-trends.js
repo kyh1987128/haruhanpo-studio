@@ -1,15 +1,15 @@
 // ========================================
-// YouTube Trends Insights - 단순화 (Supabase 제거)
+// YouTube Trends Insights - 다국가 캐시 기반
 // ========================================
 
 console.log('🔥 [YouTube Trends] 스크립트 로드');
 
-let currentCategory = 'all';
-let trendAbortController = null;
-let trendsData = {
-  keywords: [],
-  videos: []
-};
+// 상태 변수
+let trendDataCache = {}; // { "KR": { "0": [...], "10": [...] } }
+let currentRegion = 'KR';
+let currentCategory = '0'; // '0' = 전체
+let isLoadingTrends = false;
+let trendsData = { keywords: [], videos: [] };
 
 /**
  * 트렌드 인사이트 초기화
@@ -17,18 +17,42 @@ let trendsData = {
 async function initTrendsInsights() {
   console.log('🔥 [Trends] 트렌드 인사이트 초기화');
   
-  // 급상승 키워드는 숨김 처리 (Worker 없이는 불가능)
+  // 급상승 키워드는 숨김 처리
   const keywordsSection = document.querySelector('.keywords-section');
   if (keywordsSection) {
     keywordsSection.style.display = 'none';
   }
   
-  // 인기 영상만 표시
-  await loadTrendVideos(currentCategory);
+  // 리전 드롭다운 이벤트 리스너
+  const regionSelect = document.getElementById('trendRegionSelect');
+  if (regionSelect) {
+    regionSelect.addEventListener('change', function() {
+      currentRegion = this.value;
+      currentCategory = '0'; // 리전 변경 시 전체 탭으로 리셋
+      
+      // 활성 버튼 스타일 리셋 → 전체 버튼 활성화
+      document.querySelectorAll('.category-tab-btn').forEach(b => {
+        b.classList.remove('active', 'bg-green-100', 'text-green-700');
+        b.classList.add('bg-gray-100', 'text-gray-600');
+      });
+      const allBtn = document.querySelector('.category-tab-btn[data-category="0"]');
+      if (allBtn) {
+        allBtn.classList.add('active', 'bg-green-100', 'text-green-700');
+        allBtn.classList.remove('bg-gray-100', 'text-gray-600');
+      }
+      
+      loadAllTrendData(currentRegion);
+    });
+  }
   
   // 카테고리 버튼 이벤트 리스너
   document.querySelectorAll('.category-tab-btn').forEach(btn => {
     btn.addEventListener('click', function() {
+      if (this.disabled) return;
+      
+      const catId = this.dataset.category;
+      currentCategory = catId;
+      
       // 활성 버튼 스타일 변경
       document.querySelectorAll('.category-tab-btn').forEach(b => {
         b.classList.remove('active', 'bg-green-100', 'text-green-700');
@@ -37,9 +61,8 @@ async function initTrendsInsights() {
       this.classList.add('active', 'bg-green-100', 'text-green-700');
       this.classList.remove('bg-gray-100', 'text-gray-600');
       
-      // 카테고리 변경
-      currentCategory = this.dataset.category;
-      loadTrendVideos(currentCategory);
+      // 캐시에서 렌더링 (API 호출 없음)
+      renderTrendVideos(catId);
     });
   });
   
@@ -49,105 +72,188 @@ async function initTrendsInsights() {
     activeBtn.classList.add('bg-green-100', 'text-green-700');
     activeBtn.classList.remove('bg-gray-100', 'text-gray-600');
   }
+  
+  // 초기 로드
+  await loadAllTrendData(currentRegion);
 }
 
 /**
- * 인기 영상 로드 (YouTube Trending API 직접 호출)
+ * 전체 카테고리 데이터 일괄 로드 (서버 캐시 활용)
  */
-async function loadTrendVideos(category = 'all') {
-  console.log(`📹 [Trends] 인기 영상 로드 시작 (카테고리: ${category})`);
-  
-  // 이전 요청 취소
-  if (trendAbortController) {
-    trendAbortController.abort();
-  }
-  trendAbortController = new AbortController();
-  const signal = trendAbortController.signal;
+async function loadAllTrendData(regionCode) {
+  if (isLoadingTrends) return;
+  isLoadingTrends = true;
   
   const loadingEl = document.getElementById('videos-loading');
   const listEl = document.getElementById('videos-list');
   const emptyEl = document.getElementById('videos-empty');
   const updateEl = document.getElementById('videos-last-update');
   
-  // 로딩 표시 + 기존 결과 숨김
+  // 로딩 UI 표시
   loadingEl?.classList.remove('hidden');
   listEl?.classList.add('hidden');
   emptyEl?.classList.add('hidden');
+  if (updateEl) updateEl.textContent = '로딩 중...';
+  
+  // 카테고리 버튼 모두 비활성화 (로딩 중)
+  disableAllCategoryButtons();
   
   try {
-    const response = await fetch('/api/youtube/trending', {
+    const response = await fetch('/api/youtube/trending-all', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        regionCode: 'KR', 
-        maxResults: 20,
-        videoCategoryId: category !== 'all' ? category : undefined
-      }),
-      signal: signal
+      body: JSON.stringify({ regionCode: regionCode })
     });
-    
-    if (!response.ok) {
-      throw new Error(`API 오류: ${response.status}`);
-    }
     
     const result = await response.json();
     
-    if (!result.success || !result.data?.videos) {
-      throw new Error(result.error?.message || '데이터 없음');
-    }
-    
-    const videos = result.data.videos.map(v => ({
-      video_id: v.videoId || v.id,
-      title: v.title || v.snippet?.title || '',
-      channel_title: v.channel || v.snippet?.channelTitle || '',
-      views: v.views || v.statistics?.viewCount || 0,
-      published_at: v.publishedAt || v.snippet?.publishedAt || new Date().toISOString(),
-      category: v.categoryId || v.snippet?.categoryId || category || '24',
-      thumbnail_url: v.thumbnailUrl || v.snippet?.thumbnails?.medium?.url || '',
-      updated_at: new Date().toISOString()
-    }));
-    
-    console.log(`✅ [Trends] ${videos.length}개 영상 로드 완료`);
-    
-    trendsData.videos = videos;
-    window.trendingVideos = videos;
-    
-    if (videos && videos.length > 0) {
-      renderVideos(videos);
-      listEl?.classList.remove('hidden');
-      if (updateEl) updateEl.textContent = `마지막 업데이트: 방금 전`;
+    if (result.success) {
+      // 캐시 저장
+      trendDataCache[regionCode] = result.data;
+      
+      // 캐시 상태 표시
+      const cacheStatus = document.getElementById('trendCacheStatus');
+      if (cacheStatus) {
+        cacheStatus.textContent = result.fromCache ? '(캐시된 데이터)' : '(방금 업데이트됨)';
+      }
+      
+      if (updateEl) {
+        updateEl.textContent = result.fromCache ? '캐시 데이터 사용' : `마지막 업데이트: 방금 전`;
+      }
+      
+      // 카테고리 버튼 활성/비활성 처리
+      updateCategoryButtons(result.data);
+      
+      // 현재 선택된 카테고리 데이터 표시
+      renderTrendVideos(currentCategory);
+      
     } else {
-      // 빈 결과: 카테고리별 메시지 구분
       if (emptyEl) {
-        const noDataCategories = ['1', '2', '15', '17', '19', '26', '29'];
-        if (noDataCategories.includes(category)) {
-          emptyEl.innerHTML = '<i class="fas fa-info-circle text-4xl mb-3 text-blue-300"></i><p>이 카테고리는 현재 인기 영상 데이터가 제공되지 않습니다.</p>';
-        } else {
-          emptyEl.innerHTML = '<i class="fas fa-video-slash text-4xl mb-3 text-gray-300"></i><p>인기 영상이 없습니다.</p>';
-          console.warn(`⚠️ [기본 카테고리 ${category}] 빈 배열 반환됨`);
-        }
+        emptyEl.innerHTML = '<i class="fas fa-exclamation-triangle text-4xl mb-3 text-red-300"></i><p>데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</p>';
         emptyEl.classList.remove('hidden');
       }
-      if (updateEl) updateEl.textContent = '데이터 없음';
+      if (updateEl) updateEl.textContent = '로드 실패';
+      enableAllCategoryButtons();
     }
+    
   } catch (error) {
-    if (error.name === 'AbortError') {
-      console.log('🚫 [Trends] 이전 요청 취소됨');
-      return;
-    }
-    console.error('❌ [Trends] 영상 로드 실패:', error);
-    showError('영상을 불러오는 데 실패했습니다.');
+    console.error('❌ [Trends] 트렌드 데이터 로드 실패:', error);
     if (emptyEl) {
-      emptyEl.innerHTML = '<i class="fas fa-exclamation-triangle text-4xl mb-3 text-red-300"></i><p>영상을 불러오는 데 실패했습니다.</p>';
+      emptyEl.innerHTML = '<i class="fas fa-exclamation-triangle text-4xl mb-3 text-red-300"></i><p>네트워크 오류가 발생했습니다.</p>';
       emptyEl.classList.remove('hidden');
     }
+    if (updateEl) updateEl.textContent = '네트워크 오류';
+    enableAllCategoryButtons();
   } finally {
     loadingEl?.classList.add('hidden');
+    isLoadingTrends = false;
   }
 }
 
 /**
- * 영상 렌더링
+ * 카테고리 버튼 활성/비활성 처리
+ */
+function updateCategoryButtons(data) {
+  document.querySelectorAll('.category-tab-btn').forEach(btn => {
+    const catId = btn.getAttribute('data-category');
+    
+    if (catId === '0' || catId === 'all') {
+      // 전체 버튼은 항상 활성화
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+    } else if (data[catId] && data[catId].length > 0) {
+      // 데이터 있음 → 활성화
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+    } else {
+      // 데이터 없음 → 비활성화
+      btn.disabled = true;
+      btn.style.opacity = '0.4';
+      btn.style.cursor = 'not-allowed';
+    }
+  });
+}
+
+function disableAllCategoryButtons() {
+  document.querySelectorAll('.category-tab-btn').forEach(btn => {
+    btn.disabled = true;
+    btn.style.opacity = '0.4';
+    btn.style.cursor = 'not-allowed';
+  });
+}
+
+function enableAllCategoryButtons() {
+  document.querySelectorAll('.category-tab-btn').forEach(btn => {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+  });
+}
+
+/**
+ * 캐시에서 카테고리 영상 렌더링 (API 호출 없음)
+ */
+function renderTrendVideos(categoryId) {
+  const regionData = trendDataCache[currentRegion];
+  if (!regionData) return;
+  
+  const listEl = document.getElementById('videos-list');
+  const emptyEl = document.getElementById('videos-empty');
+  
+  let videos = [];
+  
+  if (categoryId === '0' || categoryId === 'all') {
+    videos = regionData['0'] || [];
+  } else {
+    videos = regionData[categoryId] || [];
+  }
+  
+  // 기존 videos 필드명 정규화
+  const normalizedVideos = videos.map(v => ({
+    video_id: v.videoId || v.id,
+    title: v.title || v.snippet?.title || '',
+    channel_title: v.channel || v.snippet?.channelTitle || '',
+    views: v.views || parseInt(v.statistics?.viewCount || '0') || 0,
+    likes: v.likes || parseInt(v.statistics?.likeCount || '0') || 0,
+    published_at: v.publishedAt || v.snippet?.publishedAt || new Date().toISOString(),
+    category: v.categoryId || v.snippet?.categoryId || categoryId || '0',
+    thumbnail_url: v.thumbnailUrl || v.snippet?.thumbnails?.medium?.url || '',
+    updated_at: new Date().toISOString()
+  }));
+  
+  // 글로벌 상태 업데이트
+  trendsData.videos = normalizedVideos;
+  window.trendingVideos = normalizedVideos;
+  
+  if (normalizedVideos.length > 0) {
+    renderVideos(normalizedVideos);
+    listEl?.classList.remove('hidden');
+    emptyEl?.classList.add('hidden');
+  } else {
+    listEl?.classList.add('hidden');
+    if (emptyEl) {
+      emptyEl.innerHTML = '<i class="fas fa-info-circle text-4xl mb-3 text-blue-300"></i><p>이 카테고리는 현재 인기 영상 데이터가 제공되지 않습니다.</p>';
+      emptyEl.classList.remove('hidden');
+    }
+  }
+}
+
+/**
+ * 기존 호환용 — loadTrendVideos
+ */
+async function loadTrendVideos(categoryId) {
+  if (trendDataCache[currentRegion]) {
+    currentCategory = categoryId || '0';
+    renderTrendVideos(currentCategory);
+    return;
+  }
+  await loadAllTrendData(currentRegion);
+}
+
+/**
+ * 영상 카드 렌더링
  */
 function renderVideos(videos) {
   const listEl = document.getElementById('videos-list');
@@ -161,6 +267,7 @@ function renderVideos(videos) {
            channel: '${escapeHtml(video.channel_title).replace(/'/g, "\\'")}',
            thumbnailUrl: 'https://i.ytimg.com/vi/${video.video_id}/hqdefault.jpg',
            views: ${video.views},
+           likes: ${video.likes || 0},
            publishedAt: '${video.published_at}',
            category: '${video.category}'
          })">
@@ -215,7 +322,7 @@ function openVideo(videoId) {
 }
 
 /**
- * 트렌드 우측 패널 업데이트 (API 호출 없이 풍부한 정보 표시)
+ * 트렌드 우측 패널 업데이트
  */
 function updateTrendDetailPanel(video) {
   const panelEl = document.getElementById('trend-detail-panel');
@@ -226,7 +333,6 @@ function updateTrendDetailPanel(video) {
   
   console.log('📊 영상 데이터:', video);
   
-  // 계산 가능한 메트릭
   const publishDate = new Date(video.publishedAt);
   const now = new Date();
   const daysAgo = Math.floor((now - publishDate) / (1000 * 60 * 60 * 24));
@@ -234,7 +340,10 @@ function updateTrendDetailPanel(video) {
   const avgViewsPerDay = daysAgo > 0 ? Math.floor(video.views / daysAgo) : video.views;
   const avgViewsPerHour = hoursAgo > 0 ? Math.floor(video.views / hoursAgo) : video.views;
   
-  // 트렌드 배지 결정
+  // 좋아요율
+  const likeRate = video.views > 0 ? ((video.likes || 0) / video.views * 100).toFixed(2) : '0.00';
+  
+  // 트렌드 배지
   let trendBadge = '';
   if (daysAgo <= 1) {
     trendBadge = '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">🆕 신규</span>';
@@ -244,47 +353,23 @@ function updateTrendDetailPanel(video) {
     trendBadge = '<span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded">⭐ 인기</span>';
   }
   
-  // 조회수 단계별 등급
-  let viewRank = '';
-  let viewColor = '';
-  if (video.views >= 10000000) {
-    viewRank = '다이아몬드';
-    viewColor = 'text-blue-600';
-  } else if (video.views >= 5000000) {
-    viewRank = '플래티넘';
-    viewColor = 'text-purple-600';
-  } else if (video.views >= 1000000) {
-    viewRank = '골드';
-    viewColor = 'text-yellow-600';
-  } else if (video.views >= 500000) {
-    viewRank = '실버';
-    viewColor = 'text-gray-500';
-  } else if (video.views >= 100000) {
-    viewRank = '브론즈';
-    viewColor = 'text-orange-600';
-  } else {
-    viewRank = '일반';
-    viewColor = 'text-gray-600';
-  }
+  // 조회수 등급
+  let viewRank = '', viewColor = '';
+  if (video.views >= 10000000) { viewRank = '다이아몬드'; viewColor = 'text-blue-600'; }
+  else if (video.views >= 5000000) { viewRank = '플래티넘'; viewColor = 'text-purple-600'; }
+  else if (video.views >= 1000000) { viewRank = '골드'; viewColor = 'text-yellow-600'; }
+  else if (video.views >= 500000) { viewRank = '실버'; viewColor = 'text-gray-500'; }
+  else if (video.views >= 100000) { viewRank = '브론즈'; viewColor = 'text-orange-600'; }
+  else { viewRank = '일반'; viewColor = 'text-gray-600'; }
   
-  // 게시 타이밍 분석
+  // 게시 타이밍
   const dayOfWeek = publishDate.getDay();
   const hour = publishDate.getHours();
-  let timingInfo = '';
-  if (dayOfWeek === 0 || dayOfWeek === 6) {
-    timingInfo = '주말 업로드';
-  } else {
-    timingInfo = '평일 업로드';
-  }
-  if (hour >= 18 && hour <= 23) {
-    timingInfo += ' · 황금시간대';
-  } else if (hour >= 12 && hour <= 17) {
-    timingInfo += ' · 오후';
-  } else if (hour >= 6 && hour <= 11) {
-    timingInfo += ' · 오전';
-  } else {
-    timingInfo += ' · 심야';
-  }
+  let timingInfo = (dayOfWeek === 0 || dayOfWeek === 6) ? '주말 업로드' : '평일 업로드';
+  if (hour >= 18 && hour <= 23) timingInfo += ' · 황금시간대';
+  else if (hour >= 12 && hour <= 17) timingInfo += ' · 오후';
+  else if (hour >= 6 && hour <= 11) timingInfo += ' · 오전';
+  else timingInfo += ' · 심야';
   
   // 제목 분석
   const titleLength = video.title.length;
@@ -324,6 +409,10 @@ function updateTrendDetailPanel(video) {
             <span class="text-sm font-semibold ${viewColor}">${viewRank}</span>
           </div>
           <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-600">좋아요율</span>
+            <span class="text-sm font-semibold text-green-600">${likeRate}%</span>
+          </div>
+          <div class="flex items-center justify-between">
             <span class="text-sm text-gray-600">게시일</span>
             <span class="text-sm font-medium text-gray-900">${formatRelativeTime(publishDate)}</span>
           </div>
@@ -360,18 +449,14 @@ function updateTrendDetailPanel(video) {
             </div>
             <div class="text-xs text-gray-500 mt-2">
               ${publishDate.toLocaleString('ko-KR', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric', 
-                hour: '2-digit', 
-                minute: '2-digit',
-                weekday: 'short'
+                year: 'numeric', month: 'long', day: 'numeric', 
+                hour: '2-digit', minute: '2-digit', weekday: 'short'
               })}
             </div>
           </div>
         </div>
         
-        <!-- 경과 시간 상세 -->
+        <!-- 경과 시간 -->
         <div class="border-t pt-3">
           <h4 class="text-sm font-semibold text-gray-700 mb-2">⏱️ 경과 시간</h4>
           <div class="grid grid-cols-2 gap-2">
@@ -439,24 +524,18 @@ function toggleDescription() {
 function searchKeyword(keyword) {
   console.log('🔍 [Trends] 키워드 검색:', keyword);
   
-  // 영상 발굴 탭으로 전환
   const videoFinderTab = document.querySelector('[data-tab="video-finder"]');
   if (videoFinderTab) {
     videoFinderTab.click();
   }
   
-  // 검색 입력창에 키워드 설정
   setTimeout(() => {
     const searchInput = document.getElementById('market-search-input');
     if (searchInput) {
       searchInput.value = keyword;
       searchInput.focus();
-      
-      // 검색 버튼 클릭
       const searchBtn = document.getElementById('market-search-btn');
-      if (searchBtn) {
-        searchBtn.click();
-      }
+      if (searchBtn) searchBtn.click();
     }
   }, 100);
 }
@@ -466,7 +545,6 @@ function searchKeyword(keyword) {
  */
 function showError(message) {
   console.error('❌ [Trends]', message);
-  // 간단한 알림만 표시 (모달 대신)
 }
 
 /**
@@ -514,7 +592,8 @@ function getCategoryName(categoryId) {
     '25': '뉴스',
     '26': '하우투',
     '27': '교육',
-    '28': '과학기술'
+    '28': '과학기술',
+    '29': '사회/시사'
   };
   return categories[String(categoryId)] || '기타';
 }
@@ -534,4 +613,4 @@ function escapeHtml(text) {
   return String(text).replace(/[&<>"']/g, m => map[m]);
 }
 
-console.log('✅ [YouTube Trends] 단순화 버전 로드 완료');
+console.log('✅ [YouTube Trends] 다국가 캐시 기반 버전 로드 완료');
