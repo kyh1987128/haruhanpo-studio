@@ -147,6 +147,10 @@ export function getBlogPrompt(params: PromptParams): string {
   // 공통 ROLE + 입력
   const header = `🎯 ROLE
 너는 월 100만 방문자를 보유한 파워 블로거이자 네이버 블로그 SEO 전문가다.
+
+■ 핵심 규칙: 입력된 키워드를 기계적으로 전부 나열하지 마세요. 이 플랫폼에 가장 적합한 핵심 메시지 1~2개만 선택하여 깊이 있게 다루세요. 나머지 키워드는 자연스럽게 녹이거나 생략해도 됩니다.
+■ 이 플랫폼의 관점: 정보 전달과 실제 경험 공유 중심. 깊이 있는 분석과 구체적 사례를 포함하세요.
+
 사람이 직접 경험하고 쓴 것처럼 자연스럽고, 광고 느낌 없이, 독자에게 진짜 도움이 되는 글을 작성한다.
 어떤 산업, 어떤 제품, 어떤 타겟에도 적용 가능해야 한다.
 광고 문장, 보고서 문장, 프롬프트 흔적을 절대 남기지 않는다.
@@ -173,6 +177,7 @@ ${params.imageDescription}
 ${additionalInfo.length ? additionalInfo.join('\n') + '\n' : ''}핵심 키워드: ${params.keywords}
 산업 분야: ${params.industry}
 톤앤매너: ${params.tone}
+■ 플랫폼 기본 톤: 정보 전달 + 경험 공유체. 독자에게 설명하듯 친절하고 상세하게.
 타겟 연령대: ${params.targetAge}
 
 📌 콘텐츠 작성 전략
@@ -368,23 +373,31 @@ function getStrategyGuide(strategy: string, category: ContentCategory): string {
 export function getInstagramPrompt(params: PromptParams): string {
   return `당신은 인스타그램 마케팅 전문가입니다.
 
+■ 핵심 규칙: 입력된 키워드를 기계적으로 전부 나열하지 마세요. 이 플랫폼에 가장 적합한 핵심 메시지 1~2개만 선택하여 깊이 있게 다루세요. 나머지 키워드는 자연스럽게 녹이거나 생략해도 됩니다.
+■ 이 플랫폼의 관점: 감성과 공감 중심. 브랜드의 철학이나 사용자 경험 스토리에 집중하세요. 기능 나열 금지.
+
 브랜드: ${params.brand}
 키워드: ${params.keywords}
 톤: ${params.tone}
+■ 플랫폼 기본 톤: 공감과 감성 중심. 독자의 마음을 움직이는 따뜻한 톤. 정보 나열식 금지.
 타겟: ${params.targetAge}
 
 이미지 설명:
 ${params.imageDescription}
 
-간결하고 감성적인 캡션을 작성하세요 (300-500자).
+간결하고 감성적인 캡션을 작성하세요 (500-800자).
 해시태그 25-30개 포함.`;
 }
 
 export function getThreadsPrompt(params: PromptParams): string {
   return `당신은 스레드(Threads) 콘텐츠 전문가입니다.
 
+■ 핵심 규칙: 입력된 키워드를 기계적으로 전부 나열하지 마세요. 이 플랫폼에 가장 적합한 핵심 메시지 1~2개만 선택하여 깊이 있게 다루세요. 나머지 키워드는 자연스럽게 녹이거나 생략해도 됩니다.
+■ 이 플랫폼의 관점: 하나의 날카로운 의견이나 논점만 다루세요. 짧고 강렬하게. 기능 설명 금지.
+
 브랜드: ${params.brand}
 키워드: ${params.keywords}
+■ 플랫폼 기본 톤: 직설적이고 솔직한 톤. 생각을 툭 던지는 느낌. 짧은 문장 위주.
 
 ⚠️ 플랫폼 차별화 필수:
 - 다른 플랫폼과 동일한 내용 반복 금지
@@ -405,8 +418,12 @@ export function getThreadsPrompt(params: PromptParams): string {
 export function getYouTubePrompt(params: PromptParams): string {
   return `당신은 유튜브 숏폼 전문가입니다.
 
+■ 핵심 규칙: 입력된 키워드를 기계적으로 전부 나열하지 마세요. 이 플랫폼에 가장 적합한 핵심 메시지 1~2개만 선택하여 깊이 있게 다루세요. 나머지 키워드는 자연스럽게 녹이거나 생략해도 됩니다.
+■ 이 플랫폼의 관점: 짧은 시간 안에 '이게 뭔데?'라는 호기심을 해결해주는 구조. 핵심 1가지만.
+
 브랜드: ${params.brand}
 키워드: ${params.keywords}
+■ 플랫폼 기본 톤: 밝고 활기찬 유튜버 말투. 시청자에게 직접 말 거는 느낌.
 
 ⚠️ 플랫폼 차별화 필수:
 - 다른 플랫폼과 동일한 내용 반복 금지
@@ -429,7 +446,10 @@ export function getYouTubePrompt(params: PromptParams): string {
 export function getInstagramFeedPrompt(params: PromptParams): string {
   const category = detectContentCategory(params);
   const imageWeight = getImageWeight(category);
-  
+
+  const keywordRule = `■ 핵심 규칙: 입력된 키워드를 기계적으로 전부 나열하지 마세요. 이 플랫폼에 가장 적합한 핵심 메시지 1~2개만 선택하여 깊이 있게 다루세요. 나머지 키워드는 자연스럽게 녹이거나 생략해도 됩니다.
+■ 이 플랫폼의 관점: 감성과 공감 중심. 브랜드의 철학이나 사용자 경험 스토리에 집중하세요. 기능 나열 금지.`;
+
   const categoryRules = {
     person: `
 🎯 **콘텐츠 카테고리: 인물 소개**
@@ -454,6 +474,8 @@ export function getInstagramFeedPrompt(params: PromptParams): string {
   
   return `🎯 당신은 인스타그램 피드 전문 마케터입니다.
 
+${keywordRule}
+
 ${categoryRule}
 
 📊 INPUT 정보
@@ -462,6 +484,7 @@ ${categoryRule}
 키워드: ${params.keywords}
 산업: ${params.industry}
 톤앤매너: ${params.tone}
+■ 플랫폼 기본 톤: 공감과 감성 중심. 독자의 마음을 움직이는 따뜻한 톤. 정보 나열식 금지.
 타겟: ${params.targetAge} ${params.targetGender || '전체'}
 
 이미지 설명:
@@ -476,10 +499,7 @@ ${params.imageDescription}
 
 📌 OUTPUT 구조
 
-1. **캡션 (300-500자 초과 절대 금지)**
-
-⚠️ 중요: 본문은 반드시 500자 이내로 작성하세요.
-500자를 1글자라도 초과하면 안 됩니다.
+1. **캡션 (500-800자)**
 
 [훅 문장 - 스크롤 멈추게]
 감정/공감/질문으로 시작
@@ -515,7 +535,7 @@ ${params.imageDescription}
 
 [훅 문장]
 
-[본문 300-500자 - 500자 초과 절대 금지!]
+[본문 500-800자]
 
 [CTA]
 💬 [질문]
@@ -535,7 +555,7 @@ ${params.imageDescription}
 
 ✅ 최종 체크:
 ✓ 훅 문장 강력
-✓ 본문 300-500자 (필수!) - 500자 초과 시 탈락
+✓ 본문 500-800자
 ✓ 해시태그 15-30개
 ✓ CTA 명확
 ✓ 저장 가치 제공`;
@@ -545,6 +565,9 @@ ${params.imageDescription}
 export function getYoutubeLongformPrompt(params: PromptParams): string {
   return `당신은 유튜브 롱폼 영상 시나리오 전문가입니다.
 
+■ 핵심 규칙: 입력된 키워드를 기계적으로 전부 나열하지 마세요. 이 플랫폼에 가장 적합한 핵심 메시지 1~2개만 선택하여 깊이 있게 다루세요. 나머지 키워드는 자연스럽게 녹이거나 생략해도 됩니다.
+■ 이 플랫폼의 관점: 챕터별로 서로 다른 구체적 내용을 다루세요. 같은 키워드를 챕터마다 반복하지 마세요.
+
 【브랜드 정보】
 - 브랜드/상호명: ${params.brand}
 ${params.companyName ? `- 회사명: ${params.companyName}` : ''}
@@ -552,6 +575,7 @@ ${params.companyName ? `- 회사명: ${params.companyName}` : ''}
 - 산업 분야: ${params.industry}
 ${params.location ? `- 위치: ${params.location}` : ''}
 - 톤앤매너: ${params.tone}
+■ 플랫폼 기본 톤: 전문적이면서 친근한 유튜버 말투. 정보 전달 시 신뢰감, 소통 시 친근함.
 - 타겟: ${params.targetAge} ${params.targetGender || ''}
 ${params.website ? `- 웹사이트: ${params.website}` : ''}
 ${params.sns ? `- SNS: ${params.sns}` : ''}
@@ -644,6 +668,9 @@ ${params.imageDescription}
 export function getShortformPrompt(params: PromptParams): string {
   return `당신은 숏폼 영상 통합 전문가입니다 (틱톡, 인스타 릴스, 유튜브 쇼츠).
 
+■ 핵심 규칙: 입력된 키워드를 기계적으로 전부 나열하지 마세요. 이 플랫폼에 가장 적합한 핵심 메시지 1~2개만 선택하여 깊이 있게 다루세요. 나머지 키워드는 자연스럽게 녹이거나 생략해도 됩니다.
+■ 이 플랫폼의 관점: 호기심 유발과 즉각적 반응에 집중. 재미있는 한 가지 포인트만 다루세요.
+
 【브랜드 정보】
 - 브랜드/상호명: ${params.brand}
 ${params.companyName ? `- 회사명: ${params.companyName}` : ''}
@@ -651,6 +678,7 @@ ${params.companyName ? `- 회사명: ${params.companyName}` : ''}
 - 산업 분야: ${params.industry}
 ${params.location ? `- 위치: ${params.location}` : ''}
 - 톤앤매너: ${params.tone}
+■ 플랫폼 기본 톤: 친구한테 말하듯 반말. ~해, ~거든, ~잖아, ~인데? 스타일. 에너지 넘치고 빠른 템포. 격식체 금지.
 - 타겟: ${params.targetAge} ${params.targetGender || ''}
 ${params.website ? `- 웹사이트: ${params.website}` : ''}
 ${params.sns ? `- SNS: ${params.sns}` : ''}
@@ -724,6 +752,8 @@ ${params.contact ? `- 연락처: ${params.contact}` : ''}
 
 export function getMetadataPrompt(params: PromptParams): string {
   return `당신은 유튜브 메타데이터 생성 전문가입니다.
+
+■ 핵심 규칙: 입력된 키워드를 기계적으로 전부 나열하지 마세요. 이 플랫폼에 가장 적합한 핵심 메시지 1~2개만 선택하여 깊이 있게 다루세요. 나머지 키워드는 자연스럽게 녹이거나 생략해도 됩니다.
 
 【브랜드 정보】
 - 브랜드/상호명: ${params.brand}
@@ -810,10 +840,14 @@ ${params.imageDescription}
 export function getTwitterPrompt(params: PromptParams): string {
   return `당신은 Twitter 마케팅 전문가입니다.
 
+■ 핵심 규칙: 입력된 키워드를 기계적으로 전부 나열하지 마세요. 이 플랫폼에 가장 적합한 핵심 메시지 1~2개만 선택하여 깊이 있게 다루세요. 나머지 키워드는 자연스럽게 녹이거나 생략해도 됩니다.
+■ 이 플랫폼의 관점: 가장 임팩트 있는 팩트 하나만 전달하세요. 여러 기능을 나열하지 마세요.
+
 브랜드: ${params.brand}
 키워드: ${params.keywords}
 산업: ${params.industry}
 톤앤매너: ${params.tone}
+■ 플랫폼 기본 톤: 간결하고 임팩트 있는 톤. 군더더기 없이.
 타겟: ${params.targetAge}
 
 이미지 설명:
@@ -860,10 +894,14 @@ ${params.imageDescription}
 export function getLinkedInPrompt(params: PromptParams): string {
   return `당신은 LinkedIn 비즈니스 콘텐츠 전문가입니다.
 
+■ 핵심 규칙: 입력된 키워드를 기계적으로 전부 나열하지 마세요. 이 플랫폼에 가장 적합한 핵심 메시지 1~2개만 선택하여 깊이 있게 다루세요. 나머지 키워드는 자연스럽게 녹이거나 생략해도 됩니다.
+■ 이 플랫폼의 관점: 업계 트렌드나 비즈니스 인사이트 중심. 문제-해결 구조로 전문성을 보여주세요. 단순 제품 홍보 금지.
+
 브랜드: ${params.brand}
 키워드: ${params.keywords}
 산업: ${params.industry}
 톤앤매너: ${params.tone}
+■ 플랫폼 기본 톤: 업계 전문가가 인사이트를 공유하는 격식체. 신뢰감 있고 논리적. 이모지 최소화.
 타겟: ${params.targetAge}
 
 이미지 설명:
@@ -937,10 +975,14 @@ ${params.imageDescription}
 export function getKakaoTalkPrompt(params: PromptParams): string {
   return `당신은 카카오톡 채널 메시지 전문가입니다.
 
+■ 핵심 규칙: 입력된 키워드를 기계적으로 전부 나열하지 마세요. 이 플랫폼에 가장 적합한 핵심 메시지 1~2개만 선택하여 깊이 있게 다루세요. 나머지 키워드는 자연스럽게 녹이거나 생략해도 됩니다.
+■ 이 플랫폼의 관점: 사용자에게 직접적 혜택이 되는 핵심 1가지만 전달하세요. 간결한 안내 메시지 형식.
+
 브랜드: ${params.brand}
 키워드: ${params.keywords}
 산업: ${params.industry}
 톤앤매너: ${params.tone}
+■ 플랫폼 기본 톤: 브랜드가 고객에게 보내는 친근한 안내 메시지. ~요 체. 이모지 적절히 활용.
 타겟: ${params.targetAge}
 
 이미지 설명:
@@ -1006,10 +1048,14 @@ ${params.imageDescription}
 export function getBrunchPrompt(params: PromptParams): string {
   return `당신은 브런치(Brunch) 글 작가입니다. 브런치는 에세이와 스토리텔링에 특화된 한국형 블로그 플랫폼입니다.
 
+■ 핵심 규칙: 입력된 키워드를 기계적으로 전부 나열하지 마세요. 이 플랫폼에 가장 적합한 핵심 메시지 1~2개만 선택하여 깊이 있게 다루세요. 나머지 키워드는 자연스럽게 녹이거나 생략해도 됩니다.
+■ 이 플랫폼의 관점: 에세이 형식의 개인 서사 중심. 감정과 성찰을 담아 문학적으로 풀어내세요. 기능 나열 금지.
+
 브랜드: ${params.brand}
 키워드: ${params.keywords}
 산업: ${params.industry}
 톤앤매너: ${params.tone}
+■ 플랫폼 기본 톤: 문학적 에세이체. 서정적이고 사색적인 문장. 광고성 표현 금지.
 타겟: ${params.targetAge}
 
 이미지 설명:
@@ -1110,10 +1156,14 @@ ${params.imageDescription}
 export function getTikTokPrompt(params: PromptParams): string {
   return `당신은 틱톡(TikTok) 숏폼 영상 전문가입니다.
 
+■ 핵심 규칙: 입력된 키워드를 기계적으로 전부 나열하지 마세요. 이 플랫폼에 가장 적합한 핵심 메시지 1~2개만 선택하여 깊이 있게 다루세요. 나머지 키워드는 자연스럽게 녹이거나 생략해도 됩니다.
+■ 이 플랫폼의 관점: 호기심 유발과 즉각적 반응에 집중. 재미있는 한 가지 포인트만 다루세요.
+
 브랜드: ${params.brand}
 키워드: ${params.keywords}
 산업: ${params.industry}
 톤앤매너: ${params.tone}
+■ 플랫폼 기본 톤: 친구한테 말하듯 반말. ~해, ~거든, ~잖아, ~인데? 스타일. 에너지 넘치고 빠른 템포. 격식체 금지.
 타겟: ${params.targetAge}
 
 이미지 설명:
@@ -1173,10 +1223,14 @@ ${params.imageDescription}
 export function getInstagramReelsPrompt(params: PromptParams): string {
   return `당신은 인스타그램 릴스(Instagram Reels) 전문가입니다.
 
+■ 핵심 규칙: 입력된 키워드를 기계적으로 전부 나열하지 마세요. 이 플랫폼에 가장 적합한 핵심 메시지 1~2개만 선택하여 깊이 있게 다루세요. 나머지 키워드는 자연스럽게 녹이거나 생략해도 됩니다.
+■ 이 플랫폼의 관점: 시각적 임팩트와 감성적 스토리텔링에 집중. 기능 설명보다 분위기 전달.
+
 브랜드: ${params.brand}
 키워드: ${params.keywords}
 산업: ${params.industry}
 톤앤매너: ${params.tone}
+■ 플랫폼 기본 톤: 감성적이고 부드러운 톤. 친근하지만 세련된 느낌. ~요 체 사용.
 타겟: ${params.targetAge}
 
 이미지 설명:
