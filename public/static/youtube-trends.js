@@ -158,34 +158,40 @@ function updateCategoryButtons(data) {
     const catId = btn.getAttribute('data-category');
     
     if (catId === '0' || catId === 'all') {
-      // 전체 버튼은 항상 활성화
+      // 전체 버튼은 항상 표시
+      btn.style.display = '';
       btn.disabled = false;
       btn.style.opacity = '1';
       btn.style.cursor = 'pointer';
     } else if (data[catId] && data[catId].length > 0) {
-      // 데이터 있음 → 활성화
+      // 데이터 있음 → 표시
+      btn.style.display = '';
       btn.disabled = false;
       btn.style.opacity = '1';
       btn.style.cursor = 'pointer';
     } else {
-      // 데이터 없음 → 비활성화
-      btn.disabled = true;
-      btn.style.opacity = '0.4';
-      btn.style.cursor = 'not-allowed';
+      // 데이터 없음 → DOM에서 숨김
+      btn.style.display = 'none';
     }
   });
 }
 
 function disableAllCategoryButtons() {
   document.querySelectorAll('.category-tab-btn').forEach(btn => {
-    btn.disabled = true;
-    btn.style.opacity = '0.4';
-    btn.style.cursor = 'not-allowed';
+    const catId = btn.getAttribute('data-category');
+    if (catId === '0' || catId === 'all') {
+      btn.disabled = true;
+      btn.style.opacity = '0.4';
+      btn.style.cursor = 'not-allowed';
+    } else {
+      btn.style.display = 'none';
+    }
   });
 }
 
 function enableAllCategoryButtons() {
   document.querySelectorAll('.category-tab-btn').forEach(btn => {
+    btn.style.display = '';
     btn.disabled = false;
     btn.style.opacity = '1';
     btn.style.cursor = 'pointer';

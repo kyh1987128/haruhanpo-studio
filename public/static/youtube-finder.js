@@ -1386,7 +1386,7 @@ function updateChannelDetailPanel(video) {
   
   const likeRateLabel = getPerformanceLabel(likeRate, { good: 3, normal: 1 });
   const subViewLabel = subscriberCount > 0 ? getPerformanceLabel(subViewRatio, { good: 100, normal: 30 }) : '';
-  const contributionLabel = currentChannelAvgViews > 0 ? getPerformanceLabel(channelContribution, { good: 200, normal: 80 }) : '';
+  const contributionLabel = currentChannelAvgViews > 0 ? getPerformanceLabel(channelContribution, { good: 100, normal: 50 }) : '';
   
   // 트렌드 배지 결정
   let trendBadge = '';
@@ -4000,7 +4000,7 @@ function openCompareModal() {
   const resultDiv = document.getElementById('compare-ai-result');
   if (resultDiv) {
     resultDiv.classList.add('hidden');
-    console.log('✅ [비교] 이전 AI 분석 결과 숨김');
+    console.log('[비교] 이전 AI 분석 결과 숨김');
   }
   
   // 모달 표시
@@ -4012,8 +4012,11 @@ function openCompareModal() {
   // 비교 테이블 렌더링
   renderCompareTable();
   
-  // 레이더 차트 렌더링
-  renderCompareChart();
+  // 레이더 차트는 AI 분석 버튼 클릭 후에 렌더링 (모달 열릴 때 숨김)
+  const radarSection = document.getElementById('compare-radar-chart')?.closest('.bg-gray-50');
+  if (radarSection) {
+    radarSection.style.display = 'none';
+  }
 }
 
 /**
@@ -4218,25 +4221,6 @@ function renderCompareChart() {
     }
   }
   
-  // 한줄 해석 생성 (정규화된 데이터 기준 — 모든 영상 평균)
-  let interpretationText = '';
-  if (normalizedValues.length > 0) {
-    const axisAverages = labelNames.map((label, axisIdx) => {
-      const values = normalizedValues.map(nv => nv[axisIdx]);
-      return { label, avg: values.reduce((a, b) => a + b, 0) / values.length };
-    });
-    const sorted = [...axisAverages].sort((a, b) => b.avg - a.avg);
-    const highest = sorted[0];
-    const lowest = sorted[sorted.length - 1];
-    
-    if (selectedCompareVideos.length === 1) {
-      interpretationText = '단일 영상 분석 시 모든 지표가 균등하게 표시됩니다.';
-    } else if (highest.avg - lowest.avg < 20) {
-      interpretationText = '이 영상들은 전반적으로 균형 잡힌 성과를 보입니다.';
-    } else {
-      interpretationText = '이 영상들은 ' + highest.label + '에서 강하고, ' + lowest.label + '에서 개선이 필요합니다.';
-    }
-  }
   
   // 데이터셋 준비
   const datasets = selectedCompareVideos.map((video, index) => {
@@ -4290,17 +4274,6 @@ function renderCompareChart() {
     }
   });
   
-  // 한줄 해석 표시
-  const chartContainer = canvas.parentElement;
-  const existingInterpretation = chartContainer?.querySelector('.chart-interpretation');
-  if (existingInterpretation) existingInterpretation.remove();
-  
-  if (interpretationText && chartContainer) {
-    const interpEl = document.createElement('p');
-    interpEl.className = 'chart-interpretation text-sm text-gray-600 text-center mt-3';
-    interpEl.textContent = interpretationText;
-    chartContainer.appendChild(interpEl);
-  }
 }
 
 /**
@@ -4609,10 +4582,32 @@ ${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
     contentDiv.innerHTML = finalHtml;
     resultDiv.classList.remove('hidden');
     
-    // ⭐ 복사하기 버튼 추가
+    // AI 분석 결과 영역 내 외부 링크 차단
+    contentDiv.addEventListener('click', function(e) {
+      const link = e.target.closest('a');
+      if (link) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
+    contentDiv.querySelectorAll('a').forEach(a => {
+      a.style.pointerEvents = 'none';
+      a.style.color = 'inherit';
+      a.style.textDecoration = 'none';
+      a.removeAttribute('href');
+    });
+    
+    // 레이더 차트 표시 + 렌더링 (AI 분석 결과와 함께)
+    const radarSection = document.getElementById('compare-radar-chart')?.closest('.bg-gray-50');
+    if (radarSection) {
+      radarSection.style.display = '';
+    }
+    renderCompareChart();
+    
+    // 복사하기 버튼 추가
     addCopyButton(contentDiv);
     
-    console.log('✅ [AI 비교 분석] 완료');
+    console.log('[AI 비교 분석] 완료');
     
   } catch (error) {
     console.error('❌ [AI 비교 분석 오류]', error);
@@ -6349,25 +6344,6 @@ function renderCompetitorResults(data) {
     }
   }
   
-  // 한줄 해석 (정규화된 데이터 기준)
-  let compInterpretation = '';
-  if (competitorNormalized.length > 0) {
-    const axisAverages = competitorLabels.map((label, axisIdx) => {
-      const values = competitorNormalized.map(nv => nv[axisIdx]);
-      return { label, avg: values.reduce((a, b) => a + b, 0) / values.length };
-    });
-    const sorted = [...axisAverages].sort((a, b) => b.avg - a.avg);
-    const highest = sorted[0];
-    const lowest = sorted[sorted.length - 1];
-    
-    if (channels.length === 1) {
-      compInterpretation = '단일 채널 분석 시 모든 지표가 균등하게 표시됩니다.';
-    } else if (highest.avg - lowest.avg < 20) {
-      compInterpretation = '이 채널들은 전반적으로 균형 잡힌 성과를 보입니다.';
-    } else {
-      compInterpretation = '이 채널들은 ' + highest.label + '에서 강하고, ' + lowest.label + '에서 개선이 필요합니다.';
-    }
-  }
   
   const datasets = channels.map((channel, idx) => {
     const colors = [
@@ -6404,18 +6380,6 @@ function renderCompetitorResults(data) {
       }
     }
   });
-  
-  // 한줄 해석 표시
-  const radarContainer = document.getElementById('competitor-radar-chart')?.parentElement;
-  const existingCompInterp = radarContainer?.querySelector('.chart-interpretation');
-  if (existingCompInterp) existingCompInterp.remove();
-  
-  if (compInterpretation && radarContainer) {
-    const interpEl = document.createElement('p');
-    interpEl.className = 'chart-interpretation text-sm text-gray-600 text-center mt-3';
-    interpEl.textContent = compInterpretation;
-    radarContainer.appendChild(interpEl);
-  }
   
   // 테이블 렌더링
   const tbody = document.getElementById('competitor-table-body');
