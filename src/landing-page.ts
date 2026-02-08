@@ -1020,8 +1020,8 @@ export const landingPageTemplate = `
                 <div>
                     <h4 class="font-semibold mb-3">정책</h4>
                     <ul class="space-y-2 text-gray-400 text-sm">
-                        <li><a href="/privacy" class="hover:text-white">개인정보처리방침</a></li>
-                        <li><a href="/terms" class="hover:text-white">이용약관</a></li>
+                        <li><a href="https://marketinghub-ai.com/privacy" class="hover:text-white">개인정보처리방침</a></li>
+                        <li><a href="https://marketinghub-ai.com/terms" class="hover:text-white">이용약관</a></li>
                     </ul>
                 </div>
             </div>
