@@ -1020,9 +1020,8 @@ export const landingPageTemplate = `
                 <div>
                     <h4 class="font-semibold mb-3">정책</h4>
                     <ul class="space-y-2 text-gray-400 text-sm">
-                        <li><a href="javascript:void(0)" onclick="openPolicyModal('refund')" class="hover:text-white cursor-pointer">환불 정책</a></li>
-                        <li><a href="javascript:void(0)" onclick="openPolicyModal('privacy')" class="hover:text-white cursor-pointer">개인정보처리방침</a></li>
-                        <li><a href="javascript:void(0)" onclick="openPolicyModal('terms')" class="hover:text-white cursor-pointer">이용약관</a></li>
+                        <li><a href="/privacy" class="hover:text-white">개인정보처리방침</a></li>
+                        <li><a href="/terms" class="hover:text-white">이용약관</a></li>
                     </ul>
                 </div>
             </div>
