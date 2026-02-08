@@ -5,6 +5,18 @@
 
 // 전역 변수
 let authMode = 'signup'; // 인증 모드 (signup or login)
+
+// 인앱 브라우저 감지 (Google OAuth 차단 대응)
+function isInAppBrowser() {
+  const ua = navigator.userAgent || '';
+  // 카카오톡, 네이버, 인스타그램, 페이스북, 라인, 밴드, 트위터 등 인앱 브라우저
+  const inAppPatterns = [
+    'KAKAOTALK', 'NAVER', 'Instagram', 'FBAN', 'FBAV', 'FB_IAB',
+    'Line/', 'BAND/', 'Daum', 'Twitter', 'Snapchat',
+    'wv', 'WebView'  // Android WebView 일반
+  ];
+  return inAppPatterns.some(p => ua.includes(p));
+}
 let selectedImages = []; // 더 이상 사용 안 함 (개별 콘텐츠로 변경)
 let contentBlocks = {}; // { 0: { images: [], keywords: '', topic: '', description: '' }, 1: {...}, ... }
 let contentPlatforms = {}; // 콘텐츠별 플랫폼 선택 상태 (Option B)
@@ -6915,7 +6927,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   if (googleLoginBtn) {
-    googleLoginBtn.addEventListener('click', handleGoogleLogin);
+    if (isInAppBrowser()) {
+      // 인앱 브라우저: Google 버튼 비활성화 + 안내 표시
+      googleLoginBtn.style.opacity = '0.5';
+      googleLoginBtn.style.pointerEvents = 'none';
+      googleLoginBtn.style.position = 'relative';
+      const notice = document.createElement('div');
+      notice.style.cssText = 'font-size:11px;color:#dc2626;margin-top:4px;text-align:center;';
+      notice.textContent = '인앱 브라우저에서는 Google 로그인이 불가합니다. Chrome/Safari에서 열어주세요.';
+      googleLoginBtn.parentNode.insertBefore(notice, googleLoginBtn.nextSibling);
+    } else {
+      googleLoginBtn.addEventListener('click', handleGoogleLogin);
+    }
   }
   
   if (kakaoLoginBtn) {
@@ -10164,6 +10187,12 @@ async function handleEmailLogin() {
 
 // Google 로그인 (모달에서)
 async function handleGoogleLogin() {
+  // 인앱 브라우저 차단
+  if (isInAppBrowser()) {
+    showToast('인앱 브라우저에서는 Google 로그인이 불가합니다. Chrome 또는 Safari에서 열어주세요.', 'warning');
+    return;
+  }
+  
   if (!supabaseClient) {
     showToast('인증 시스템을 초기화하는 중입니다', 'warning');
     return;
