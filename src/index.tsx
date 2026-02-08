@@ -2185,9 +2185,9 @@ app.post('/api/auth/sync', async (c) => {
     
     console.log('📝 요청 데이터:', { user_id, email, name });
     
-    if (!user_id || !email) {
-      console.error('❌ user_id 또는 email 누락:', { user_id, email });
-      return c.json({ success: false, error: 'user_id와 email은 필수입니다' }, 400);
+    if (!user_id) {
+      console.error('❌ user_id 누락:', { user_id, email });
+      return c.json({ success: false, error: 'user_id는 필수입니다' }, 400);
     }
     
     const supabase = createSupabaseAdmin(
@@ -2345,7 +2345,7 @@ app.post('/api/auth/sync', async (c) => {
         .from('users')
         .insert({
           id: user_id,
-          email,
+          email: email || null,
           name: name || null,
           tier: 'free', // ✅ 무료 회원
           free_credits: 30, // ✅ 월간 무료 크레딧
@@ -2466,6 +2466,7 @@ app.post('/api/auth/complete-registration', async (c) => {
     const { 
       user_id, 
       name,
+      email,
       gender, 
       birth_date,
       phone, 
@@ -2479,10 +2480,10 @@ app.post('/api/auth/complete-registration', async (c) => {
     } = await c.req.json();
     
     // 입력값 검증
-    if (!user_id || !name || !gender || !birth_date || !phone) {
+    if (!user_id || !name || !email || !gender || !birth_date || !phone) {
       return c.json({ 
         success: false, 
-        error: '필수 정보(이름, 성별, 생년월일, 연락처)를 모두 입력해주세요' 
+        error: '필수 정보(이름, 이메일, 성별, 생년월일, 연락처)를 모두 입력해주세요' 
       }, 400);
     }
     
@@ -2523,6 +2524,7 @@ app.post('/api/auth/complete-registration', async (c) => {
       .from('users')
       .update({
         name: name,
+        email: email,
         gender: gender,
         birth_date: birth_date,
         phone: phone,

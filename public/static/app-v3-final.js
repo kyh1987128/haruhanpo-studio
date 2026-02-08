@@ -5937,6 +5937,26 @@ function showRegistrationCompleteModal(userId) {
             />
           </div>
           
+          <!-- 이메일 (자동채우기 + 수정 가능) -->
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">
+              이메일 <span style="color: #ef4444;">*</span>
+            </label>
+            <input 
+              type="email" 
+              id="userEmail" 
+              placeholder="example@email.com" 
+              required
+              style="
+                width: 100%; padding: 0.875rem; border: 2px solid #e5e7eb; 
+                border-radius: 10px; font-size: 1rem; outline: none;
+              "
+            />
+            <p style="font-size: 0.8rem; color: #9ca3af; margin-top: 0.4rem;">
+              서비스 안내 및 고객 문의에 사용됩니다. 다른 이메일을 원하시면 수정해주세요.
+            </p>
+          </div>
+          
           <!-- 성별 -->
           <div style="margin-bottom: 1rem;">
             <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">
@@ -6151,6 +6171,16 @@ function showRegistrationCompleteModal(userId) {
   
   document.body.insertAdjacentHTML('beforeend', modalHTML);
   
+  // 이메일 자동채우기 (구글/카카오/이메일 가입 모두 대응)
+  const emailInput = document.getElementById('userEmail');
+  if (emailInput) {
+    const autoEmail = window.currentUser?.email || '';
+    if (autoEmail) {
+      emailInput.value = autoEmail;
+      console.log('📧 이메일 자동채우기:', autoEmail);
+    }
+  }
+  
   // 전체동의 체크박스 로직
   const agreeAllCheckbox = document.getElementById('agreeAll');
   const agreementCheckboxes = document.querySelectorAll('.agreement-checkbox');
@@ -6175,6 +6205,7 @@ function showRegistrationCompleteModal(userId) {
     e.preventDefault();
     
     const name = document.getElementById('userName').value.trim();
+    const email = document.getElementById('userEmail').value.trim();
     const gender = document.querySelector('input[name="gender"]:checked')?.value;
     const birthDate = document.getElementById('userBirthDate').value;
     const phone = document.getElementById('userPhone').value.trim();
@@ -6192,6 +6223,12 @@ function showRegistrationCompleteModal(userId) {
     if (!name) {
       showToast('❌ 이름을 입력해주세요', 'error');
       document.getElementById('userName').focus();
+      return;
+    }
+    
+    if (!email || !email.includes('@')) {
+      showToast('❌ 올바른 이메일을 입력해주세요', 'error');
+      document.getElementById('userEmail').focus();
       return;
     }
     
@@ -6256,7 +6293,7 @@ function showRegistrationCompleteModal(userId) {
     
     try {
       console.log('📝 회원가입 완료 처리 시작:', { 
-        userId, name, gender, birthDate, phone,
+        userId, name, email, gender, birthDate, phone,
         agreeTerms, agreePrivacy, agreeCollection, agreePersonalInfo, 
         agreeAge14, agreeMarketing, agreeCustomInfo
       });
@@ -6267,6 +6304,7 @@ function showRegistrationCompleteModal(userId) {
         body: JSON.stringify({
           user_id: userId,
           name: name,
+          email: email,
           gender: gender,
           birth_date: birthDate,
           phone: phone,
@@ -10235,14 +10273,13 @@ async function handleKakaoLogin() {
   try {
     console.log('🟡 Kakao 로그인 시작');
     
-    // NEW v7.8: queryParams로 스코프 강제 설정 (KOE205 완전 수정)
-    // Supabase가 자동으로 account_email을 추가하는 것을 방지
+    // NEW v7.9: 카카오 이메일 동의항목 추가 (카카오 개발자 콘솔에서 필수 동의 설정 완료 후)
     const { data, error } = await supabaseClient.auth.signInWithOAuth({
       provider: 'kakao',
       options: {
-        scopes: 'profile_nickname profile_image',  // account_email 제외
+        scopes: 'profile_nickname profile_image account_email',
         queryParams: {
-          scope: 'profile_nickname profile_image'  // 명시적 오버라이드
+          scope: 'profile_nickname profile_image account_email'
         }
       }
     });
