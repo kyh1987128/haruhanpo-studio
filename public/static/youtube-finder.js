@@ -4894,19 +4894,7 @@ function renderVisualAnalysis(videosInfo, visualData) {
  * 섹션 1: 성과 비교 차트 (구독자 대비 조회수, 좋아요율 비교 바 차트)
  */
 function renderMetricsComparisonChart(videos, videosInfo) {
-  const chartId = 'metrics-compare-chart-' + Date.now();
   const radarCanvasId = 'compare-radar-chart-' + Date.now();
-  
-  // 영상별 라벨 (앞 15자)
-  const labels = videos.map((v, i) => {
-    const title = v.title || videosInfo[i]?.title || `영상 ${i + 1}`;
-    return title.length > 15 ? title.substring(0, 15) + '...' : title;
-  });
-
-  // 데이터 추출
-  const subViewRatios = videos.map(v => v.metrics?.subscriberViewRatio || 0);
-  const likeRates = videos.map(v => v.metrics?.likeRate || 0);
-  const viewsRaw = videos.map((v, i) => v.metrics?.viewsRaw || videosInfo[i]?.views || 0);
 
   return `
     <div style="background: white; border-radius: 16px; padding: 28px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);">
@@ -4914,11 +4902,18 @@ function renderMetricsComparisonChart(videos, videosInfo) {
         <span style="background: #00B87D; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800;">1</span>
         성과 비교 차트
       </h3>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-        <div style="position: relative; height: 280px;">
-          <canvas id="${chartId}-bar"></canvas>
+      <div style="display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap;">
+        <!-- 왼쪽: 레이더 차트 -->
+        <div style="flex: 1; min-width: 300px;">
+          <h4 style="font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 16px; text-align: center;">
+            성과 레이더 비교
+          </h4>
+          <div style="max-width: 400px; margin: 0 auto;">
+            <canvas id="${radarCanvasId}"></canvas>
+          </div>
         </div>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
+        <!-- 오른쪽: KPI 카드 -->
+        <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 12px;">
           ${videos.map((v, i) => {
             const svr = v.metrics?.subscriberViewRatio || 0;
             const svrLabel = v.metrics?.subscriberViewRatioLabel || (svr >= 100 ? 'Good' : svr >= 30 ? 'Normal' : 'Bad');
@@ -4948,56 +4943,7 @@ function renderMetricsComparisonChart(videos, videosInfo) {
           }).join('')}
         </div>
       </div>
-      <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
-        <h4 style="font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 16px; text-align: center;">
-          성과 레이더 비교
-        </h4>
-        <div style="max-width: 500px; margin: 0 auto;">
-          <canvas id="${radarCanvasId}"></canvas>
-        </div>
-      </div>
     </div>
-    <script>
-    (function() {
-      const ctx = document.getElementById('${chartId}-bar');
-      if (!ctx) return;
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: ${JSON.stringify(labels)},
-          datasets: [
-            {
-              label: '구독자 대비 조회수 (%)',
-              data: ${JSON.stringify(subViewRatios)},
-              backgroundColor: 'rgba(16, 185, 129, 0.7)',
-              borderColor: '#10b981',
-              borderWidth: 1,
-              borderRadius: 6,
-              yAxisID: 'y1'
-            },
-            {
-              label: '좋아요율 (%)',
-              data: ${JSON.stringify(likeRates)},
-              backgroundColor: 'rgba(59, 130, 246, 0.7)',
-              borderColor: '#3b82f6',
-              borderWidth: 1,
-              borderRadius: 6,
-              yAxisID: 'y2'
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'top', labels: { font: { size: 12 } } } },
-          scales: {
-            y1: { type: 'linear', position: 'left', title: { display: true, text: '구독자 대비 조회수 (%)' }, beginAtZero: true },
-            y2: { type: 'linear', position: 'right', title: { display: true, text: '좋아요율 (%)' }, beginAtZero: true, grid: { drawOnChartArea: false } }
-          }
-        }
-      });
-    })();
-    </script>
   `;
 }
 
