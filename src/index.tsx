@@ -4125,6 +4125,301 @@ app.get('/', (c) => {
 });
 
 // ===================================
+// 개인정보처리방침 페이지
+// ===================================
+app.get('/privacy', (c) => {
+  return c.html(`<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>개인정보처리방침 - 마케팅허브 AI 스튜디오</title>
+  <meta name="description" content="마케팅허브 AI 스튜디오 개인정보처리방침">
+  <link href="/static/styles.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" rel="stylesheet">
+  <style>
+    .policy-body { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+    .policy-body h1 { font-size: 28px; font-weight: 800; color: #1f2937; margin-bottom: 8px; }
+    .policy-body .updated { font-size: 14px; color: #9ca3af; margin-bottom: 40px; }
+    .policy-body h2 { font-size: 18px; font-weight: 700; color: #374151; margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 2px solid #f3f4f6; }
+    .policy-body p, .policy-body li { font-size: 15px; line-height: 1.8; color: #4b5563; }
+    .policy-body ul { list-style: disc; padding-left: 24px; margin: 8px 0 16px; }
+    .policy-body li { margin-bottom: 4px; }
+    .policy-body .contact-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px 24px; margin-top: 32px; }
+    .policy-body .contact-box strong { color: #1f2937; }
+  </style>
+</head>
+<body class="bg-white">
+  <!-- 헤더 -->
+  <header class="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
+    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <a href="/" class="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition">
+          🏠 마케팅허브 AI 스튜디오
+        </a>
+        <div class="flex items-center gap-4">
+          <a href="/terms" class="text-sm text-gray-500 hover:text-purple-600 transition">이용약관</a>
+          <a href="/" class="text-sm font-medium text-purple-600 hover:text-purple-700 transition">홈으로</a>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <div class="policy-body">
+    <h1>개인정보처리방침</h1>
+    <p class="updated">최종 업데이트: 2026년 2월</p>
+
+    <p>마케팅허브 AI 스튜디오(이하 "회사")는 이용자의 개인정보를 중요시하며, 「개인정보 보호법」 및 관련 법률을 준수합니다. 본 방침은 회사가 수집하는 개인정보의 항목, 이용 목적, 보유 기간 및 이용자의 권리에 대해 안내합니다.</p>
+
+    <h2>제1조 (수집하는 개인정보 항목)</h2>
+    <p><strong>필수 수집 항목:</strong></p>
+    <ul>
+      <li>이메일 주소, 이름 (회원가입 및 서비스 이용)</li>
+      <li>비밀번호 (이메일 가입 시, 암호화 저장)</li>
+      <li>생년월일, 휴대전화번호 (본인 확인 및 연령 확인)</li>
+    </ul>
+    <p><strong>선택 수집 항목:</strong></p>
+    <ul>
+      <li>프로필 이미지, 성별</li>
+      <li>마케팅 수신 동의 여부</li>
+    </ul>
+    <p><strong>자동 수집 항목:</strong></p>
+    <ul>
+      <li>IP 주소, 쿠키, 브라우저 정보</li>
+      <li>서비스 이용 기록, 접속 로그</li>
+    </ul>
+
+    <h2>제2조 (개인정보의 이용 목적)</h2>
+    <ul>
+      <li>회원 가입 및 본인 확인, 서비스 이용 관리</li>
+      <li>AI 콘텐츠 생성 서비스 제공 및 개선</li>
+      <li>크레딧 결제 및 환불 처리</li>
+      <li>고객 문의 응대 및 서비스 안내</li>
+      <li>부정 이용 방지 및 서비스 보안</li>
+      <li>마케팅 및 프로모션 안내 (동의 시에 한함)</li>
+    </ul>
+
+    <h2>제3조 (개인정보의 보유 및 이용 기간)</h2>
+    <p>회원 탈퇴 시 즉시 파기하며, 다음의 경우 관련 법령에 따라 일정 기간 보관합니다:</p>
+    <ul>
+      <li>계약 또는 청약철회 등에 관한 기록: 5년 (전자상거래법)</li>
+      <li>대금결제 및 재화 등의 공급에 관한 기록: 5년 (전자상거래법)</li>
+      <li>소비자의 불만 또는 분쟁처리에 관한 기록: 3년 (전자상거래법)</li>
+      <li>웹사이트 방문 기록: 3개월 (통신비밀보호법)</li>
+    </ul>
+
+    <h2>제4조 (개인정보의 제3자 제공)</h2>
+    <p>회사는 이용자의 동의 없이 개인정보를 제3자에게 제공하지 않습니다. 다만 다음의 경우는 예외로 합니다:</p>
+    <ul>
+      <li>이용자가 사전에 동의한 경우</li>
+      <li>법률에 특별한 규정이 있거나, 법령상 의무를 준수하기 위한 경우</li>
+      <li>수사 기관의 요청이 있는 경우 (적법한 절차 준수)</li>
+    </ul>
+
+    <h2>제5조 (개인정보의 파기 절차 및 방법)</h2>
+    <ul>
+      <li>전자적 파일: 복구 및 재생이 불가능한 방법으로 영구 삭제</li>
+      <li>회원 탈퇴 시 30일간 재가입 제한 후 완전 파기</li>
+    </ul>
+
+    <h2>제6조 (이용자의 권리와 행사 방법)</h2>
+    <ul>
+      <li>개인정보 열람, 정정, 삭제, 처리 정지 요구 가능</li>
+      <li>회원 탈퇴를 통한 개인정보 삭제 요청 가능</li>
+      <li>모든 요청은 아래 연락처를 통해 접수할 수 있습니다</li>
+    </ul>
+
+    <h2>제7조 (쿠키의 사용)</h2>
+    <p>회사는 이용자의 편의를 위해 쿠키를 사용합니다. 이용자는 브라우저 설정을 통해 쿠키 저장을 거부할 수 있으나, 일부 서비스 이용에 제한이 있을 수 있습니다.</p>
+
+    <h2>제8조 (개인정보 보호책임자)</h2>
+    <div class="contact-box">
+      <p><strong>개인정보 보호책임자</strong></p>
+      <p>이메일: <a href="mailto:contentitda@naver.com" style="color:#7c3aed;">contentitda@naver.com</a></p>
+      <p style="margin-top:8px; font-size:13px; color:#6b7280;">개인정보 관련 문의, 불만, 열람/정정/삭제 요청은 위 이메일로 접수해 주세요.</p>
+    </div>
+  </div>
+
+  <!-- 푸터 -->
+  <footer class="bg-gray-50 border-t border-gray-200 py-8">
+    <div class="max-w-7xl mx-auto px-4 text-center">
+      <div class="flex justify-center gap-6 mb-4">
+        <a href="/privacy" class="text-sm font-semibold text-purple-600">개인정보처리방침</a>
+        <a href="/terms" class="text-sm text-gray-500 hover:text-gray-700">이용약관</a>
+      </div>
+      <p class="text-sm text-gray-400">&copy; 2026 마케팅허브 AI 스튜디오. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>`);
+});
+
+// ===================================
+// 이용약관 페이지
+// ===================================
+app.get('/terms', (c) => {
+  return c.html(`<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>이용약관 - 마케팅허브 AI 스튜디오</title>
+  <meta name="description" content="마케팅허브 AI 스튜디오 이용약관 및 환불정책">
+  <link href="/static/styles.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" rel="stylesheet">
+  <style>
+    .policy-body { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+    .policy-body h1 { font-size: 28px; font-weight: 800; color: #1f2937; margin-bottom: 8px; }
+    .policy-body .updated { font-size: 14px; color: #9ca3af; margin-bottom: 40px; }
+    .policy-body h2 { font-size: 18px; font-weight: 700; color: #374151; margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 2px solid #f3f4f6; }
+    .policy-body h3 { font-size: 16px; font-weight: 600; color: #4b5563; margin: 20px 0 8px; }
+    .policy-body p, .policy-body li { font-size: 15px; line-height: 1.8; color: #4b5563; }
+    .policy-body ul { list-style: disc; padding-left: 24px; margin: 8px 0 16px; }
+    .policy-body li { margin-bottom: 4px; }
+    .policy-body .divider { border: none; border-top: 3px solid #e5e7eb; margin: 48px 0; }
+    .policy-body .refund-tag { display: inline-block; background: #fef3c7; color: #92400e; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 6px; margin-bottom: 8px; }
+    .policy-body .contact-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px 24px; margin-top: 32px; }
+    .policy-body .contact-box strong { color: #1f2937; }
+  </style>
+</head>
+<body class="bg-white">
+  <!-- 헤더 -->
+  <header class="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
+    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <a href="/" class="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition">
+          🏠 마케팅허브 AI 스튜디오
+        </a>
+        <div class="flex items-center gap-4">
+          <a href="/privacy" class="text-sm text-gray-500 hover:text-purple-600 transition">개인정보처리방침</a>
+          <a href="/" class="text-sm font-medium text-purple-600 hover:text-purple-700 transition">홈으로</a>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <div class="policy-body">
+    <h1>이용약관</h1>
+    <p class="updated">최종 업데이트: 2026년 2월</p>
+
+    <h2>제1조 (목적)</h2>
+    <p>본 약관은 마케팅허브 AI 스튜디오(이하 "회사")가 제공하는 AI 콘텐츠 생성 서비스(이하 "서비스")의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.</p>
+
+    <h2>제2조 (정의)</h2>
+    <ul>
+      <li><strong>"서비스"</strong>란 회사가 제공하는 하루 한포스트(PostFlow), 유튜브 파인더(TrendFinder), 스토리 메이커(StoryMaker) 등 모든 AI 기반 콘텐츠 생성 도구를 말합니다.</li>
+      <li><strong>"회원"</strong>이란 본 약관에 동의하고 회사와 서비스 이용계약을 체결한 자를 말합니다.</li>
+      <li><strong>"크레딧"</strong>이란 서비스 이용을 위한 가상의 화폐 단위를 말합니다.</li>
+    </ul>
+
+    <h2>제3조 (회원 가입)</h2>
+    <ul>
+      <li>회원 가입은 이메일 인증 또는 소셜 로그인(Google, Kakao)으로 가능합니다.</li>
+      <li>만 14세 이상만 가입할 수 있습니다.</li>
+      <li>회원은 정확한 정보를 제공해야 하며, 허위 정보 제공 시 서비스 이용이 제한될 수 있습니다.</li>
+      <li>회원 탈퇴 후 30일간 동일 이메일로 재가입이 제한됩니다.</li>
+    </ul>
+
+    <h2>제4조 (서비스 이용)</h2>
+    <ul>
+      <li>서비스는 크레딧 소비 방식으로 제공됩니다.</li>
+      <li>무료 회원은 가입 시 30개 무료 크레딧을 지급받으며, 매월 가입일 기준으로 30개 크레딧이 자동 충전됩니다.</li>
+      <li>AI 생성 콘텐츠의 저작권은 회원에게 있으나, 불법적인 용도로 사용할 수 없습니다.</li>
+      <li>회사는 서비스 개선을 위해 AI 생성 결과를 익명화하여 통계적 목적으로 활용할 수 있습니다.</li>
+    </ul>
+
+    <h2>제5조 (서비스 이용 제한)</h2>
+    <p>회사는 다음 각 호에 해당하는 경우 서비스 이용을 제한하거나 계약을 해지할 수 있습니다:</p>
+    <ul>
+      <li>타인의 정보를 도용한 경우</li>
+      <li>서비스를 불법적인 목적으로 이용한 경우</li>
+      <li>서비스 운영을 고의로 방해한 경우</li>
+      <li>24시간 내 3개 이상의 계정을 생성한 경우 (IP 기반 제한)</li>
+      <li>자동화 도구를 사용하여 서비스를 부정 이용한 경우</li>
+    </ul>
+
+    <h2>제6조 (크레딧 정책)</h2>
+    <ul>
+      <li>크레딧은 회사가 정한 가격에 따라 구매할 수 있습니다.</li>
+      <li>무료 크레딧은 매월 자동 충전되며, 미사용 크레딧은 이월되지 않습니다.</li>
+      <li>유료 크레딧은 사용 기한이 없으며, 구매일로부터 유효합니다.</li>
+      <li>크레딧 사용 시 무료 크레딧이 먼저 차감됩니다.</li>
+    </ul>
+
+    <h2>제7조 (회원 탈퇴)</h2>
+    <ul>
+      <li>회원은 언제든지 서비스 내에서 회원 탈퇴를 요청할 수 있습니다.</li>
+      <li>탈퇴 시 잔여 크레딧은 소멸되며, 30일 내 동일 이메일로 재가입이 제한됩니다.</li>
+      <li>탈퇴 후에도 관련 법령에 따라 일부 정보가 보관될 수 있습니다.</li>
+    </ul>
+
+    <h2>제8조 (면책 조항)</h2>
+    <ul>
+      <li>회사는 AI 생성 콘텐츠의 정확성, 완전성을 보장하지 않습니다.</li>
+      <li>천재지변, 전쟁, 시스템 장애 등 불가항력적 사유로 인한 서비스 중단에 대해 책임을 지지 않습니다.</li>
+      <li>회원이 생성한 콘텐츠로 인해 발생한 문제에 대해 회사는 책임을 지지 않습니다.</li>
+    </ul>
+
+    <h2>제9조 (분쟁 해결)</h2>
+    <p>서비스 이용과 관련하여 발생한 분쟁은 회사의 소재지를 관할하는 법원을 전속 관할 법원으로 합니다.</p>
+
+    <!-- 환불 정책 섹션 -->
+    <hr class="divider">
+
+    <span class="refund-tag">결제 관련 정책</span>
+    <h1 style="margin-top: 8px;">환불 정책</h1>
+    <p class="updated">최종 업데이트: 2026년 2월</p>
+
+    <h2>제1조 (환불 가능 조건)</h2>
+    <ul>
+      <li>크레딧 구매 후 <strong>7일 이내</strong>, 사용하지 않은 크레딧에 한해 환불 가능합니다.</li>
+      <li>시스템 장애로 인한 서비스 이용 불가 시 <strong>전액 환불</strong>합니다.</li>
+      <li>서비스 품질 불만족 시 사용하지 않은 크레딧에 대해 <strong>부분 환불</strong>이 가능합니다.</li>
+    </ul>
+
+    <h2>제2조 (환불 불가 조건)</h2>
+    <ul>
+      <li>이미 사용한 크레딧</li>
+      <li>프로모션이나 이벤트로 무료 지급된 크레딧</li>
+      <li>구매 후 7일이 경과한 경우</li>
+      <li>회원 탈퇴 후 잔여 크레딧</li>
+    </ul>
+
+    <h2>제3조 (환불 절차)</h2>
+    <ul>
+      <li>고객센터 이메일(<a href="mailto:contentitda@naver.com" style="color:#7c3aed;">contentitda@naver.com</a>)로 환불 요청</li>
+      <li>요청 접수 후 확인 및 검토</li>
+      <li><strong>3~5 영업일 이내</strong> 원래 결제 수단으로 환불 처리</li>
+    </ul>
+
+    <h2>제4조 (환불 금액 산정)</h2>
+    <ul>
+      <li>미사용 크레딧 수 × 크레딧 단가 = 환불 금액</li>
+      <li>결제 수수료가 발생한 경우 해당 수수료를 차감한 금액이 환불됩니다.</li>
+    </ul>
+
+    <div class="contact-box">
+      <p><strong>환불 및 결제 관련 문의</strong></p>
+      <p>이메일: <a href="mailto:contentitda@naver.com" style="color:#7c3aed;">contentitda@naver.com</a></p>
+      <p style="margin-top:8px; font-size:13px; color:#6b7280;">환불 요청 시 주문번호, 이메일, 환불 사유를 함께 기재해 주세요.</p>
+    </div>
+  </div>
+
+  <!-- 푸터 -->
+  <footer class="bg-gray-50 border-t border-gray-200 py-8">
+    <div class="max-w-7xl mx-auto px-4 text-center">
+      <div class="flex justify-center gap-6 mb-4">
+        <a href="/privacy" class="text-sm text-gray-500 hover:text-gray-700">개인정보처리방침</a>
+        <a href="/terms" class="text-sm font-semibold text-purple-600">이용약관</a>
+      </div>
+      <p class="text-sm text-gray-400">&copy; 2026 마케팅허브 AI 스튜디오. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>`);
+});
+
+// ===================================
 // 크레딧 상품 목록 API
 // ===================================
 app.get('/api/products', async (c) => {
