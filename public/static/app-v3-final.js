@@ -5749,37 +5749,27 @@ async function syncUserToBackend(session, isNewUser = false) {
       
       localStorage.setItem('postflow_user', JSON.stringify(window.currentUser));
       
-      // 🔔 모든 컴포넌트에 알림 (핵심!)
-      // ✅ setTimeout으로 이벤트 발생 지연 (DOM 업데이트 대기)
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('userUpdated', {
-          detail: window.currentUser
-        }));
-        console.log('🔔 userUpdated 이벤트 발생! (지연 실행)');
-      }, 100);  // 0.1초 지연
-      
-      updateAuthUI();
-      
-      // 🔥 프로필 자동 로드 추가
-      loadProfileFromDB(session.user.id);
-      
-      // 🚨 회원가입 완료 여부 체크 (window.currentUser만 참조!)
+      // 🚨 신규회원 체크를 대시보드 로드보다 먼저 실행!
       if (!window.currentUser.registration_completed) {
-        console.log('🔔 회원가입 미완료 → 모달 표시');
+        console.log('🔔 회원가입 미완료 → 모달 먼저 표시 (대시보드 로드 지연)');
+        // 기본 UI만 업데이트 (대시보드 데이터 로드는 하지 않음)
+        updateAuthUI();
         showRegistrationCompleteModal(session.user.id);
+        // ⚠️ userUpdated 이벤트와 loadProfileFromDB는 모달 완료 후 실행됨
       } else {
-        console.log('✅ 회원가입 이미 완료 - 모달 표시 안 함');
-        // 신규 사용자 / 기존 사용자 환영 메시지 - 비활성화
-        // 사용자 피드백: 대시보드 이동 시 팝업이 부담스럽다는 의견으로 비활성화
-        /*
-        if (window.location.pathname !== '/') {
-          if (isNewUser) {
-            showWelcomeMessage('signup');
-          } else {
-            showWelcomeMessage('login');
-          }
-        }
-        */
+        console.log('✅ 회원가입 이미 완료 - 대시보드 정상 로드');
+        // 🔔 모든 컴포넌트에 알림 (핵심!)
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('userUpdated', {
+            detail: window.currentUser
+          }));
+          console.log('🔔 userUpdated 이벤트 발생! (지연 실행)');
+        }, 100);
+        
+        updateAuthUI();
+        
+        // 🔥 프로필 자동 로드 추가
+        loadProfileFromDB(session.user.id);
       }
     } else {
       const errorData = await response.json().catch(() => ({ error: '응답 파싱 실패' }));
@@ -6315,6 +6305,16 @@ function showRegistrationCompleteModal(userId) {
         // UI 업데이트
         updateAuthUI();
         updateCostEstimate();
+        
+        // 🔥 모달 완료 후 대시보드 로드 실행 (신규회원 순서 보장)
+        console.log('🔥 모달 완료 → 대시보드 데이터 로드 시작');
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('userUpdated', {
+            detail: window.currentUser
+          }));
+          console.log('🔔 userUpdated 이벤트 발생! (모달 완료 후)');
+        }, 100);
+        loadProfileFromDB(userId);
         
       } else {
         console.error('❌ 회원가입 완료 실패:', data.error);
