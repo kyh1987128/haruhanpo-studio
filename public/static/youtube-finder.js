@@ -4904,7 +4904,7 @@ function renderMetricsComparisonChart(videos, videosInfo) {
       </h3>
       <div style="display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap;">
         <!-- 왼쪽: 레이더 차트 -->
-        <div style="flex: 1; min-width: 300px;">
+        <div style="flex: 1; min-width: 300px; max-width: 400px;">
           <h4 style="font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 16px; text-align: center;">
             성과 레이더 비교
           </h4>
