@@ -11,6 +11,10 @@ export const landingPageTemplate = `
     <title>마케팅허브 AI 스튜디오 - AI로 콘텐츠 제작을 10배 빠르게</title>
     <meta name="description" content="30초 만에 9개 플랫폼 콘텐츠 자동 생성, 유튜브 AI 분석, 영상 스토리보드 제작까지. 1개 계정으로 3개 서비스 모두 이용하세요.">
     <link href="/static/styles.css" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
     <!-- FontAwesome 6.5.1 (스레드 아이콘 지원) -->
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" rel="stylesheet">
     <!-- AOS Animation Library -->
@@ -23,8 +27,9 @@ export const landingPageTemplate = `
             <div class="flex justify-between items-center h-16">
                 <!-- 로고 -->
                 <div class="flex items-center gap-2">
-                    <a href="javascript:void(0)" onclick="handleLogoClick()" class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition cursor-pointer">
-                        🏠 마케팅허브 AI 스튜디오
+                    <a href="javascript:void(0)" onclick="handleLogoClick()" class="flex items-center gap-2 text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition cursor-pointer">
+                        <img src="/static/logo-192.png" alt="마케팅허브" style="width: 32px; height: 32px; border-radius: 8px;">
+                        마케팅허브 AI 스튜디오
                     </a>
                 </div>
                 

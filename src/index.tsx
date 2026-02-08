@@ -1900,6 +1900,10 @@ app.get('/auth/callback', async (c) => {
       <title>이메일 인증 처리 중...</title>
       <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
       <link href="/static/styles.css" rel="stylesheet">
+      <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+      <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+      <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+      <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
     </head>
     <body class="bg-gray-100 flex items-center justify-center min-h-screen">
       <div class="bg-white p-8 rounded-lg shadow-lg text-center max-w-md">
@@ -4138,6 +4142,10 @@ app.get('/privacy', (c) => {
   <title>개인정보처리방침 - 마케팅허브 AI 스튜디오</title>
   <meta name="description" content="마케팅허브 AI 스튜디오 개인정보처리방침">
   <link href="/static/styles.css" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" rel="stylesheet">
   <style>
     .policy-body { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
@@ -4156,8 +4164,9 @@ app.get('/privacy', (c) => {
   <header class="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
     <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
-        <a href="/" class="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition">
-          🏠 마케팅허브 AI 스튜디오
+        <a href="/" class="flex items-center gap-2 hover:opacity-80 transition">
+          <img src="/static/logo-192.png" alt="마케팅허브" style="width: 32px; height: 32px; border-radius: 8px;">
+          <span class="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">마케팅허브 AI 스튜디오</span>
         </a>
         <div class="flex items-center gap-4">
           <a href="/terms" class="text-sm text-gray-500 hover:text-purple-600 transition">이용약관</a>
@@ -4268,6 +4277,10 @@ app.get('/terms', (c) => {
   <title>이용약관 - 마케팅허브 AI 스튜디오</title>
   <meta name="description" content="마케팅허브 AI 스튜디오 이용약관 및 환불정책">
   <link href="/static/styles.css" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" rel="stylesheet">
   <style>
     .policy-body { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
@@ -4289,8 +4302,9 @@ app.get('/terms', (c) => {
   <header class="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
     <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
-        <a href="/" class="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition">
-          🏠 마케팅허브 AI 스튜디오
+        <a href="/" class="flex items-center gap-2 hover:opacity-80 transition">
+          <img src="/static/logo-192.png" alt="마케팅허브" style="width: 32px; height: 32px; border-radius: 8px;">
+          <span class="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">마케팅허브 AI 스튜디오</span>
         </a>
         <div class="flex items-center gap-4">
           <a href="/privacy" class="text-sm text-gray-500 hover:text-purple-600 transition">개인정보처리방침</a>
