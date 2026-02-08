@@ -4012,11 +4012,6 @@ function openCompareModal() {
   // 비교 테이블 렌더링
   renderCompareTable();
   
-  // 레이더 차트는 AI 분석 버튼 클릭 후에 렌더링 (모달 열릴 때 숨김)
-  const radarSection = document.getElementById('compare-radar-chart')?.closest('.bg-gray-50');
-  if (radarSection) {
-    radarSection.style.display = 'none';
-  }
 }
 
 /**
@@ -4562,9 +4557,9 @@ ${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
       // 시각화 모드: 구조화된 JSON 데이터로 카드/차트/테이블 렌더링
       console.log('[AI 분석] 시각화 모드 활성화 — videos:', visualData.videos.length);
       const dashboardHtml = generateVisualizationDashboard(videosInfo, '');
-      const crownSectionHtml = generateCrownSection(videosInfo);
+      const scoreCardsHtml = generateScoreBreakdownCards(videosInfo);
       const visualHtml = renderVisualAnalysis(videosInfo, visualData);
-      finalHtml = dashboardHtml + crownSectionHtml + visualHtml;
+      finalHtml = dashboardHtml + scoreCardsHtml + visualHtml;
     } else if (rawData && (rawData.individualAnalysis || rawData.videos)) {
       // 레거시 JSON 모드 (호환성)
       console.log('[AI 분석] 레거시 JSON 모드');
@@ -4574,8 +4569,8 @@ ${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
       console.log('[AI 분석] Markdown 폴백 모드');
       const html = markdownToHtml(analysis);
       const dashboardHtml = generateVisualizationDashboard(videosInfo, analysis);
-      const crownSectionHtml = generateCrownSection(videosInfo);
-      finalHtml = dashboardHtml + crownSectionHtml + '<div style="margin-top: 30px;">' + html + '</div>';
+      const scoreCardsHtml = generateScoreBreakdownCards(videosInfo);
+      finalHtml = dashboardHtml + scoreCardsHtml + '<div style="margin-top: 30px;">' + html + '</div>';
     }
     
     // 결과 표시
@@ -4597,12 +4592,11 @@ ${videosInfo.length > 2 ? '- 영상 3의 약점' : ''}
       a.removeAttribute('href');
     });
     
-    // 레이더 차트 표시 + 렌더링 (AI 분석 결과와 함께)
-    const radarSection = document.getElementById('compare-radar-chart')?.closest('.bg-gray-50');
-    if (radarSection) {
-      radarSection.style.display = '';
+    // 레이더 차트 렌더링 (성과 비교 차트 내부 캔버스에)
+    const radarCanvas = contentDiv.querySelector('canvas[id^="compare-radar-chart-"]');
+    if (radarCanvas && typeof renderCompareRadarOnCanvas === 'function') {
+      renderCompareRadarOnCanvas(radarCanvas, selectedCompareVideos);
     }
-    renderCompareChart();
     
     // 복사하기 버튼 추가
     addCopyButton(contentDiv);
@@ -4698,140 +4692,155 @@ function copyAIAnalysisContent(event) {
 window.copyAIAnalysisContent = copyAIAnalysisContent;
 
 /**
- * 왕관 섹션 생성 (최고 성과 영상 분석)
+ * 성과 요인 분해 카드 (종합 점수 + 기여도 분해)
  */
-function generateCrownSection(videosInfo) {
-  // 최고 조회수 찾기
-  let maxViews = { video: null, index: -1, value: 0 };
-  let maxLikeRate = { video: null, index: -1, value: 0 };
-  let minDuration = { video: null, index: -1, value: Infinity };
+function generateScoreBreakdownCards(videosInfo) {
+  if (!videosInfo || videosInfo.length === 0) return '';
   
-  videosInfo.forEach((video, i) => {
-    // 조회수
-    const views = parseInt(video.views) || 0;
-    if (views > maxViews.value) {
-      maxViews = { video, index: i, value: views };
-    }
+  // 각 영상의 지표별 점수 계산
+  const analyzed = videosInfo.map((video, idx) => {
+    const views = parseInt(video.views) || parseInt(video.viewCount) || 0;
+    const subs = parseInt(video.subscriberCount) || parseInt(video.subscribers) || 0;
+    const likes = parseInt(video.likes) || parseInt(video.likeCount) || 0;
+    const comments = parseInt(video.comments) || parseInt(video.commentCount) || 0;
+    const likeRate = views > 0 ? (likes / views) * 100 : 0;
+    const viralRate = subs > 0 ? (views / subs) * 100 : 0;
     
-    // 좋아요율
-    const likeRate = parseFloat(video.performance?.likeRate) || 0;
-    if (likeRate > maxLikeRate.value) {
-      maxLikeRate = { video, index: i, value: likeRate };
-    }
+    // 영상 길이 파싱
+    let durationSec = 0;
+    const dur = video.duration || '';
+    const hMatch = dur.match(/(\d+)H/);
+    const mMatch = dur.match(/(\d+)M/);
+    const sMatch = dur.match(/(\d+)S/);
+    if (hMatch) durationSec += parseInt(hMatch[1]) * 3600;
+    if (mMatch) durationSec += parseInt(mMatch[1]) * 60;
+    if (sMatch) durationSec += parseInt(sMatch[1]);
     
-    // 영상 길이 (짧은 것이 우승)
-    const duration = video.duration || 0;
-    if (duration > 0 && duration < minDuration.value) {
-      minDuration = { video, index: i, value: duration };
-    }
+    // 영상 길이 적절성 (5~15분이 최적)
+    let durationFit = 0;
+    if (durationSec >= 300 && durationSec <= 900) durationFit = 100;
+    else if (durationSec >= 180 && durationSec <= 1200) durationFit = 70;
+    else if (durationSec >= 60 && durationSec <= 1800) durationFit = 40;
+    else durationFit = 20;
+    
+    return { video, idx, views, subs, likes, comments, likeRate, viralRate, durationSec, durationFit };
   });
   
-  // 각 영상의 트로피 생성
-  const videoCards = videosInfo.map((video, i) => {
-    const trophies = [];
+  // 각 지표의 최대값 (상대 점수 계산용)
+  const maxViews = Math.max(...analyzed.map(a => a.views), 1);
+  
+  // 영상별 기여도 산출 및 종합 점수 계산
+  const cards = analyzed.map(a => {
+    // 바이럴 지수 점수 (0~100)
+    const viralScore = Math.min(100, a.viralRate);
+    // 좋아요율 점수 (0~100, 3% = 100점)
+    const likeScore = Math.min(100, (a.likeRate / 3) * 100);
+    // 조회수 점수 (상대)
+    const viewScore = (a.views / maxViews) * 100;
+    // 길이 점수
+    const durScore = a.durationFit;
     
-    // 조회수 1위
-    if (i === maxViews.index) {
-      trophies.push({
-        icon: '📊',
-        title: '조회수 1위',
-        value: `${maxViews.value.toLocaleString()}회`,
-        color: '#3b82f6'
-      });
-    }
+    // 가중 종합 점수
+    const totalScore = Math.round(viralScore * 0.4 + likeScore * 0.3 + viewScore * 0.2 + durScore * 0.1);
     
-    // 좋아요율 1위
-    if (i === maxLikeRate.index) {
-      trophies.push({
-        icon: '👍',
-        title: '좋아요율 1위',
-        value: `${maxLikeRate.value.toFixed(2)}%`,
-        color: '#10b981'
-      });
-    }
+    // 기여도 (각 항목이 종합 점수에 기여한 절대 점수)
+    const viralContrib = Math.round(viralScore * 0.4);
+    const likeContrib = Math.round(likeScore * 0.3);
+    const viewContrib = Math.round(viewScore * 0.2);
+    const durContrib = Math.round(durScore * 0.1);
     
-    // 완주율 1위 (짧은 길이)
-    if (minDuration.index >= 0 && i === minDuration.index) {
-      trophies.push({
-        icon: '⚡',
-        title: '완주율 1위',
-        value: video.displayDuration || '짧은 길이',
-        color: '#8b5cf6'
-      });
-    }
+    // 기여 비율 (스택 바용)
+    const total = viralContrib + likeContrib + viewContrib + durContrib || 1;
+    const viralPct = Math.round((viralContrib / total) * 100);
+    const likePct = Math.round((likeContrib / total) * 100);
+    const viewPct = Math.round((viewContrib / total) * 100);
+    const durPct = 100 - viralPct - likePct - viewPct;
     
-    return {
-      video,
-      index: i,
-      trophies
-    };
+    const title = a.video.title || a.video.videoTitle || ('영상 ' + (a.idx + 1));
+    const channel = a.video.channelTitle || a.video.channel || '';
+    
+    // 강점/약점 판별
+    const factors = [
+      { name: '바이럴 지수', score: viralScore, pct: viralPct, value: a.viralRate.toFixed(0) + '%', color: '#3b82f6' },
+      { name: '좋아요율', score: likeScore, pct: likePct, value: a.likeRate.toFixed(2) + '%', color: '#10b981' },
+      { name: '조회수', score: viewScore, pct: viewPct, value: a.views.toLocaleString() + '회', color: '#8b5cf6' },
+      { name: '영상 길이', score: durScore, pct: durPct, value: Math.floor(a.durationSec/60) + '분 ' + (a.durationSec%60) + '초', color: '#f59e0b' }
+    ];
+    
+    factors.sort((a, b) => b.score - a.score);
+    const strength = factors[0];
+    const weakness = factors[factors.length - 1];
+    
+    return { title, channel, totalScore, factors, strength, weakness, idx: a.idx };
   });
   
-  // HTML 생성 — 수상(trophies)이 있는 영상만 카드 렌더링
-  const cardsWithTrophies = videoCards.filter(card => card.trophies.length > 0);
-  const cardsHtml = cardsWithTrophies.map(card => {
-    return `
-      <div style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border: 2px solid #fb923c; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-          <div style="font-size: 24px; font-weight: 800; color: #1f2937;">
-            영상 ${card.index + 1}
+  const cardColors = ['#3b82f6', '#10b981', '#ef4444'];
+  
+  const cardsHtml = cards.map(card => {
+    const cardColor = cardColors[card.idx] || '#6b7280';
+    
+    // 스택 바 (CSS)
+    const stackBar = card.factors.map(f => 
+      `<div style="width: ${Math.max(f.pct, 5)}%; background: ${f.color}; height: 100%; display: inline-block;" title="${f.name}: ${f.pct}%"></div>`
+    ).join('');
+    
+    const factorList = card.factors.map(f => {
+      const label = f.score >= 70 ? '강' : f.score >= 40 ? '중' : '약';
+      const labelColor = f.score >= 70 ? '#16a34a' : f.score >= 40 ? '#d97706' : '#dc2626';
+      const labelBg = f.score >= 70 ? '#dcfce7' : f.score >= 40 ? '#fef3c7' : '#fee2e2';
+      return `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #f3f4f6;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 10px; height: 10px; border-radius: 50%; background: ${f.color};"></div>
+            <span style="font-size: 13px; color: #374151;">${f.name}</span>
           </div>
-          <div style="font-size: 24px;">🏆</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 13px; font-weight: 600; color: #1e293b;">${f.value}</span>
+            <span style="font-size: 11px; font-weight: 600; color: ${labelColor}; background: ${labelBg}; padding: 2px 6px; border-radius: 4px;">${label}</span>
+            <span style="font-size: 12px; color: #6b7280;">${f.pct}%</span>
+          </div>
         </div>
-        
-        <div style="font-size: 14px; color: #6b7280; margin-bottom: 12px; line-height: 1.4;">
-          ${card.video.title.substring(0, 50)}${card.video.title.length > 50 ? '...' : ''}
+      `;
+    }).join('');
+    
+    return `
+      <div style="background: white; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden; flex: 1; min-width: 280px;">
+        <div style="background: ${cardColor}; padding: 12px 16px; color: white;">
+          <div style="font-size: 12px; opacity: 0.8;">영상 ${card.idx + 1}</div>
+          <div style="font-size: 14px; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${card.title}</div>
+          <div style="font-size: 12px; opacity: 0.8; margin-top: 2px;">${card.channel}</div>
         </div>
-        
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          ${card.trophies.map(trophy => `
-            <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: white; border-radius: 8px; border-left: 3px solid ${trophy.color};">
-              <span style="font-size: 16px;">${trophy.icon}</span>
-              <span style="font-size: 14px; font-weight: 600; color: #374151;">${trophy.title}</span>
-              <span style="margin-left: auto; font-size: 13px; color: #6b7280;">${trophy.value}</span>
-            </div>
-          `).join('')}
+        <div style="padding: 16px;">
+          <div style="text-align: center; margin-bottom: 12px;">
+            <span style="font-size: 32px; font-weight: 800; color: ${cardColor};">${card.totalScore}</span>
+            <span style="font-size: 16px; color: #9ca3af;">/100</span>
+          </div>
+          <div style="height: 8px; background: #f3f4f6; border-radius: 4px; overflow: hidden; display: flex; margin-bottom: 16px;">
+            ${stackBar}
+          </div>
+          ${factorList}
+          <div style="margin-top: 12px; padding: 10px; background: #f0fdf4; border-radius: 8px; border-left: 3px solid #16a34a;">
+            <div style="font-size: 11px; color: #16a34a; font-weight: 600;">최대 강점</div>
+            <div style="font-size: 13px; color: #374151; margin-top: 2px;">${card.strength.name} -- ${card.strength.value} (기여 ${card.strength.pct}%)</div>
+          </div>
+          <div style="margin-top: 8px; padding: 10px; background: #fef2f2; border-radius: 8px; border-left: 3px solid #dc2626;">
+            <div style="font-size: 11px; color: #dc2626; font-weight: 600;">개선 필요</div>
+            <div style="font-size: 13px; color: #374151; margin-top: 2px;">${card.weakness.name} -- ${card.weakness.value} (기여 ${card.weakness.pct}%)</div>
+          </div>
         </div>
       </div>
     `;
   }).join('');
   
-  // 한줄 결론 생성
-  const conclusionParts = [];
-  if (maxViews.index >= 0) conclusionParts.push(`영상 ${maxViews.index + 1}의 바이럴 전략`);
-  if (minDuration.index >= 0) conclusionParts.push(`영상 ${minDuration.index + 1}의 짧은 길이`);
-  
-  const conclusion = conclusionParts.length > 0 
-    ? conclusionParts.join(' + ') + '을 결합하면 완벽한 공식 완성'
-    : '각 영상의 강점을 분석하여 최적의 전략을 수립하세요';
-  
-  // 수상 카드가 없으면 카드 그리드 숨김, 한줄 결론은 항상 표시
-  const cardsGridHtml = cardsWithTrophies.length > 0 ? `
-      <div style="display: grid; gap: 16px; margin-bottom: 24px;">
-        ${cardsHtml}
-      </div>
-  ` : '';
-
   return `
-    <div style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border: 2px solid #fb923c; border-radius: 16px; padding: 32px; margin: 30px 0; box-shadow: 0 8px 24px rgba(251, 146, 60, 0.15);">
-      <div style="text-align: center; margin-bottom: 24px;">
-        <h2 style="margin: 0; font-size: 28px; color: #ea580c; font-weight: 800;">
-          🏆 최고 성과 영상 분석
-        </h2>
-        <p style="margin: 8px 0 0 0; font-size: 14px; color: #9a3412;">각 영상의 수상 내역</p>
+    <div style="margin: 20px 0;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+        <span style="background: #7c3aed; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700;">2</span>
+        <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">성과 요인 분해</h3>
       </div>
-      
-      ${cardsGridHtml}
-      
-      <div style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 12px; padding: 20px; border: 2px solid #22c55e;">
-        <div style="text-align: center;">
-          <div style="font-size: 18px; font-weight: 700; color: #166534; margin-bottom: 8px;">
-            💡 한줄 결론
-          </div>
-          <div style="font-size: 16px; color: #15803d; line-height: 1.6;">
-            ${conclusion}
-          </div>
-        </div>
+      <p style="font-size: 13px; color: #6b7280; margin: 0 0 16px 0;">각 영상의 종합 점수가 어떤 지표에서 나왔는지 분해합니다. 바이럴(40%) + 좋아요율(30%) + 조회수(20%) + 길이(10%)</p>
+      <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+        ${cardsHtml}
       </div>
     </div>
   `;
@@ -4886,6 +4895,7 @@ function renderVisualAnalysis(videosInfo, visualData) {
  */
 function renderMetricsComparisonChart(videos, videosInfo) {
   const chartId = 'metrics-compare-chart-' + Date.now();
+  const radarCanvasId = 'compare-radar-chart-' + Date.now();
   
   // 영상별 라벨 (앞 15자)
   const labels = videos.map((v, i) => {
@@ -4938,6 +4948,14 @@ function renderMetricsComparisonChart(videos, videosInfo) {
           }).join('')}
         </div>
       </div>
+      <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+        <h4 style="font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 16px; text-align: center;">
+          성과 레이더 비교
+        </h4>
+        <div style="max-width: 500px; margin: 0 auto;">
+          <canvas id="${radarCanvasId}"></canvas>
+        </div>
+      </div>
     </div>
     <script>
     (function() {
@@ -4981,6 +4999,86 @@ function renderMetricsComparisonChart(videos, videosInfo) {
     })();
     </script>
   `;
+}
+
+/**
+ * 레이더 차트 렌더링 (성과 비교 차트 내부 캔버스에)
+ */
+function renderCompareRadarOnCanvas(canvas, videos) {
+  if (!canvas || !videos || videos.length === 0) return;
+  
+  const labels = ['조회수', '구독자', '성과도', '좋아요', '댓글'];
+  const numMetrics = 5;
+  
+  // 원시 값 추출
+  const rawValues = videos.map(video => {
+    const views = parseInt(video.views) || parseInt(video.viewCount) || 0;
+    const subs = parseInt(video.subscriberCount) || parseInt(video.subscribers) || 0;
+    const likes = parseInt(video.likes) || parseInt(video.likeCount) || 0;
+    const comments = parseInt(video.comments) || parseInt(video.commentCount) || 0;
+    const likeRate = views > 0 ? (likes / views) * 100 : 0;
+    return [views, subs, likeRate, likes, comments];
+  });
+  
+  // Min-Max 정규화 (0~100)
+  const normalizedValues = [];
+  if (videos.length === 1) {
+    normalizedValues.push([50, 50, 50, 50, 50]);
+  } else {
+    for (let m = 0; m < numMetrics; m++) {
+      const vals = rawValues.map(r => r[m]);
+      const min = Math.min(...vals);
+      const max = Math.max(...vals);
+      const range = max - min;
+      rawValues.forEach((rv, idx) => {
+        if (!normalizedValues[idx]) normalizedValues[idx] = [];
+        normalizedValues[idx][m] = range === 0 ? 50 : Math.round(((rv[m] - min) / range) * 100);
+      });
+    }
+  }
+  
+  const colors = [
+    { bg: 'rgba(59, 130, 246, 0.2)', border: 'rgb(59, 130, 246)' },
+    { bg: 'rgba(16, 185, 129, 0.2)', border: 'rgb(16, 185, 129)' },
+    { bg: 'rgba(239, 68, 68, 0.2)', border: 'rgb(239, 68, 68)' }
+  ];
+  
+  const datasets = videos.map((video, index) => {
+    const data = normalizedValues[index] || [0, 0, 0, 0, 0];
+    const title = video.title || video.videoTitle || ('영상 ' + (index + 1));
+    const shortTitle = title.length > 15 ? title.substring(0, 15) + '...' : title;
+    return {
+      label: shortTitle,
+      data: data,
+      backgroundColor: colors[index]?.bg || 'rgba(100,100,100,0.2)',
+      borderColor: colors[index]?.border || 'rgb(100,100,100)',
+      borderWidth: 2,
+      pointBackgroundColor: colors[index]?.border || 'rgb(100,100,100)',
+      pointBorderColor: '#fff',
+      pointHoverBackgroundColor: '#fff',
+      pointHoverBorderColor: colors[index]?.border || 'rgb(100,100,100)'
+    };
+  });
+  
+  new Chart(canvas, {
+    type: 'radar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      scales: {
+        r: {
+          beginAtZero: true,
+          max: 100,
+          ticks: { stepSize: 20, display: false },
+          grid: { color: 'rgba(0,0,0,0.05)' },
+          pointLabels: { font: { size: 12, weight: 'bold' }, color: '#374151' }
+        }
+      },
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true, font: { size: 11 } } }
+      }
+    }
+  });
 }
 
 /**

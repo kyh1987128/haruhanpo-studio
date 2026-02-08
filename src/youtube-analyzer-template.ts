@@ -1146,17 +1146,6 @@ export function youtubeAnalyzerTemplate() {
           </table>
         </div>
         
-        <!-- 레이더 차트 -->
-        <div class="bg-gray-50 rounded-xl p-6">
-          <h3 class="text-lg font-bold text-gray-900 mb-4 text-center">
-            <i class="fas fa-chart-area text-green-600 mr-2"></i>
-            성과 레이더 차트
-          </h3>
-          <div class="flex justify-center">
-            <canvas id="compare-radar-chart" style="max-width: 500px; max-height: 500px;"></canvas>
-          </div>
-        </div>
-        
         <!-- AI 비교 분석 -->
         <div class="mt-6">
           <button 
