@@ -6509,15 +6509,40 @@ app.get('/community', (c) => {
 });
 
 // ========================================
+// 🔥 정적 루트 파일 서빙 (robots.txt, sitemap.xml, favicon.ico)
+// ========================================
+app.get('/robots.txt', (c) => {
+  return c.text(`User-agent: *
+Allow: /
+Sitemap: https://marketinghub-ai.com/sitemap.xml
+`, 200, { 'Content-Type': 'text/plain; charset=utf-8' });
+});
+
+app.get('/sitemap.xml', (c) => {
+  return c.text(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://marketinghub-ai.com/</loc>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://marketinghub-ai.com/privacy</loc>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://marketinghub-ai.com/terms</loc>
+    <priority>0.5</priority>
+  </url>
+</urlset>`, 200, { 'Content-Type': 'application/xml; charset=utf-8' });
+});
+
+app.get('/favicon.ico', serveStatic({ path: './public/favicon.ico' }));
+
+// ========================================
 // 🔥 Catch-all 라우트 (404 처리)
 // ========================================
 app.get('*', (c) => {
   const path = c.req.path;
-  
-  // favicon은 404 반환
-  if (path === '/favicon.ico') {
-    return c.text('Not Found', 404);
-  }
   
   // 그 외 모든 경로는 랜딩 페이지 반환
   return c.html(landingPageTemplate);
