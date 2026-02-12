@@ -8,6 +8,7 @@ export const landingPageTemplate = `
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="naver-site-verification" content="a0d894323b50af92ad799b57c3316d8b74eca14b" />
     <title>마케팅허브 AI 스튜디오 - AI로 콘텐츠 제작을 10배 빠르게</title>
     <meta name="description" content="30초 만에 9개 플랫폼 콘텐츠 자동 생성, 유튜브 AI 분석, 영상 스토리보드 제작까지. 1개 계정으로 3개 서비스 모두 이용하세요.">
     <link href="/static/styles.css" rel="stylesheet">

@@ -1897,6 +1897,7 @@ app.get('/auth/callback', async (c) => {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="naver-site-verification" content="a0d894323b50af92ad799b57c3316d8b74eca14b" />
       <title>이메일 인증 처리 중...</title>
       <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
       <link href="/static/styles.css" rel="stylesheet">
@@ -4139,6 +4140,7 @@ app.get('/privacy', (c) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="naver-site-verification" content="a0d894323b50af92ad799b57c3316d8b74eca14b" />
   <title>개인정보처리방침 - 마케팅허브 AI 스튜디오</title>
   <meta name="description" content="마케팅허브 AI 스튜디오 개인정보처리방침">
   <link href="/static/styles.css" rel="stylesheet">
@@ -4274,6 +4276,7 @@ app.get('/terms', (c) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="naver-site-verification" content="a0d894323b50af92ad799b57c3316d8b74eca14b" />
   <title>이용약관 - 마케팅허브 AI 스튜디오</title>
   <meta name="description" content="마케팅허브 AI 스튜디오 이용약관 및 환불정책">
   <link href="/static/styles.css" rel="stylesheet">
@@ -6487,6 +6490,7 @@ app.get('/community', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="naver-site-verification" content="a0d894323b50af92ad799b57c3316d8b74eca14b" />
         <title>커뮤니티 - 준비중</title>
         <script src="https://cdn.tailwindcss.com"></script>
     </head>

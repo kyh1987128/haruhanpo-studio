@@ -6,6 +6,7 @@ export const dashboardTemplate = `
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="naver-site-verification" content="a0d894323b50af92ad799b57c3316d8b74eca14b" />
     <title>마케팅허브 AI - 대시보드</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">

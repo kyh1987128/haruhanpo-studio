@@ -6,6 +6,7 @@ export const htmlTemplate = `
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="naver-site-verification" content="a0d894323b50af92ad799b57c3316d8b74eca14b" />
     <title>콘텐츠잇다 AI Studio</title>
     
     <!-- Google Analytics (GA4) -->
