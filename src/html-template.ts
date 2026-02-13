@@ -7,7 +7,7 @@ export const htmlTemplate = `
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="naver-site-verification" content="a0d894323b50af92ad799b57c3316d8b74eca14b" />
-    <title>콘텐츠잇다 AI Studio</title>
+    <title>마케팅허브 AI 스튜디오</title>
     
     <!-- Google Analytics (GA4) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
@@ -1239,8 +1239,8 @@ export const htmlTemplate = `
                         5개 플랫폼 맞춤 콘텐츠를 30초 안에 자동 생성합니다.
                     </p>
                     <div class="flex gap-4">
-                        <a href="mailto:contentitda@naver.com" class="text-blue-400 hover:text-blue-300 transition">
-                            <i class="fas fa-envelope"></i> contentitda@naver.com
+                        <a href="mailto:marketinghubai2026@gmail.com" class="text-blue-400 hover:text-blue-300 transition">
+                            <i class="fas fa-envelope"></i> marketinghubai2026@gmail.com
                         </a>
                     </div>
                 </div>
@@ -1252,7 +1252,7 @@ export const htmlTemplate = `
                         <li><a href="#" onclick="showRefundPolicy(); return false;" class="hover:text-white transition">환불 정책</a></li>
                         <li><a href="#" onclick="showPrivacyPolicy(); return false;" class="hover:text-white transition">개인정보 처리방침</a></li>
                         <li><a href="#" onclick="showTermsOfService(); return false;" class="hover:text-white transition">서비스 이용약관</a></li>
-                        <li><a href="mailto:contentitda@naver.com" class="hover:text-white transition">문의하기</a></li>
+                        <li><a href="mailto:marketinghubai2026@gmail.com" class="hover:text-white transition">문의하기</a></li>
                     </ul>
                 </div>
 
@@ -1270,7 +1270,14 @@ export const htmlTemplate = `
 
             <!-- 저작권 및 법적 고지 -->
             <div class="border-t border-gray-800 pt-8 text-center text-sm text-gray-500">
-                <p class="mb-2">© 2026 마케팅허브 AI Studio. All rights reserved.</p>
+                <p class="mb-2">© 2026 김선수컴퍼니. All rights reserved.</p>
+                <div class="text-xs space-y-1 mb-3">
+                    <p>상호명: 김선수컴퍼니 | 대표자: 김용현 | 사업자등록번호: 251-33-00794</p>
+                    <p>통신판매업신고번호: 2019-서울서대문-1243</p>
+                    <p>사업장 주소: 경상남도 창원시 성산구 충혼로 91, 1층 110호 경남관광기업지원센터</p>
+                    <p>고객센터: marketinghubai2026@gmail.com | 전화: 055-606-0826</p>
+                    <p>개인정보관리책임자: 김용현</p>
+                </div>
                 <p class="text-xs">
                     본 서비스는 AI 기술을 활용한 콘텐츠 생성 도구입니다. 
                     생성된 콘텐츠의 저작권은 사용자에게 있으며, 
@@ -1448,7 +1455,7 @@ export const htmlTemplate = `
                         환불을 원하시면 아래 방법으로 문의해주세요:
                     </p>
                     <ul class="list-disc list-inside space-y-1 text-gray-700">
-                        <li>이메일: <a href="mailto:refund@haruhanpo.com" class="text-blue-600 hover:underline">refund@haruhanpo.com</a></li>
+                        <li>이메일: <a href="mailto:marketinghubai2026@gmail.com" class="text-blue-600 hover:underline">marketinghubai2026@gmail.com</a></li>
                         <li>고객센터: 055-606-0826 (평일 09:00~18:00)</li>
                         <li>필수 정보: 주문번호, 구매일자, 환불 사유</li>
                     </ul>
@@ -1580,7 +1587,7 @@ export const htmlTemplate = `
                 window.location.reload();
             } catch (error) {
                 console.error('회원 탈퇴 오류:', error);
-                alert('회원 탈퇴 중 오류가 발생했습니다.\\n\\n문의: contentitda@naver.com');
+                alert('회원 탈퇴 중 오류가 발생했습니다.\\n\\n문의: marketinghubai2026@gmail.com');
             }
         }
         
@@ -1755,7 +1762,8 @@ export const htmlTemplate = `
             회사는 개인정보 처리에 관한 업무를 총괄해서 책임지고, 개인정보 처리와 관련한 정보주체의 불만처리 및 피해구제를 위하여 아래와 같이 개인정보 보호책임자를 지정하고 있습니다:
           </p>
           <ul style="list-style: none; margin-left: 0; margin-bottom: 15px;">
-            <li><strong>이메일:</strong> contentitda@naver.com</li>
+            <li><strong>성명:</strong> 김용현</li>
+            <li><strong>이메일:</strong> marketinghubai2026@gmail.com</li>
             <li><strong>전화번호:</strong> 055-606-0826</li>
           </ul>
 
@@ -2006,7 +2014,7 @@ export const htmlTemplate = `
             <li>생성된 콘텐츠의 품질이 주관적 기대에 미치지 못하는 경우 (기술적 오류가 아닌 경우)</li>
           </ul>
           <p style="margin-bottom: 15px;">
-            3. 환불 요청은 고객센터(055-606-0826 또는 contentitda@naver.com)를 통해 가능합니다.
+            3. 환불 요청은 고객센터(055-606-0826 또는 marketinghubai2026@gmail.com)를 통해 가능합니다.
           </p>
 
           <h3 style="font-weight: 600; margin: 20px 0 10px; color: #1f2937;">제8조 (이용자의 의무)</h3>

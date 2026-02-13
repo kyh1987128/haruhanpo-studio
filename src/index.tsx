@@ -4182,7 +4182,7 @@ app.get('/privacy', (c) => {
     <h1>개인정보처리방침</h1>
     <p class="updated">최종 업데이트: 2026년 2월</p>
 
-    <p>마케팅허브 AI 스튜디오(이하 "회사")는 이용자의 개인정보를 중요시하며, 「개인정보 보호법」 및 관련 법률을 준수합니다. 본 방침은 회사가 수집하는 개인정보의 항목, 이용 목적, 보유 기간 및 이용자의 권리에 대해 안내합니다.</p>
+    <p>김선수컴퍼니(이하 "회사")가 운영하는 마케팅허브 AI 스튜디오는 이용자의 개인정보를 중요시하며, 「개인정보 보호법」 및 관련 법률을 준수합니다. 본 방침은 회사가 수집하는 개인정보의 항목, 이용 목적, 보유 기간 및 이용자의 권리에 대해 안내합니다.</p>
 
     <h2>제1조 (수집하는 개인정보 항목)</h2>
     <p><strong>필수 수집 항목:</strong></p>
@@ -4248,8 +4248,10 @@ app.get('/privacy', (c) => {
     <h2>제8조 (개인정보 보호책임자)</h2>
     <div class="contact-box">
       <p><strong>개인정보 보호책임자</strong></p>
-      <p>이메일: <a href="mailto:contentitda@naver.com" style="color:#7c3aed;">contentitda@naver.com</a></p>
-      <p style="margin-top:8px; font-size:13px; color:#6b7280;">개인정보 관련 문의, 불만, 열람/정정/삭제 요청은 위 이메일로 접수해 주세요.</p>
+      <p>성명: 김용현</p>
+      <p>이메일: <a href="mailto:marketinghubai2026@gmail.com" style="color:#7c3aed;">marketinghubai2026@gmail.com</a></p>
+      <p>전화: 055-606-0826</p>
+      <p style="margin-top:8px; font-size:13px; color:#6b7280;">개인정보 관련 문의, 불만, 열람/정정/삭제 요청은 위 연락처로 접수해 주세요.</p>
     </div>
   </div>
 
@@ -4260,7 +4262,8 @@ app.get('/privacy', (c) => {
         <a href="/privacy" class="text-sm font-semibold text-purple-600">개인정보처리방침</a>
         <a href="/terms" class="text-sm text-gray-500 hover:text-gray-700">이용약관</a>
       </div>
-      <p class="text-sm text-gray-400">&copy; 2026 마케팅허브 AI 스튜디오. All rights reserved.</p>
+      <p class="text-sm text-gray-400">&copy; 2026 김선수컴퍼니. All rights reserved.</p>
+      <p class="text-xs text-gray-400 mt-1">상호명: 김선수컴퍼니 | 대표자: 김용현 | 사업자등록번호: 251-33-00794</p>
     </div>
   </footer>
 </body>
@@ -4322,7 +4325,7 @@ app.get('/terms', (c) => {
     <p class="updated">최종 업데이트: 2026년 2월</p>
 
     <h2>제1조 (목적)</h2>
-    <p>본 약관은 마케팅허브 AI 스튜디오(이하 "회사")가 제공하는 AI 콘텐츠 생성 서비스(이하 "서비스")의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.</p>
+    <p>본 약관은 김선수컴퍼니(이하 "회사")가 운영하는 마케팅허브 AI 스튜디오에서 제공하는 AI 콘텐츠 생성 서비스(이하 "서비스")의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.</p>
 
     <h2>제2조 (정의)</h2>
     <ul>
@@ -4406,7 +4409,7 @@ app.get('/terms', (c) => {
 
     <h2>제3조 (환불 절차)</h2>
     <ul>
-      <li>고객센터 이메일(<a href="mailto:contentitda@naver.com" style="color:#7c3aed;">contentitda@naver.com</a>)로 환불 요청</li>
+      <li>고객센터 이메일(<a href="mailto:marketinghubai2026@gmail.com" style="color:#7c3aed;">marketinghubai2026@gmail.com</a>)로 환불 요청</li>
       <li>요청 접수 후 확인 및 검토</li>
       <li><strong>3~5 영업일 이내</strong> 원래 결제 수단으로 환불 처리</li>
     </ul>
@@ -4419,7 +4422,7 @@ app.get('/terms', (c) => {
 
     <div class="contact-box">
       <p><strong>환불 및 결제 관련 문의</strong></p>
-      <p>이메일: <a href="mailto:contentitda@naver.com" style="color:#7c3aed;">contentitda@naver.com</a></p>
+      <p>이메일: <a href="mailto:marketinghubai2026@gmail.com" style="color:#7c3aed;">marketinghubai2026@gmail.com</a></p>
       <p style="margin-top:8px; font-size:13px; color:#6b7280;">환불 요청 시 주문번호, 이메일, 환불 사유를 함께 기재해 주세요.</p>
     </div>
   </div>
@@ -4431,7 +4434,8 @@ app.get('/terms', (c) => {
         <a href="/privacy" class="text-sm text-gray-500 hover:text-gray-700">개인정보처리방침</a>
         <a href="/terms" class="text-sm font-semibold text-purple-600">이용약관</a>
       </div>
-      <p class="text-sm text-gray-400">&copy; 2026 마케팅허브 AI 스튜디오. All rights reserved.</p>
+      <p class="text-sm text-gray-400">&copy; 2026 김선수컴퍼니. All rights reserved.</p>
+      <p class="text-xs text-gray-400 mt-1">상호명: 김선수컴퍼니 | 대표자: 김용현 | 사업자등록번호: 251-33-00794</p>
     </div>
   </footer>
 </body>

@@ -979,7 +979,7 @@ export const landingPageTemplate = `
                         <i class="fas fa-chevron-down transition-transform" id="faq5-icon"></i>
                     </button>
                     <div id="faq5" class="hidden px-8 pb-6 text-gray-700 leading-relaxed">
-                        <p>네! 기업용 플랜은 별도 문의를 통해 맞춤 상담이 가능합니다. 대량 크레딧 할인, 전담 매니저, API 연동 등을 제공합니다. (contentitda@naver.com)</p>
+                        <p>네! 기업용 플랜은 별도 문의를 통해 맞춤 상담이 가능합니다. 대량 크레딧 할인, 전담 매니저, API 연동 등을 제공합니다. (marketinghubai2026@gmail.com)</p>
                     </div>
                 </div>
             </div>
@@ -1032,8 +1032,14 @@ export const landingPageTemplate = `
                 </div>
             </div>
             <div class="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
-                <p>© 2026 마케팅허브 AI 스튜디오. All rights reserved.</p>
-                <p class="mt-2">문의: contentitda@naver.com</p>
+                <p class="mb-3">© 2026 김선수컴퍼니. All rights reserved.</p>
+                <div class="space-y-1 text-xs">
+                    <p>상호명: 김선수컴퍼니 | 대표자: 김용현 | 사업자등록번호: 251-33-00794</p>
+                    <p>통신판매업신고번호: 2019-서울서대문-1243</p>
+                    <p>사업장 주소: 경상남도 창원시 성산구 충혼로 91, 1층 110호 경남관광기업지원센터</p>
+                    <p>고객센터: <a href="mailto:marketinghubai2026@gmail.com" class="text-blue-400 hover:text-blue-300">marketinghubai2026@gmail.com</a> | 전화: 055-606-0826</p>
+                    <p>개인정보관리책임자: 김용현</p>
+                </div>
             </div>
         </div>
     </footer>

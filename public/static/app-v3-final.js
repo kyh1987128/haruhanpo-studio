@@ -6402,7 +6402,7 @@ function openPolicyModal(type) {
             <li>구매 후 7일 경과</li>
           </ul>
           <p><strong>3. 환불 절차</strong></p>
-          <p>고객센터(contentitda@naver.com)로 환불 요청 → 검토 후 3-5영업일 내 처리</p>
+          <p>고객센터(marketinghubai2026@gmail.com)로 환불 요청 → 검토 후 3-5영업일 내 처리</p>
         </div>
       `
     },
@@ -6427,7 +6427,9 @@ function openPolicyModal(type) {
           <p><strong>3. 개인정보의 보유 및 이용 기간</strong></p>
           <p>회원 탈퇴 시까지 보유하며, 탈퇴 즉시 파기합니다. 단, 관련 법령에 따라 일부 정보는 일정 기간 보관될 수 있습니다.</p>
           <p><strong>4. 개인정보 보호책임자</strong></p>
-          <p>이메일: contentitda@naver.com</p>
+          <p>성명: 김용현</p>
+          <p>이메일: marketinghubai2026@gmail.com</p>
+          <p>전화: 055-606-0826</p>
         </div>
       `
     },
@@ -6437,7 +6439,7 @@ function openPolicyModal(type) {
         <h4 class="text-xl font-bold text-gray-800 mb-4">이용약관</h4>
         <div class="space-y-4 text-gray-600">
           <p><strong>제1조 (목적)</strong></p>
-          <p>본 약관은 마케팅허브 AI 스튜디오(이하 "회사")가 제공하는 AI 콘텐츠 생성 서비스(이하 "서비스")의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.</p>
+          <p>본 약관은 김선수컴퍼니(이하 "회사")가 운영하는 마케팅허브 AI 스튜디오에서 제공하는 AI 콘텐츠 생성 서비스(이하 "서비스")의 이용과 관련하여 회사와 회원 간의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.</p>
           
           <p><strong>제2조 (정의)</strong></p>
           <ul class="list-disc pl-6 space-y-2">
