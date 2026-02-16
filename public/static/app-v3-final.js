@@ -3275,6 +3275,9 @@ function displayBatchResults(allResults, errors) {
   
   // 전역 변수에 저장 (Excel 다운로드용)
   window.batchResults = allResults;
+
+  // 이미지 도구 활성화 이벤트
+  document.dispatchEvent(new CustomEvent('contentGenerated', { detail: { results: allResults } }));
 }
 
 // ===================================
@@ -8637,11 +8640,13 @@ async function generateSingleContent(contentIndex) {
     return;
   }
   
-  // 키워드 검증
-  if (!content.keywords || content.keywords.trim() === '') {
+  // 키워드 검증 (배열/null/undefined 안전 처리)
+  const _kw = Array.isArray(content.keywords) ? content.keywords.join(', ') : (content.keywords || '');
+  if (typeof _kw !== 'string' || _kw.trim() === '') {
     showToast(`❌ 콘텐츠 #${contentIndex + 1}의 키워드를 입력해주세요`, 'error');
     return;
   }
+  content.keywords = _kw.trim();
   
   // 플랫폼 검증
   const platforms = contentPlatforms[contentIndex] || [];

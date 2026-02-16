@@ -234,23 +234,17 @@
     document.body.appendChild(_modalEl);
   }
 
-  // ── 이미지 도구 활성화 감시 ──
+  // ── 이미지 도구 활성화 (커스텀 이벤트 방식) ──
   function _watchContentGeneration() {
-    // batchResults 변경 감시 (Proxy)
-    const origDisplayBatch = window.displayBatchResults;
-    if (typeof origDisplayBatch === 'function') {
-      window.displayBatchResults = function () {
-        origDisplayBatch.apply(this, arguments);
-        _enableImageTools();
-      };
-    }
+    // contentGenerated 커스텀 이벤트 리스닝
+    document.addEventListener('contentGenerated', function () {
+      _enableImageTools();
+    });
 
-    // 주기적으로 확인
-    setInterval(() => {
-      if (window.batchResults && window.batchResults.length > 0) {
-        _enableImageTools();
-      }
-    }, 3000);
+    // 페이지 로드 시 이미 결과가 있으면 즉시 활성화
+    if (window.batchResults && window.batchResults.length > 0) {
+      _enableImageTools();
+    }
   }
 
   function _enableImageTools() {
