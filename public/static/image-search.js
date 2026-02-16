@@ -234,13 +234,8 @@
     document.body.appendChild(_modalEl);
   }
 
-  // ── 이미지 도구 활성화 (커스텀 이벤트 방식) ──
+  // ── 이미지 도구 활성화 (폴링 체크 방식) ──
   function _watchContentGeneration() {
-    // contentGenerated 커스텀 이벤트 리스닝
-    document.addEventListener('contentGenerated', function () {
-      _enableImageTools();
-    });
-
     // 페이지 로드 시 이미 결과가 있으면 즉시 활성화
     if (window.batchResults && window.batchResults.length > 0) {
       _enableImageTools();

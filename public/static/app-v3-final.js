@@ -3276,8 +3276,13 @@ function displayBatchResults(allResults, errors) {
   // 전역 변수에 저장 (Excel 다운로드용)
   window.batchResults = allResults;
 
-  // 이미지 도구 활성화 이벤트
-  document.dispatchEvent(new CustomEvent('contentGenerated', { detail: { results: allResults } }));
+  // 이미지 도구 버튼 직접 활성화
+  var _imgBtn1 = document.getElementById('freeImageSearchBtn');
+  var _imgBtn2 = document.getElementById('aiImageGenBtn');
+  var _imgHint = document.getElementById('imageToolsHint');
+  if (_imgBtn1) _imgBtn1.disabled = false;
+  if (_imgBtn2) _imgBtn2.disabled = false;
+  if (_imgHint) _imgHint.style.display = 'none';
 }
 
 // ===================================
@@ -8912,7 +8917,13 @@ async function generateSingleContent(contentIndex) {
     }
     
     showToast(`✅ 콘텐츠 #${contentIndex + 1} 생성 완료!`, 'success');
-    document.dispatchEvent(new CustomEvent('contentGenerated'));
+    // 이미지 도구 버튼 직접 활성화
+    var _imgBtn1 = document.getElementById('freeImageSearchBtn');
+    var _imgBtn2 = document.getElementById('aiImageGenBtn');
+    var _imgHint = document.getElementById('imageToolsHint');
+    if (_imgBtn1) _imgBtn1.disabled = false;
+    if (_imgBtn2) _imgBtn2.disabled = false;
+    if (_imgHint) _imgHint.style.display = 'none';
     
   } catch (error) {
     console.error(`❌ [콘텐츠 #${contentIndex + 1}] 생성 오류:`, error);
