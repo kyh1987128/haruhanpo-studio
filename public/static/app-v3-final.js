@@ -8912,6 +8912,7 @@ async function generateSingleContent(contentIndex) {
     }
     
     showToast(`✅ 콘텐츠 #${contentIndex + 1} 생성 완료!`, 'success');
+    document.dispatchEvent(new CustomEvent('contentGenerated'));
     
   } catch (error) {
     console.error(`❌ [콘텐츠 #${contentIndex + 1}] 생성 오류:`, error);

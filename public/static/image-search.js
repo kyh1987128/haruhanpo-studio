@@ -248,6 +248,7 @@
   }
 
   function _enableImageTools() {
+    console.log('🖼️ 이미지 도구 활성화');
     const btn1 = document.getElementById('freeImageSearchBtn');
     const btn2 = document.getElementById('aiImageGenBtn');
     const hint = document.getElementById('imageToolsHint');
