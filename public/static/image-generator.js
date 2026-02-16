@@ -33,12 +33,22 @@
     if (_modalEl) _modalEl.classList.add('hidden');
   }
 
+  // ── 키워드 추출 (폴백 순서: batchResults → keyword_N input → 빈값) ──
   function _extractKeyword() {
+    // 1) batchResults에서 추출 (일괄 생성 완료 시)
     if (window.batchResults && window.batchResults.length > 0) {
-      return window.batchResults[0].keywords || '';
+      const kw = window.batchResults[0].keywords;
+      if (kw && (typeof kw === 'string' ? kw.trim() : '')) {
+        return typeof kw === 'string' ? kw.trim().split(',')[0].trim() : kw;
+      }
     }
-    const kw = document.getElementById('keywords');
-    if (kw && kw.value.trim()) return kw.value.trim().split(',')[0].trim();
+    // 2) 콘텐츠 블록의 키워드 입력 필드에서 직접 가져오기 (단일 생성 시)
+    for (let i = 0; i < 10; i++) {
+      const el = document.getElementById('keyword_' + i);
+      if (el && el.value && el.value.trim()) {
+        return el.value.trim().split(',')[0].trim();
+      }
+    }
     return '';
   }
 

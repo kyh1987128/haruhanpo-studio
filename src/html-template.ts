@@ -2148,7 +2148,7 @@ export const htmlTemplate = `
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ko.js"></script>
     
-    <script src="/static/app-v3-final.js?v=24.0.7"></script>
+    <script src="/static/app-v3-final.js?v=24.0.8"></script>
     <script src="/static/keyword-analysis.js?v=24.0.2"></script>
     <script src="/static/keyword-extended.js?v=19.0.0"></script>
     
@@ -2166,8 +2166,8 @@ export const htmlTemplate = `
     <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
     
     <!-- 이미지 도구 모듈 -->
-    <script src="/static/image-search.js?v=1.0.0"></script>
-    <script src="/static/image-generator.js?v=1.0.0"></script>
+    <script src="/static/image-search.js?v=1.0.1"></script>
+    <script src="/static/image-generator.js?v=1.0.1"></script>
     <script src="/static/image-editor.js?v=1.0.0"></script>
     
     <script>
