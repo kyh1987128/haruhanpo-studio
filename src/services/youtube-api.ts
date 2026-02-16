@@ -89,11 +89,12 @@ export async function translateKeyword(
     const systemPrompt = `당신은 YouTube 검색 키워드 번역 전문가입니다. 사용자가 입력한 키워드를 ${LANGUAGE_NAMES[targetLang] || targetLang}로 자연스럽게 번역하세요. 번역된 단어만 출력하고 설명은 하지 마세요.`
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+      `https://gemini-proxy.kyh1987128.workers.dev/v1beta/models/gemini-2.0-flash:generateContent`,
       {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${geminiApiKey}`
         },
         body: JSON.stringify({
           contents: [

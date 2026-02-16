@@ -23,11 +23,12 @@ export async function analyzeVideo(
   const systemInstruction = '당신은 YouTube 영상 분석 전문가입니다. 데이터를 기반으로 정확하고 실용적인 분석을 제공합니다. 응답은 반드시 유효한 JSON 형식이어야 합니다.'
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    `https://gemini-proxy.kyh1987128.workers.dev/v1beta/models/gemini-2.0-flash:generateContent`,
     {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
         contents: [
@@ -101,11 +102,12 @@ export async function callGemini(
   }
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    `https://gemini-proxy.kyh1987128.workers.dev/v1beta/models/gemini-2.0-flash:generateContent`,
     {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
         contents: [

@@ -1,8 +1,11 @@
 /**
- * Gemini API 직접 호출 (Cloudflare Workers 호환)
+ * Gemini API 호출 (Smart Placement 프록시 경유)
  * GoogleGenerativeAI SDK는 Cloudflare Workers에서 제대로 작동하지 않으므로
- * 직접 REST API를 호출합니다.
+ * gemini-proxy Worker를 통해 REST API를 호출합니다.
+ * 프록시가 미국 리전(IAD)에서 실행되어 한국 지역 차단을 우회합니다.
  */
+
+const GEMINI_PROXY_URL = 'https://gemini-proxy.kyh1987128.workers.dev';
 
 /**
  * Gemini Flash 이미지 분석 (Cloudflare Workers 호환)
@@ -11,7 +14,7 @@ export async function analyzeImageWithGemini(
   apiKey: string,
   imageUrl: string
 ): Promise<string> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  const url = `${GEMINI_PROXY_URL}/v1beta/models/gemini-2.5-flash:generateContent`;
 
   // 이미지 URL을 base64로 변환
   const response = await fetch(imageUrl);
@@ -31,6 +34,7 @@ export async function analyzeImageWithGemini(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       contents: [{
@@ -77,12 +81,13 @@ export async function generateContentWithGemini(
   apiKey: string,
   prompt: string
 ): Promise<string> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  const url = `${GEMINI_PROXY_URL}/v1beta/models/gemini-2.5-flash:generateContent`;
   
   const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       contents: [{
