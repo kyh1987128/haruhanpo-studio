@@ -9004,7 +9004,7 @@ function displaySingleContentResult(contentIndex, result, platforms) {
           <i class="fas fa-check-circle text-green-600 mr-2"></i>
           콘텐츠 #${contentIndex + 1} 생성 완료
           <span style="color: #667eea; font-size: 14px; font-weight: normal; margin-left: 8px;">
-            💡 이어서 다음 작업을 진행해보세요 (예: 이미지 생성, 영상 생성 등)
+            💡 이어서 다음 작업을 진행해보세요 (예: 이미지 도구, SNS 바로가기, AI 워크플로우로 다른 AI 작업 이어서 하기 등)
           </span>
         </h3>
         <button

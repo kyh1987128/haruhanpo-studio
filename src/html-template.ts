@@ -537,6 +537,30 @@ export const htmlTemplate = `
                 <p id="imageToolsHint" class="text-[10px] text-gray-400 mt-2 text-center">
                     <i class="fas fa-info-circle mr-1"></i>콘텐츠 생성 후 사용 가능합니다
                 </p>
+
+                <!-- 이미지 뷰어 카드 (콘텐츠 생성 후 표시) -->
+                <div id="imageToolViewer" class="hidden mt-3 bg-white border border-gray-200 rounded-xl overflow-hidden" style="max-height:520px;">
+                    <!-- 탭 바 -->
+                    <div class="flex gap-1 p-2 bg-gray-50 border-b border-gray-200">
+                        <button id="tabFreeSearch" class="flex-1 py-1.5 px-3 text-xs font-bold rounded-full transition-all bg-purple-600 text-white" onclick="window.ImageToolTabs && window.ImageToolTabs.switchTab('search')">
+                            <i class="fas fa-search mr-1"></i>무료 찾기
+                        </button>
+                        <button id="tabAiGen" class="flex-1 py-1.5 px-3 text-xs font-bold rounded-full transition-all bg-gray-200 text-gray-600 hover:bg-gray-300" onclick="window.ImageToolTabs && window.ImageToolTabs.switchTab('aigen')">
+                            <i class="fas fa-magic mr-1"></i>AI 생성
+                        </button>
+                    </div>
+                    <!-- 탭 컨텐츠 -->
+                    <div id="tabContentSearch" class="overflow-y-auto" style="max-height:470px;">
+                        <!-- image-search.js가 여기에 렌더링 -->
+                    </div>
+                    <div id="tabContentAigen" class="hidden overflow-y-auto" style="max-height:470px;">
+                        <!-- image-generator.js가 여기에 렌더링 -->
+                    </div>
+                    <!-- 에디터 뷰 (이미지 클릭 시) -->
+                    <div id="tabContentEditor" class="hidden overflow-y-auto" style="max-height:470px;">
+                        <!-- image-editor.js가 여기에 렌더링 -->
+                    </div>
+                </div>
             </div>
             
             <style>
@@ -2148,7 +2172,7 @@ export const htmlTemplate = `
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ko.js"></script>
     
-    <script src="/static/app-v3-final.js?v=24.0.8"></script>
+    <script src="/static/app-v3-final.js?v=24.0.9"></script>
     <script src="/static/keyword-analysis.js?v=24.0.2"></script>
     <script src="/static/keyword-extended.js?v=19.0.0"></script>
     
@@ -2166,9 +2190,9 @@ export const htmlTemplate = `
     <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
     
     <!-- 이미지 도구 모듈 -->
-    <script src="/static/image-search.js?v=1.0.1"></script>
-    <script src="/static/image-generator.js?v=1.0.1"></script>
-    <script src="/static/image-editor.js?v=1.0.0"></script>
+    <script src="/static/image-search.js?v=1.1.0"></script>
+    <script src="/static/image-generator.js?v=1.1.0"></script>
+    <script src="/static/image-editor.js?v=1.1.0"></script>
     
     <script>
       // ========================================

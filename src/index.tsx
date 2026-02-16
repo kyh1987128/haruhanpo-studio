@@ -6710,7 +6710,7 @@ app.route('/', channelsApi);
 // 이미지 도구 API 라우트
 // ========================================
 
-// POST /api/images/search - 무료 이미지 검색 (Pexels)
+// POST /api/images/search - 무료 이미지 검색 (Pexels 3 + Unsplash 3 + Pixabay 2 병렬)
 app.post('/api/images/search', async (c) => {
   try {
     const { keyword, page, orientation, per_page } = await c.req.json();
@@ -6725,95 +6725,105 @@ app.post('/api/images/search', async (c) => {
     
     const pageNum = page || 1;
     const orient = orientation || 'landscape';
-    const count = per_page || 8;
     
+    // 각 소스별 할당량
+    const pexelsCount = 3;
+    const unsplashCount = 3;
+    const pixabayCount = 2;
+    
+    // 병렬로 3개 소스 동시 호출
+    const [pexelsResults, unsplashResults, pixabayResults] = await Promise.all([
+      // Pexels
+      (async () => {
+        if (!pexelsKey) return [];
+        try {
+          const res = await fetch(
+            `https://api.pexels.com/v1/search?query=${encodeURIComponent(keyword)}&per_page=${pexelsCount}&page=${pageNum}&orientation=${orient}`,
+            { headers: { 'Authorization': pexelsKey } }
+          );
+          if (!res.ok) return [];
+          const data: any = await res.json();
+          return (data.photos || []).map((img: any) => ({
+            id: `pexels-${img.id}`,
+            url: img.src.large2x,
+            thumb: img.src.medium,
+            alt: img.alt || keyword,
+            author: img.photographer,
+            source: 'pexels',
+            sourceUrl: img.url
+          }));
+        } catch (e) {
+          console.error('❌ Pexels API 오류:', e);
+          return [];
+        }
+      })(),
+      // Unsplash
+      (async () => {
+        if (!unsplashKey) return [];
+        try {
+          const res = await fetch(
+            `https://api.unsplash.com/search/photos?query=${encodeURIComponent(keyword)}&per_page=${unsplashCount}&page=${pageNum}&orientation=${orient}`,
+            { headers: { 'Authorization': `Client-ID ${unsplashKey}` } }
+          );
+          if (!res.ok) return [];
+          const data: any = await res.json();
+          return (data.results || []).map((img: any) => ({
+            id: `unsplash-${img.id}`,
+            url: img.urls.regular,
+            thumb: img.urls.small,
+            alt: img.alt_description || keyword,
+            author: img.user.name,
+            source: 'unsplash',
+            sourceUrl: img.links.html
+          }));
+        } catch (e) {
+          console.error('❌ Unsplash API 오류:', e);
+          return [];
+        }
+      })(),
+      // Pixabay
+      (async () => {
+        if (!pixabayKey) return [];
+        try {
+          const orientMap: Record<string,string> = { landscape: 'horizontal', portrait: 'vertical', squarish: 'all' };
+          const pixOrient = orientMap[orient] || 'horizontal';
+          const res = await fetch(
+            `https://pixabay.com/api/?key=${pixabayKey}&q=${encodeURIComponent(keyword)}&image_type=photo&per_page=${pixabayCount}&page=${pageNum}&orientation=${pixOrient}`
+          );
+          if (!res.ok) return [];
+          const data: any = await res.json();
+          return (data.hits || []).map((img: any) => ({
+            id: `pixabay-${img.id}`,
+            url: img.largeImageURL,
+            thumb: img.webformatURL,
+            alt: img.tags || keyword,
+            author: img.user,
+            source: 'pixabay',
+            sourceUrl: img.pageURL
+          }));
+        } catch (e) {
+          console.error('❌ Pixabay API 오류:', e);
+          return [];
+        }
+      })()
+    ]);
+    
+    // 결과 합치기 (소스 섞기: pexels→unsplash→pixabay 번갈아)
     const results: any[] = [];
-    
-    // Pexels API (우선)
-    if (pexelsKey) {
-      try {
-        const pexelsRes = await fetch(
-          `https://api.pexels.com/v1/search?query=${encodeURIComponent(keyword)}&per_page=${count}&page=${pageNum}&orientation=${orient}`,
-          { headers: { 'Authorization': pexelsKey } }
-        );
-        if (pexelsRes.ok) {
-          const pexelsData: any = await pexelsRes.json();
-          (pexelsData.photos || []).forEach((img: any) => {
-            results.push({
-              id: `pexels-${img.id}`,
-              url: img.src.large2x,
-              thumb: img.src.medium,
-              alt: img.alt || keyword,
-              author: img.photographer,
-              source: 'pexels',
-              sourceUrl: img.url
-            });
-          });
-          console.log(`✅ Pexels: ${results.length}개 결과`);
-        }
-      } catch (e) {
-        console.error('❌ Pexels API 오류:', e);
-      }
+    const maxLen = Math.max(pexelsResults.length, unsplashResults.length, pixabayResults.length);
+    for (let i = 0; i < maxLen; i++) {
+      if (i < pexelsResults.length) results.push(pexelsResults[i]);
+      if (i < unsplashResults.length) results.push(unsplashResults[i]);
+      if (i < pixabayResults.length) results.push(pixabayResults[i]);
     }
     
-    // Pexels 결과 부족 시 Unsplash 보충
-    if (results.length < count && unsplashKey) {
-      try {
-        const unsplashRes = await fetch(
-          `https://api.unsplash.com/search/photos?query=${encodeURIComponent(keyword)}&per_page=${count - results.length}&page=${pageNum}&orientation=${orient}`,
-          { headers: { 'Authorization': `Client-ID ${unsplashKey}` } }
-        );
-        if (unsplashRes.ok) {
-          const unsplashData: any = await unsplashRes.json();
-          (unsplashData.results || []).forEach((img: any) => {
-            results.push({
-              id: `unsplash-${img.id}`,
-              url: img.urls.regular,
-              thumb: img.urls.small,
-              alt: img.alt_description || keyword,
-              author: img.user.name,
-              source: 'unsplash',
-              sourceUrl: img.links.html
-            });
-          });
-        }
-      } catch (e) {
-        console.error('❌ Unsplash API 오류:', e);
-      }
-    }
-    
-    // 여전히 부족하면 Pixabay 보충
-    if (results.length < count && pixabayKey) {
-      try {
-        const orientMap: Record<string,string> = { landscape: 'horizontal', portrait: 'vertical', squarish: 'all' };
-        const pixOrient = orientMap[orient] || 'horizontal';
-        const pixRes = await fetch(
-          `https://pixabay.com/api/?key=${pixabayKey}&q=${encodeURIComponent(keyword)}&image_type=photo&per_page=${count - results.length}&page=${pageNum}&orientation=${pixOrient}`
-        );
-        if (pixRes.ok) {
-          const pixData: any = await pixRes.json();
-          (pixData.hits || []).forEach((img: any) => {
-            results.push({
-              id: `pixabay-${img.id}`,
-              url: img.largeImageURL,
-              thumb: img.webformatURL,
-              alt: img.tags || keyword,
-              author: img.user,
-              source: 'pixabay',
-              sourceUrl: img.pageURL
-            });
-          });
-        }
-      } catch (e) {
-        console.error('❌ Pixabay API 오류:', e);
-      }
-    }
+    console.log(`✅ 이미지 검색: Pexels ${pexelsResults.length}, Unsplash ${unsplashResults.length}, Pixabay ${pixabayResults.length} → 총 ${results.length}개`);
     
     return c.json({
       success: true,
       images: results,
       page: pageNum,
-      hasMore: results.length >= count
+      hasMore: results.length >= 4  // 절반 이상 결과 있으면 더 보기 가능
     });
     
   } catch (error: any) {
