@@ -240,8 +240,6 @@ export const headerHTML = `
       <div class="user-info-text" id="userInfoText" style="display: none;">
         <span class="user-name" id="userNameDisplay">-</span>
         <span class="divider">|</span>
-        <span class="user-tier" id="userTierDisplay">-</span>
-        <span class="divider">|</span>
         <span class="user-credits" id="userCreditsDisplay">무료 0 · 유료 0</span>
       </div>
       
@@ -306,9 +304,11 @@ export const headerScript = `
         const freeCredits = user.free_credits || 0;
         const paidCredits = user.paid_credits || 0;
 
+        // 천단위 콤마 포맷 헬퍼
+        const fmt = (n) => Number(n).toLocaleString('ko-KR');
+
         document.getElementById('userNameDisplay').textContent = userName;
-        document.getElementById('userTierDisplay').textContent = tier;
-        document.getElementById('userCreditsDisplay').textContent = \`무료 \${freeCredits} · 유료 \${paidCredits}\`;
+        document.getElementById('userCreditsDisplay').textContent = \`무료 \${fmt(freeCredits)} · 유료 \${fmt(paidCredits)}\`;
         
         console.log('✅ [헤더] 사용자 정보 업데이트 완료:', {userName, tier, freeCredits, paidCredits});
     };
@@ -383,7 +383,8 @@ export const headerScript = `
             if (creditEl) {
                 const freeCredits = e.detail.free_credits || 0;
                 const paidCredits = e.detail.paid_credits || 0;
-                creditEl.textContent = \`무료 \${freeCredits} · 유료 \${paidCredits}\`;
+                const fmt = (n) => Number(n).toLocaleString('ko-KR');
+                creditEl.textContent = \`무료 \${fmt(freeCredits)} · 유료 \${fmt(paidCredits)}\`;
                 console.log('✅ [헤더] 크레딧 실시간 업데이트:', creditEl.textContent);
             }
         }

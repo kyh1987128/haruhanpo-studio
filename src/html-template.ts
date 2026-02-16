@@ -485,32 +485,58 @@ export const htmlTemplate = `
                     <i class="fas fa-star text-yellow-500"></i>
                     빠른 기능
                 </h3>
-                <div class="grid grid-cols-2 gap-2">
-                    <button id="saveProfileBtn" class="px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium flex items-center justify-center gap-2">
-                        <i class="fas fa-save"></i>
-                        <span>새 프로필 저장</span>
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="saveProfileBtn" class="quick-card-btn" style="--qc-color: #16a34a;">
+                        <i class="fas fa-save text-xl"></i>
+                        <span class="text-[10px] mt-1 leading-tight">프로필 저장</span>
                     </button>
-                    <button id="loadProfileBtn" class="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium flex items-center justify-center gap-2">
-                        <i class="fas fa-folder-open"></i>
-                        <span>프로필 관리</span>
+                    <button id="loadProfileBtn" class="quick-card-btn" style="--qc-color: #2563eb;">
+                        <i class="fas fa-folder-open text-xl"></i>
+                        <span class="text-[10px] mt-1 leading-tight">프로필 관리</span>
                     </button>
-                    <button id="historyBtn" class="px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm font-medium flex items-center justify-center gap-2">
-                        <i class="fas fa-history"></i>
-                        <span>히스토리</span>
+                    <button id="historyBtn" class="quick-card-btn" style="--qc-color: #9333ea;">
+                        <i class="fas fa-history text-xl"></i>
+                        <span class="text-[10px] mt-1 leading-tight">히스토리</span>
                     </button>
-                    <button id="templateBtn" class="px-4 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm font-medium flex items-center justify-center gap-2">
-                        <i class="fas fa-file-alt"></i>
-                        <span>템플릿</span>
+                    <button id="templateBtn" class="quick-card-btn" style="--qc-color: #ea580c;">
+                        <i class="fas fa-file-alt text-xl"></i>
+                        <span class="text-[10px] mt-1 leading-tight">템플릿</span>
                     </button>
-                    <button id="snsLinksBtn" class="px-4 py-2.5 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition text-sm font-medium flex items-center justify-center gap-2">
-                        <i class="fas fa-share-alt"></i>
-                        <span>SNS 바로가기</span>
+                    <button id="snsLinksBtn" class="quick-card-btn" style="--qc-color: #db2777;">
+                        <i class="fas fa-share-alt text-xl"></i>
+                        <span class="text-[10px] mt-1 leading-tight">SNS 바로가기</span>
                     </button>
-                    <button id="aiWorkflowBtn" class="px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm font-medium flex items-center justify-center gap-2">
-                        <i class="fas fa-robot"></i>
-                        <span>AI 워크플로우</span>
+                    <button id="aiWorkflowBtn" class="quick-card-btn" style="--qc-color: #4f46e5;">
+                        <i class="fas fa-robot text-xl"></i>
+                        <span class="text-[10px] mt-1 leading-tight">AI 워크플로우</span>
                     </button>
                 </div>
+            </div>
+            
+            <!-- ========================================
+                 이미지 도구 섹션
+                 ======================================== -->
+            <div class="border-t border-gray-200 my-6"></div>
+            <div id="imageToolsSection" class="mb-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-images text-teal-500"></i>
+                    이미지 도구
+                </h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="freeImageSearchBtn" disabled class="img-tool-btn disabled:opacity-40 disabled:cursor-not-allowed" onclick="window.ImageSearch && window.ImageSearch.open()">
+                        <i class="fas fa-search text-lg text-teal-600"></i>
+                        <span class="text-xs mt-1 font-semibold text-gray-700">무료 이미지 찾기</span>
+                        <span class="text-[9px] text-gray-400">무료</span>
+                    </button>
+                    <button id="aiImageGenBtn" disabled class="img-tool-btn disabled:opacity-40 disabled:cursor-not-allowed" onclick="window.ImageGenerator && window.ImageGenerator.open()">
+                        <i class="fas fa-magic text-lg text-purple-600"></i>
+                        <span class="text-xs mt-1 font-semibold text-gray-700">AI 이미지 생성</span>
+                        <span class="text-[9px] text-orange-500 font-bold">2 크레딧</span>
+                    </button>
+                </div>
+                <p id="imageToolsHint" class="text-[10px] text-gray-400 mt-2 text-center">
+                    <i class="fas fa-info-circle mr-1"></i>콘텐츠 생성 후 사용 가능합니다
+                </p>
             </div>
             
             <style>
@@ -528,6 +554,47 @@ export const htmlTemplate = `
                 .sample-btn:hover {
                     background: rgba(255,255,255,0.3);
                     transform: scale(1.05);
+                }
+                /* 빠른 기능 카드 버튼 */
+                .quick-card-btn {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0.75rem 0.25rem;
+                    background: #fff;
+                    border: 1.5px solid #e5e7eb;
+                    border-radius: 0.75rem;
+                    color: var(--qc-color, #374151);
+                    cursor: pointer;
+                    transition: border-color 0.15s, box-shadow 0.15s;
+                    min-height: 68px;
+                }
+                .quick-card-btn:hover {
+                    border-color: var(--qc-color, #6366f1);
+                    box-shadow: 0 0 0 2px color-mix(in srgb, var(--qc-color) 15%, transparent);
+                }
+                .quick-card-btn span {
+                    color: #374151;
+                }
+                /* 이미지 도구 버튼 */
+                .img-tool-btn {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0.75rem 0.5rem;
+                    background: #f9fafb;
+                    border: 1.5px dashed #d1d5db;
+                    border-radius: 0.75rem;
+                    cursor: pointer;
+                    transition: border-color 0.15s, background 0.15s;
+                    min-height: 78px;
+                }
+                .img-tool-btn:not(:disabled):hover {
+                    border-color: #14b8a6;
+                    background: #f0fdfa;
+                    border-style: solid;
                 }
             </style>
         </aside>
@@ -2093,6 +2160,15 @@ export const htmlTemplate = `
     
     <!-- 자동 저장 및 이어서 작업하기 시스템 로드 -->
     <script src="/static/auto-save.js"></script>
+    
+    <!-- Cropper.js CDN (이미지 크롭 에디터) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
+    
+    <!-- 이미지 도구 모듈 -->
+    <script src="/static/image-search.js?v=1.0.0"></script>
+    <script src="/static/image-generator.js?v=1.0.0"></script>
+    <script src="/static/image-editor.js?v=1.0.0"></script>
     
     <script>
       // ========================================

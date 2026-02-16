@@ -6660,7 +6660,8 @@ function updateAuthUI() {
     const totalCredits = freeCredits + paidCredits;
     
     // 🔥 키워드 분석과 동일한 포맷 사용 (가운뎃점 ·)
-    let creditText = `무료 ${freeCredits} · 유료 ${paidCredits}`;
+    const _fmt = (n) => Number(n).toLocaleString('ko-KR');
+    let creditText = `무료 ${_fmt(freeCredits)} · 유료 ${_fmt(paidCredits)}`;
     
     if (userCredits) userCredits.textContent = creditText;
     
@@ -8797,7 +8798,9 @@ async function generateSingleContent(contentIndex) {
       const allCreditsElements = document.querySelectorAll('[id^="keywordCredits"], .keyword-credits-display, #userCreditsDisplay');
       allCreditsElements.forEach(element => {
         if (element.textContent.includes('무료') && element.textContent.includes('유료')) {
-          element.textContent = `무료 ${free_credits} · 유료 ${paid_credits}`;
+          const _fc = Number(free_credits).toLocaleString('ko-KR');
+          const _pc = Number(paid_credits).toLocaleString('ko-KR');
+          element.textContent = `무료 ${_fc} · 유료 ${_pc}`;
         }
       });
       

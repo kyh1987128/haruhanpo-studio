@@ -26,6 +26,8 @@ type Bindings = {
   SUPABASE_ANON_KEY: string;
   SUPABASE_SERVICE_KEY: string;
   UNSPLASH_ACCESS_KEY?: string;
+  PEXELS_API_KEY?: string;
+  PIXABAY_API_KEY?: string;
   YOUTUBE_API_KEY: string;
   TURNSTILE_SECRET_KEY?: string;
   TURNSTILE_ENABLED?: string | boolean;
@@ -6703,5 +6705,334 @@ app.route('/', youtubeApi);
 
 // 채널 관리 API 라우트 등록
 app.route('/', channelsApi);
+
+// ========================================
+// 이미지 도구 API 라우트
+// ========================================
+
+// POST /api/images/search - 무료 이미지 검색 (Pexels)
+app.post('/api/images/search', async (c) => {
+  try {
+    const { keyword, page, orientation, per_page } = await c.req.json();
+    
+    if (!keyword || typeof keyword !== 'string') {
+      return c.json({ success: false, error: '키워드를 입력해주세요' }, 400);
+    }
+    
+    const pexelsKey = c.env.PEXELS_API_KEY;
+    const unsplashKey = c.env.UNSPLASH_ACCESS_KEY;
+    const pixabayKey = c.env.PIXABAY_API_KEY;
+    
+    const pageNum = page || 1;
+    const orient = orientation || 'landscape';
+    const count = per_page || 8;
+    
+    const results: any[] = [];
+    
+    // Pexels API (우선)
+    if (pexelsKey) {
+      try {
+        const pexelsRes = await fetch(
+          `https://api.pexels.com/v1/search?query=${encodeURIComponent(keyword)}&per_page=${count}&page=${pageNum}&orientation=${orient}`,
+          { headers: { 'Authorization': pexelsKey } }
+        );
+        if (pexelsRes.ok) {
+          const pexelsData: any = await pexelsRes.json();
+          (pexelsData.photos || []).forEach((img: any) => {
+            results.push({
+              id: `pexels-${img.id}`,
+              url: img.src.large2x,
+              thumb: img.src.medium,
+              alt: img.alt || keyword,
+              author: img.photographer,
+              source: 'pexels',
+              sourceUrl: img.url
+            });
+          });
+          console.log(`✅ Pexels: ${results.length}개 결과`);
+        }
+      } catch (e) {
+        console.error('❌ Pexels API 오류:', e);
+      }
+    }
+    
+    // Pexels 결과 부족 시 Unsplash 보충
+    if (results.length < count && unsplashKey) {
+      try {
+        const unsplashRes = await fetch(
+          `https://api.unsplash.com/search/photos?query=${encodeURIComponent(keyword)}&per_page=${count - results.length}&page=${pageNum}&orientation=${orient}`,
+          { headers: { 'Authorization': `Client-ID ${unsplashKey}` } }
+        );
+        if (unsplashRes.ok) {
+          const unsplashData: any = await unsplashRes.json();
+          (unsplashData.results || []).forEach((img: any) => {
+            results.push({
+              id: `unsplash-${img.id}`,
+              url: img.urls.regular,
+              thumb: img.urls.small,
+              alt: img.alt_description || keyword,
+              author: img.user.name,
+              source: 'unsplash',
+              sourceUrl: img.links.html
+            });
+          });
+        }
+      } catch (e) {
+        console.error('❌ Unsplash API 오류:', e);
+      }
+    }
+    
+    // 여전히 부족하면 Pixabay 보충
+    if (results.length < count && pixabayKey) {
+      try {
+        const orientMap: Record<string,string> = { landscape: 'horizontal', portrait: 'vertical', squarish: 'all' };
+        const pixOrient = orientMap[orient] || 'horizontal';
+        const pixRes = await fetch(
+          `https://pixabay.com/api/?key=${pixabayKey}&q=${encodeURIComponent(keyword)}&image_type=photo&per_page=${count - results.length}&page=${pageNum}&orientation=${pixOrient}`
+        );
+        if (pixRes.ok) {
+          const pixData: any = await pixRes.json();
+          (pixData.hits || []).forEach((img: any) => {
+            results.push({
+              id: `pixabay-${img.id}`,
+              url: img.largeImageURL,
+              thumb: img.webformatURL,
+              alt: img.tags || keyword,
+              author: img.user,
+              source: 'pixabay',
+              sourceUrl: img.pageURL
+            });
+          });
+        }
+      } catch (e) {
+        console.error('❌ Pixabay API 오류:', e);
+      }
+    }
+    
+    return c.json({
+      success: true,
+      images: results,
+      page: pageNum,
+      hasMore: results.length >= count
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 이미지 검색 API 오류:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// POST /api/images/generate-ai - AI 이미지 생성 (Gemini Imagen 3 via 프록시)
+app.post('/api/images/generate-ai', async (c) => {
+  try {
+    const { keyword, user_id, style } = await c.req.json();
+    
+    if (!keyword || typeof keyword !== 'string') {
+      return c.json({ success: false, error: '키워드를 입력해주세요' }, 400);
+    }
+    if (!user_id || typeof user_id !== 'string') {
+      return c.json({ success: false, error: 'user_id는 필수입니다' }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_KEY);
+    const geminiApiKey = c.env.GEMINI_API_KEY;
+    
+    if (!geminiApiKey) {
+      return c.json({ success: false, error: 'GEMINI_API_KEY가 설정되지 않았습니다' }, 500);
+    }
+    
+    // ── 크레딧 차감 (2크레딧, 무료 우선) ──
+    const requiredCredits = 2;
+    
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('free_credits, paid_credits')
+      .eq('id', user_id)
+      .single();
+    
+    if (userError || !user) {
+      return c.json({ success: false, error: '사용자를 찾을 수 없습니다' }, 404);
+    }
+    
+    const totalCredits = (user.free_credits || 0) + (user.paid_credits || 0);
+    if (totalCredits < requiredCredits) {
+      return c.json({
+        success: false,
+        error: '크레딧이 부족합니다',
+        required: requiredCredits,
+        free_credits: user.free_credits || 0,
+        paid_credits: user.paid_credits || 0,
+        redirect: '/payment'
+      }, 402);
+    }
+    
+    let newFree = user.free_credits || 0;
+    let newPaid = user.paid_credits || 0;
+    let remaining = requiredCredits;
+    let usedFree = 0;
+    let usedPaid = 0;
+    
+    if (newFree > 0) {
+      const fromFree = Math.min(newFree, remaining);
+      newFree -= fromFree;
+      remaining -= fromFree;
+      usedFree = fromFree;
+    }
+    if (remaining > 0) {
+      const fromPaid = Math.min(newPaid, remaining);
+      newPaid -= fromPaid;
+      remaining -= fromPaid;
+      usedPaid = fromPaid;
+    }
+    
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ free_credits: newFree, paid_credits: newPaid, updated_at: new Date().toISOString() })
+      .eq('id', user_id);
+    
+    if (updateError) {
+      console.error('❌ AI 이미지 크레딧 차감 실패:', updateError);
+      return c.json({ success: false, error: '크레딧 차감 실패' }, 500);
+    }
+    
+    console.log(`✅ AI 이미지 크레딧 차감: 무료 ${usedFree} + 유료 ${usedPaid} = ${requiredCredits}`);
+    
+    // 거래 기록
+    await supabase.from('credit_transactions').insert({
+      user_id,
+      amount: -requiredCredits,
+      balance_after: newFree + newPaid,
+      type: 'usage',
+      description: `AI 이미지 생성: ${keyword}`
+    });
+    
+    // ── 영문 프롬프트 생성 (Gemini) ──
+    const styleHint = style || 'professional marketing photo';
+    const proxyBase = 'https://gemini-proxy.kyh1987128.workers.dev';
+    
+    let englishPrompt = `A high-quality ${styleHint} for: ${keyword}`;
+    
+    try {
+      const promptRes = await fetch(
+        `${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${geminiApiKey}`
+          },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `Translate the following Korean marketing keyword into a detailed English image generation prompt. The image should be suitable for social media marketing. Keep it under 100 words. Style: ${styleHint}. Keyword: "${keyword}". Output only the English prompt, nothing else.` }] }],
+            generationConfig: { maxOutputTokens: 200, temperature: 0.7 }
+          })
+        }
+      );
+      
+      if (promptRes.ok) {
+        const promptData: any = await promptRes.json();
+        const generatedPrompt = promptData?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (generatedPrompt) {
+          englishPrompt = generatedPrompt.trim();
+        }
+      }
+    } catch (e) {
+      console.error('⚠️ 프롬프트 번역 실패, 기본 프롬프트 사용:', e);
+    }
+    
+    console.log(`🎨 AI 이미지 생성 프롬프트: ${englishPrompt}`);
+    
+    // ── Gemini Imagen 3 호출 ──
+    let imageData: string | null = null;
+    
+    try {
+      const imagenRes = await fetch(
+        `${proxyBase}/v1beta/models/imagen-3.0-generate-002:predict`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${geminiApiKey}`
+          },
+          body: JSON.stringify({
+            instances: [{ prompt: englishPrompt }],
+            parameters: {
+              sampleCount: 1,
+              aspectRatio: '1:1',
+              safetyFilterLevel: 'block_few'
+            }
+          })
+        }
+      );
+      
+      if (imagenRes.ok) {
+        const imagenData: any = await imagenRes.json();
+        const predictions = imagenData?.predictions;
+        if (predictions && predictions.length > 0) {
+          imageData = predictions[0].bytesBase64Encoded;
+        }
+      } else {
+        const errText = await imagenRes.text();
+        console.error(`❌ Imagen API 오류 (${imagenRes.status}):`, errText);
+        
+        // Imagen 실패 시 환불
+        await supabase
+          .from('users')
+          .update({ free_credits: user.free_credits, paid_credits: user.paid_credits })
+          .eq('id', user_id);
+        
+        await supabase.from('credit_transactions').insert({
+          user_id,
+          amount: requiredCredits,
+          balance_after: (user.free_credits || 0) + (user.paid_credits || 0),
+          type: 'refund',
+          description: `AI 이미지 생성 실패 환불: ${keyword}`
+        });
+        
+        return c.json({
+          success: false,
+          error: 'AI 이미지 생성에 실패했습니다. 크레딧이 환불되었습니다.',
+          refunded: true,
+          free_credits: user.free_credits || 0,
+          paid_credits: user.paid_credits || 0
+        }, 500);
+      }
+    } catch (e: any) {
+      console.error('❌ Imagen API 예외:', e);
+      
+      // 예외 발생 시 환불
+      await supabase
+        .from('users')
+        .update({ free_credits: user.free_credits, paid_credits: user.paid_credits })
+        .eq('id', user_id);
+      
+      return c.json({
+        success: false,
+        error: 'AI 이미지 생성 중 오류가 발생했습니다. 크레딧이 환불되었습니다.',
+        refunded: true
+      }, 500);
+    }
+    
+    // 크레딧 변동 이벤트 정보
+    const creditInfo = {
+      credits_used: requiredCredits,
+      free_used: usedFree,
+      paid_used: usedPaid,
+      free_credits: newFree,
+      paid_credits: newPaid,
+      total_remaining: newFree + newPaid
+    };
+    
+    return c.json({
+      success: true,
+      image: imageData ? `data:image/png;base64,${imageData}` : null,
+      prompt: englishPrompt,
+      cost_info: creditInfo
+    });
+    
+  } catch (error: any) {
+    console.error('❌ AI 이미지 생성 API 오류:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
 
 export default app;
