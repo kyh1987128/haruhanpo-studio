@@ -92,8 +92,8 @@
       <div class="p-3 space-y-2">\
         <div>\
           <label class="text-[10px] font-semibold text-gray-500">콘텐츠 내용</label>\
-          <textarea id="thumbContent" rows="3" placeholder="썸네일에 반영할 콘텐츠 내용을 입력하세요..."\
-                    class="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-pink-400 focus:outline-none resize-none"></textarea>\
+          <textarea id="thumbContent" rows="4" placeholder="키워드 또는 생성된 콘텐츠를 붙여넣으세요"\
+                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-pink-400 focus:border-transparent resize-y"></textarea>\
         </div>\
         <div class="grid grid-cols-2 gap-2">\
           <div>\

@@ -71,9 +71,9 @@
     container.innerHTML = '\
       <div class="p-3 space-y-2">\
         <div>\
-          <label class="text-[10px] font-semibold text-gray-500">키워드</label>\
-          <input id="aiGenKeyword" type="text" placeholder="이미지 생성 키워드 입력"\
-                 class="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-purple-400 focus:outline-none">\
+          <label class="text-[10px] font-semibold text-gray-500">콘텐츠 내용</label>\
+          <textarea id="aiGenKeyword" rows="4" placeholder="키워드 또는 생성된 콘텐츠를 붙여넣으세요"\
+                    class="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-400 focus:border-transparent resize-y"></textarea>\
         </div>\
         <div>\
           <label class="text-[10px] font-semibold text-gray-500">스타일</label>\
