@@ -539,7 +539,7 @@ export const htmlTemplate = `
                 </p>
 
                 <!-- 이미지 뷰어 카드 (콘텐츠 생성 후 표시) -->
-                <div id="imageToolViewer" class="hidden mt-3 bg-white border border-gray-200 rounded-xl overflow-hidden" style="max-height:520px;">
+                <div id="imageToolViewer" class="hidden mt-3 bg-white border border-gray-200 rounded-xl overflow-hidden" style="max-height:560px;">
                     <!-- 탭 바 -->
                     <div class="flex gap-1 p-2 bg-gray-50 border-b border-gray-200">
                         <button id="tabFreeSearch" class="flex-1 py-1.5 px-3 text-xs font-bold rounded-full transition-all bg-purple-600 text-white" onclick="window.ImageToolTabs && window.ImageToolTabs.switchTab('search')">
@@ -557,7 +557,7 @@ export const htmlTemplate = `
                         <!-- image-generator.js가 여기에 렌더링 -->
                     </div>
                     <!-- 에디터 뷰 (이미지 클릭 시) -->
-                    <div id="tabContentEditor" class="hidden overflow-y-auto" style="max-height:470px;">
+                    <div id="tabContentEditor" class="hidden" style="max-height:510px;">
                         <!-- image-editor.js가 여기에 렌더링 -->
                     </div>
                 </div>
@@ -2188,15 +2188,17 @@ export const htmlTemplate = `
     <!-- Cropper.js CDN (이미지 크롭 에디터) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css">
     <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
-    <!-- Google Fonts (텍스트 오버레이 폰트 옵션) -->
+    <!-- Google Fonts (텍스트 오버레이 폰트 옵션 6종) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Black+Han+Sans&family=Jua&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Black+Han+Sans&family=Jua&family=Nanum+Gothic:wght@400;700;800&family=Nanum+Myeongjo:wght@400;700;800&family=Nanum+Square:wght@400;700;800&display=swap" rel="stylesheet">
+    <!-- Pretendard 웹폰트 -->
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
     
     <!-- 이미지 도구 모듈 -->
-    <script src="/static/image-search.js?v=1.2.0"></script>
-    <script src="/static/image-generator.js?v=1.2.0"></script>
-    <script src="/static/image-editor.js?v=1.2.0"></script>
+    <script src="/static/image-search.js?v=1.3.0"></script>
+    <script src="/static/image-generator.js?v=1.3.0"></script>
+    <script src="/static/image-editor.js?v=1.3.0"></script>
     
     <script>
       // ========================================

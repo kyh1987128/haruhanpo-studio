@@ -77,12 +77,11 @@
         <div>\
           <label class="text-[10px] font-semibold text-gray-500">스타일</label>\
           <select id="aiGenStyle" class="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-purple-400 focus:outline-none">\
-            <option value="professional marketing photo">📸 전문 마케팅 사진</option>\
-            <option value="flat design illustration">🎨 플랫 디자인 일러스트</option>\
-            <option value="minimal product photo on white background">🧊 미니멀 제품 사진</option>\
-            <option value="warm lifestyle photo">☀️ 따뜻한 라이프스타일</option>\
-            <option value="food photography close-up">🍽️ 음식 사진 (클로즈업)</option>\
-            <option value="modern social media banner">📱 소셜미디어 배너</option>\
+            <option value="realistic photograph, high resolution, natural lighting">📷 사실적 사진 (Realistic Photo)</option>\
+            <option value="flat design illustration, vector style, clean colors">🎨 일러스트 (Illustration)</option>\
+            <option value="minimal clean design, white space, simple composition">🧊 미니멀 (Minimal)</option>\
+            <option value="3D rendered image, glossy materials, studio lighting">🔮 3D 렌더 (3D Render)</option>\
+            <option value="watercolor painting style, soft brush strokes, artistic">🖌️ 수채화 (Watercolor)</option>\
           </select>\
         </div>\
         <button id="aiGenBtn" onclick="window.ImageGenerator._generate()"\
@@ -119,7 +118,7 @@
     var kwInput = document.getElementById('aiGenKeyword');
     _keyword = (kwInput && kwInput.value.trim()) || _keyword;
     var style = document.getElementById('aiGenStyle');
-    var styleVal = (style && style.value) || 'professional marketing photo';
+    var styleVal = (style && style.value) || 'realistic photograph, high resolution, natural lighting';
 
     _loading = true;
     _setLoading(true);

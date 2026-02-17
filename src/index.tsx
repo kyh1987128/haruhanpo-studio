@@ -6710,7 +6710,7 @@ app.route('/', channelsApi);
 // 이미지 도구 API 라우트
 // ========================================
 
-// POST /api/images/search - 무료 이미지 검색 (Pexels 3 + Unsplash 3 + Pixabay 3 병렬)
+// POST /api/images/search - 무료 이미지 검색 (Pexels 3 + Unsplash 3 + Pixabay 2 병렬)
 app.post('/api/images/search', async (c) => {
   try {
     const { keyword, page } = await c.req.json();
@@ -6725,10 +6725,10 @@ app.post('/api/images/search', async (c) => {
     
     const pageNum = page || 1;
     
-    // 각 소스별 할당량 (Pixabay per_page 최소 3)
+    // 각 소스별 할당량 (Pixabay per_page 최소 3이므로 3개 요청 후 2개만 사용)
     const pexelsCount = 3;
     const unsplashCount = 3;
-    const pixabayCount = 3;
+    const pixabayCount = 3;  // API 최소값 3, 결과에서 2개만 사용
     // orientation 파라미터 제거 — 모든 방향의 이미지를 반환
     
     // 병렬로 3개 소스 동시 호출
@@ -6790,7 +6790,7 @@ app.post('/api/images/search', async (c) => {
           );
           if (!res.ok) return [];
           const data: any = await res.json();
-          return (data.hits || []).map((img: any) => ({
+          return (data.hits || []).slice(0, 2).map((img: any) => ({
             id: `pixabay-${img.id}`,
             url: img.largeImageURL,
             thumb: img.webformatURL,
@@ -6815,13 +6815,13 @@ app.post('/api/images/search', async (c) => {
       if (i < pixabayResults.length) results.push(pixabayResults[i]);
     }
     
-    console.log(`✅ 이미지 검색: Pexels ${pexelsResults.length}, Unsplash ${unsplashResults.length}, Pixabay ${pixabayResults.length} → 총 ${results.length}개`);
+    console.log(`✅ 이미지 검색: Pexels ${pexelsResults.length}, Unsplash ${unsplashResults.length}, Pixabay ${pixabayResults.length} → 총 ${results.length}개 (목표 8개)`);
     
     return c.json({
       success: true,
       images: results,
       page: pageNum,
-      hasMore: results.length >= 4  // 절반 이상 결과 있으면 더 보기 가능
+      hasMore: results.length >= 6  // 6장 이상이면 더 보기 가능
     });
     
   } catch (error: any) {
