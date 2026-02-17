@@ -9,7 +9,6 @@
   var _images = [];
   var _page = 1;
   var _keyword = '';
-  var _orientation = 'landscape';
   var _hasMore = false;
   var _loading = false;
   var _rendered = false; // tabContentSearch에 HTML이 삽입되었는지
@@ -25,6 +24,13 @@
     if (cs) cs.classList.toggle('hidden', tab !== 'search');
     if (ca) ca.classList.toggle('hidden', tab !== 'aigen');
     if (ce) ce.classList.toggle('hidden', tab !== 'editor');
+    // 탭 전환 시 AI 생성 로딩 상태 초기화
+    if (tab !== 'aigen') {
+      var spinner = document.getElementById('aiGenSpinner');
+      var genBtn = document.getElementById('aiGenBtn');
+      if (spinner) spinner.classList.add('hidden');
+      if (genBtn) genBtn.disabled = false;
+    }
     // 탭 스타일
     if (ts) {
       ts.className = tab === 'search'
@@ -106,14 +112,6 @@
             <i class="fas fa-search"></i>\
           </button>\
         </div>\
-        <div class="flex gap-1.5 mb-3">\
-          <button data-orient="landscape" class="orient-btn px-2.5 py-1 text-[10px] rounded-full border bg-white ring-2 ring-teal-500"\
-                  onclick="window.ImageSearch._setOrientation(\'landscape\')">가로</button>\
-          <button data-orient="portrait" class="orient-btn px-2.5 py-1 text-[10px] rounded-full border bg-white"\
-                  onclick="window.ImageSearch._setOrientation(\'portrait\')">세로</button>\
-          <button data-orient="squarish" class="orient-btn px-2.5 py-1 text-[10px] rounded-full border bg-white"\
-                  onclick="window.ImageSearch._setOrientation(\'squarish\')">정사각</button>\
-        </div>\
         <div id="imgSearchLoading" class="hidden text-center py-6">\
           <i class="fas fa-spinner fa-spin text-teal-500 text-xl"></i>\
           <p class="text-[10px] text-gray-400 mt-1">이미지 검색 중...</p>\
@@ -137,7 +135,7 @@
       var res = await fetch('/api/images/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keyword: _keyword, page: _page, orientation: _orientation, per_page: 8 })
+        body: JSON.stringify({ keyword: _keyword, page: _page })
       });
       var data = await res.json();
       if (data.success) {
@@ -207,18 +205,6 @@
       _images = [];
       _doSearch();
     }
-  };
-
-  // ── orientation 변경 ──
-  window.ImageSearch._setOrientation = function (o) {
-    _orientation = o;
-    _page = 1;
-    _images = [];
-    document.querySelectorAll('.orient-btn').forEach(function (b) {
-      b.classList.toggle('ring-2', b.dataset.orient === o);
-      b.classList.toggle('ring-teal-500', b.dataset.orient === o);
-    });
-    _doSearch();
   };
 
   // ── 로딩 / 에러 ──

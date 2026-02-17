@@ -6710,10 +6710,10 @@ app.route('/', channelsApi);
 // 이미지 도구 API 라우트
 // ========================================
 
-// POST /api/images/search - 무료 이미지 검색 (Pexels 3 + Unsplash 3 + Pixabay 2 병렬)
+// POST /api/images/search - 무료 이미지 검색 (Pexels 3 + Unsplash 3 + Pixabay 3 병렬)
 app.post('/api/images/search', async (c) => {
   try {
-    const { keyword, page, orientation, per_page } = await c.req.json();
+    const { keyword, page } = await c.req.json();
     
     if (!keyword || typeof keyword !== 'string') {
       return c.json({ success: false, error: '키워드를 입력해주세요' }, 400);
@@ -6724,12 +6724,12 @@ app.post('/api/images/search', async (c) => {
     const pixabayKey = c.env.PIXABAY_API_KEY;
     
     const pageNum = page || 1;
-    const orient = orientation || 'landscape';
     
-    // 각 소스별 할당량
+    // 각 소스별 할당량 (Pixabay per_page 최소 3)
     const pexelsCount = 3;
     const unsplashCount = 3;
-    const pixabayCount = 2;
+    const pixabayCount = 3;
+    // orientation 파라미터 제거 — 모든 방향의 이미지를 반환
     
     // 병렬로 3개 소스 동시 호출
     const [pexelsResults, unsplashResults, pixabayResults] = await Promise.all([
@@ -6738,7 +6738,7 @@ app.post('/api/images/search', async (c) => {
         if (!pexelsKey) return [];
         try {
           const res = await fetch(
-            `https://api.pexels.com/v1/search?query=${encodeURIComponent(keyword)}&per_page=${pexelsCount}&page=${pageNum}&orientation=${orient}`,
+            `https://api.pexels.com/v1/search?query=${encodeURIComponent(keyword)}&per_page=${pexelsCount}&page=${pageNum}`,  // orientation 제거
             { headers: { 'Authorization': pexelsKey } }
           );
           if (!res.ok) return [];
@@ -6762,7 +6762,7 @@ app.post('/api/images/search', async (c) => {
         if (!unsplashKey) return [];
         try {
           const res = await fetch(
-            `https://api.unsplash.com/search/photos?query=${encodeURIComponent(keyword)}&per_page=${unsplashCount}&page=${pageNum}&orientation=${orient}`,
+            `https://api.unsplash.com/search/photos?query=${encodeURIComponent(keyword)}&per_page=${unsplashCount}&page=${pageNum}`,  // orientation 제거
             { headers: { 'Authorization': `Client-ID ${unsplashKey}` } }
           );
           if (!res.ok) return [];
@@ -6785,10 +6785,8 @@ app.post('/api/images/search', async (c) => {
       (async () => {
         if (!pixabayKey) return [];
         try {
-          const orientMap: Record<string,string> = { landscape: 'horizontal', portrait: 'vertical', squarish: 'all' };
-          const pixOrient = orientMap[orient] || 'horizontal';
           const res = await fetch(
-            `https://pixabay.com/api/?key=${pixabayKey}&q=${encodeURIComponent(keyword)}&image_type=photo&per_page=${pixabayCount}&page=${pageNum}&orientation=${pixOrient}`
+            `https://pixabay.com/api/?key=${pixabayKey}&q=${encodeURIComponent(keyword)}&image_type=photo&per_page=${pixabayCount}&page=${pageNum}`  // orientation 제거
           );
           if (!res.ok) return [];
           const data: any = await res.json();
@@ -6832,7 +6830,7 @@ app.post('/api/images/search', async (c) => {
   }
 });
 
-// POST /api/images/generate-ai - AI 이미지 생성 (Gemini Imagen 3 via 프록시)
+// POST /api/images/generate-ai - AI 이미지 생성 (Gemini 2.0 Flash Image Generation via 프록시)
 app.post('/api/images/generate-ai', async (c) => {
   try {
     const { keyword, user_id, style } = await c.req.json();
@@ -6951,12 +6949,13 @@ app.post('/api/images/generate-ai', async (c) => {
     
     console.log(`🎨 AI 이미지 생성 프롬프트: ${englishPrompt}`);
     
-    // ── Gemini Imagen 3 호출 ──
+    // ── Gemini 2.0 Flash (이미지 생성 모드) 호출 ──
     let imageData: string | null = null;
     
     try {
+      console.log('🎨 Gemini 이미지 생성 시작: gemini-2.0-flash-exp-image-generation');
       const imagenRes = await fetch(
-        `${proxyBase}/v1beta/models/imagen-3.0-generate-002:predict`,
+        `${proxyBase}/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent`,
         {
           method: 'POST',
           headers: {
@@ -6964,27 +6963,45 @@ app.post('/api/images/generate-ai', async (c) => {
             'Authorization': `Bearer ${geminiApiKey}`
           },
           body: JSON.stringify({
-            instances: [{ prompt: englishPrompt }],
-            parameters: {
-              sampleCount: 1,
-              aspectRatio: '1:1',
-              safetyFilterLevel: 'block_few'
+            contents: [{
+              parts: [{ text: englishPrompt }]
+            }],
+            generationConfig: {
+              responseModalities: ['TEXT', 'IMAGE']
             }
           })
         }
       );
       
+      console.log(`🎨 Gemini 이미지 응답 상태: ${imagenRes.status}`);
+      
       if (imagenRes.ok) {
         const imagenData: any = await imagenRes.json();
-        const predictions = imagenData?.predictions;
-        if (predictions && predictions.length > 0) {
-          imageData = predictions[0].bytesBase64Encoded;
+        console.log('🎨 Gemini 응답 구조:', JSON.stringify(Object.keys(imagenData || {})));
+        
+        // generateContent 응답에서 이미지 추출
+        const candidates = imagenData?.candidates;
+        if (candidates && candidates.length > 0) {
+          const parts = candidates[0]?.content?.parts || [];
+          for (const part of parts) {
+            if (part.inlineData && part.inlineData.data) {
+              imageData = part.inlineData.data;
+              console.log('✅ Gemini 이미지 데이터 추출 성공, 크기:', imageData!.length);
+              break;
+            }
+          }
+        }
+        
+        if (!imageData) {
+          console.error('❌ Gemini 응답에서 이미지 데이터를 찾을 수 없음:', JSON.stringify(imagenData).substring(0, 500));
         }
       } else {
         const errText = await imagenRes.text();
-        console.error(`❌ Imagen API 오류 (${imagenRes.status}):`, errText);
-        
-        // Imagen 실패 시 환불
+        console.error(`❌ Gemini 이미지 API 오류 (${imagenRes.status}):`, errText);
+      }
+      
+      // 이미지 생성 실패 시 환불
+      if (!imageData) {
         await supabase
           .from('users')
           .update({ free_credits: user.free_credits, paid_credits: user.paid_credits })
@@ -7007,7 +7024,7 @@ app.post('/api/images/generate-ai', async (c) => {
         }, 500);
       }
     } catch (e: any) {
-      console.error('❌ Imagen API 예외:', e);
+      console.error('❌ Gemini 이미지 API 예외:', e?.message || e);
       
       // 예외 발생 시 환불
       await supabase
@@ -7015,10 +7032,20 @@ app.post('/api/images/generate-ai', async (c) => {
         .update({ free_credits: user.free_credits, paid_credits: user.paid_credits })
         .eq('id', user_id);
       
+      await supabase.from('credit_transactions').insert({
+        user_id,
+        amount: requiredCredits,
+        balance_after: (user.free_credits || 0) + (user.paid_credits || 0),
+        type: 'refund',
+        description: `AI 이미지 생성 실패 환불: ${keyword}`
+      });
+      
       return c.json({
         success: false,
-        error: 'AI 이미지 생성 중 오류가 발생했습니다. 크레딧이 환불되었습니다.',
-        refunded: true
+        error: 'AI 이미지 생성에 실패했습니다. 크레딧이 환불되었습니다.',
+        refunded: true,
+        free_credits: user.free_credits || 0,
+        paid_credits: user.paid_credits || 0
       }, 500);
     }
     

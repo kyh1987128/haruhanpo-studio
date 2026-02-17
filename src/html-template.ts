@@ -2188,11 +2188,15 @@ export const htmlTemplate = `
     <!-- Cropper.js CDN (이미지 크롭 에디터) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css">
     <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
+    <!-- Google Fonts (텍스트 오버레이 폰트 옵션) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Black+Han+Sans&family=Jua&display=swap" rel="stylesheet">
     
     <!-- 이미지 도구 모듈 -->
-    <script src="/static/image-search.js?v=1.1.0"></script>
-    <script src="/static/image-generator.js?v=1.1.0"></script>
-    <script src="/static/image-editor.js?v=1.1.0"></script>
+    <script src="/static/image-search.js?v=1.2.0"></script>
+    <script src="/static/image-generator.js?v=1.2.0"></script>
+    <script src="/static/image-editor.js?v=1.2.0"></script>
     
     <script>
       // ========================================

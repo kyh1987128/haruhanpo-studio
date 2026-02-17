@@ -40,6 +40,9 @@
     var kwInput = document.getElementById('aiGenKeyword');
     if (kwInput) kwInput.value = _keyword;
     _renderHistory();
+    // 로딩 상태 초기화 (자동 로딩 방지)
+    _loading = false;
+    _setLoading(false);
     // 자동 생성 호출하지 않음 — 사용자가 버튼을 직접 클릭
   }
 
@@ -130,7 +133,7 @@
       });
 
       var data = await res.json();
-      console.log('🎨 AI 이미지 생성 응답:', data);
+      console.log('🎨 AI 이미지 생성 응답:', { status: res.status, success: data.success, error: data.error, refunded: data.refunded });
 
       if (data.success && data.image) {
         _history.unshift({
@@ -144,9 +147,9 @@
         _showToast('✅ AI 이미지가 생성되었습니다! (2크레딧 차감)');
       } else {
         var errMsg = data.error || 'AI 이미지 생성에 실패했습니다';
-        console.error('🎨 AI 이미지 생성 실패:', errMsg, data);
+        console.error('🎨 AI 이미지 생성 실패:', { status: res.status, error: errMsg, refunded: data.refunded, data: data });
         if (data.refunded) {
-          _showToast('⚠️ ' + errMsg, true);
+          _showToast('⚠️ AI 이미지 생성에 실패했습니다. 크레딧이 환불되었습니다.', true);
           if (data.free_credits !== undefined) {
             _syncCredits({ free_credits: data.free_credits, paid_credits: data.paid_credits });
           }
