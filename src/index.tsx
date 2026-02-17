@@ -7159,41 +7159,94 @@ app.post('/api/images/generate-thumbnail', async (c) => {
     };
     const resolution = resolutionMap[pf.ratio] || '1280x720';
     
-    // ── STEP 1: 컨셉 추출 (텍스트 분석 → visual + text_lines JSON) ──
+    // ── STEP 1: 컨셉 추출 (텍스트 분석 → visual + text_lines + text_colors + layout JSON) ──
     let visual = `A vibrant, eye-catching ${pf.name} thumbnail background with dynamic lighting and bold colors. Style: ${styleHint}`;
     let textLines: string[] = [];
+    let textColors: string[] = ['#FFFFFF', '#FFD700'];
+    let layout = 'centered text over dramatic background';
+    
+    // 플랫폼별 전문가 전략
+    const platformStrategy: Record<string, string> = {
+      'YouTube': `YOUTUBE THUMBNAIL EXPERT STRATEGY:
+- "Before/After" comparison layout: split image showing transformation (extremely high CTR)
+- Face close-up with exaggerated expression (surprise, shock, excitement) - faces increase CTR by 38%
+- Red/yellow arrows or circles pointing to key element
+- Maximum 2 lines of text, 5-7 Korean characters per line
+- Text color strategy: main keyword in YELLOW or RED, rest in WHITE
+- Strong color contrast: dark background + bright subject OR bright background + dark subject
+- "3-second rule": viewer must understand the content in 3 seconds
+- Numbers in thumbnails increase CTR by 17% (e.g., "3가지", "100%", "5분")
+- High saturation + sharpening for mobile visibility
+- Border/frame effect to stand out in YouTube feed`,
+
+      'Blog': `BLOG THUMBNAIL EXPERT STRATEGY:
+- Clean, editorial magazine-cover style
+- Large readable Korean text taking 50-60% of image width
+- Split layout: text on one side, visual element on other
+- Professional color palette: navy+gold, black+coral, white+teal
+- Text with subtle background box for readability
+- Lifestyle imagery with aspirational mood
+- Clear visual hierarchy: headline → subtext → image`,
+
+      'Instagram': `INSTAGRAM FEED EXPERT STRATEGY:
+- "Scroll-stopping" design: must break the thumb-scrolling pattern
+- Clean, minimal composition - Instagram users prefer aesthetic quality
+- Warm color palette performs 24% better than cool tones on Instagram
+- Text overlay: maximum 1-2 lines, large bold Korean text
+- Highlight key word in accent color (coral, golden yellow, electric blue)
+- Faces with direct eye contact increase engagement by 38%
+- Rule of thirds composition with text in clean space`,
+
+      'Threads': `THREADS EXPERT STRATEGY:
+- Bold, high-contrast design optimized for rapid scrolling
+- Single powerful visual with minimal text
+- Maximum 1 line of Korean text, ultra bold
+- Bright accent colors on dark background
+- Conversational/relatable imagery
+- Square format fully utilized with edge-to-edge design`,
+
+      'YouTube Shorts': `YOUTUBE SHORTS EXPERT STRATEGY:
+- Full-screen vertical design (9:16)
+- Text centered in "safe zone" (middle 60% of screen)
+- Large, punchy Korean text with background blur or overlay
+- Bright, high-energy colors (neon accents work well)
+- Face/person as main focal point with text overlay
+- Motion/energy in composition
+- "Tap to see more" curiosity design`
+    };
+    const strategy = platformStrategy[pf.name] || platformStrategy['YouTube'];
     
     try {
       console.log('🔍 Step 1: 컨셉 추출 시작...');
       const conceptController = new AbortController();
       const conceptTimeout = setTimeout(() => conceptController.abort(), 15000);
       
-      const conceptPrompt = `You are an expert thumbnail concept designer.
+      const conceptPrompt = `You are a world-class thumbnail designer who has created 10,000+ high-CTR thumbnails.
 
-Analyze the following Korean marketing content and extract the core visual concept and hook text for a thumbnail image.
+=== PLATFORM-SPECIFIC EXPERT STRATEGY ===
+${strategy}
 
-CONTENT (Korean):
+=== CONTENT TO ANALYZE ===
 ${content.substring(0, 800)}
 
-PLATFORM: ${pf.name} (${pf.ratio})
-STYLE: ${styleHint}
+=== TASK ===
+Analyze the content above and design the HIGHEST CTR thumbnail concept possible.
 
-Return ONLY a valid JSON object (no markdown, no code fences, no explanation):
+Return ONLY valid JSON (no markdown, no code fences):
 {
-  "visual": "English description of the ideal background/scene for this thumbnail. Be specific about colors, objects, lighting, mood. Max 150 words.",
-  "text_lines": ["Korean hook line 1 (max 15 chars)", "Korean hook line 2 (max 15 chars, optional)"]
+  "visual": "Detailed English description of the thumbnail background/scene. Include: specific objects, camera angle, lighting direction, color palette (exact hex colors), composition layout, mood/atmosphere. Be extremely specific about what makes this visually stunning. Max 200 words.",
+  "text_lines": ["Korean hook line 1 (max 15 chars)", "Korean hook line 2 (optional, max 15 chars)"],
+  "text_colors": ["primary text color hex", "accent/highlight color hex"],
+  "layout": "composition description (e.g., 'split comparison left-right', 'centered face with bottom text', 'text-left visual-right', 'diagonal split with overlay')"
 }
 
-Rules for text_lines:
-- Maximum 2 lines
-- Each line maximum 15 Korean characters
-- Must be attention-grabbing hook phrases extracted from content
-- Use powerful Korean marketing words
+RULES:
+- text_lines: Maximum 2 lines, each max 15 Korean characters. Use power words that create curiosity gap. Include numbers if relevant.
+- text_colors: First = main text color (usually white or yellow), second = emphasized keyword color (red, yellow, or neon)
+- visual: Background scene only, NOT text. Style: ${styleHint}. Include dramatic lighting, specific color hex values, and composition details.
+- layout: Describe spatial arrangement optimized for the platform strategy above
+- Apply EVERY platform-specific strategy point to maximize CTR`;
 
-Rules for visual:
-- Describe ONLY the background/scene, NOT any text
-- Be specific about style: ${styleHint}
-- Include color palette, lighting, composition details`;
 
       const conceptRes = await fetch(
         `${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`,
@@ -7228,7 +7281,13 @@ Rules for visual:
               .slice(0, 2)
               .map((l: string) => l.substring(0, 15));
           }
-          console.log('✅ 컨셉 추출 성공 - visual:', visual.substring(0, 80), 'text_lines:', textLines);
+          if (Array.isArray(parsed.text_colors) && parsed.text_colors.length >= 2) {
+            textColors = parsed.text_colors.slice(0, 2);
+          }
+          if (parsed.layout && typeof parsed.layout === 'string') {
+            layout = parsed.layout;
+          }
+          console.log('✅ 컨셉 추출 성공 - visual:', visual.substring(0, 80), 'text_lines:', textLines, 'layout:', layout);
         } catch (parseErr) {
           console.warn('⚠️ 컨셉 JSON 파싱 실패, 기본값 사용:', parseErr);
           // Fallback: try to extract first hook from content
@@ -7249,24 +7308,41 @@ Rules for visual:
       if (hookMatch) textLines = [hookMatch[0]];
     }
     
-    // ── STEP 2: 이미지 생성 프롬프트 조합 ──
+    // ── STEP 2: 이미지 생성 프롬프트 조합 (text_colors + layout 활용) ──
     const koreanTextBlock = textLines.length > 0
-      ? `\n\nKOREAN TEXT TO RENDER ON THE IMAGE:\n${textLines.map((l, i) => `Line ${i + 1}: "${l}"`).join('\n')}\n\nKorean text rendering rules:\n- Compose each Korean glyph (자소) precisely: initial consonant (초성) + vowel (중성) + optional final consonant (종성). For example: "맛" = ㅁ + ㅏ + ㅅ, "집" = ㅈ + ㅣ + ㅂ.\n- Use bold Gothic/sans-serif font style (similar to "Black Han Sans" or "Noto Sans KR Bold")\n- Text color: white (#FFFFFF) with thick black stroke (3-4px) and drop shadow\n- Text size: at least 70% of image width\n- Position: centered horizontally, bottom 30% of image\n- ONLY render the exact Korean characters provided above. No English text, no random symbols, no foreign characters.\n- Each character must be clearly legible and correctly composed.`
+      ? `\n\nKOREAN TEXT TO RENDER ON THE IMAGE:
+${textLines.map((l, i) => `Line ${i + 1}: "${l}" — color: ${textColors[i] || textColors[0]}, bold Gothic font`).join('\n')}
+
+KOREAN TEXT RENDERING RULES:
+- Compose each Korean glyph (자소) precisely: initial consonant (초성) + vowel (중성) + optional final consonant (종성). Example: "맛" = ㅁ+ㅏ+ㅅ, "집" = ㅈ+ㅣ+ㅂ.
+- Font: Extra Bold Gothic/sans-serif (like "Black Han Sans" or "Noto Sans KR Black")
+- Primary text color: ${textColors[0]} with 3-4px black stroke outline and drop shadow (offset:3px, blur:6px, rgba(0,0,0,0.8))
+- Accent/highlight color for key words: ${textColors[1]}
+- Text size: at least 60% of image width for maximum readability
+- Position: ${layout.includes('top') ? 'upper 30%' : layout.includes('bottom') ? 'lower 30%' : 'center-bottom 30%'} of image, centered horizontally
+- Color contrast ratio of at least 4.5:1 between text and background
+- ONLY render the exact Korean characters provided above. No English text, no random symbols, no stray characters.
+- Each character must be clearly legible, correctly composed, and visually impactful at mobile size.`
       : '';
     
     const finalPrompt = `Generate a ${resolution} thumbnail image in EXACTLY ${pf.ratio} aspect ratio.
 
+DESIGN LAYOUT: ${layout}
+
 BACKGROUND/SCENE:
 ${visual}
 
-Style: ${styleHint}. High contrast, vibrant colors, professional ${pf.name} thumbnail quality.
+STYLE: ${styleHint}. Cinematic lighting, high contrast, vibrant saturated colors, professional ${pf.name} thumbnail quality.
 ${koreanTextBlock}
 
-CRITICAL REQUIREMENTS:
+THUMBNAIL DESIGN PRINCIPLES:
 - The image MUST be exactly ${pf.ratio} aspect ratio (${resolution} pixels)
-- Single clear focal point with high visual impact
+- Single clear focal point with maximum visual impact
+- Color contrast ratio of at least 4.5:1 between text and background
 - Design for maximum Click-Through-Rate on ${pf.name}
-- No watermarks, no artifacts, no blurry elements`;
+- Must grab attention in under 0.3 seconds on a crowded feed
+- Mobile-optimized: legible at 160x90px preview size
+- No watermarks, no artifacts, no blurry elements, no cluttered composition`;
 
     console.log(`🖼️ Step 2: 최종 프롬프트 (${finalPrompt.length}자):\n${finalPrompt.substring(0, 300)}...`);
     

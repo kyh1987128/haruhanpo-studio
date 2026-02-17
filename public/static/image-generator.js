@@ -129,13 +129,19 @@
     _loading = true;
     _setLoading(true);
 
+    // 프론트엔드 타임아웃 (35초: 서버 25초 + 여유 10초)
+    var controller = new AbortController();
+    var fetchTimeout = setTimeout(function() { controller.abort(); }, 35000);
+
     try {
       console.log('🎨 AI 이미지 생성 요청:', { keyword: _keyword, style: styleVal });
       var res = await fetch('/api/images/generate-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keyword: _keyword, user_id: user.id, style: styleVal })
+        body: JSON.stringify({ keyword: _keyword, user_id: user.id, style: styleVal }),
+        signal: controller.signal
       });
+      clearTimeout(fetchTimeout);
 
       var data = await res.json();
       console.log('🎨 AI 이미지 생성 응답:', { status: res.status, success: data.success });
@@ -151,7 +157,7 @@
       } else {
         var errMsg = data.error || 'AI 이미지 생성에 실패했습니다';
         if (data.refunded) {
-          _showToast('⚠️ AI 이미지 생성에 실패했습니다. 크레딧이 환불되었습니다.', true);
+          _showToast('⚠️ ' + errMsg + ' 크레딧이 환불되었습니다.', true);
           if (data.free_credits !== undefined) {
             _syncCredits({ free_credits: data.free_credits, paid_credits: data.paid_credits });
           }
@@ -164,8 +170,13 @@
         }
       }
     } catch (e) {
-      console.error('🎨 AI 이미지 생성 네트워크 오류:', e);
-      _showToast('❌ 네트워크 오류가 발생했습니다', true);
+      clearTimeout(fetchTimeout);
+      if (e.name === 'AbortError') {
+        _showToast('⚠️ 서버 응답 시간이 초과되었습니다 (35초). 크레딧은 자동 환불됩니다.', true);
+      } else {
+        console.error('🎨 AI 이미지 생성 네트워크 오류:', e);
+        _showToast('❌ 네트워크 오류가 발생했습니다', true);
+      }
     } finally {
       _loading = false;
       _setLoading(false);

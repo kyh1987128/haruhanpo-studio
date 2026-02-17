@@ -100,27 +100,27 @@
           <div id="editorTextPreview" class="absolute inset-0 pointer-events-none z-10"></div>\
           <img id="editorImage" src="" alt="" class="block w-full h-full" style="object-fit:contain;">\
         </div>\
-        <!-- 필터 슬라이더 (이미지 아래) -->\
-        <div class="mt-1 mb-1 space-y-0.5">\
-          <div class="flex gap-1 items-center">\
-            <span class="text-[8px] text-gray-400 w-6 flex-shrink-0">밝기</span>\
-            <input type="range" min="50" max="150" value="100" id="filterBrightness" oninput="window.ImageEditor._setFilter(\'brightness\',this.value)" class="flex-1 h-1 accent-yellow-500">\
-            <span id="filterBrightnessVal" class="text-[8px] text-gray-400 w-6">100</span>\
+        <!-- 필터 슬라이더 (이미지 아래, 간격 개선) -->\
+        <div class="mt-2 mb-2 space-y-2">\
+          <div class="flex gap-2 items-center">\
+            <span class="text-[9px] text-gray-500 w-7 flex-shrink-0">밝기</span>\
+            <input type="range" min="50" max="150" value="100" id="filterBrightness" oninput="window.ImageEditor._setFilter(\'brightness\',this.value)" class="flex-1 h-1.5 accent-yellow-500">\
+            <span id="filterBrightnessVal" class="text-[9px] text-gray-500 w-7 text-right">100</span>\
           </div>\
-          <div class="flex gap-1 items-center">\
-            <span class="text-[8px] text-gray-400 w-6 flex-shrink-0">대비</span>\
-            <input type="range" min="50" max="150" value="100" id="filterContrast" oninput="window.ImageEditor._setFilter(\'contrast\',this.value)" class="flex-1 h-1 accent-orange-500">\
-            <span id="filterContrastVal" class="text-[8px] text-gray-400 w-6">100</span>\
+          <div class="flex gap-2 items-center">\
+            <span class="text-[9px] text-gray-500 w-7 flex-shrink-0">대비</span>\
+            <input type="range" min="50" max="150" value="100" id="filterContrast" oninput="window.ImageEditor._setFilter(\'contrast\',this.value)" class="flex-1 h-1.5 accent-orange-500">\
+            <span id="filterContrastVal" class="text-[9px] text-gray-500 w-7 text-right">100</span>\
           </div>\
-          <div class="flex gap-1 items-center">\
-            <span class="text-[8px] text-gray-400 w-6 flex-shrink-0">채도</span>\
-            <input type="range" min="0" max="200" value="100" id="filterSaturate" oninput="window.ImageEditor._setFilter(\'saturate\',this.value)" class="flex-1 h-1 accent-pink-500">\
-            <span id="filterSaturateVal" class="text-[8px] text-gray-400 w-6">100</span>\
+          <div class="flex gap-2 items-center">\
+            <span class="text-[9px] text-gray-500 w-7 flex-shrink-0">채도</span>\
+            <input type="range" min="0" max="200" value="100" id="filterSaturate" oninput="window.ImageEditor._setFilter(\'saturate\',this.value)" class="flex-1 h-1.5 accent-pink-500">\
+            <span id="filterSaturateVal" class="text-[9px] text-gray-500 w-7 text-right">100</span>\
           </div>\
         </div>\
         <!-- 텍스트 컨트롤 -->\
-        <div class="mt-1 border-t border-gray-200 pt-1 flex-shrink-0">\
-          <div class="flex items-center justify-between mb-0.5">\
+        <div class="mt-2 border-t border-gray-200 pt-2 flex-shrink-0">\
+          <div class="flex items-center justify-between mb-1">\
             <span class="text-[9px] font-semibold text-gray-600"><i class="fas fa-font mr-0.5"></i>텍스트</span>\
             <button onclick="window.ImageEditor._addText()" class="px-1.5 py-0.5 text-[8px] bg-purple-500 text-white rounded-full font-bold hover:bg-purple-600"><i class="fas fa-plus mr-0.5"></i>추가</button>\
           </div>\
@@ -238,7 +238,7 @@
     _renderTextPreview();
   };
 
-  // ── 텍스트 컨트롤 (컴팩트 가로 배치) ──
+  // ── 텍스트 컨트롤 (순수 + 연결, 간격 개선) ──
   function _renderTextControls() {
     var panel = document.getElementById('editorTextPanel');
     if (!panel) return;
@@ -252,67 +252,97 @@
       return '<option value="' + fi + '"' + (ov.fontIndex === fi ? ' selected' : '') + ' style="font-family:' + f.value + '">' + f.label + '</option>';
     }).join('');
 
-    panel.innerHTML = '\
-      <div class="space-y-1.5">\
-        <div class="flex gap-1">\
-          <input type="text" value="' + ov.text.replace(/"/g, '&quot;') + '" onchange="window.ImageEditor._updateText(' + idx + ',\'text\',this.value)" class="flex-1 px-1.5 py-0.5 border rounded text-[9px] focus:ring-1 focus:ring-purple-400 focus:outline-none min-w-0">\
-          <button onclick="window.ImageEditor._removeText(' + idx + ')" class="px-1 py-0.5 text-[8px] bg-red-100 text-red-500 rounded flex-shrink-0"><i class="fas fa-trash"></i></button>\
-        </div>\
-        <div class="flex gap-1 items-center">\
-          <select onchange="window.ImageEditor._setFont(' + idx + ',parseInt(this.value))" class="flex-1 px-1 py-0.5 border rounded text-[9px] min-w-0">' + fontOpts + '</select>\
-          <span class="text-[8px] text-gray-400 flex-shrink-0">크기</span>\
-          <input type="range" min="10" max="60" value="' + ov.fontSize + '" oninput="window.ImageEditor._updateText(' + idx + ',\'fontSize\',parseInt(this.value))" class="w-14 h-1 accent-purple-500 flex-shrink-0">\
-          <span class="text-[8px] text-gray-400 w-4 flex-shrink-0">' + ov.fontSize + '</span>\
-        </div>\
-        <div class="flex gap-0.5 items-center flex-wrap">\
-          <span class="text-[8px] text-gray-400 flex-shrink-0">색</span>\
-          <button onclick="window.ImageEditor._updateText(' + idx + ',\'color\',\'#ffffff\')" class="w-4 h-4 rounded-full bg-white border ' + (ov.color === '#ffffff' ? 'border-purple-500 border-2' : 'border-gray-300') + '"></button>\
-          <button onclick="window.ImageEditor._updateText(' + idx + ',\'color\',\'#000000\')" class="w-4 h-4 rounded-full bg-black border ' + (ov.color === '#000000' ? 'border-purple-500 border-2' : 'border-gray-300') + '"></button>\
-          <button onclick="window.ImageEditor._updateText(' + idx + ',\'color\',\'#ef4444\')" class="w-4 h-4 rounded-full bg-red-500 border ' + (ov.color === '#ef4444' ? 'border-purple-500 border-2' : 'border-gray-300') + '"></button>\
-          <button onclick="window.ImageEditor._updateText(' + idx + ',\'color\',\'#3b82f6\')" class="w-4 h-4 rounded-full bg-blue-500 border ' + (ov.color === '#3b82f6' ? 'border-purple-500 border-2' : 'border-gray-300') + '"></button>\
-          <button onclick="window.ImageEditor._updateText(' + idx + ',\'color\',\'#facc15\')" class="w-4 h-4 rounded-full bg-yellow-400 border ' + (ov.color === '#facc15' ? 'border-purple-500 border-2' : 'border-gray-300') + '"></button>\
-          <input type="color" value="' + ov.color + '" onchange="window.ImageEditor._updateText(' + idx + ',\'color\',this.value)" class="w-4 h-4 rounded cursor-pointer border-0 p-0 flex-shrink-0">\
-        </div>\
-        <div class="rounded-md" style="background:#f3e8ff; padding:4px 8px;">\
-          <label class="flex items-center gap-1 cursor-pointer">\
-            <input type="checkbox" id="bgCheckbox" ' + (ov.bgEnabled ? 'checked' : '') + ' onchange="window.ImageEditor._toggleBg(' + idx + ',this.checked)" class="w-4 h-4 accent-purple-500">\
-            <span class="text-[10px] font-semibold text-purple-700">배경</span>\
-          </label>\
-          <div id="bgOptions" class="' + (ov.bgEnabled ? '' : 'hidden') + ' mt-1 space-y-1">\
-            <div class="flex gap-0.5 items-center flex-wrap">\
-              <span class="text-[8px] text-purple-500 flex-shrink-0">배경색</span>\
-              <button onclick="window.ImageEditor._setBgColor(' + idx + ',\'0,0,0\')" class="bg-color-btn w-4 h-4 rounded-full border ' + (ov.bgColorRGB === '0,0,0' ? 'border-purple-500 border-2' : 'border-gray-300') + '" style="background:#000"></button>\
-              <button onclick="window.ImageEditor._setBgColor(' + idx + ',\'255,255,255\')" class="bg-color-btn w-4 h-4 rounded-full border ' + (ov.bgColorRGB === '255,255,255' ? 'border-purple-500 border-2' : 'border-gray-300') + '" style="background:#fff"></button>\
-              <button onclick="window.ImageEditor._setBgColor(' + idx + ',\'30,58,138\')" class="bg-color-btn w-4 h-4 rounded-full border ' + (ov.bgColorRGB === '30,58,138' ? 'border-purple-500 border-2' : 'border-gray-300') + '" style="background:#1e3a8a"></button>\
-              <button onclick="window.ImageEditor._setBgColor(' + idx + ',\'153,27,27\')" class="bg-color-btn w-4 h-4 rounded-full border ' + (ov.bgColorRGB === '153,27,27' ? 'border-purple-500 border-2' : 'border-gray-300') + '" style="background:#991b1b"></button>\
-              <button onclick="window.ImageEditor._setBgColor(' + idx + ',\'21,128,61\')" class="bg-color-btn w-4 h-4 rounded-full border ' + (ov.bgColorRGB === '21,128,61' ? 'border-purple-500 border-2' : 'border-gray-300') + '" style="background:#15803d"></button>\
-              <input type="color" id="bgColorPicker" value="' + _rgbToHex(ov.bgColorRGB) + '" onchange="window.ImageEditor._setBgColorHex(' + idx + ',this.value)" class="w-4 h-4 rounded cursor-pointer border-0 p-0 flex-shrink-0">\
-            </div>\
-            <div class="flex items-center gap-1">\
-              <span class="text-[8px] text-purple-500 flex-shrink-0">불투명도</span>\
-              <input type="range" id="bgOpacity" min="0" max="100" value="' + ov.bgOpacity + '" oninput="window.ImageEditor._setBgOpacity(' + idx + ',parseInt(this.value))" class="flex-1 h-1 accent-purple-500">\
-              <span id="bgOpacityValue" class="text-[9px] text-purple-600 font-bold w-8 text-right">' + ov.bgOpacity + '%</span>\
-            </div>\
-          </div>\
-        </div>\
-        <div class="rounded-md" style="background:#fef3c7; padding:4px 8px;">\
-          <label class="flex items-center gap-1 cursor-pointer">\
-            <input type="checkbox" ' + (ov.shadow ? 'checked' : '') + ' onchange="window.ImageEditor._updateText(' + idx + ',\'shadow\',this.checked)" class="w-4 h-4 accent-yellow-500">\
-            <span class="text-[10px] font-semibold text-yellow-800">그림자</span>\
-          </label>\
-          ' + (ov.shadow ? '<div class="flex items-center gap-1 mt-1"><span class="text-[8px] text-yellow-600 flex-shrink-0">강도</span><input type="range" min="1" max="10" value="' + ov.shadowStrength + '" oninput="window.ImageEditor._updateText(' + idx + ',\'shadowStrength\',parseInt(this.value))" class="flex-1 h-1 accent-yellow-500"><span class="text-[9px] text-yellow-700 font-bold w-4">' + ov.shadowStrength + '</span></div>' : '') + '\
-        </div>\
-        <div class="flex gap-0.5 items-center">\
-          <span class="text-[7px] text-gray-400 flex-shrink-0">정렬</span>\
-          <button onclick="window.ImageEditor._align(' + idx + ',\'left\')" class="w-6 h-6 text-[9px] rounded border ' + (ov.x <= 15 ? 'border-purple-400 bg-purple-50' : 'border-gray-200') + ' hover:bg-purple-50" title="왼쪽"><i class="fas fa-align-left"></i></button>\
-          <button onclick="window.ImageEditor._align(' + idx + ',\'center\')" class="w-6 h-6 text-[9px] rounded border ' + (ov.x > 15 && ov.x < 85 ? 'border-purple-400 bg-purple-50' : 'border-gray-200') + ' hover:bg-purple-50" title="가운데"><i class="fas fa-align-center"></i></button>\
-          <button onclick="window.ImageEditor._align(' + idx + ',\'right\')" class="w-6 h-6 text-[9px] rounded border ' + (ov.x >= 85 ? 'border-purple-400 bg-purple-50' : 'border-gray-200') + ' hover:bg-purple-50" title="오른쪽"><i class="fas fa-align-right"></i></button>\
-          <span class="mx-0.5 text-gray-300">|</span>\
-          <button onclick="window.ImageEditor._alignV(' + idx + ',\'top\')" class="w-6 h-6 text-[9px] rounded border ' + (ov.y <= 20 ? 'border-purple-400 bg-purple-50' : 'border-gray-200') + ' hover:bg-purple-50" title="상단"><i class="fas fa-arrow-up"></i></button>\
-          <button onclick="window.ImageEditor._alignV(' + idx + ',\'middle\')" class="w-6 h-6 text-[9px] rounded border ' + (ov.y > 20 && ov.y < 80 ? 'border-purple-400 bg-purple-50' : 'border-gray-200') + ' hover:bg-purple-50" title="중앙"><i class="fas fa-arrows-alt-v"></i></button>\
-          <button onclick="window.ImageEditor._alignV(' + idx + ',\'bottom\')" class="w-6 h-6 text-[9px] rounded border ' + (ov.y >= 80 ? 'border-purple-400 bg-purple-50' : 'border-gray-200') + ' hover:bg-purple-50" title="하단"><i class="fas fa-arrow-down"></i></button>\
-        </div>\
-      </div>';
+    // 배경 옵션 HTML (bgEnabled일 때만 보임)
+    var bgOptsHtml = '';
+    if (ov.bgEnabled) {
+      bgOptsHtml =
+        '<div class="mt-2 space-y-2">' +
+          '<div class="flex gap-1 items-center flex-wrap">' +
+            '<span class="text-[9px] text-purple-500 flex-shrink-0">색상</span>' +
+            '<button onclick="window.ImageEditor._setBgColor(' + idx + ',\'0,0,0\')" class="w-5 h-5 rounded-full border-2 cursor-pointer ' + (ov.bgColorRGB === '0,0,0' ? 'border-purple-500' : 'border-gray-300') + '" style="background:#000"></button>' +
+            '<button onclick="window.ImageEditor._setBgColor(' + idx + ',\'255,255,255\')" class="w-5 h-5 rounded-full border-2 cursor-pointer ' + (ov.bgColorRGB === '255,255,255' ? 'border-purple-500' : 'border-gray-300') + '" style="background:#fff"></button>' +
+            '<button onclick="window.ImageEditor._setBgColor(' + idx + ',\'30,58,138\')" class="w-5 h-5 rounded-full border-2 cursor-pointer ' + (ov.bgColorRGB === '30,58,138' ? 'border-purple-500' : 'border-gray-300') + '" style="background:#1e3a8a"></button>' +
+            '<button onclick="window.ImageEditor._setBgColor(' + idx + ',\'220,38,38\')" class="w-5 h-5 rounded-full border-2 cursor-pointer ' + (ov.bgColorRGB === '220,38,38' ? 'border-purple-500' : 'border-gray-300') + '" style="background:#dc2626"></button>' +
+            '<button onclick="window.ImageEditor._setBgColor(' + idx + ',\'21,128,61\')" class="w-5 h-5 rounded-full border-2 cursor-pointer ' + (ov.bgColorRGB === '21,128,61' ? 'border-purple-500' : 'border-gray-300') + '" style="background:#15803d"></button>' +
+            '<input type="color" value="' + _rgbToHex(ov.bgColorRGB) + '" onchange="window.ImageEditor._setBgColorHex(' + idx + ',this.value)" class="w-5 h-5 rounded cursor-pointer border-0 p-0">' +
+          '</div>' +
+          '<div class="flex items-center gap-1">' +
+            '<span class="text-[9px] text-purple-500 flex-shrink-0">불투명도</span>' +
+            '<input type="range" min="0" max="100" value="' + ov.bgOpacity + '" oninput="window.ImageEditor._setBgOpacity(' + idx + ',parseInt(this.value))" class="flex-1 h-1.5 accent-purple-500">' +
+            '<span id="bgOpacityValue" class="text-[10px] text-purple-600 font-bold w-8 text-right">' + ov.bgOpacity + '%</span>' +
+          '</div>' +
+        '</div>';
+    }
+
+    // 그림자 옵션 HTML
+    var shadowOptsHtml = '';
+    if (ov.shadow) {
+      shadowOptsHtml =
+        '<div class="flex items-center gap-1 mt-2">' +
+          '<span class="text-[9px] text-yellow-600 flex-shrink-0">강도</span>' +
+          '<input type="range" min="1" max="10" value="' + ov.shadowStrength + '" oninput="window.ImageEditor._updateText(' + idx + ',\'shadowStrength\',parseInt(this.value))" class="flex-1 h-1.5 accent-yellow-500">' +
+          '<span class="text-[10px] text-yellow-700 font-bold w-4">' + ov.shadowStrength + '</span>' +
+        '</div>';
+    }
+
+    panel.innerHTML =
+      '<div class="space-y-3">' +
+        // 텍스트 입력 + 삭제
+        '<div class="flex gap-1">' +
+          '<input type="text" value="' + ov.text.replace(/"/g, '&quot;') + '" onchange="window.ImageEditor._updateText(' + idx + ',\'text\',this.value)" class="flex-1 px-1.5 py-1 border rounded text-[10px] focus:ring-1 focus:ring-purple-400 focus:outline-none min-w-0">' +
+          '<button onclick="window.ImageEditor._removeText(' + idx + ')" class="px-1.5 py-0.5 text-[9px] bg-red-100 text-red-500 rounded flex-shrink-0"><i class="fas fa-trash"></i></button>' +
+        '</div>' +
+        // 폰트 + 크기
+        '<div class="flex gap-1.5 items-center">' +
+          '<select onchange="window.ImageEditor._setFont(' + idx + ',parseInt(this.value))" class="flex-1 px-1 py-1 border rounded text-[10px] min-w-0">' + fontOpts + '</select>' +
+          '<span class="text-[9px] text-gray-400 flex-shrink-0">크기</span>' +
+          '<input type="range" min="10" max="60" value="' + ov.fontSize + '" oninput="window.ImageEditor._updateText(' + idx + ',\'fontSize\',parseInt(this.value))" class="w-16 h-1.5 accent-purple-500 flex-shrink-0">' +
+          '<span class="text-[9px] text-gray-500 w-5 flex-shrink-0">' + ov.fontSize + '</span>' +
+        '</div>' +
+        // 구분선
+        '<div class="border-b border-gray-200"></div>' +
+        // 텍스트 색상
+        '<div class="flex gap-1 items-center flex-wrap">' +
+          '<span class="text-[9px] text-gray-400 flex-shrink-0">텍스트색</span>' +
+          '<button onclick="window.ImageEditor._updateText(' + idx + ',\'color\',\'#ffffff\')" class="w-5 h-5 rounded-full bg-white border-2 cursor-pointer ' + (ov.color === '#ffffff' ? 'border-purple-500' : 'border-gray-300') + '"></button>' +
+          '<button onclick="window.ImageEditor._updateText(' + idx + ',\'color\',\'#000000\')" class="w-5 h-5 rounded-full bg-black border-2 cursor-pointer ' + (ov.color === '#000000' ? 'border-purple-500' : 'border-gray-300') + '"></button>' +
+          '<button onclick="window.ImageEditor._updateText(' + idx + ',\'color\',\'#ef4444\')" class="w-5 h-5 rounded-full border-2 cursor-pointer ' + (ov.color === '#ef4444' ? 'border-purple-500' : 'border-gray-300') + '" style="background:#ef4444"></button>' +
+          '<button onclick="window.ImageEditor._updateText(' + idx + ',\'color\',\'#3b82f6\')" class="w-5 h-5 rounded-full border-2 cursor-pointer ' + (ov.color === '#3b82f6' ? 'border-purple-500' : 'border-gray-300') + '" style="background:#3b82f6"></button>' +
+          '<button onclick="window.ImageEditor._updateText(' + idx + ',\'color\',\'#facc15\')" class="w-5 h-5 rounded-full border-2 cursor-pointer ' + (ov.color === '#facc15' ? 'border-purple-500' : 'border-gray-300') + '" style="background:#facc15"></button>' +
+          '<input type="color" value="' + ov.color + '" onchange="window.ImageEditor._updateText(' + idx + ',\'color\',this.value)" class="w-5 h-5 rounded cursor-pointer border-0 p-0 flex-shrink-0">' +
+        '</div>' +
+        // 구분선
+        '<div class="border-b border-gray-200"></div>' +
+        // 배경 체크박스 + 색상 + 불투명도
+        '<div class="rounded-lg" style="background:#f3e8ff; padding:6px 10px;">' +
+          '<label class="flex items-center gap-1.5 cursor-pointer">' +
+            '<input type="checkbox" ' + (ov.bgEnabled ? 'checked' : '') + ' onchange="window.ImageEditor._toggleBg(' + idx + ',this.checked)" class="w-4 h-4 accent-purple-500">' +
+            '<span class="text-[11px] font-semibold text-purple-700">배경</span>' +
+          '</label>' +
+          bgOptsHtml +
+        '</div>' +
+        // 그림자 체크박스 + 강도
+        '<div class="rounded-lg" style="background:#fef3c7; padding:6px 10px;">' +
+          '<label class="flex items-center gap-1.5 cursor-pointer">' +
+            '<input type="checkbox" ' + (ov.shadow ? 'checked' : '') + ' onchange="window.ImageEditor._updateText(' + idx + ',\'shadow\',this.checked)" class="w-4 h-4 accent-yellow-500">' +
+            '<span class="text-[11px] font-semibold text-yellow-800">그림자</span>' +
+          '</label>' +
+          shadowOptsHtml +
+        '</div>' +
+        // 구분선
+        '<div class="border-b border-gray-200"></div>' +
+        // 정렬
+        '<div class="flex gap-1 items-center">' +
+          '<span class="text-[8px] text-gray-400 flex-shrink-0">정렬</span>' +
+          '<button onclick="window.ImageEditor._align(' + idx + ',\'left\')" class="w-6 h-6 text-[9px] rounded border ' + (ov.x <= 15 ? 'border-purple-400 bg-purple-50' : 'border-gray-200') + ' hover:bg-purple-50" title="왼쪽"><i class="fas fa-align-left"></i></button>' +
+          '<button onclick="window.ImageEditor._align(' + idx + ',\'center\')" class="w-6 h-6 text-[9px] rounded border ' + (ov.x > 15 && ov.x < 85 ? 'border-purple-400 bg-purple-50' : 'border-gray-200') + ' hover:bg-purple-50" title="가운데"><i class="fas fa-align-center"></i></button>' +
+          '<button onclick="window.ImageEditor._align(' + idx + ',\'right\')" class="w-6 h-6 text-[9px] rounded border ' + (ov.x >= 85 ? 'border-purple-400 bg-purple-50' : 'border-gray-200') + ' hover:bg-purple-50" title="오른쪽"><i class="fas fa-align-right"></i></button>' +
+          '<span class="mx-1 text-gray-300">|</span>' +
+          '<button onclick="window.ImageEditor._alignV(' + idx + ',\'top\')" class="w-6 h-6 text-[9px] rounded border ' + (ov.y <= 20 ? 'border-purple-400 bg-purple-50' : 'border-gray-200') + ' hover:bg-purple-50" title="상단"><i class="fas fa-arrow-up"></i></button>' +
+          '<button onclick="window.ImageEditor._alignV(' + idx + ',\'middle\')" class="w-6 h-6 text-[9px] rounded border ' + (ov.y > 20 && ov.y < 80 ? 'border-purple-400 bg-purple-50' : 'border-gray-200') + ' hover:bg-purple-50" title="중앙"><i class="fas fa-arrows-alt-v"></i></button>' +
+          '<button onclick="window.ImageEditor._alignV(' + idx + ',\'bottom\')" class="w-6 h-6 text-[9px] rounded border ' + (ov.y >= 80 ? 'border-purple-400 bg-purple-50' : 'border-gray-200') + ' hover:bg-purple-50" title="하단"><i class="fas fa-arrow-down"></i></button>' +
+        '</div>' +
+      '</div>';
   }
 
   // ── 정렬 ──
