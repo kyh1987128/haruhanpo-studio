@@ -6725,10 +6725,10 @@ app.post('/api/images/search', async (c) => {
     
     const pageNum = page || 1;
     
-    // 각 소스별 할당량 (Pixabay per_page 최소 3이므로 3개 요청 후 2개만 사용)
-    const pexelsCount = 3;
-    const unsplashCount = 3;
-    const pixabayCount = 3;  // API 최소값 3, 결과에서 2개만 사용
+    // 각 소스별 할당량 (최소 4장씩 요청하여 interleave 후 8장 이상 반환)
+    const pexelsCount = 4;
+    const unsplashCount = 4;
+    const pixabayCount = 4;  // API 최소값 3
     // orientation 파라미터 제거 — 모든 방향의 이미지를 반환
     
     // 병렬로 3개 소스 동시 호출
@@ -6790,7 +6790,7 @@ app.post('/api/images/search', async (c) => {
           );
           if (!res.ok) return [];
           const data: any = await res.json();
-          return (data.hits || []).slice(0, 2).map((img: any) => ({
+          return (data.hits || []).map((img: any) => ({
             id: `pixabay-${img.id}`,
             url: img.largeImageURL,
             thumb: img.webformatURL,
@@ -6815,7 +6815,7 @@ app.post('/api/images/search', async (c) => {
       if (i < pixabayResults.length) results.push(pixabayResults[i]);
     }
     
-    console.log(`✅ 이미지 검색: Pexels ${pexelsResults.length}, Unsplash ${unsplashResults.length}, Pixabay ${pixabayResults.length} → 총 ${results.length}개 (목표 8개)`);
+    console.log(`✅ 이미지 검색: Pexels ${pexelsResults.length}, Unsplash ${unsplashResults.length}, Pixabay ${pixabayResults.length} → 총 ${results.length}개 (목표 10개 이상)`);
     
     return c.json({
       success: true,
@@ -6962,6 +6962,11 @@ app.post('/api/images/generate-ai', async (c) => {
     for (const model of models) {
       try {
         console.log(`🎨 Gemini 이미지 생성 시도: ${model}`);
+        
+        // 25초 서버 타임아웃
+        const imgController = new AbortController();
+        const imgTimeout = setTimeout(() => imgController.abort(), 25000);
+        
         const imagenRes = await fetch(
           `${proxyBase}/v1beta/models/${model}:generateContent`,
           {
@@ -6977,9 +6982,11 @@ app.post('/api/images/generate-ai', async (c) => {
               generationConfig: {
                 responseModalities: ['TEXT', 'IMAGE']
               }
-            })
+            }),
+            signal: imgController.signal
           }
         );
+        clearTimeout(imgTimeout);
         
         console.log(`🎨 ${model} 응답 상태: ${imagenRes.status}`);
         
@@ -7015,6 +7022,11 @@ app.post('/api/images/generate-ai', async (c) => {
           }
         }
       } catch (e: any) {
+        if (e?.name === 'AbortError') {
+          lastError = `${model}: 서버 타임아웃 (25초 초과)`;
+          console.error(`❌ ${lastError}`);
+          continue;
+        }
         lastError = `${model}: ${e?.message || '알 수 없는 오류'}`;
         console.error(`❌ ${model} 예외:`, lastError);
       }

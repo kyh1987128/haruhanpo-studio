@@ -71,7 +71,7 @@
     var container = document.getElementById('tabContentEditor');
     if (!container) return;
     container.innerHTML = '\
-      <div class="p-2 flex flex-col" style="max-height:none; overflow-y:auto;">\
+      <div class="p-2 flex flex-col">\
         <!-- 헤더: 뒤로 / 제목 / PNG + 클립보드 -->\
         <div class="flex items-center justify-between mb-1">\
           <button onclick="window.ImageEditor.close()" class="px-2 py-0.5 text-[10px] text-gray-500 hover:text-gray-700 font-bold">\

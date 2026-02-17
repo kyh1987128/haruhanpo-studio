@@ -126,8 +126,7 @@
         </div>\
         <button id="thumbGenBtn" onclick="window.ThumbnailGenerator._generate()"\
                 class="w-full py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-bold text-xs hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed">\
-          <i id="thumbSpinner" class="fas fa-spinner fa-spin mr-1 hidden"></i>\
-          <i class="fas fa-image mr-1"></i>AI 썸네일 생성 (3크레딧)\
+          🎨 AI 썸네일 생성 (3크레딧)\
         </button>\
         <p class="text-[9px] text-gray-400 text-center">생성 버튼을 눌러야 크레딧이 차감됩니다</p>\
         <div class="border-t border-gray-200 pt-2">\
@@ -267,11 +266,21 @@
     else alert(msg);
   }
 
-  function _setLoading(v) {
+  function _setLoading(loading) {
     var btn = document.getElementById('thumbGenBtn');
-    var spinner = document.getElementById('thumbSpinner');
-    if (btn) btn.disabled = v;
-    if (spinner) spinner.classList.toggle('hidden', !v);
+    if (!btn) return;
+    if (loading) {
+      btn.disabled = true;
+      btn.dataset.originalText = btn.textContent;
+      btn.textContent = '⏳ 생성 중... (최대 30초)';
+      btn.style.opacity = '0.6';
+      btn.style.cursor = 'not-allowed';
+    } else {
+      btn.disabled = false;
+      btn.textContent = btn.dataset.originalText || '🎨 AI 썸네일 생성 (3크레딧)';
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+    }
   }
 
   window.ThumbnailGenerator._generate = _generate;

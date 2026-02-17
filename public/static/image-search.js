@@ -25,10 +25,8 @@
     if (ce) ce.classList.toggle('hidden', tab !== 'editor');
     // AI 생성 로딩 상태 초기화
     if (tab !== 'aigen') {
-      var spinner = document.getElementById('aiGenSpinner');
       var genBtn = document.getElementById('aiGenBtn');
-      if (spinner) spinner.classList.add('hidden');
-      if (genBtn) genBtn.disabled = false;
+      if (genBtn) { genBtn.disabled = false; genBtn.style.opacity = '1'; genBtn.style.cursor = 'pointer'; }
     }
     // 상단 큰 버튼 활성 상태 표시
     var btn1 = document.getElementById('freeImageSearchBtn');
@@ -115,10 +113,10 @@
           <p class="text-[10px] text-gray-400 mt-1">이미지 검색 중...</p>\
         </div>\
         <div id="imgSearchGrid" class="grid grid-cols-2 gap-2"></div>\
-        <div class="text-center mt-2">\
-          <button id="imgSearchMore" class="hidden w-full py-1.5 bg-gray-100 rounded-lg text-[10px] text-gray-500 hover:bg-gray-200 font-semibold"\
+        <div class="text-center mt-3">\
+          <button id="imgSearchMore" class="hidden w-full py-2.5 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-purple-400 hover:text-purple-500 transition-colors"\
                   onclick="window.ImageSearch._loadMore()">\
-            <i class="fas fa-plus mr-1"></i>더 보기\
+            📷 더 많은 이미지 보기\
           </button>\
         </div>\
       </div>';
@@ -174,7 +172,11 @@
       '</div>';
     }).join('');
     var moreBtn = document.getElementById('imgSearchMore');
-    if (moreBtn) moreBtn.classList.toggle('hidden', !_hasMore);
+    if (moreBtn) {
+      moreBtn.classList.toggle('hidden', !_hasMore);
+      moreBtn.textContent = '📷 더 많은 이미지 보기';
+      moreBtn.disabled = false;
+    }
   }
 
   window.ImageSearch._selectImage = function (index) {
@@ -187,6 +189,8 @@
 
   window.ImageSearch._loadMore = function () {
     _page++;
+    var btn = document.getElementById('imgSearchMore');
+    if (btn) { btn.textContent = '로딩 중...'; btn.disabled = true; }
     _doSearch(true);
   };
 
