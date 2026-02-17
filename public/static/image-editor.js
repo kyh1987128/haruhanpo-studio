@@ -1,6 +1,6 @@
 /**
- * 이미지 크롭 + 텍스트 오버레이 에디터 v1.3
- * 기능: 다중 텍스트, 웹폰트(7종), 배경 투명도 슬라이더, 그림자 강도 슬라이더, 컴팩트 레이아웃
+ * 이미지 크롭 + 텍스트 오버레이 에디터 v1.4
+ * 기능: 배경 투명도 슬라이더, 정렬 6버튼, 350px 미리보기, 필터(밝기/대비/채도), 클립보드 복사
  */
 (function () {
   'use strict';
@@ -15,8 +15,8 @@
   var _aspectRatio = NaN;
   var _dragging = false;
   var _rendered = false;
+  var _filters = { brightness: 100, contrast: 100, saturate: 100 };
 
-  // 폰트 7종
   var FONTS = [
     { label: '기본 고딕', value: 'sans-serif', css: 'sans-serif' },
     { label: '나눔고딕', value: '"Nanum Gothic", sans-serif', css: 'Nanum Gothic' },
@@ -37,22 +37,25 @@
     _textOverlays = [];
     _activeOverlayIndex = -1;
     _aspectRatio = NaN;
+    _filters = { brightness: 100, contrast: 100, saturate: 100 };
 
     var viewer = document.getElementById('imageToolViewer');
     if (viewer) viewer.classList.remove('hidden');
 
     var cs = document.getElementById('tabContentSearch');
     var ca = document.getElementById('tabContentAigen');
+    var ct = document.getElementById('tabContentThumbnail');
     var ce = document.getElementById('tabContentEditor');
     if (cs) cs.classList.add('hidden');
     if (ca) ca.classList.add('hidden');
+    if (ct) ct.classList.add('hidden');
     if (ce) ce.classList.remove('hidden');
 
-    // 상단 큰 버튼 ring 제거 (에디터 모드)
-    var btn1 = document.getElementById('freeImageSearchBtn');
-    var btn2 = document.getElementById('aiImageGenBtn');
-    if (btn1) btn1.classList.remove('ring-2', 'ring-teal-400');
-    if (btn2) btn2.classList.remove('ring-2', 'ring-purple-400');
+    // 상단 버튼 ring 제거
+    ['freeImageSearchBtn', 'aiImageGenBtn', 'aiThumbnailGenBtn'].forEach(function (id) {
+      var b = document.getElementById(id);
+      if (b) b.classList.remove('ring-2', 'ring-teal-400', 'ring-purple-400', 'ring-pink-400');
+    });
 
     if (!_rendered) { _renderEditorUI(); _rendered = true; }
     setTimeout(function () { _initCropper(); }, 150);
@@ -63,21 +66,28 @@
     if (window.ImageToolTabs) window.ImageToolTabs.switchTab(_sourceTab);
   }
 
-  // ── 컴팩트 에디터 UI (스크롤 없음) ──
+  // ── 에디터 UI ──
   function _renderEditorUI() {
     var container = document.getElementById('tabContentEditor');
     if (!container) return;
     container.innerHTML = '\
-      <div class="p-2 flex flex-col" style="max-height:500px;">\
+      <div class="p-2 flex flex-col" style="max-height:680px;">\
+        <!-- 헤더: 뒤로 / 제목 / PNG + 클립보드 -->\
         <div class="flex items-center justify-between mb-1">\
           <button onclick="window.ImageEditor.close()" class="px-2 py-0.5 text-[10px] text-gray-500 hover:text-gray-700 font-bold">\
             <i class="fas fa-arrow-left mr-1"></i>뒤로\
           </button>\
           <span class="text-[10px] font-bold text-gray-700"><i class="fas fa-crop-alt mr-1 text-purple-500"></i>이미지 편집</span>\
-          <button onclick="window.ImageEditor._download()" class="px-2 py-0.5 text-[9px] bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded font-bold">\
-            <i class="fas fa-download mr-0.5"></i>PNG\
-          </button>\
+          <div class="flex gap-1">\
+            <button onclick="window.ImageEditor._download()" class="px-2 py-0.5 text-[9px] bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded font-bold">\
+              <i class="fas fa-download mr-0.5"></i>PNG\
+            </button>\
+            <button id="editorClipboardBtn" onclick="window.ImageEditor._copyClipboard()" class="px-2 py-0.5 text-[9px] bg-blue-500 text-white rounded font-bold">\
+              <i class="fas fa-copy mr-0.5"></i>복사\
+            </button>\
+          </div>\
         </div>\
+        <!-- 비율 버튼 -->\
         <div class="flex gap-1 mb-1">\
           <button data-ratio="free" class="ratio-btn px-1.5 py-0.5 text-[8px] rounded-full border bg-purple-50 ring-1 ring-purple-500 font-bold" onclick="window.ImageEditor._setRatio(\'free\')">자유</button>\
           <button data-ratio="1:1" class="ratio-btn px-1.5 py-0.5 text-[8px] rounded-full border bg-white font-bold" onclick="window.ImageEditor._setRatio(\'1:1\')">1:1</button>\
@@ -85,12 +95,26 @@
           <button data-ratio="16:9" class="ratio-btn px-1.5 py-0.5 text-[8px] rounded-full border bg-white font-bold" onclick="window.ImageEditor._setRatio(\'16:9\')">16:9</button>\
           <button data-ratio="9:16" class="ratio-btn px-1.5 py-0.5 text-[8px] rounded-full border bg-white font-bold" onclick="window.ImageEditor._setRatio(\'9:16\')">9:16</button>\
         </div>\
-        <div class="relative bg-gray-900 rounded-lg overflow-hidden flex-shrink-0" style="height:200px;">\
+        <!-- 필터 슬라이더 -->\
+        <div class="flex gap-2 mb-1 items-center">\
+          <span class="text-[8px] text-gray-400 w-6 flex-shrink-0">밝기</span>\
+          <input type="range" min="50" max="150" value="100" id="filterBrightness" oninput="window.ImageEditor._setFilter(\'brightness\',this.value)" class="flex-1 h-1 accent-yellow-500">\
+          <span id="filterBrightnessVal" class="text-[8px] text-gray-400 w-6">100</span>\
+          <span class="text-[8px] text-gray-400 w-6 flex-shrink-0">대비</span>\
+          <input type="range" min="50" max="150" value="100" id="filterContrast" oninput="window.ImageEditor._setFilter(\'contrast\',this.value)" class="flex-1 h-1 accent-orange-500">\
+          <span id="filterContrastVal" class="text-[8px] text-gray-400 w-6">100</span>\
+          <span class="text-[8px] text-gray-400 w-6 flex-shrink-0">채도</span>\
+          <input type="range" min="0" max="200" value="100" id="filterSaturate" oninput="window.ImageEditor._setFilter(\'saturate\',this.value)" class="flex-1 h-1 accent-pink-500">\
+          <span id="filterSaturateVal" class="text-[8px] text-gray-400 w-6">100</span>\
+        </div>\
+        <!-- 이미지 프리뷰 (350px) -->\
+        <div class="relative bg-gray-900 rounded-lg overflow-hidden flex-shrink-0" style="height:340px;">\
           <div id="editorTextPreview" class="absolute inset-0 pointer-events-none z-10"></div>\
           <img id="editorImage" src="" alt="" class="block w-full h-full" style="object-fit:contain;">\
         </div>\
-        <div class="mt-1.5 border-t border-gray-200 pt-1.5 flex-shrink-0">\
-          <div class="flex items-center justify-between mb-1">\
+        <!-- 텍스트 컨트롤 -->\
+        <div class="mt-1.5 border-t border-gray-200 pt-1 flex-shrink-0">\
+          <div class="flex items-center justify-between mb-0.5">\
             <span class="text-[9px] font-semibold text-gray-600"><i class="fas fa-font mr-0.5"></i>텍스트</span>\
             <button onclick="window.ImageEditor._addText()" class="px-1.5 py-0.5 text-[8px] bg-purple-500 text-white rounded-full font-bold hover:bg-purple-600"><i class="fas fa-plus mr-0.5"></i>추가</button>\
           </div>\
@@ -100,6 +124,31 @@
           </div>\
         </div>\
       </div>';
+
+    // 클립보드 API 미지원 시 버튼 숨김
+    if (!navigator.clipboard || !navigator.clipboard.write) {
+      var cb = document.getElementById('editorClipboardBtn');
+      if (cb) cb.style.display = 'none';
+    }
+  }
+
+  // ── 필터 ──
+  window.ImageEditor._setFilter = function (type, val) {
+    _filters[type] = parseInt(val);
+    var valEl = document.getElementById('filter' + type.charAt(0).toUpperCase() + type.slice(1) + 'Val');
+    if (valEl) valEl.textContent = val;
+    _applyFilter();
+  };
+
+  function _applyFilter() {
+    var img = document.getElementById('editorImage');
+    if (!img) return;
+    var filterStr = 'brightness(' + _filters.brightness + '%) contrast(' + _filters.contrast + '%) saturate(' + _filters.saturate + '%)';
+    // Cropper.js의 canvas에도 필터 적용
+    var cropperCanvas = document.querySelector('.cropper-canvas');
+    if (cropperCanvas) cropperCanvas.style.filter = filterStr;
+    var cropperView = document.querySelector('.cropper-view-box img');
+    if (cropperView) cropperView.style.filter = filterStr;
   }
 
   // ── Cropper ──
@@ -114,7 +163,8 @@
         viewMode: 1, dragMode: 'move', aspectRatio: _aspectRatio,
         autoCropArea: 0.9, background: true, responsive: true,
         restore: false, guides: true, center: true, highlight: true,
-        cropBoxMovable: true, cropBoxResizable: true, toggleDragModeOnDblclick: false
+        cropBoxMovable: true, cropBoxResizable: true, toggleDragModeOnDblclick: false,
+        ready: function () { _applyFilter(); }
       });
     };
   }
@@ -149,8 +199,8 @@
       }
     }
     _textOverlays.push({
-      text: defaultText, fontSize: 20, color: '#ffffff',
-      x: 50, y: 25 + (_textOverlays.length * 18),
+      text: defaultText, fontSize: 24, color: '#ffffff',
+      x: 50, y: 25 + (_textOverlays.length * 15),
       shadow: true, shadowStrength: 5,
       fontFamily: FONTS[0].value, fontIndex: 0,
       bgEnabled: false, bgOpacity: 50
@@ -181,7 +231,7 @@
     _renderTextPreview();
   };
 
-  // ── 컴팩트 텍스트 컨트롤 (가로 배치, 최소 높이) ──
+  // ── 텍스트 컨트롤 (컴팩트 가로 배치) ──
   function _renderTextControls() {
     var panel = document.getElementById('editorTextPanel');
     if (!panel) return;
@@ -204,10 +254,10 @@
         <div class="flex gap-1 items-center">\
           <select onchange="window.ImageEditor._setFont(' + idx + ',parseInt(this.value))" class="flex-1 px-1 py-0.5 border rounded text-[9px] min-w-0">' + fontOpts + '</select>\
           <span class="text-[8px] text-gray-400 flex-shrink-0">크기</span>\
-          <input type="range" min="10" max="48" value="' + ov.fontSize + '" oninput="window.ImageEditor._updateText(' + idx + ',\'fontSize\',parseInt(this.value))" class="w-14 h-1 accent-purple-500 flex-shrink-0">\
+          <input type="range" min="10" max="60" value="' + ov.fontSize + '" oninput="window.ImageEditor._updateText(' + idx + ',\'fontSize\',parseInt(this.value))" class="w-14 h-1 accent-purple-500 flex-shrink-0">\
           <span class="text-[8px] text-gray-400 w-4 flex-shrink-0">' + ov.fontSize + '</span>\
         </div>\
-        <div class="flex gap-0.5 items-center">\
+        <div class="flex gap-0.5 items-center flex-wrap">\
           <span class="text-[8px] text-gray-400 flex-shrink-0">색</span>\
           <button onclick="window.ImageEditor._updateText(' + idx + ',\'color\',\'#ffffff\')" class="w-4 h-4 rounded-full bg-white border ' + (ov.color === '#ffffff' ? 'border-purple-500 border-2' : 'border-gray-300') + '"></button>\
           <button onclick="window.ImageEditor._updateText(' + idx + ',\'color\',\'#000000\')" class="w-4 h-4 rounded-full bg-black border ' + (ov.color === '#000000' ? 'border-purple-500 border-2' : 'border-gray-300') + '"></button>\
@@ -221,18 +271,46 @@
             <input type="checkbox" ' + (ov.bgEnabled ? 'checked' : '') + ' onchange="window.ImageEditor._updateText(' + idx + ',\'bgEnabled\',this.checked)" class="w-3 h-3 accent-purple-500">\
             <span class="text-[8px] text-gray-500">배경</span>\
           </label>\
-          ' + (ov.bgEnabled ? '<span class="text-[8px] text-gray-400 flex-shrink-0">투명도</span><input type="range" min="0" max="100" value="' + ov.bgOpacity + '" oninput="window.ImageEditor._updateText(' + idx + ',\'bgOpacity\',parseInt(this.value))" class="w-16 h-1 accent-purple-500 flex-shrink-0" title="배경 투명도 ' + ov.bgOpacity + '%"><span class="text-[8px] text-gray-400 flex-shrink-0 w-6">' + ov.bgOpacity + '%</span>' : '') + '\
+          ' + (ov.bgEnabled ? '<input type="range" min="0" max="100" value="' + ov.bgOpacity + '" oninput="window.ImageEditor._updateText(' + idx + ',\'bgOpacity\',parseInt(this.value))" class="w-16 h-1 accent-purple-500 flex-shrink-0" title="투명도 ' + ov.bgOpacity + '%"><span class="text-[8px] text-gray-400 flex-shrink-0 w-6">' + ov.bgOpacity + '%</span>' : '') + '\
           <span class="mx-0.5 text-gray-300">|</span>\
           <label class="flex items-center gap-0.5 cursor-pointer flex-shrink-0">\
             <input type="checkbox" ' + (ov.shadow ? 'checked' : '') + ' onchange="window.ImageEditor._updateText(' + idx + ',\'shadow\',this.checked)" class="w-3 h-3 accent-purple-500">\
             <span class="text-[8px] text-gray-500">그림자</span>\
           </label>\
-          ' + (ov.shadow ? '<span class="text-[8px] text-gray-400 flex-shrink-0">강도</span><input type="range" min="1" max="10" value="' + ov.shadowStrength + '" oninput="window.ImageEditor._updateText(' + idx + ',\'shadowStrength\',parseInt(this.value))" class="w-14 h-1 accent-purple-500 flex-shrink-0" title="그림자 강도 ' + ov.shadowStrength + '"><span class="text-[8px] text-gray-400 flex-shrink-0 w-4">' + ov.shadowStrength + '</span>' : '') + '\
+          ' + (ov.shadow ? '<input type="range" min="1" max="10" value="' + ov.shadowStrength + '" oninput="window.ImageEditor._updateText(' + idx + ',\'shadowStrength\',parseInt(this.value))" class="w-12 h-1 accent-purple-500 flex-shrink-0"><span class="text-[8px] text-gray-400 flex-shrink-0 w-3">' + ov.shadowStrength + '</span>' : '') + '\
+        </div>\
+        <div class="flex gap-0.5 items-center">\
+          <span class="text-[7px] text-gray-400 flex-shrink-0">정렬</span>\
+          <button onclick="window.ImageEditor._align(' + idx + ',\'left\')" class="w-5 h-5 text-[8px] rounded border ' + (ov.x <= 15 ? 'border-purple-400 bg-purple-50' : 'border-gray-200') + ' hover:bg-purple-50" title="왼쪽"><i class="fas fa-align-left"></i></button>\
+          <button onclick="window.ImageEditor._align(' + idx + ',\'center\')" class="w-5 h-5 text-[8px] rounded border ' + (ov.x > 15 && ov.x < 85 ? 'border-purple-400 bg-purple-50' : 'border-gray-200') + ' hover:bg-purple-50" title="가운데"><i class="fas fa-align-center"></i></button>\
+          <button onclick="window.ImageEditor._align(' + idx + ',\'right\')" class="w-5 h-5 text-[8px] rounded border ' + (ov.x >= 85 ? 'border-purple-400 bg-purple-50' : 'border-gray-200') + ' hover:bg-purple-50" title="오른쪽"><i class="fas fa-align-right"></i></button>\
+          <span class="mx-0.5 text-gray-300">|</span>\
+          <button onclick="window.ImageEditor._alignV(' + idx + ',\'top\')" class="w-5 h-5 text-[8px] rounded border ' + (ov.y <= 20 ? 'border-purple-400 bg-purple-50' : 'border-gray-200') + ' hover:bg-purple-50" title="상단"><i class="fas fa-arrow-up"></i></button>\
+          <button onclick="window.ImageEditor._alignV(' + idx + ',\'middle\')" class="w-5 h-5 text-[8px] rounded border ' + (ov.y > 20 && ov.y < 80 ? 'border-purple-400 bg-purple-50' : 'border-gray-200') + ' hover:bg-purple-50" title="중앙"><i class="fas fa-arrows-alt-v"></i></button>\
+          <button onclick="window.ImageEditor._alignV(' + idx + ',\'bottom\')" class="w-5 h-5 text-[8px] rounded border ' + (ov.y >= 80 ? 'border-purple-400 bg-purple-50' : 'border-gray-200') + ' hover:bg-purple-50" title="하단"><i class="fas fa-arrow-down"></i></button>\
         </div>\
       </div>';
   }
 
-  // ── 폰트 변경 ──
+  // ── 정렬 ──
+  window.ImageEditor._align = function (idx, pos) {
+    if (!_textOverlays[idx]) return;
+    if (pos === 'left') _textOverlays[idx].x = 12;
+    else if (pos === 'center') _textOverlays[idx].x = 50;
+    else if (pos === 'right') _textOverlays[idx].x = 88;
+    _renderTextControls();
+    _renderTextPreview();
+  };
+  window.ImageEditor._alignV = function (idx, pos) {
+    if (!_textOverlays[idx]) return;
+    if (pos === 'top') _textOverlays[idx].y = 12;
+    else if (pos === 'middle') _textOverlays[idx].y = 50;
+    else if (pos === 'bottom') _textOverlays[idx].y = 88;
+    _renderTextControls();
+    _renderTextPreview();
+  };
+
+  // ── 폰트 ──
   window.ImageEditor._setFont = function (idx, fi) {
     if (_textOverlays[idx] && FONTS[fi]) {
       _textOverlays[idx].fontFamily = FONTS[fi].value;
@@ -316,20 +394,32 @@
     _renderTextPreview();
   };
 
-  // ── 다운로드 (Canvas) ──
-  window.ImageEditor._download = function () {
-    if (!_cropper) { alert('이미지를 먼저 로드해주세요'); return; }
+  // ── Canvas 렌더링 (필터 + 텍스트 + 배경 + 그림자) ──
+  function _renderCanvas() {
+    if (!_cropper) return null;
     var croppedCanvas = _cropper.getCroppedCanvas({ maxWidth: 2048, maxHeight: 2048, imageSmoothingEnabled: true, imageSmoothingQuality: 'high' });
-    if (!croppedCanvas) { alert('크롭 영역을 선택해주세요'); return; }
-    var ctx = croppedCanvas.getContext('2d');
+    if (!croppedCanvas) return null;
+
+    // 필터 적용: 새 캔버스에 필터 CSS로 그리기
     var w = croppedCanvas.width;
     var h = croppedCanvas.height;
+    var finalCanvas = document.createElement('canvas');
+    finalCanvas.width = w;
+    finalCanvas.height = h;
+    var ctx = finalCanvas.getContext('2d');
+
+    // 필터 적용
+    ctx.filter = 'brightness(' + _filters.brightness + '%) contrast(' + _filters.contrast + '%) saturate(' + _filters.saturate + '%)';
+    ctx.drawImage(croppedCanvas, 0, 0);
+    ctx.filter = 'none';
+
+    // 텍스트 오버레이
     _textOverlays.forEach(function (ov) {
       var x = (ov.x / 100) * w;
       var y = (ov.y / 100) * h;
       var fontSize = Math.round(ov.fontSize * (w / 400));
 
-      // 배경 반투명 박스 (투명도 슬라이더 반영)
+      // 배경 반투명 박스
       if (ov.bgEnabled) {
         ctx.save();
         ctx.font = 'bold ' + fontSize + 'px ' + ov.fontFamily;
@@ -362,7 +452,6 @@
       ctx.textBaseline = 'middle';
       ctx.font = 'bold ' + fontSize + 'px ' + ov.fontFamily;
 
-      // 그림자 (강도 슬라이더 반영)
       if (ov.shadow) {
         var s = ov.shadowStrength || 5;
         ctx.shadowColor = 'rgba(0,0,0,' + (0.3 + s * 0.07) + ')';
@@ -374,7 +463,16 @@
       ctx.fillText(ov.text, x, y);
       ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
     });
-    croppedCanvas.toBlob(function (blob) {
+
+    return finalCanvas;
+  }
+
+  // ── 다운로드 ──
+  window.ImageEditor._download = function () {
+    if (!_cropper) { alert('이미지를 먼저 로드해주세요'); return; }
+    var canvas = _renderCanvas();
+    if (!canvas) { alert('크롭 영역을 선택해주세요'); return; }
+    canvas.toBlob(function (blob) {
       if (!blob) return;
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
@@ -384,6 +482,34 @@
       URL.revokeObjectURL(url);
     }, 'image/png');
   };
+
+  // ── 클립보드 복사 ──
+  window.ImageEditor._copyClipboard = function () {
+    if (!_cropper) { alert('이미지를 먼저 로드해주세요'); return; }
+    var canvas = _renderCanvas();
+    if (!canvas) { alert('크롭 영역을 선택해주세요'); return; }
+    canvas.toBlob(function (blob) {
+      if (!blob) return;
+      try {
+        navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob })
+        ]).then(function () {
+          _showToast('✅ 클립보드에 복사되었습니다!');
+        }).catch(function (err) {
+          console.error('클립보드 복사 실패:', err);
+          _showToast('❌ 클립보드 복사에 실패했습니다', true);
+        });
+      } catch (e) {
+        console.error('ClipboardItem 미지원:', e);
+        _showToast('❌ 이 브라우저에서는 클립보드 복사를 지원하지 않습니다', true);
+      }
+    }, 'image/png');
+  };
+
+  function _showToast(msg, isError) {
+    if (window.showToast) window.showToast(msg, isError ? 'error' : 'success');
+    else alert(msg);
+  }
 
   window.ImageEditor._back = function () { close(); };
 })();

@@ -522,21 +522,23 @@ export const htmlTemplate = `
                     <i class="fas fa-images text-teal-500"></i>
                     이미지 도구
                 </h3>
-                <div class="grid grid-cols-2 gap-2">
-                    <button id="freeImageSearchBtn" disabled class="img-tool-btn disabled:opacity-40 disabled:cursor-not-allowed" onclick="window.ImageSearch && window.ImageSearch.open()">
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="freeImageSearchBtn" class="img-tool-btn" onclick="window.ImageSearch && window.ImageSearch.open()">
                         <i class="fas fa-search text-lg text-teal-600"></i>
                         <span class="text-xs mt-1 font-semibold text-gray-700">무료 이미지 찾기</span>
                         <span class="text-[9px] text-gray-400">무료</span>
                     </button>
-                    <button id="aiImageGenBtn" disabled class="img-tool-btn disabled:opacity-40 disabled:cursor-not-allowed" onclick="window.ImageGenerator && window.ImageGenerator.open()">
+                    <button id="aiImageGenBtn" class="img-tool-btn" onclick="window.ImageGenerator && window.ImageGenerator.open()">
                         <i class="fas fa-magic text-lg text-purple-600"></i>
                         <span class="text-xs mt-1 font-semibold text-gray-700">AI 이미지 생성</span>
                         <span class="text-[9px] text-orange-500 font-bold">2 크레딧</span>
                     </button>
+                    <button id="aiThumbnailGenBtn" class="img-tool-btn" onclick="window.ThumbnailGenerator && window.ThumbnailGenerator.open()">
+                        <i class="fas fa-image text-lg text-pink-600"></i>
+                        <span class="text-xs mt-1 font-semibold text-gray-700">AI 썸네일 생성</span>
+                        <span class="text-[9px] text-orange-500 font-bold">3 크레딧</span>
+                    </button>
                 </div>
-                <p id="imageToolsHint" class="text-[10px] text-gray-400 mt-2 text-center">
-                    <i class="fas fa-info-circle mr-1"></i>콘텐츠 생성 후 사용 가능합니다
-                </p>
 
                 <!-- 이미지 뷰어 카드 (콘텐츠 생성 후 표시) -->
                 <div id="imageToolViewer" class="hidden mt-3 bg-white border border-gray-200 rounded-xl overflow-hidden" style="max-height:560px;">
@@ -546,6 +548,9 @@ export const htmlTemplate = `
                     </div>
                     <div id="tabContentAigen" class="hidden overflow-y-auto" style="max-height:520px;">
                         <!-- image-generator.js가 여기에 렌더링 -->
+                    </div>
+                    <div id="tabContentThumbnail" class="hidden overflow-y-auto" style="max-height:520px;">
+                        <!-- thumbnail-generator.js가 여기에 렌더링 -->
                     </div>
                     <!-- 에디터 뷰 (이미지 클릭 시) -->
                     <div id="tabContentEditor" class="hidden" style="max-height:520px;">
@@ -2187,9 +2192,10 @@ export const htmlTemplate = `
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
     
     <!-- 이미지 도구 모듈 -->
-    <script src="/static/image-search.js?v=1.3.0"></script>
-    <script src="/static/image-generator.js?v=1.3.0"></script>
-    <script src="/static/image-editor.js?v=1.3.0"></script>
+    <script src="/static/image-search.js?v=1.4.0"></script>
+    <script src="/static/image-generator.js?v=1.4.0"></script>
+    <script src="/static/image-editor.js?v=1.4.0"></script>
+    <script src="/static/thumbnail-generator.js?v=1.0.0"></script>
     
     <script>
       // ========================================

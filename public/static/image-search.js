@@ -1,28 +1,29 @@
 /**
- * 무료 이미지 검색 모듈 v1.1
- * 왼쪽 패널 고정 영역 방식 (모달 제거)
+ * 무료 이미지 검색 모듈 v1.4
+ * 버튼 항상 활성 / 키워드 4단계 우선순위 / 썸네일 탭 지원
  */
 (function () {
   'use strict';
 
-  // ── 상태 ──
   var _images = [];
   var _page = 1;
   var _keyword = '';
   var _hasMore = false;
   var _loading = false;
-  var _rendered = false; // tabContentSearch에 HTML이 삽입되었는지
+  var _rendered = false;
 
-  // ── 탭 전환 공개 API ──
+  // ── 탭 전환 공개 API (search / aigen / thumbnail / editor) ──
   window.ImageToolTabs = window.ImageToolTabs || {};
   window.ImageToolTabs.switchTab = function (tab) {
     var cs = document.getElementById('tabContentSearch');
     var ca = document.getElementById('tabContentAigen');
+    var ct = document.getElementById('tabContentThumbnail');
     var ce = document.getElementById('tabContentEditor');
     if (cs) cs.classList.toggle('hidden', tab !== 'search');
     if (ca) ca.classList.toggle('hidden', tab !== 'aigen');
+    if (ct) ct.classList.toggle('hidden', tab !== 'thumbnail');
     if (ce) ce.classList.toggle('hidden', tab !== 'editor');
-    // 탭 전환 시 AI 생성 로딩 상태 초기화
+    // AI 생성 로딩 상태 초기화
     if (tab !== 'aigen') {
       var spinner = document.getElementById('aiGenSpinner');
       var genBtn = document.getElementById('aiGenBtn');
@@ -32,14 +33,10 @@
     // 상단 큰 버튼 활성 상태 표시
     var btn1 = document.getElementById('freeImageSearchBtn');
     var btn2 = document.getElementById('aiImageGenBtn');
-    if (btn1) {
-      if (tab === 'search') { btn1.classList.add('ring-2', 'ring-teal-400'); }
-      else { btn1.classList.remove('ring-2', 'ring-teal-400'); }
-    }
-    if (btn2) {
-      if (tab === 'aigen') { btn2.classList.add('ring-2', 'ring-purple-400'); }
-      else { btn2.classList.remove('ring-2', 'ring-purple-400'); }
-    }
+    var btn3 = document.getElementById('aiThumbnailGenBtn');
+    if (btn1) { btn1.classList.toggle('ring-2', tab === 'search'); btn1.classList.toggle('ring-teal-400', tab === 'search'); }
+    if (btn2) { btn2.classList.toggle('ring-2', tab === 'aigen'); btn2.classList.toggle('ring-purple-400', tab === 'aigen'); }
+    if (btn3) { btn3.classList.toggle('ring-2', tab === 'thumbnail'); btn3.classList.toggle('ring-pink-400', tab === 'thumbnail'); }
   };
 
   // ── 공개 API ──
@@ -51,51 +48,54 @@
 
   function open() {
     _keyword = _extractKeyword();
-    if (!_keyword) {
-      alert('콘텐츠를 먼저 생성해주세요.');
-      return;
-    }
 
     // 뷰어 카드 표시
     var viewer = document.getElementById('imageToolViewer');
     if (viewer) viewer.classList.remove('hidden');
 
-    // 탭 전환
     window.ImageToolTabs.switchTab('search');
 
-    // 내부 HTML 최초 1회 삽입
-    if (!_rendered) {
-      _renderSearchUI();
-      _rendered = true;
-    }
+    if (!_rendered) { _renderSearchUI(); _rendered = true; }
 
-    document.getElementById('imgSearchKeyword').value = _keyword;
+    var kwInput = document.getElementById('imgSearchKeyword');
+    if (kwInput) kwInput.value = _keyword;
 
-    // 이전 결과가 있으면 재사용
-    if (_images.length === 0) {
+    // 키워드 있을 때만 자동 검색
+    if (_keyword && _images.length === 0) {
       _page = 1;
       _doSearch();
     }
   }
 
-  // ── 키워드 추출 (폴백: batchResults → keyword_N input → 빈값) ──
+  // ── 키워드 추출 4단계 우선순위 ──
   function _extractKeyword() {
+    // 1순위: window.batchResults (방금 생성한 콘텐츠)
     if (window.batchResults && window.batchResults.length > 0) {
       var kw = window.batchResults[0].keywords;
       if (kw && (typeof kw === 'string' ? kw.trim() : '')) {
         return typeof kw === 'string' ? kw.trim().split(',')[0].trim() : kw;
       }
     }
+    // 2순위: 화면에 표시 중인 히스토리 콘텐츠의 키워드/제목
+    var historyKw = document.querySelector('[data-history-keyword]');
+    if (historyKw && historyKw.getAttribute('data-history-keyword')) {
+      return historyKw.getAttribute('data-history-keyword').trim().split(',')[0].trim();
+    }
+    var historyTitle = document.querySelector('.history-content-title');
+    if (historyTitle && historyTitle.textContent && historyTitle.textContent.trim()) {
+      return historyTitle.textContent.trim().substring(0, 30);
+    }
+    // 3순위: 왼쪽 패널 키워드 입력란
     for (var i = 0; i < 10; i++) {
       var el = document.getElementById('keyword_' + i);
       if (el && el.value && el.value.trim()) {
         return el.value.trim().split(',')[0].trim();
       }
     }
+    // 4순위: 빈 문자열 (검색어 직접 입력)
     return '';
   }
 
-  // ── 검색 UI 렌더링 (tabContentSearch 내부) ──
   function _renderSearchUI() {
     var container = document.getElementById('tabContentSearch');
     if (!container) return;
@@ -124,9 +124,8 @@
       </div>';
   }
 
-  // ── 검색 실행 ──
   async function _doSearch(append) {
-    if (_loading) return;
+    if (_loading || !_keyword) return;
     _loading = true;
     _setLoading(true);
     try {
@@ -152,7 +151,6 @@
     }
   }
 
-  // ── 그리드 렌더링 ──
   function _renderGrid() {
     var grid = document.getElementById('imgSearchGrid');
     if (!grid) return;
@@ -179,7 +177,6 @@
     if (moreBtn) moreBtn.classList.toggle('hidden', !_hasMore);
   }
 
-  // ── 이미지 선택 → 에디터 ──
   window.ImageSearch._selectImage = function (index) {
     var img = _images[index];
     if (!img) return;
@@ -188,13 +185,11 @@
     }
   };
 
-  // ── 더 보기 ──
   window.ImageSearch._loadMore = function () {
     _page++;
     _doSearch(true);
   };
 
-  // ── 새 검색 ──
   window.ImageSearch._newSearch = function () {
     var input = document.getElementById('imgSearchKeyword');
     if (input && input.value.trim()) {
@@ -205,7 +200,6 @@
     }
   };
 
-  // ── 로딩 / 에러 ──
   function _setLoading(v) {
     var el = document.getElementById('imgSearchLoading');
     if (el) el.classList.toggle('hidden', !v);
@@ -214,23 +208,4 @@
     var grid = document.getElementById('imgSearchGrid');
     if (grid) grid.innerHTML = '<p class="text-red-400 text-[10px] text-center col-span-2 py-6">' + msg + '</p>';
   }
-
-  // ── 이미지 도구 활성화 ──
-  function _enableImageTools() {
-    console.log('🖼️ 이미지 도구 활성화');
-    var btn1 = document.getElementById('freeImageSearchBtn');
-    var btn2 = document.getElementById('aiImageGenBtn');
-    var hint = document.getElementById('imageToolsHint');
-    if (btn1) btn1.disabled = false;
-    if (btn2) btn2.disabled = false;
-    if (hint) hint.style.display = 'none';
-  }
-
-  function _watchContentGeneration() {
-    if (window.batchResults && window.batchResults.length > 0) {
-      _enableImageTools();
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', _watchContentGeneration);
 })();

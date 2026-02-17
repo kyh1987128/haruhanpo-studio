@@ -7072,4 +7072,182 @@ app.post('/api/images/generate-ai', async (c) => {
   }
 });
 
+// POST /api/images/generate-thumbnail - AI 썸네일 생성 (3크레딧)
+app.post('/api/images/generate-thumbnail', async (c) => {
+  try {
+    const { content, user_id, platform, style } = await c.req.json();
+    
+    if (!content || typeof content !== 'string') {
+      return c.json({ success: false, error: '콘텐츠 내용을 입력해주세요' }, 400);
+    }
+    if (!user_id || typeof user_id !== 'string') {
+      return c.json({ success: false, error: 'user_id는 필수입니다' }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_KEY);
+    const geminiApiKey = c.env.GEMINI_API_KEY;
+    
+    if (!geminiApiKey) {
+      return c.json({ success: false, error: 'GEMINI_API_KEY가 설정되지 않았습니다' }, 500);
+    }
+    
+    // ── 크레딧 차감 (3크레딧, 무료 우선) ──
+    const requiredCredits = 3;
+    
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('free_credits, paid_credits')
+      .eq('id', user_id)
+      .single();
+    
+    if (userError || !user) {
+      return c.json({ success: false, error: '사용자를 찾을 수 없습니다' }, 404);
+    }
+    
+    const totalCredits = (user.free_credits || 0) + (user.paid_credits || 0);
+    if (totalCredits < requiredCredits) {
+      return c.json({
+        success: false, error: '크레딧이 부족합니다',
+        required: requiredCredits,
+        free_credits: user.free_credits || 0,
+        paid_credits: user.paid_credits || 0,
+        redirect: '/payment'
+      }, 402);
+    }
+    
+    let newFree = user.free_credits || 0;
+    let newPaid = user.paid_credits || 0;
+    let remaining = requiredCredits;
+    let usedFree = 0, usedPaid = 0;
+    
+    if (newFree > 0) {
+      const fromFree = Math.min(newFree, remaining);
+      newFree -= fromFree; remaining -= fromFree; usedFree = fromFree;
+    }
+    if (remaining > 0) {
+      const fromPaid = Math.min(newPaid, remaining);
+      newPaid -= fromPaid; remaining -= fromPaid; usedPaid = fromPaid;
+    }
+    
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ free_credits: newFree, paid_credits: newPaid, updated_at: new Date().toISOString() })
+      .eq('id', user_id);
+    
+    if (updateError) {
+      return c.json({ success: false, error: '크레딧 차감 실패' }, 500);
+    }
+    
+    console.log(`✅ AI 썸네일 크레딧 차감: 무료 ${usedFree} + 유료 ${usedPaid} = ${requiredCredits}`);
+    
+    await supabase.from('credit_transactions').insert({
+      user_id, amount: -requiredCredits,
+      balance_after: newFree + newPaid, type: 'usage',
+      description: `AI 썸네일 생성: ${content.substring(0, 30)}`
+    });
+    
+    // ── 플랫폼별 비율 ──
+    const platformMap: Record<string, { name: string; ratio: string }> = {
+      youtube_16_9: { name: 'YouTube', ratio: '16:9' },
+      blog_16_9: { name: 'Blog', ratio: '16:9' },
+      instagram_1_1: { name: 'Instagram', ratio: '1:1' },
+      threads_1_1: { name: 'Threads', ratio: '1:1' },
+      shorts_9_16: { name: 'YouTube Shorts', ratio: '9:16' }
+    };
+    const pf = platformMap[platform] || platformMap.youtube_16_9;
+    
+    // ── 영문 프롬프트 생성 ──
+    const proxyBase = 'https://gemini-proxy.kyh1987128.workers.dev';
+    const styleHint = style || 'realistic photo, professional quality';
+    
+    let englishPrompt = `Create a ${pf.name} thumbnail (${pf.ratio}) for marketing content. Style: ${styleHint}. Optimize for high CTR with bold text and vibrant colors.`;
+    
+    try {
+      const promptRes = await fetch(
+        `${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `Create a detailed English image generation prompt for a ${pf.name} thumbnail (${pf.ratio} aspect ratio). The thumbnail should be optimized for high CTR with eye-catching design. Style: ${styleHint}. Content to represent: "${content.substring(0, 300)}". Output only the English prompt (under 100 words).` }] }],
+            generationConfig: { maxOutputTokens: 200, temperature: 0.7 }
+          })
+        }
+      );
+      if (promptRes.ok) {
+        const promptData: any = await promptRes.json();
+        const gen = promptData?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (gen) englishPrompt = gen.trim();
+      }
+    } catch (e) {
+      console.error('⚠️ 썸네일 프롬프트 번역 실패:', e);
+    }
+    
+    console.log(`🖼️ AI 썸네일 프롬프트: ${englishPrompt}`);
+    
+    // ── Gemini 이미지 생성 ──
+    let imageData: string | null = null;
+    
+    try {
+      const imagenRes = await fetch(
+        `${proxyBase}/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: englishPrompt }] }],
+            generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+          })
+        }
+      );
+      
+      if (imagenRes.ok) {
+        const imagenData: any = await imagenRes.json();
+        const candidates = imagenData?.candidates;
+        if (candidates && candidates.length > 0) {
+          const parts = candidates[0]?.content?.parts || [];
+          for (const part of parts) {
+            if (part.inlineData && part.inlineData.data) {
+              imageData = part.inlineData.data;
+              break;
+            }
+          }
+        }
+      } else {
+        console.error(`❌ 썸네일 Gemini API 오류 (${imagenRes.status}):`, await imagenRes.text());
+      }
+      
+      if (!imageData) {
+        // 환불
+        await supabase.from('users').update({ free_credits: user.free_credits, paid_credits: user.paid_credits }).eq('id', user_id);
+        await supabase.from('credit_transactions').insert({
+          user_id, amount: requiredCredits,
+          balance_after: (user.free_credits || 0) + (user.paid_credits || 0),
+          type: 'refund', description: `AI 썸네일 생성 실패 환불`
+        });
+        return c.json({ success: false, error: 'AI 썸네일 생성에 실패했습니다. 크레딧이 환불되었습니다.', refunded: true, free_credits: user.free_credits || 0, paid_credits: user.paid_credits || 0 }, 500);
+      }
+    } catch (e: any) {
+      await supabase.from('users').update({ free_credits: user.free_credits, paid_credits: user.paid_credits }).eq('id', user_id);
+      await supabase.from('credit_transactions').insert({
+        user_id, amount: requiredCredits,
+        balance_after: (user.free_credits || 0) + (user.paid_credits || 0),
+        type: 'refund', description: `AI 썸네일 생성 실패 환불`
+      });
+      return c.json({ success: false, error: 'AI 썸네일 생성에 실패했습니다. 크레딧이 환불되었습니다.', refunded: true, free_credits: user.free_credits || 0, paid_credits: user.paid_credits || 0 }, 500);
+    }
+    
+    return c.json({
+      success: true,
+      image: `data:image/png;base64,${imageData}`,
+      prompt: englishPrompt,
+      cost_info: { credits_used: requiredCredits, free_used: usedFree, paid_used: usedPaid, free_credits: newFree, paid_credits: newPaid, total_remaining: newFree + newPaid }
+    });
+    
+  } catch (error: any) {
+    console.error('❌ AI 썸네일 API 오류:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
 export default app;
