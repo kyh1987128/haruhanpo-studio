@@ -48,11 +48,11 @@
     if (ca) ca.classList.add('hidden');
     if (ce) ce.classList.remove('hidden');
 
-    var ts = document.getElementById('tabFreeSearch');
-    var ta = document.getElementById('tabAiGen');
-    var inactiveClass = 'flex-1 py-1.5 px-3 text-xs font-bold rounded-full transition-all bg-gray-200 text-gray-600 hover:bg-gray-300';
-    if (ts) ts.className = inactiveClass;
-    if (ta) ta.className = inactiveClass;
+    // 상단 큰 버튼 ring 제거 (에디터 모드)
+    var btn1 = document.getElementById('freeImageSearchBtn');
+    var btn2 = document.getElementById('aiImageGenBtn');
+    if (btn1) btn1.classList.remove('ring-2', 'ring-teal-400');
+    if (btn2) btn2.classList.remove('ring-2', 'ring-purple-400');
 
     if (!_rendered) { _renderEditorUI(); _rendered = true; }
     setTimeout(function () { _initCropper(); }, 150);
@@ -215,21 +215,19 @@
           <button onclick="window.ImageEditor._updateText(' + idx + ',\'color\',\'#3b82f6\')" class="w-4 h-4 rounded-full bg-blue-500 border ' + (ov.color === '#3b82f6' ? 'border-purple-500 border-2' : 'border-gray-300') + '"></button>\
           <button onclick="window.ImageEditor._updateText(' + idx + ',\'color\',\'#facc15\')" class="w-4 h-4 rounded-full bg-yellow-400 border ' + (ov.color === '#facc15' ? 'border-purple-500 border-2' : 'border-gray-300') + '"></button>\
           <input type="color" value="' + ov.color + '" onchange="window.ImageEditor._updateText(' + idx + ',\'color\',this.value)" class="w-4 h-4 rounded cursor-pointer border-0 p-0 flex-shrink-0">\
-          <span class="mx-0.5 text-gray-300">|</span>\
+        </div>\
+        <div class="flex gap-1 items-center flex-wrap">\
           <label class="flex items-center gap-0.5 cursor-pointer flex-shrink-0">\
             <input type="checkbox" ' + (ov.bgEnabled ? 'checked' : '') + ' onchange="window.ImageEditor._updateText(' + idx + ',\'bgEnabled\',this.checked)" class="w-3 h-3 accent-purple-500">\
             <span class="text-[8px] text-gray-500">배경</span>\
           </label>\
-          ' + (ov.bgEnabled ? '<input type="range" min="0" max="100" value="' + ov.bgOpacity + '" oninput="window.ImageEditor._updateText(' + idx + ',\'bgOpacity\',parseInt(this.value))" class="w-10 h-1 accent-purple-500 flex-shrink-0" title="배경 투명도 ' + ov.bgOpacity + '%"><span class="text-[8px] text-gray-400 flex-shrink-0">' + ov.bgOpacity + '%</span>' : '') + '\
-        </div>\
-        <div class="flex gap-1 items-center">\
+          ' + (ov.bgEnabled ? '<span class="text-[8px] text-gray-400 flex-shrink-0">투명도</span><input type="range" min="0" max="100" value="' + ov.bgOpacity + '" oninput="window.ImageEditor._updateText(' + idx + ',\'bgOpacity\',parseInt(this.value))" class="w-16 h-1 accent-purple-500 flex-shrink-0" title="배경 투명도 ' + ov.bgOpacity + '%"><span class="text-[8px] text-gray-400 flex-shrink-0 w-6">' + ov.bgOpacity + '%</span>' : '') + '\
+          <span class="mx-0.5 text-gray-300">|</span>\
           <label class="flex items-center gap-0.5 cursor-pointer flex-shrink-0">\
             <input type="checkbox" ' + (ov.shadow ? 'checked' : '') + ' onchange="window.ImageEditor._updateText(' + idx + ',\'shadow\',this.checked)" class="w-3 h-3 accent-purple-500">\
             <span class="text-[8px] text-gray-500">그림자</span>\
           </label>\
-          ' + (ov.shadow ? '<input type="range" min="1" max="10" value="' + ov.shadowStrength + '" oninput="window.ImageEditor._updateText(' + idx + ',\'shadowStrength\',parseInt(this.value))" class="w-14 h-1 accent-purple-500 flex-shrink-0" title="그림자 강도 ' + ov.shadowStrength + '"><span class="text-[8px] text-gray-400 flex-shrink-0">' + ov.shadowStrength + '</span>' : '') + '\
-          <span class="flex-1"></span>\
-          <span class="text-[7px] text-gray-300"><i class="fas fa-arrows-alt mr-0.5"></i>드래그로 이동</span>\
+          ' + (ov.shadow ? '<span class="text-[8px] text-gray-400 flex-shrink-0">강도</span><input type="range" min="1" max="10" value="' + ov.shadowStrength + '" oninput="window.ImageEditor._updateText(' + idx + ',\'shadowStrength\',parseInt(this.value))" class="w-14 h-1 accent-purple-500 flex-shrink-0" title="그림자 강도 ' + ov.shadowStrength + '"><span class="text-[8px] text-gray-400 flex-shrink-0 w-4">' + ov.shadowStrength + '</span>' : '') + '\
         </div>\
       </div>';
   }

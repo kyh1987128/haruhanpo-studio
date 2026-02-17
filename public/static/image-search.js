@@ -19,8 +19,6 @@
     var cs = document.getElementById('tabContentSearch');
     var ca = document.getElementById('tabContentAigen');
     var ce = document.getElementById('tabContentEditor');
-    var ts = document.getElementById('tabFreeSearch');
-    var ta = document.getElementById('tabAiGen');
     if (cs) cs.classList.toggle('hidden', tab !== 'search');
     if (ca) ca.classList.toggle('hidden', tab !== 'aigen');
     if (ce) ce.classList.toggle('hidden', tab !== 'editor');
@@ -31,16 +29,16 @@
       if (spinner) spinner.classList.add('hidden');
       if (genBtn) genBtn.disabled = false;
     }
-    // 탭 스타일
-    if (ts) {
-      ts.className = tab === 'search'
-        ? 'flex-1 py-1.5 px-3 text-xs font-bold rounded-full transition-all bg-purple-600 text-white'
-        : 'flex-1 py-1.5 px-3 text-xs font-bold rounded-full transition-all bg-gray-200 text-gray-600 hover:bg-gray-300';
+    // 상단 큰 버튼 활성 상태 표시
+    var btn1 = document.getElementById('freeImageSearchBtn');
+    var btn2 = document.getElementById('aiImageGenBtn');
+    if (btn1) {
+      if (tab === 'search') { btn1.classList.add('ring-2', 'ring-teal-400'); }
+      else { btn1.classList.remove('ring-2', 'ring-teal-400'); }
     }
-    if (ta) {
-      ta.className = tab === 'aigen'
-        ? 'flex-1 py-1.5 px-3 text-xs font-bold rounded-full transition-all bg-purple-600 text-white'
-        : 'flex-1 py-1.5 px-3 text-xs font-bold rounded-full transition-all bg-gray-200 text-gray-600 hover:bg-gray-300';
+    if (btn2) {
+      if (tab === 'aigen') { btn2.classList.add('ring-2', 'ring-purple-400'); }
+      else { btn2.classList.remove('ring-2', 'ring-purple-400'); }
     }
   };
 

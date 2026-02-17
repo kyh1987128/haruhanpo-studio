@@ -540,24 +540,15 @@ export const htmlTemplate = `
 
                 <!-- 이미지 뷰어 카드 (콘텐츠 생성 후 표시) -->
                 <div id="imageToolViewer" class="hidden mt-3 bg-white border border-gray-200 rounded-xl overflow-hidden" style="max-height:560px;">
-                    <!-- 탭 바 -->
-                    <div class="flex gap-1 p-2 bg-gray-50 border-b border-gray-200">
-                        <button id="tabFreeSearch" class="flex-1 py-1.5 px-3 text-xs font-bold rounded-full transition-all bg-purple-600 text-white" onclick="window.ImageToolTabs && window.ImageToolTabs.switchTab('search')">
-                            <i class="fas fa-search mr-1"></i>무료 찾기
-                        </button>
-                        <button id="tabAiGen" class="flex-1 py-1.5 px-3 text-xs font-bold rounded-full transition-all bg-gray-200 text-gray-600 hover:bg-gray-300" onclick="window.ImageToolTabs && window.ImageToolTabs.switchTab('aigen')">
-                            <i class="fas fa-magic mr-1"></i>AI 생성
-                        </button>
-                    </div>
-                    <!-- 탭 컨텐츠 -->
-                    <div id="tabContentSearch" class="overflow-y-auto" style="max-height:470px;">
+                    <!-- 탭 컨텐츠 (탭 바 제거 — 상단 큰 버튼으로 전환) -->
+                    <div id="tabContentSearch" class="overflow-y-auto" style="max-height:520px;">
                         <!-- image-search.js가 여기에 렌더링 -->
                     </div>
-                    <div id="tabContentAigen" class="hidden overflow-y-auto" style="max-height:470px;">
+                    <div id="tabContentAigen" class="hidden overflow-y-auto" style="max-height:520px;">
                         <!-- image-generator.js가 여기에 렌더링 -->
                     </div>
                     <!-- 에디터 뷰 (이미지 클릭 시) -->
-                    <div id="tabContentEditor" class="hidden" style="max-height:510px;">
+                    <div id="tabContentEditor" class="hidden" style="max-height:520px;">
                         <!-- image-editor.js가 여기에 렌더링 -->
                     </div>
                 </div>
