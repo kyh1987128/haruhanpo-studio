@@ -7151,61 +7151,126 @@ app.post('/api/images/generate-thumbnail', async (c) => {
     };
     const pf = platformMap[platform] || platformMap.youtube_16_9;
     
-    // ── 영문 프롬프트 생성 (2단계: Kai 페르소나) ──
+    // ── 2단계 파이프라인: 컨셉 추출 → 이미지 생성 ──
     const proxyBase = 'https://gemini-proxy.kyh1987128.workers.dev';
     const styleHint = style || 'realistic photo, professional quality';
+    const resolutionMap: Record<string, string> = {
+      '16:9': '1280x720', '1:1': '1024x1024', '9:16': '720x1280'
+    };
+    const resolution = resolutionMap[pf.ratio] || '1280x720';
     
-    let englishPrompt = `Generate a ${pf.resolution} image in ${pf.ratio} aspect ratio. A high-quality ${pf.name} thumbnail for marketing content. Style: ${styleHint}. Bold text, vibrant colors, high CTR.`;
+    // ── STEP 1: 컨셉 추출 (텍스트 분석 → visual + text_lines JSON) ──
+    let visual = `A vibrant, eye-catching ${pf.name} thumbnail background with dynamic lighting and bold colors. Style: ${styleHint}`;
+    let textLines: string[] = [];
     
     try {
-      const kaiPrompt = `You are Kai, an elite thumbnail designer with 10+ years of experience creating high-CTR thumbnails for YouTube, Instagram, blogs, and social media.
+      console.log('🔍 Step 1: 컨셉 추출 시작...');
+      const conceptController = new AbortController();
+      const conceptTimeout = setTimeout(() => conceptController.abort(), 15000);
+      
+      const conceptPrompt = `You are an expert thumbnail concept designer.
 
-Analyze the following content and create an image generation prompt:
+Analyze the following Korean marketing content and extract the core visual concept and hook text for a thumbnail image.
 
-CONTENT: ${content.substring(0, 300)}
-PLATFORM: ${pf.name} (target: ${pf.resolution} pixels, ${pf.ratio} ratio)
+CONTENT (Korean):
+${content.substring(0, 800)}
+
+PLATFORM: ${pf.name} (${pf.ratio})
 STYLE: ${styleHint}
 
-Create a thumbnail image prompt following this formula:
-[Topic/Title] + [Emotional Hook] + [Visual Elements] + [Color/Mood] + [Style]
+Return ONLY a valid JSON object (no markdown, no code fences, no explanation):
+{
+  "visual": "English description of the ideal background/scene for this thumbnail. Be specific about colors, objects, lighting, mood. Max 150 words.",
+  "text_lines": ["Korean hook line 1 (max 15 chars)", "Korean hook line 2 (max 15 chars, optional)"]
+}
 
-Mandatory rules:
-- The thumbnail must grab attention in 0.3 seconds on a crowded feed
-- Use bold, high-contrast colors (red/orange for urgency, blue for trust, yellow for energy)
-- Include a clear single focal point (dramatic object, bold icon, or striking visual metaphor)
-- If text is needed on the thumbnail: maximum 3-5 Korean words, ultra bold, readable at mobile size
-- High contrast between subject and background - no cluttered compositions
-- The image MUST be exactly ${pf.ratio} aspect ratio, ${pf.resolution} pixels
-- Apply ${styleHint} visual style consistently throughout
-- Design for maximum Click-Through-Rate (CTR)
-- Consider the platform's feed context (${pf.name} typical viewing environment)
+Rules for text_lines:
+- Maximum 2 lines
+- Each line maximum 15 Korean characters
+- Must be attention-grabbing hook phrases extracted from content
+- Use powerful Korean marketing words
 
-Start the prompt with: "Generate a ${pf.resolution} image in ${pf.ratio} aspect ratio."
-Output ONLY the English image generation prompt, under 150 words. No explanations.`;
+Rules for visual:
+- Describe ONLY the background/scene, NOT any text
+- Be specific about style: ${styleHint}
+- Include color palette, lighting, composition details`;
 
-      const promptRes = await fetch(
+      const conceptRes = await fetch(
         `${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: kaiPrompt }] }],
-            generationConfig: { maxOutputTokens: 300, temperature: 0.8 }
-          })
+            contents: [{ parts: [{ text: conceptPrompt }] }],
+            generationConfig: { maxOutputTokens: 400, temperature: 0.7 }
+          }),
+          signal: conceptController.signal
         }
       );
-      if (promptRes.ok) {
-        const promptData: any = await promptRes.json();
-        const gen = promptData?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (gen) englishPrompt = gen.trim();
+      clearTimeout(conceptTimeout);
+      
+      if (conceptRes.ok) {
+        const conceptData: any = await conceptRes.json();
+        let rawText = conceptData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        console.log('📝 컨셉 원문:', rawText.substring(0, 200));
+        
+        // Strip code fences (```json ... ``` or ``` ... ```)
+        rawText = rawText.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+        
+        try {
+          const parsed = JSON.parse(rawText);
+          if (parsed.visual && typeof parsed.visual === 'string') {
+            visual = parsed.visual.substring(0, 600);
+          }
+          if (Array.isArray(parsed.text_lines)) {
+            textLines = parsed.text_lines
+              .filter((l: any) => typeof l === 'string' && l.trim())
+              .slice(0, 2)
+              .map((l: string) => l.substring(0, 15));
+          }
+          console.log('✅ 컨셉 추출 성공 - visual:', visual.substring(0, 80), 'text_lines:', textLines);
+        } catch (parseErr) {
+          console.warn('⚠️ 컨셉 JSON 파싱 실패, 기본값 사용:', parseErr);
+          // Fallback: try to extract first hook from content
+          const hookMatch = content.match(/[가-힣]{2,15}/);
+          if (hookMatch) textLines = [hookMatch[0]];
+        }
+      } else {
+        console.warn('⚠️ 컨셉 추출 API 오류:', conceptRes.status);
       }
-    } catch (e) {
-      console.error('⚠️ 썸네일 프롬프트 번역 실패:', e);
+    } catch (conceptErr: any) {
+      if (conceptErr.name === 'AbortError') {
+        console.warn('⚠️ 컨셉 추출 타임아웃 (15초)');
+      } else {
+        console.error('⚠️ 컨셉 추출 실패:', conceptErr);
+      }
+      // Fallback hook
+      const hookMatch = content.match(/[가-힣]{2,15}/);
+      if (hookMatch) textLines = [hookMatch[0]];
     }
     
-    console.log(`🖼️ AI 썸네일 프롬프트: ${englishPrompt}`);
+    // ── STEP 2: 이미지 생성 프롬프트 조합 ──
+    const koreanTextBlock = textLines.length > 0
+      ? `\n\nKOREAN TEXT TO RENDER ON THE IMAGE:\n${textLines.map((l, i) => `Line ${i + 1}: "${l}"`).join('\n')}\n\nKorean text rendering rules:\n- Compose each Korean glyph (자소) precisely: initial consonant (초성) + vowel (중성) + optional final consonant (종성). For example: "맛" = ㅁ + ㅏ + ㅅ, "집" = ㅈ + ㅣ + ㅂ.\n- Use bold Gothic/sans-serif font style (similar to "Black Han Sans" or "Noto Sans KR Bold")\n- Text color: white (#FFFFFF) with thick black stroke (3-4px) and drop shadow\n- Text size: at least 70% of image width\n- Position: centered horizontally, bottom 30% of image\n- ONLY render the exact Korean characters provided above. No English text, no random symbols, no foreign characters.\n- Each character must be clearly legible and correctly composed.`
+      : '';
     
-    // ── Gemini 이미지 생성 (폴백 포함) ──
+    const finalPrompt = `Generate a ${resolution} thumbnail image in EXACTLY ${pf.ratio} aspect ratio.
+
+BACKGROUND/SCENE:
+${visual}
+
+Style: ${styleHint}. High contrast, vibrant colors, professional ${pf.name} thumbnail quality.
+${koreanTextBlock}
+
+CRITICAL REQUIREMENTS:
+- The image MUST be exactly ${pf.ratio} aspect ratio (${resolution} pixels)
+- Single clear focal point with high visual impact
+- Design for maximum Click-Through-Rate on ${pf.name}
+- No watermarks, no artifacts, no blurry elements`;
+
+    console.log(`🖼️ Step 2: 최종 프롬프트 (${finalPrompt.length}자):\n${finalPrompt.substring(0, 300)}...`);
+    
+    // ── STEP 2: Gemini 이미지 생성 (폴백 포함, 25s 타임아웃) ──
     let imageData: string | null = null;
     let thumbLastError = '';
     
@@ -7214,22 +7279,25 @@ Output ONLY the English image generation prompt, under 150 words. No explanation
       'gemini-2.0-flash-exp'
     ];
     
-    const thumbPromptText = `${englishPrompt}\n\nIMPORTANT: The output image MUST be exactly ${pf.ratio} aspect ratio (${pf.resolution} pixels). Do NOT deviate from this aspect ratio.`;
-    
     for (const model of thumbModels) {
       try {
         console.log(`🖼️ 썸네일 생성 시도: ${model}`);
+        const imgController = new AbortController();
+        const imgTimeout = setTimeout(() => imgController.abort(), 25000);
+        
         const imagenRes = await fetch(
           `${proxyBase}/v1beta/models/${model}:generateContent`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
             body: JSON.stringify({
-              contents: [{ parts: [{ text: thumbPromptText }] }],
+              contents: [{ parts: [{ text: finalPrompt }] }],
               generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
-            })
+            }),
+            signal: imgController.signal
           }
         );
+        clearTimeout(imgTimeout);
         
         if (imagenRes.ok) {
           const imagenData: any = await imagenRes.json();
@@ -7239,43 +7307,68 @@ Output ONLY the English image generation prompt, under 150 words. No explanation
             for (const part of parts) {
               if (part.inlineData && part.inlineData.data) {
                 imageData = part.inlineData.data;
-                console.log(`✅ ${model} 썸네일 이미지 추출 성공`);
+                console.log(`✅ ${model} 썸네일 이미지 추출 성공 (${imageData.length} bytes)`);
                 break;
               }
             }
           }
           if (imageData) break;
-          thumbLastError = `${model}: 이미지 데이터 없음`;
+          thumbLastError = `${model}: 이미지 데이터가 응답에 포함되지 않았습니다`;
+          console.warn(`⚠️ ${thumbLastError}`);
         } else {
           const errText = await imagenRes.text();
-          thumbLastError = `${model}: API 오류 (${imagenRes.status})`;
-          console.error(`❌ ${thumbLastError}:`, errText.substring(0, 300));
-          if (imagenRes.status === 401 || imagenRes.status === 403) {
-            thumbLastError = 'API 키 인증 오류입니다.';
+          const status = imagenRes.status;
+          console.error(`❌ ${model} API 오류 (${status}):`, errText.substring(0, 500));
+          
+          if (status === 401 || status === 403) {
+            thumbLastError = 'API 키 인증 오류입니다. API 키를 확인해주세요.';
             break;
+          } else if (status === 400) {
+            thumbLastError = '잘못된 요청입니다. 콘텐츠를 수정 후 다시 시도해주세요.';
+            // Try next model
+          } else if (status === 404) {
+            thumbLastError = `${model}: 모델을 사용할 수 없습니다.`;
+            // Try next model
+          } else if (status === 429) {
+            thumbLastError = 'API 사용량 한도를 초과했습니다. 잠시 후 다시 시도해주세요.';
+            break;
+          } else {
+            thumbLastError = `${model}: 서버 오류 (${status})`;
           }
         }
       } catch (e: any) {
-        thumbLastError = `${model}: ${e?.message || '알 수 없는 오류'}`;
-        console.error(`❌ 썸네일 ${thumbLastError}`);
+        if (e.name === 'AbortError') {
+          thumbLastError = `${model}: 이미지 생성 시간 초과 (25초)`;
+          console.warn(`⚠️ ${thumbLastError}`);
+        } else {
+          thumbLastError = `${model}: ${e?.message || '알 수 없는 오류'}`;
+          console.error(`❌ 썸네일 ${thumbLastError}`);
+        }
       }
     }
-      
-      if (!imageData) {
-        // 환불
-        await supabase.from('users').update({ free_credits: user.free_credits, paid_credits: user.paid_credits }).eq('id', user_id);
-        await supabase.from('credit_transactions').insert({
-          user_id, amount: requiredCredits,
-          balance_after: (user.free_credits || 0) + (user.paid_credits || 0),
-          type: 'refund', description: `AI 썸네일 생성 실패 환불`
-        });
-        return c.json({ success: false, error: thumbLastError || 'AI 썸네일 생성에 실패했습니다. 크레딧이 환불되었습니다.', refunded: true, free_credits: user.free_credits || 0, paid_credits: user.paid_credits || 0 }, 500);
-      }
+    
+    if (!imageData) {
+      // 환불
+      await supabase.from('users').update({ free_credits: user.free_credits, paid_credits: user.paid_credits }).eq('id', user_id);
+      await supabase.from('credit_transactions').insert({
+        user_id, amount: requiredCredits,
+        balance_after: (user.free_credits || 0) + (user.paid_credits || 0),
+        type: 'refund', description: `AI 썸네일 생성 실패 환불`
+      });
+      return c.json({ 
+        success: false, 
+        error: thumbLastError || 'AI 썸네일 생성에 실패했습니다. 크레딧이 환불되었습니다.', 
+        refunded: true, 
+        free_credits: user.free_credits || 0, 
+        paid_credits: user.paid_credits || 0 
+      }, 500);
+    }
     
     return c.json({
       success: true,
       image: `data:image/png;base64,${imageData}`,
-      prompt: englishPrompt,
+      text_lines: textLines,
+      prompt: finalPrompt.substring(0, 300),
       cost_info: { credits_used: requiredCredits, free_used: usedFree, paid_used: usedPaid, free_credits: newFree, paid_credits: newPaid, total_remaining: newFree + newPaid }
     });
     

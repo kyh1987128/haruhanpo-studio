@@ -1,6 +1,6 @@
 /**
  * 이미지 크롭 + 텍스트 오버레이 에디터 v1.5
- * 기능: 배경 투명도 슬라이더, 정렬 6버튼, 350px 미리보기, 필터(밝기/대비/채도), 클립보드 복사
+ * 기능: 배경색상+투명도 슬라이더, 정렬 6버튼, 340px 미리보기, 필터(밝기/대비/채도), 클립보드 복사
  */
 (function () {
   'use strict';
@@ -209,7 +209,8 @@
       x: 50, y: 25 + (_textOverlays.length * 15),
       shadow: true, shadowStrength: 5,
       fontFamily: FONTS[0].value, fontIndex: 0,
-      bgEnabled: false, bgOpacity: 50
+      bgEnabled: false, bgColorRGB: '0,0,0', bgOpacity: 60,
+      backgroundColor: 'rgba(0,0,0,0.6)'
     });
     _activeOverlayIndex = _textOverlays.length - 1;
     _renderTextList();
@@ -274,10 +275,25 @@
         </div>\
         <div class="rounded-md" style="background:#f3e8ff; padding:4px 8px;">\
           <label class="flex items-center gap-1 cursor-pointer">\
-            <input type="checkbox" ' + (ov.bgEnabled ? 'checked' : '') + ' onchange="window.ImageEditor._updateText(' + idx + ',\'bgEnabled\',this.checked)" class="w-4 h-4 accent-purple-500">\
+            <input type="checkbox" id="bgCheckbox" ' + (ov.bgEnabled ? 'checked' : '') + ' onchange="window.ImageEditor._toggleBg(' + idx + ',this.checked)" class="w-4 h-4 accent-purple-500">\
             <span class="text-[10px] font-semibold text-purple-700">배경</span>\
           </label>\
-          ' + (ov.bgEnabled ? '<div class="flex items-center gap-1 mt-1"><span class="text-[8px] text-purple-500 flex-shrink-0">불투명도</span><input type="range" min="0" max="100" value="' + ov.bgOpacity + '" oninput="window.ImageEditor._updateText(' + idx + ',\'bgOpacity\',parseInt(this.value))" class="flex-1 h-1 accent-purple-500" title="투명도 ' + ov.bgOpacity + '%"><span class="text-[9px] text-purple-600 font-bold w-8 text-right">' + ov.bgOpacity + '%</span></div>' : '') + '\
+          <div id="bgOptions" class="' + (ov.bgEnabled ? '' : 'hidden') + ' mt-1 space-y-1">\
+            <div class="flex gap-0.5 items-center flex-wrap">\
+              <span class="text-[8px] text-purple-500 flex-shrink-0">배경색</span>\
+              <button onclick="window.ImageEditor._setBgColor(' + idx + ',\'0,0,0\')" class="bg-color-btn w-4 h-4 rounded-full border ' + (ov.bgColorRGB === '0,0,0' ? 'border-purple-500 border-2' : 'border-gray-300') + '" style="background:#000"></button>\
+              <button onclick="window.ImageEditor._setBgColor(' + idx + ',\'255,255,255\')" class="bg-color-btn w-4 h-4 rounded-full border ' + (ov.bgColorRGB === '255,255,255' ? 'border-purple-500 border-2' : 'border-gray-300') + '" style="background:#fff"></button>\
+              <button onclick="window.ImageEditor._setBgColor(' + idx + ',\'30,58,138\')" class="bg-color-btn w-4 h-4 rounded-full border ' + (ov.bgColorRGB === '30,58,138' ? 'border-purple-500 border-2' : 'border-gray-300') + '" style="background:#1e3a8a"></button>\
+              <button onclick="window.ImageEditor._setBgColor(' + idx + ',\'153,27,27\')" class="bg-color-btn w-4 h-4 rounded-full border ' + (ov.bgColorRGB === '153,27,27' ? 'border-purple-500 border-2' : 'border-gray-300') + '" style="background:#991b1b"></button>\
+              <button onclick="window.ImageEditor._setBgColor(' + idx + ',\'21,128,61\')" class="bg-color-btn w-4 h-4 rounded-full border ' + (ov.bgColorRGB === '21,128,61' ? 'border-purple-500 border-2' : 'border-gray-300') + '" style="background:#15803d"></button>\
+              <input type="color" id="bgColorPicker" value="' + _rgbToHex(ov.bgColorRGB) + '" onchange="window.ImageEditor._setBgColorHex(' + idx + ',this.value)" class="w-4 h-4 rounded cursor-pointer border-0 p-0 flex-shrink-0">\
+            </div>\
+            <div class="flex items-center gap-1">\
+              <span class="text-[8px] text-purple-500 flex-shrink-0">불투명도</span>\
+              <input type="range" id="bgOpacity" min="0" max="100" value="' + ov.bgOpacity + '" oninput="window.ImageEditor._setBgOpacity(' + idx + ',parseInt(this.value))" class="flex-1 h-1 accent-purple-500">\
+              <span id="bgOpacityValue" class="text-[9px] text-purple-600 font-bold w-8 text-right">' + ov.bgOpacity + '%</span>\
+            </div>\
+          </div>\
         </div>\
         <div class="rounded-md" style="background:#fef3c7; padding:4px 8px;">\
           <label class="flex items-center gap-1 cursor-pointer">\
@@ -327,6 +343,53 @@
     }
   };
 
+  // ── 배경색 관련 헬퍼 ──
+  function _rgbToHex(rgb) {
+    var parts = (rgb || '0,0,0').split(',').map(function(v){return parseInt(v.trim())});
+    return '#' + parts.map(function(c){var h=c.toString(16);return h.length<2?'0'+h:h;}).join('');
+  }
+  function _hexToRgb(hex) {
+    hex = hex.replace('#','');
+    var r = parseInt(hex.substring(0,2),16);
+    var g = parseInt(hex.substring(2,4),16);
+    var b = parseInt(hex.substring(4,6),16);
+    return r+','+g+','+b;
+  }
+  function _updateBgColor(idx) {
+    if (!_textOverlays[idx]) return;
+    var ov = _textOverlays[idx];
+    ov.backgroundColor = 'rgba(' + ov.bgColorRGB + ',' + (ov.bgOpacity / 100) + ')';
+  }
+
+  window.ImageEditor._toggleBg = function(idx, checked) {
+    if (!_textOverlays[idx]) return;
+    _textOverlays[idx].bgEnabled = checked;
+    _renderTextControls();
+    _renderTextPreview();
+  };
+  window.ImageEditor._setBgColor = function(idx, rgb) {
+    if (!_textOverlays[idx]) return;
+    _textOverlays[idx].bgColorRGB = rgb;
+    _updateBgColor(idx);
+    _renderTextControls();
+    _renderTextPreview();
+  };
+  window.ImageEditor._setBgColorHex = function(idx, hex) {
+    if (!_textOverlays[idx]) return;
+    _textOverlays[idx].bgColorRGB = _hexToRgb(hex);
+    _updateBgColor(idx);
+    _renderTextControls();
+    _renderTextPreview();
+  };
+  window.ImageEditor._setBgOpacity = function(idx, val) {
+    if (!_textOverlays[idx]) return;
+    _textOverlays[idx].bgOpacity = val;
+    _updateBgColor(idx);
+    var valEl = document.getElementById('bgOpacityValue');
+    if (valEl) valEl.textContent = val + '%';
+    _renderTextPreview();
+  };
+
   // ── 텍스트 프리뷰 ──
   function _renderTextPreview() {
     var c = document.getElementById('editorTextPreview');
@@ -335,7 +398,7 @@
     _textOverlays.forEach(function (ov, i) {
       var el = document.createElement('div');
       el.className = 'editor-text-overlay';
-      var bgStyle = ov.bgEnabled ? 'background:rgba(0,0,0,' + (ov.bgOpacity / 100) + ');padding:2px 6px;border-radius:3px;' : '';
+      var bgStyle = ov.bgEnabled ? 'background:' + (ov.backgroundColor || 'rgba(0,0,0,0.6)') + ';padding:2px 6px;border-radius:3px;' : '';
       var shadowStyle = '';
       if (ov.shadow) {
         var s = ov.shadowStrength || 5;
@@ -426,7 +489,7 @@
       var y = (ov.y / 100) * h;
       var fontSize = Math.round(ov.fontSize * (w / 400));
 
-      // 배경 반투명 박스
+      // 배경 반투명 박스 (사용자 지정 색상 + 투명도)
       if (ov.bgEnabled) {
         ctx.save();
         ctx.font = 'bold ' + fontSize + 'px ' + ov.fontFamily;
@@ -434,7 +497,7 @@
         ctx.textBaseline = 'middle';
         var metrics = ctx.measureText(ov.text);
         var pad = fontSize * 0.3;
-        ctx.fillStyle = 'rgba(0,0,0,' + (ov.bgOpacity / 100) + ')';
+        ctx.fillStyle = ov.backgroundColor || 'rgba(0,0,0,' + (ov.bgOpacity / 100) + ')';
         var rx = x - metrics.width / 2 - pad;
         var ry = y - fontSize / 2 - pad;
         var rw = metrics.width + pad * 2;
