@@ -19,7 +19,7 @@ export const htmlTemplate = `
     </script>
     
     <!-- Tailwind CSS - Built by Vite -->
-    <link href="/static/styles.css?v=2.2.0" rel="stylesheet">
+    <link href="/static/styles.css?v=2.2.1" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     
     <!-- FullCalendar CSS -->
@@ -541,7 +541,7 @@ export const htmlTemplate = `
                 </div>
 
                 <!-- 이미지 뷰어 카드 (콘텐츠 생성 후 표시) -->
-                <div id="imageToolViewer" class="hidden mt-3 bg-white border border-gray-200 rounded-xl" style="max-height:calc(100vh - 180px); overflow-y:auto;">
+                <div id="imageToolViewer" class="hidden mt-3 bg-white border border-gray-200 rounded-xl">
                     <!-- 탭 컨텐츠 (탭 바 제거 — 상단 큰 버튼으로 전환) -->
                     <div id="tabContentSearch" class="overflow-y-auto">
                         <!-- image-search.js가 여기에 렌더링 -->
@@ -553,7 +553,7 @@ export const htmlTemplate = `
                         <!-- thumbnail-generator.js가 여기에 렌더링 -->
                     </div>
                     <!-- 에디터 뷰 (이미지 클릭 시) -->
-                    <div id="tabContentEditor" class="hidden overflow-y-auto">
+                    <div id="tabContentEditor" class="hidden">
                         <!-- image-editor.js가 여기에 렌더링 -->
                     </div>
                 </div>
@@ -2159,7 +2159,7 @@ export const htmlTemplate = `
     </div><!-- layout-container -->
     
     <!-- JavaScript -->
-    <script src="/static/i18n.js?v=2.2.0"></script>
+    <script src="/static/i18n.js?v=2.2.1"></script>
     
     <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
@@ -2168,18 +2168,18 @@ export const htmlTemplate = `
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ko.js"></script>
     
-    <script src="/static/app-v3-final.js?v=2.2.0"></script>
-    <script src="/static/keyword-analysis.js?v=2.2.0"></script>
-    <script src="/static/keyword-extended.js?v=2.2.0"></script>
+    <script src="/static/app-v3-final.js?v=2.2.1"></script>
+    <script src="/static/keyword-analysis.js?v=2.2.1"></script>
+    <script src="/static/keyword-extended.js?v=2.2.1"></script>
     
     <!-- 온보딩 시스템 로드 -->
-    <script src="/static/onboarding-integration.js?v=2.2.0"></script>
+    <script src="/static/onboarding-integration.js?v=2.2.1"></script>
     
     <!-- 스마트 추천 시스템 로드 -->
-    <script src="/static/smart-recommendations.js?v=2.2.0"></script>
+    <script src="/static/smart-recommendations.js?v=2.2.1"></script>
     
     <!-- 자동 저장 및 이어서 작업하기 시스템 로드 -->
-    <script src="/static/auto-save.js?v=2.2.0"></script>
+    <script src="/static/auto-save.js?v=2.2.1"></script>
     
     <!-- Cropper.js CDN (이미지 크롭 에디터) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css">
@@ -2192,10 +2192,10 @@ export const htmlTemplate = `
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
     
     <!-- 이미지 도구 모듈 -->
-    <script src="/static/image-search.js?v=2.2.0"></script>
-    <script src="/static/image-generator.js?v=2.2.0"></script>
-    <script src="/static/image-editor.js?v=2.2.0"></script>
-    <script src="/static/thumbnail-generator.js?v=2.2.0"></script>
+    <script src="/static/image-search.js?v=2.2.1"></script>
+    <script src="/static/image-generator.js?v=2.2.1"></script>
+    <script src="/static/image-editor.js?v=2.2.1"></script>
+    <script src="/static/thumbnail-generator.js?v=2.2.1"></script>
     
     <script>
       // ========================================
