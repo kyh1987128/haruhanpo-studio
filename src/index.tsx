@@ -6951,82 +6951,77 @@ app.post('/api/images/generate-ai', async (c) => {
     
     // ── Gemini 2.0 Flash (이미지 생성 모드) 호출 ──
     let imageData: string | null = null;
+    let lastError = '';
     
-    try {
-      console.log('🎨 Gemini 이미지 생성 시작: gemini-2.0-flash-exp-image-generation');
-      const imagenRes = await fetch(
-        `${proxyBase}/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${geminiApiKey}`
-          },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{ text: englishPrompt }]
-            }],
-            generationConfig: {
-              responseModalities: ['TEXT', 'IMAGE']
-            }
-          })
-        }
-      );
-      
-      console.log(`🎨 Gemini 이미지 응답 상태: ${imagenRes.status}`);
-      
-      if (imagenRes.ok) {
-        const imagenData: any = await imagenRes.json();
-        console.log('🎨 Gemini 응답 구조:', JSON.stringify(Object.keys(imagenData || {})));
+    // 모델 우선순위: 1차 → 2차 폴백
+    const models = [
+      'gemini-2.0-flash-exp-image-generation',
+      'gemini-2.0-flash-exp'
+    ];
+    
+    for (const model of models) {
+      try {
+        console.log(`🎨 Gemini 이미지 생성 시도: ${model}`);
+        const imagenRes = await fetch(
+          `${proxyBase}/v1beta/models/${model}:generateContent`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${geminiApiKey}`
+            },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{ text: englishPrompt }]
+              }],
+              generationConfig: {
+                responseModalities: ['TEXT', 'IMAGE']
+              }
+            })
+          }
+        );
         
-        // generateContent 응답에서 이미지 추출
-        const candidates = imagenData?.candidates;
-        if (candidates && candidates.length > 0) {
-          const parts = candidates[0]?.content?.parts || [];
-          for (const part of parts) {
-            if (part.inlineData && part.inlineData.data) {
-              imageData = part.inlineData.data;
-              console.log('✅ Gemini 이미지 데이터 추출 성공, 크기:', imageData!.length);
-              break;
+        console.log(`🎨 ${model} 응답 상태: ${imagenRes.status}`);
+        
+        if (imagenRes.ok) {
+          const imagenData: any = await imagenRes.json();
+          console.log('🎨 Gemini 응답 구조:', JSON.stringify(Object.keys(imagenData || {})));
+          
+          const candidates = imagenData?.candidates;
+          if (candidates && candidates.length > 0) {
+            const parts = candidates[0]?.content?.parts || [];
+            for (const part of parts) {
+              if (part.inlineData && part.inlineData.data) {
+                imageData = part.inlineData.data;
+                console.log(`✅ ${model} 이미지 데이터 추출 성공, 크기: ${imageData!.length}`);
+                break;
+              }
             }
           }
+          
+          if (imageData) break; // 성공 시 루프 탈출
+          
+          lastError = `${model}: 응답에서 이미지 데이터를 찾을 수 없음`;
+          console.error(`❌ ${lastError}`);
+        } else {
+          const errText = await imagenRes.text();
+          lastError = `${model}: API 오류 (${imagenRes.status})`;
+          console.error(`❌ ${lastError}:`, errText.substring(0, 300));
+          
+          // 401/403은 API 키 문제이므로 폴백 불필요
+          if (imagenRes.status === 401 || imagenRes.status === 403) {
+            lastError = 'API 키 인증 오류입니다. 관리자에게 문의해주세요.';
+            break;
+          }
         }
-        
-        if (!imageData) {
-          console.error('❌ Gemini 응답에서 이미지 데이터를 찾을 수 없음:', JSON.stringify(imagenData).substring(0, 500));
-        }
-      } else {
-        const errText = await imagenRes.text();
-        console.error(`❌ Gemini 이미지 API 오류 (${imagenRes.status}):`, errText);
+      } catch (e: any) {
+        lastError = `${model}: ${e?.message || '알 수 없는 오류'}`;
+        console.error(`❌ ${model} 예외:`, lastError);
       }
-      
-      // 이미지 생성 실패 시 환불
-      if (!imageData) {
-        await supabase
-          .from('users')
-          .update({ free_credits: user.free_credits, paid_credits: user.paid_credits })
-          .eq('id', user_id);
-        
-        await supabase.from('credit_transactions').insert({
-          user_id,
-          amount: requiredCredits,
-          balance_after: (user.free_credits || 0) + (user.paid_credits || 0),
-          type: 'refund',
-          description: `AI 이미지 생성 실패 환불: ${keyword}`
-        });
-        
-        return c.json({
-          success: false,
-          error: 'AI 이미지 생성에 실패했습니다. 크레딧이 환불되었습니다.',
-          refunded: true,
-          free_credits: user.free_credits || 0,
-          paid_credits: user.paid_credits || 0
-        }, 500);
-      }
-    } catch (e: any) {
-      console.error('❌ Gemini 이미지 API 예외:', e?.message || e);
-      
-      // 예외 발생 시 환불
+    }
+    
+    // 모든 모델 실패 시 환불
+    if (!imageData) {
       await supabase
         .from('users')
         .update({ free_credits: user.free_credits, paid_credits: user.paid_credits })
@@ -7042,7 +7037,7 @@ app.post('/api/images/generate-ai', async (c) => {
       
       return c.json({
         success: false,
-        error: 'AI 이미지 생성에 실패했습니다. 크레딧이 환불되었습니다.',
+        error: lastError || 'AI 이미지 생성에 실패했습니다. 크레딧이 환불되었습니다.',
         refunded: true,
         free_credits: user.free_credits || 0,
         paid_credits: user.paid_credits || 0
@@ -7146,39 +7141,56 @@ app.post('/api/images/generate-thumbnail', async (c) => {
       description: `AI 썸네일 생성: ${content.substring(0, 30)}`
     });
     
-    // ── 플랫폼별 비율 ──
-    const platformMap: Record<string, { name: string; ratio: string }> = {
-      youtube_16_9: { name: 'YouTube', ratio: '16:9' },
-      blog_16_9: { name: 'Blog', ratio: '16:9' },
-      instagram_1_1: { name: 'Instagram', ratio: '1:1' },
-      threads_1_1: { name: 'Threads', ratio: '1:1' },
-      shorts_9_16: { name: 'YouTube Shorts', ratio: '9:16' }
+    // ── 플랫폼별 비율 + 해상도 ──
+    const platformMap: Record<string, { name: string; ratio: string; resolution: string }> = {
+      youtube_16_9: { name: 'YouTube', ratio: '16:9', resolution: '1280x720' },
+      blog_16_9: { name: 'Blog', ratio: '16:9', resolution: '1200x675' },
+      instagram_1_1: { name: 'Instagram', ratio: '1:1', resolution: '1080x1080' },
+      threads_1_1: { name: 'Threads', ratio: '1:1', resolution: '1080x1080' },
+      shorts_9_16: { name: 'YouTube Shorts', ratio: '9:16', resolution: '1080x1920' }
     };
     const pf = platformMap[platform] || platformMap.youtube_16_9;
     
-    // ── 플랫폼별 해상도 ──
-    const resolutionMap: Record<string, string> = {
-      '16:9': '1280x720',
-      '1:1': '1024x1024',
-      '9:16': '720x1280'
-    };
-    const resolution = resolutionMap[pf.ratio] || '1280x720';
-    
-    // ── 영문 프롬프트 생성 ──
+    // ── 영문 프롬프트 생성 (2단계: Kai 페르소나) ──
     const proxyBase = 'https://gemini-proxy.kyh1987128.workers.dev';
     const styleHint = style || 'realistic photo, professional quality';
     
-    let englishPrompt = `Create a ${pf.name} thumbnail for marketing content. The image MUST be exactly ${pf.ratio} aspect ratio (${resolution} pixels). Style: ${styleHint}. Optimize for high CTR with bold text and vibrant colors.`;
+    let englishPrompt = `Generate a ${pf.resolution} image in ${pf.ratio} aspect ratio. A high-quality ${pf.name} thumbnail for marketing content. Style: ${styleHint}. Bold text, vibrant colors, high CTR.`;
     
     try {
+      const kaiPrompt = `You are Kai, an elite thumbnail designer with 10+ years of experience creating high-CTR thumbnails for YouTube, Instagram, blogs, and social media.
+
+Analyze the following content and create an image generation prompt:
+
+CONTENT: ${content.substring(0, 300)}
+PLATFORM: ${pf.name} (target: ${pf.resolution} pixels, ${pf.ratio} ratio)
+STYLE: ${styleHint}
+
+Create a thumbnail image prompt following this formula:
+[Topic/Title] + [Emotional Hook] + [Visual Elements] + [Color/Mood] + [Style]
+
+Mandatory rules:
+- The thumbnail must grab attention in 0.3 seconds on a crowded feed
+- Use bold, high-contrast colors (red/orange for urgency, blue for trust, yellow for energy)
+- Include a clear single focal point (dramatic object, bold icon, or striking visual metaphor)
+- If text is needed on the thumbnail: maximum 3-5 Korean words, ultra bold, readable at mobile size
+- High contrast between subject and background - no cluttered compositions
+- The image MUST be exactly ${pf.ratio} aspect ratio, ${pf.resolution} pixels
+- Apply ${styleHint} visual style consistently throughout
+- Design for maximum Click-Through-Rate (CTR)
+- Consider the platform's feed context (${pf.name} typical viewing environment)
+
+Start the prompt with: "Generate a ${pf.resolution} image in ${pf.ratio} aspect ratio."
+Output ONLY the English image generation prompt, under 150 words. No explanations.`;
+
       const promptRes = await fetch(
         `${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: `Create a detailed English image generation prompt for a ${pf.name} thumbnail. CRITICAL: The image MUST be exactly ${pf.ratio} aspect ratio (${resolution} pixels). The thumbnail should be optimized for high CTR with eye-catching design. Style: ${styleHint}. Content to represent: "${content.substring(0, 300)}". Start the prompt with: "Generate a ${resolution} image in ${pf.ratio} aspect ratio." Output only the English prompt (under 100 words).` }] }],
-            generationConfig: { maxOutputTokens: 200, temperature: 0.7 }
+            contents: [{ parts: [{ text: kaiPrompt }] }],
+            generationConfig: { maxOutputTokens: 300, temperature: 0.8 }
           })
         }
       );
@@ -7193,37 +7205,61 @@ app.post('/api/images/generate-thumbnail', async (c) => {
     
     console.log(`🖼️ AI 썸네일 프롬프트: ${englishPrompt}`);
     
-    // ── Gemini 이미지 생성 ──
+    // ── Gemini 이미지 생성 (폴백 포함) ──
     let imageData: string | null = null;
+    let thumbLastError = '';
     
-    try {
-      const imagenRes = await fetch(
-        `${proxyBase}/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: `${englishPrompt}\n\nIMPORTANT: The output image MUST be exactly ${pf.ratio} aspect ratio (${resolution} pixels). Do NOT deviate from this aspect ratio.` }] }],
-            generationConfig: { responseModalities: ['TEXT', 'IMAGE'], aspectRatio: pf.ratio }
-          })
-        }
-      );
-      
-      if (imagenRes.ok) {
-        const imagenData: any = await imagenRes.json();
-        const candidates = imagenData?.candidates;
-        if (candidates && candidates.length > 0) {
-          const parts = candidates[0]?.content?.parts || [];
-          for (const part of parts) {
-            if (part.inlineData && part.inlineData.data) {
-              imageData = part.inlineData.data;
-              break;
+    const thumbModels = [
+      'gemini-2.0-flash-exp-image-generation',
+      'gemini-2.0-flash-exp'
+    ];
+    
+    const thumbPromptText = `${englishPrompt}\n\nIMPORTANT: The output image MUST be exactly ${pf.ratio} aspect ratio (${pf.resolution} pixels). Do NOT deviate from this aspect ratio.`;
+    
+    for (const model of thumbModels) {
+      try {
+        console.log(`🖼️ 썸네일 생성 시도: ${model}`);
+        const imagenRes = await fetch(
+          `${proxyBase}/v1beta/models/${model}:generateContent`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: thumbPromptText }] }],
+              generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+            })
+          }
+        );
+        
+        if (imagenRes.ok) {
+          const imagenData: any = await imagenRes.json();
+          const candidates = imagenData?.candidates;
+          if (candidates && candidates.length > 0) {
+            const parts = candidates[0]?.content?.parts || [];
+            for (const part of parts) {
+              if (part.inlineData && part.inlineData.data) {
+                imageData = part.inlineData.data;
+                console.log(`✅ ${model} 썸네일 이미지 추출 성공`);
+                break;
+              }
             }
           }
+          if (imageData) break;
+          thumbLastError = `${model}: 이미지 데이터 없음`;
+        } else {
+          const errText = await imagenRes.text();
+          thumbLastError = `${model}: API 오류 (${imagenRes.status})`;
+          console.error(`❌ ${thumbLastError}:`, errText.substring(0, 300));
+          if (imagenRes.status === 401 || imagenRes.status === 403) {
+            thumbLastError = 'API 키 인증 오류입니다.';
+            break;
+          }
         }
-      } else {
-        console.error(`❌ 썸네일 Gemini API 오류 (${imagenRes.status}):`, await imagenRes.text());
+      } catch (e: any) {
+        thumbLastError = `${model}: ${e?.message || '알 수 없는 오류'}`;
+        console.error(`❌ 썸네일 ${thumbLastError}`);
       }
+    }
       
       if (!imageData) {
         // 환불
@@ -7233,17 +7269,8 @@ app.post('/api/images/generate-thumbnail', async (c) => {
           balance_after: (user.free_credits || 0) + (user.paid_credits || 0),
           type: 'refund', description: `AI 썸네일 생성 실패 환불`
         });
-        return c.json({ success: false, error: 'AI 썸네일 생성에 실패했습니다. 크레딧이 환불되었습니다.', refunded: true, free_credits: user.free_credits || 0, paid_credits: user.paid_credits || 0 }, 500);
+        return c.json({ success: false, error: thumbLastError || 'AI 썸네일 생성에 실패했습니다. 크레딧이 환불되었습니다.', refunded: true, free_credits: user.free_credits || 0, paid_credits: user.paid_credits || 0 }, 500);
       }
-    } catch (e: any) {
-      await supabase.from('users').update({ free_credits: user.free_credits, paid_credits: user.paid_credits }).eq('id', user_id);
-      await supabase.from('credit_transactions').insert({
-        user_id, amount: requiredCredits,
-        balance_after: (user.free_credits || 0) + (user.paid_credits || 0),
-        type: 'refund', description: `AI 썸네일 생성 실패 환불`
-      });
-      return c.json({ success: false, error: 'AI 썸네일 생성에 실패했습니다. 크레딧이 환불되었습니다.', refunded: true, free_credits: user.free_credits || 0, paid_credits: user.paid_credits || 0 }, 500);
-    }
     
     return c.json({
       success: true,

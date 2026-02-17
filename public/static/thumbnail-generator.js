@@ -1,5 +1,5 @@
 /**
- * AI 썸네일 생성 모듈 v1.0
+ * AI 썸네일 생성 모듈 v1.1
  * 콘텐츠 기반 플랫폼 최적화 썸네일 생성 (3크레딧)
  */
 (function () {
@@ -42,33 +42,47 @@
   function _fillContent() {
     var ta = document.getElementById('thumbContent');
     if (!ta) return;
-    // 1순위: batchResults
+    // 1순위: batchResults 전체 본문
     if (window.batchResults && window.batchResults.length > 0) {
       var r = window.batchResults[0];
       var parts = [];
-      if (r.keywords) parts.push('키워드: ' + r.keywords);
-      if (r.data) {
+      // 전체 콘텐츠 본문 우선
+      if (r.content && typeof r.content === 'string' && r.content.trim()) {
+        parts.push(r.content.replace(/\[이미지\s*\d+:.*?\]/g, '').trim().substring(0, 500));
+      } else if (r.text && typeof r.text === 'string' && r.text.trim()) {
+        parts.push(r.text.replace(/\[이미지\s*\d+:.*?\]/g, '').trim().substring(0, 500));
+      } else {
+        // hook + body 합침
+        if (r.hook && typeof r.hook === 'string') parts.push(r.hook);
+        if (r.body && typeof r.body === 'string') parts.push(r.body.substring(0, 400));
+      }
+      if (parts.length === 0 && r.data) {
         var vals = Object.values(r.data);
         for (var i = 0; i < vals.length && i < 3; i++) {
-          if (typeof vals[i] === 'string') parts.push(vals[i].substring(0, 200));
+          if (typeof vals[i] === 'string') parts.push(vals[i].substring(0, 300));
         }
       }
-      if (parts.length > 0) { ta.value = parts.join('\n\n'); return; }
+      if (r.keywords && parts.length > 0) parts.unshift('키워드: ' + r.keywords);
+      if (parts.length > 0) { ta.value = parts.join('\n\n').replace(/\[이미지\s*\d+:.*?\]/g, '').trim(); return; }
     }
-    // 2순위: 히스토리 DOM
-    var historyEl = document.querySelector('[data-history-content]');
-    if (historyEl && historyEl.getAttribute('data-history-content')) {
-      ta.value = historyEl.getAttribute('data-history-content').substring(0, 500);
+    // 2순위: 화면 DOM 스크래핑
+    var contentEl = document.querySelector('#contentResult_0');
+    if (contentEl && contentEl.textContent && contentEl.textContent.trim().length > 10) {
+      ta.value = contentEl.textContent.replace(/\[이미지\s*\d+:.*?\]/g, '').trim().substring(0, 500);
       return;
     }
-    // 3순위: 키워드 입력란
+    var historyEl = document.querySelector('[data-history-content]');
+    if (historyEl && historyEl.getAttribute('data-history-content')) {
+      ta.value = historyEl.getAttribute('data-history-content').replace(/\[이미지\s*\d+:.*?\]/g, '').trim().substring(0, 500);
+      return;
+    }
+    // 3순위: 키워드 입력란 합침
+    var kwParts = [];
     for (var j = 0; j < 10; j++) {
       var el = document.getElementById('keyword_' + j);
-      if (el && el.value && el.value.trim()) {
-        ta.value = el.value.trim();
-        return;
-      }
+      if (el && el.value && el.value.trim()) kwParts.push(el.value.trim());
     }
+    if (kwParts.length > 0) { ta.value = kwParts.join(', '); return; }
   }
 
   function _renderUI() {
@@ -104,7 +118,7 @@
           </div>\
         </div>\
         <button id="thumbGenBtn" onclick="window.ThumbnailGenerator._generate()"\
-                class="w-full py-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-lg font-bold text-xs disabled:opacity-50">\
+                class="w-full py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-bold text-xs hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed">\
           <i id="thumbSpinner" class="fas fa-spinner fa-spin mr-1 hidden"></i>\
           <i class="fas fa-image mr-1"></i>AI 썸네일 생성 (3크레딧)\
         </button>\

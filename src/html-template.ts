@@ -541,19 +541,19 @@ export const htmlTemplate = `
                 </div>
 
                 <!-- 이미지 뷰어 카드 (콘텐츠 생성 후 표시) -->
-                <div id="imageToolViewer" class="hidden mt-3 bg-white border border-gray-200 rounded-xl overflow-hidden" style="max-height:560px;">
+                <div id="imageToolViewer" class="hidden mt-3 bg-white border border-gray-200 rounded-xl" style="max-height:calc(100vh - 180px); overflow-y:auto;">
                     <!-- 탭 컨텐츠 (탭 바 제거 — 상단 큰 버튼으로 전환) -->
-                    <div id="tabContentSearch" class="overflow-y-auto" style="max-height:520px;">
+                    <div id="tabContentSearch" class="overflow-y-auto">
                         <!-- image-search.js가 여기에 렌더링 -->
                     </div>
-                    <div id="tabContentAigen" class="hidden overflow-y-auto" style="max-height:520px;">
+                    <div id="tabContentAigen" class="hidden overflow-y-auto">
                         <!-- image-generator.js가 여기에 렌더링 -->
                     </div>
-                    <div id="tabContentThumbnail" class="hidden overflow-y-auto" style="max-height:520px;">
+                    <div id="tabContentThumbnail" class="hidden overflow-y-auto">
                         <!-- thumbnail-generator.js가 여기에 렌더링 -->
                     </div>
                     <!-- 에디터 뷰 (이미지 클릭 시) -->
-                    <div id="tabContentEditor" class="hidden" style="max-height:520px;">
+                    <div id="tabContentEditor" class="hidden overflow-y-auto">
                         <!-- image-editor.js가 여기에 렌더링 -->
                     </div>
                 </div>
@@ -2192,10 +2192,10 @@ export const htmlTemplate = `
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
     
     <!-- 이미지 도구 모듈 -->
-    <script src="/static/image-search.js?v=1.4.0"></script>
-    <script src="/static/image-generator.js?v=1.4.0"></script>
-    <script src="/static/image-editor.js?v=1.4.0"></script>
-    <script src="/static/thumbnail-generator.js?v=1.0.0"></script>
+    <script src="/static/image-search.js?v=1.5.0"></script>
+    <script src="/static/image-generator.js?v=1.5.0"></script>
+    <script src="/static/image-editor.js?v=1.5.0"></script>
+    <script src="/static/thumbnail-generator.js?v=1.1.0"></script>
     
     <script>
       // ========================================
