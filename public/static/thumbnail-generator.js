@@ -114,6 +114,13 @@
               <option value="minimal clean design, white space">🧊 미니멀</option>\
               <option value="3D rendered, glossy, vibrant">🔮 3D</option>\
               <option value="bold typography focused, text-centric design">✏️ 텍스트 중심</option>\
+              <option value="cinematic film still, dramatic lighting, color grading">🎬 시네마틱</option>\
+              <option value="anime style, vibrant, dynamic composition">🌸 애니메이션</option>\
+              <option value="retro vintage, film grain, warm muted tones">📼 레트로</option>\
+              <option value="neon cyberpunk, dark background, glowing lights">🌃 네온</option>\
+              <option value="oil painting texture, rich colors, classical art">🖼️ 유화</option>\
+              <option value="pop art, bold colors, halftone dots, comic style">🎭 팝아트</option>\
+              <option value="dreamy ethereal, soft glow, pastel gradient">✨ 드리미</option>\
             </select>\
           </div>\
         </div>\

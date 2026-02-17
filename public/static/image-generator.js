@@ -83,6 +83,16 @@
             <option value="minimal clean design, white space, simple composition">🧊 미니멀 (Minimal)</option>\
             <option value="3D rendered image, glossy materials, studio lighting">🔮 3D 렌더 (3D Render)</option>\
             <option value="watercolor painting style, soft brush strokes, artistic">🖌️ 수채화 (Watercolor)</option>\
+            <option value="cinematic film still, dramatic lighting, shallow depth of field, color grading">🎬 시네마틱 (Cinematic)</option>\
+            <option value="anime style illustration, vibrant colors, detailed character design">🌸 애니메이션 (Anime)</option>\
+            <option value="retro vintage style, film grain, muted warm tones, 1970s aesthetic">📼 레트로 빈티지 (Retro)</option>\
+            <option value="neon cyberpunk style, dark background, glowing neon lights, futuristic">🌃 네온 사이버펑크 (Cyberpunk)</option>\
+            <option value="oil painting on canvas, visible brush strokes, rich texture, classical art">🖼️ 유화 (Oil Painting)</option>\
+            <option value="pixel art style, 16-bit retro game graphics, crisp pixels">👾 픽셀아트 (Pixel Art)</option>\
+            <option value="isometric 3D illustration, clean geometry, pastel colors, infographic style">📐 아이소메트릭 (Isometric)</option>\
+            <option value="pop art style, bold colors, halftone dots, comic book aesthetic">🎭 팝아트 (Pop Art)</option>\
+            <option value="dreamy ethereal style, soft glow, pastel gradient, fantasy atmosphere">✨ 드리미 (Dreamy)</option>\
+            <option value="professional product photography, clean white background, studio lighting">📦 제품 촬영 (Product Shot)</option>\
           </select>\
         </div>\
         <button id="aiGenBtn" onclick="window.ImageGenerator._generate()"\
