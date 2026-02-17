@@ -71,7 +71,7 @@
     var container = document.getElementById('tabContentEditor');
     if (!container) return;
     container.innerHTML = '\
-      <div class="p-2 flex flex-col" style="max-height:680px;">\
+      <div class="p-2 flex flex-col" style="max-height:none; overflow-y:auto;">\
         <!-- 헤더: 뒤로 / 제목 / PNG + 클립보드 -->\
         <div class="flex items-center justify-between mb-1">\
           <button onclick="window.ImageEditor.close()" class="px-2 py-0.5 text-[10px] text-gray-500 hover:text-gray-700 font-bold">\
@@ -95,25 +95,31 @@
           <button data-ratio="16:9" class="ratio-btn px-1.5 py-0.5 text-[8px] rounded-full border bg-white font-bold" onclick="window.ImageEditor._setRatio(\'16:9\')">16:9</button>\
           <button data-ratio="9:16" class="ratio-btn px-1.5 py-0.5 text-[8px] rounded-full border bg-white font-bold" onclick="window.ImageEditor._setRatio(\'9:16\')">9:16</button>\
         </div>\
-        <!-- 필터 슬라이더 -->\
-        <div class="flex gap-2 mb-1 items-center">\
-          <span class="text-[8px] text-gray-400 w-6 flex-shrink-0">밝기</span>\
-          <input type="range" min="50" max="150" value="100" id="filterBrightness" oninput="window.ImageEditor._setFilter(\'brightness\',this.value)" class="flex-1 h-1 accent-yellow-500">\
-          <span id="filterBrightnessVal" class="text-[8px] text-gray-400 w-6">100</span>\
-          <span class="text-[8px] text-gray-400 w-6 flex-shrink-0">대비</span>\
-          <input type="range" min="50" max="150" value="100" id="filterContrast" oninput="window.ImageEditor._setFilter(\'contrast\',this.value)" class="flex-1 h-1 accent-orange-500">\
-          <span id="filterContrastVal" class="text-[8px] text-gray-400 w-6">100</span>\
-          <span class="text-[8px] text-gray-400 w-6 flex-shrink-0">채도</span>\
-          <input type="range" min="0" max="200" value="100" id="filterSaturate" oninput="window.ImageEditor._setFilter(\'saturate\',this.value)" class="flex-1 h-1 accent-pink-500">\
-          <span id="filterSaturateVal" class="text-[8px] text-gray-400 w-6">100</span>\
-        </div>\
-        <!-- 이미지 프리뷰 (350px) -->\
+        <!-- 이미지 프리뷰 (340px) -->\
         <div class="relative bg-gray-900 rounded-lg overflow-hidden flex-shrink-0" style="height:340px;">\
           <div id="editorTextPreview" class="absolute inset-0 pointer-events-none z-10"></div>\
           <img id="editorImage" src="" alt="" class="block w-full h-full" style="object-fit:contain;">\
         </div>\
+        <!-- 필터 슬라이더 (이미지 아래) -->\
+        <div class="mt-1 mb-1 space-y-0.5">\
+          <div class="flex gap-1 items-center">\
+            <span class="text-[8px] text-gray-400 w-6 flex-shrink-0">밝기</span>\
+            <input type="range" min="50" max="150" value="100" id="filterBrightness" oninput="window.ImageEditor._setFilter(\'brightness\',this.value)" class="flex-1 h-1 accent-yellow-500">\
+            <span id="filterBrightnessVal" class="text-[8px] text-gray-400 w-6">100</span>\
+          </div>\
+          <div class="flex gap-1 items-center">\
+            <span class="text-[8px] text-gray-400 w-6 flex-shrink-0">대비</span>\
+            <input type="range" min="50" max="150" value="100" id="filterContrast" oninput="window.ImageEditor._setFilter(\'contrast\',this.value)" class="flex-1 h-1 accent-orange-500">\
+            <span id="filterContrastVal" class="text-[8px] text-gray-400 w-6">100</span>\
+          </div>\
+          <div class="flex gap-1 items-center">\
+            <span class="text-[8px] text-gray-400 w-6 flex-shrink-0">채도</span>\
+            <input type="range" min="0" max="200" value="100" id="filterSaturate" oninput="window.ImageEditor._setFilter(\'saturate\',this.value)" class="flex-1 h-1 accent-pink-500">\
+            <span id="filterSaturateVal" class="text-[8px] text-gray-400 w-6">100</span>\
+          </div>\
+        </div>\
         <!-- 텍스트 컨트롤 -->\
-        <div class="mt-1.5 border-t border-gray-200 pt-1 flex-shrink-0">\
+        <div class="mt-1 border-t border-gray-200 pt-1 flex-shrink-0">\
           <div class="flex items-center justify-between mb-0.5">\
             <span class="text-[9px] font-semibold text-gray-600"><i class="fas fa-font mr-0.5"></i>텍스트</span>\
             <button onclick="window.ImageEditor._addText()" class="px-1.5 py-0.5 text-[8px] bg-purple-500 text-white rounded-full font-bold hover:bg-purple-600"><i class="fas fa-plus mr-0.5"></i>추가</button>\
@@ -356,7 +362,7 @@
     _activeOverlayIndex = index;
     var rect = document.getElementById('editorTextPreview').getBoundingClientRect();
     var onMove = function (ev) {
-      if (!_dragging) return;
+      if (!_dragging || !_textOverlays[index]) return;
       var cx = ev.touches ? ev.touches[0].clientX : ev.clientX;
       var cy = ev.touches ? ev.touches[0].clientY : ev.clientY;
       _textOverlays[index].x = Math.max(5, Math.min(95, ((cx - rect.left) / rect.width) * 100));

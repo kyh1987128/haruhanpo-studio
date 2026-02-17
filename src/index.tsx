@@ -7156,11 +7156,19 @@ app.post('/api/images/generate-thumbnail', async (c) => {
     };
     const pf = platformMap[platform] || platformMap.youtube_16_9;
     
+    // ── 플랫폼별 해상도 ──
+    const resolutionMap: Record<string, string> = {
+      '16:9': '1280x720',
+      '1:1': '1024x1024',
+      '9:16': '720x1280'
+    };
+    const resolution = resolutionMap[pf.ratio] || '1280x720';
+    
     // ── 영문 프롬프트 생성 ──
     const proxyBase = 'https://gemini-proxy.kyh1987128.workers.dev';
     const styleHint = style || 'realistic photo, professional quality';
     
-    let englishPrompt = `Create a ${pf.name} thumbnail (${pf.ratio}) for marketing content. Style: ${styleHint}. Optimize for high CTR with bold text and vibrant colors.`;
+    let englishPrompt = `Create a ${pf.name} thumbnail for marketing content. The image MUST be exactly ${pf.ratio} aspect ratio (${resolution} pixels). Style: ${styleHint}. Optimize for high CTR with bold text and vibrant colors.`;
     
     try {
       const promptRes = await fetch(
@@ -7169,7 +7177,7 @@ app.post('/api/images/generate-thumbnail', async (c) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: `Create a detailed English image generation prompt for a ${pf.name} thumbnail (${pf.ratio} aspect ratio). The thumbnail should be optimized for high CTR with eye-catching design. Style: ${styleHint}. Content to represent: "${content.substring(0, 300)}". Output only the English prompt (under 100 words).` }] }],
+            contents: [{ parts: [{ text: `Create a detailed English image generation prompt for a ${pf.name} thumbnail. CRITICAL: The image MUST be exactly ${pf.ratio} aspect ratio (${resolution} pixels). The thumbnail should be optimized for high CTR with eye-catching design. Style: ${styleHint}. Content to represent: "${content.substring(0, 300)}". Start the prompt with: "Generate a ${resolution} image in ${pf.ratio} aspect ratio." Output only the English prompt (under 100 words).` }] }],
             generationConfig: { maxOutputTokens: 200, temperature: 0.7 }
           })
         }
@@ -7195,8 +7203,8 @@ app.post('/api/images/generate-thumbnail', async (c) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: englishPrompt }] }],
-            generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+            contents: [{ parts: [{ text: `${englishPrompt}\n\nIMPORTANT: The output image MUST be exactly ${pf.ratio} aspect ratio (${resolution} pixels). Do NOT deviate from this aspect ratio.` }] }],
+            generationConfig: { responseModalities: ['TEXT', 'IMAGE'], aspectRatio: pf.ratio }
           })
         }
       );

@@ -27,6 +27,16 @@
     _renderHistory();
     _loading = false;
     _setLoading(false);
+
+    // 버튼 활성화: 콘텐츠가 있으면 enabled, 없으면 disabled
+    var btn = document.getElementById('thumbGenBtn');
+    var ta = document.getElementById('thumbContent');
+    if (btn && ta) {
+      btn.disabled = !ta.value.trim();
+      ta.addEventListener('input', function () {
+        if (!_loading) btn.disabled = !ta.value.trim();
+      });
+    }
   }
 
   function _fillContent() {
