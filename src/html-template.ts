@@ -19,7 +19,7 @@ export const htmlTemplate = `
     </script>
     
     <!-- Tailwind CSS - Built by Vite -->
-    <link href="/static/styles.css?v=3.0.0" rel="stylesheet">
+    <link href="/static/styles.css?v=4.0.0" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     
     <!-- FullCalendar CSS -->
@@ -522,7 +522,7 @@ export const htmlTemplate = `
                     <i class="fas fa-images text-teal-500"></i>
                     이미지 도구
                 </h3>
-                <div class="grid grid-cols-3 gap-2">
+                <div class="grid grid-cols-5 gap-2">
                     <button id="freeImageSearchBtn" class="img-tool-btn" onclick="window.ImageSearch && window.ImageSearch.open()">
                         <i class="fas fa-search text-lg text-teal-600"></i>
                         <span class="text-xs mt-1 font-semibold text-gray-700">무료 이미지 찾기</span>
@@ -538,6 +538,16 @@ export const htmlTemplate = `
                         <span class="text-xs mt-1 font-semibold text-gray-700">AI 썸네일 생성</span>
                         <span class="text-[9px] text-orange-500 font-bold">3 크레딧</span>
                     </button>
+                    <button id="aiCardNewsBtn" class="img-tool-btn" onclick="window.CardNewsGenerator && window.CardNewsGenerator.show()">
+                        <i class="fas fa-th-large text-lg text-emerald-600"></i>
+                        <span class="text-xs mt-1 font-semibold text-gray-700">AI 카드뉴스</span>
+                        <span class="text-[9px] text-orange-500 font-bold">5 크레딧</span>
+                    </button>
+                    <button id="aiDesignFeedbackBtn" class="img-tool-btn" onclick="window.DesignFeedback && window.DesignFeedback.show()">
+                        <i class="fas fa-chart-bar text-lg text-blue-600"></i>
+                        <span class="text-xs mt-1 font-semibold text-gray-700">디자인 피드백</span>
+                        <span class="text-[9px] text-orange-500 font-bold">1 크레딧</span>
+                    </button>
                 </div>
 
                 <!-- 이미지 뷰어 카드 (콘텐츠 생성 후 표시) -->
@@ -551,6 +561,12 @@ export const htmlTemplate = `
                     </div>
                     <div id="tabContentThumbnail" class="hidden overflow-y-auto">
                         <!-- thumbnail-generator.js가 여기에 렌더링 -->
+                    </div>
+                    <div id="tabContentCardNews" class="hidden overflow-y-auto">
+                        <!-- card-news-generator.js가 여기에 렌더링 -->
+                    </div>
+                    <div id="tabContentFeedback" class="hidden overflow-y-auto">
+                        <!-- design-feedback.js가 여기에 렌더링 -->
                     </div>
                     <!-- 에디터 뷰 (이미지 클릭 시) -->
                     <div id="tabContentEditor" class="hidden">
@@ -2184,7 +2200,7 @@ export const htmlTemplate = `
     </div><!-- layout-container -->
     
     <!-- JavaScript -->
-    <script src="/static/i18n.js?v=3.0.0"></script>
+    <script src="/static/i18n.js?v=4.0.0"></script>
     
     <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
@@ -2193,18 +2209,18 @@ export const htmlTemplate = `
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ko.js"></script>
     
-    <script src="/static/app-v3-final.js?v=3.0.0"></script>
-    <script src="/static/keyword-analysis.js?v=3.0.0"></script>
-    <script src="/static/keyword-extended.js?v=3.0.0"></script>
+    <script src="/static/app-v3-final.js?v=4.0.0"></script>
+    <script src="/static/keyword-analysis.js?v=4.0.0"></script>
+    <script src="/static/keyword-extended.js?v=4.0.0"></script>
     
     <!-- 온보딩 시스템 로드 -->
-    <script src="/static/onboarding-integration.js?v=3.0.0"></script>
+    <script src="/static/onboarding-integration.js?v=4.0.0"></script>
     
     <!-- 스마트 추천 시스템 로드 -->
-    <script src="/static/smart-recommendations.js?v=3.0.0"></script>
+    <script src="/static/smart-recommendations.js?v=4.0.0"></script>
     
     <!-- 자동 저장 및 이어서 작업하기 시스템 로드 -->
-    <script src="/static/auto-save.js?v=3.0.0"></script>
+    <script src="/static/auto-save.js?v=4.0.0"></script>
     
     <!-- Cropper.js CDN (이미지 크롭 에디터) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css">
@@ -2217,11 +2233,13 @@ export const htmlTemplate = `
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
     
     <!-- 이미지 도구 모듈 -->
-    <script src="/static/image-search.js?v=3.0.0"></script>
-    <script src="/static/image-generator.js?v=3.0.0"></script>
-    <script src="/static/image-editor.js?v=3.0.0"></script>
-    <script src="/static/thumbnail-generator.js?v=3.0.0"></script>
-    <script src="/static/slide-collection.js?v=3.0.0"></script>
+    <script src="/static/image-search.js?v=4.0.0"></script>
+    <script src="/static/image-generator.js?v=4.0.0"></script>
+    <script src="/static/image-editor.js?v=4.0.0"></script>
+    <script src="/static/thumbnail-generator.js?v=4.0.0"></script>
+    <script src="/static/slide-collection.js?v=4.0.0"></script>
+    <script src="/static/card-news-generator.js?v=4.0.0"></script>
+    <script src="/static/design-feedback.js?v=4.0.0"></script>
     
     <script>
       // ========================================

@@ -1053,6 +1053,27 @@ async function handleChannelAnalysis() {
     return;
   }
 
+  // ── 크레딧 차감 (1크레딧) ──
+  try {
+    const creditRes = await fetch('/api/credits/deduct', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: 1, feature: 'youtube_channel', user_id: window.currentUser?.id })
+    });
+    const creditData = await creditRes.json();
+    if (!creditData.success) {
+      alert(creditData.error || '크레딧이 부족합니다.');
+      return;
+    }
+    if (creditData.free_credits !== undefined) {
+      window.dispatchEvent(new CustomEvent('userUpdated', { detail: { ...window.currentUser, free_credits: creditData.free_credits, paid_credits: creditData.paid_credits } }));
+    }
+  } catch (e) {
+    console.error('크레딧 차감 오류:', e);
+    alert('크레딧 확인 중 오류가 발생했습니다.');
+    return;
+  }
+
   console.log('📺 채널 분석 시작:', channelIdOrUrl);
 
   // 로딩 표시
@@ -2481,6 +2502,28 @@ async function searchMarket200(keyword = null) {
   
   if (!keyword) {
     alert('검색 키워드를 입력해주세요.');
+    return;
+  }
+
+  // ── 크레딧 차감 (1크레딧) ──
+  try {
+    const creditRes = await fetch('/api/credits/deduct', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: 1, feature: 'youtube_search', user_id: window.currentUser?.id })
+    });
+    const creditData = await creditRes.json();
+    if (!creditData.success) {
+      alert(creditData.error || '크레딧이 부족합니다.');
+      return;
+    }
+    // 헤더 크레딧 업데이트
+    if (creditData.free_credits !== undefined) {
+      window.dispatchEvent(new CustomEvent('userUpdated', { detail: { ...window.currentUser, free_credits: creditData.free_credits, paid_credits: creditData.paid_credits } }));
+    }
+  } catch (e) {
+    console.error('크레딧 차감 오류:', e);
+    alert('크레딧 확인 중 오류가 발생했습니다.');
     return;
   }
   
@@ -5824,7 +5867,7 @@ async function handleChannelSearch() {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-search mr-2"></i>🔍 검색 시작';
+      btn.innerHTML = '<i class="fas fa-search mr-2"></i>🔍 검색 시작 (1크레딧)';
     }
   }
 }
@@ -5882,7 +5925,7 @@ async function handleCategorySearch() {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-search mr-2"></i>🔍 검색 시작';
+      btn.innerHTML = '<i class="fas fa-search mr-2"></i>🔍 검색 시작 (1크레딧)';
     }
   }
 }

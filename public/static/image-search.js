@@ -19,10 +19,14 @@
     var ca = document.getElementById('tabContentAigen');
     var ct = document.getElementById('tabContentThumbnail');
     var ce = document.getElementById('tabContentEditor');
+    var cn = document.getElementById('tabContentCardNews');
+    var cf = document.getElementById('tabContentFeedback');
     if (cs) cs.classList.toggle('hidden', tab !== 'search');
     if (ca) ca.classList.toggle('hidden', tab !== 'aigen');
     if (ct) ct.classList.toggle('hidden', tab !== 'thumbnail');
     if (ce) ce.classList.toggle('hidden', tab !== 'editor');
+    if (cn) cn.classList.toggle('hidden', tab !== 'cardnews');
+    if (cf) cf.classList.toggle('hidden', tab !== 'feedback');
     // AI 생성 로딩 상태 초기화
     if (tab !== 'aigen') {
       var genBtn = document.getElementById('aiGenBtn');
@@ -32,9 +36,13 @@
     var btn1 = document.getElementById('freeImageSearchBtn');
     var btn2 = document.getElementById('aiImageGenBtn');
     var btn3 = document.getElementById('aiThumbnailGenBtn');
+    var btn4 = document.getElementById('aiCardNewsBtn');
+    var btn5 = document.getElementById('aiDesignFeedbackBtn');
     if (btn1) { btn1.classList.toggle('ring-2', tab === 'search'); btn1.classList.toggle('ring-teal-400', tab === 'search'); }
     if (btn2) { btn2.classList.toggle('ring-2', tab === 'aigen'); btn2.classList.toggle('ring-purple-400', tab === 'aigen'); }
     if (btn3) { btn3.classList.toggle('ring-2', tab === 'thumbnail'); btn3.classList.toggle('ring-pink-400', tab === 'thumbnail'); }
+    if (btn4) { btn4.classList.toggle('ring-2', tab === 'cardnews'); btn4.classList.toggle('ring-emerald-400', tab === 'cardnews'); }
+    if (btn5) { btn5.classList.toggle('ring-2', tab === 'feedback'); btn5.classList.toggle('ring-blue-400', tab === 'feedback'); }
   };
 
   // ── 공개 API ──

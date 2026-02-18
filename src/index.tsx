@@ -6707,6 +6707,122 @@ app.route('/', youtubeApi);
 app.route('/', channelsApi);
 
 // ========================================
+// 크레딧 공통 API (프론트엔드에서 직접 차감/환불)
+// ========================================
+
+// POST /api/credits/deduct
+app.post('/api/credits/deduct', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { amount, feature, user_id: bodyUserId } = body;
+    if (!amount || amount < 1) {
+      return c.json({ success: false, error: '유효하지 않은 크레딧 금액입니다.' }, 400);
+    }
+
+    const authHeader = c.req.header('Authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    const supabase = createSupabaseAdmin(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_KEY);
+
+    // 사용자 확인
+    let userId: string | null = bodyUserId || null;
+    if (!userId && token) {
+      const { createClient } = await import('@supabase/supabase-js');
+      const userSupabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_ANON_KEY || c.env.SUPABASE_SERVICE_KEY);
+      const { data: { user } } = await userSupabase.auth.getUser(token);
+      userId = user?.id || null;
+    }
+    if (!userId) {
+      return c.json({ success: false, error: '로그인이 필요합니다.' }, 401);
+    }
+
+    const result = await deductCredits(supabase, userId, amount);
+    if (!result.success) {
+      return c.json({ success: false, error: result.error || '크레딧이 부족합니다.' }, 402);
+    }
+
+    // 트랜잭션 기록
+    await supabase.from('credit_transactions').insert({
+      user_id: userId,
+      amount: -amount,
+      balance_after: result.remaining.free + result.remaining.paid,
+      type: 'usage',
+      description: `${feature || '기능 사용'} (${amount}크레딧)`
+    });
+
+    return c.json({
+      success: true,
+      used: amount,
+      remaining: result.remaining,
+      free_credits: result.remaining.free,
+      paid_credits: result.remaining.paid
+    });
+  } catch (err: any) {
+    console.error('크레딧 차감 오류:', err);
+    return c.json({ success: false, error: '크레딧 차감 중 오류가 발생했습니다.' }, 500);
+  }
+});
+
+// POST /api/credits/refund
+app.post('/api/credits/refund', async (c) => {
+  try {
+    const { amount, feature } = await c.req.json();
+    if (!amount || amount < 1) {
+      return c.json({ success: false, error: '유효하지 않은 환불 금액입니다.' }, 400);
+    }
+
+    const authHeader = c.req.header('Authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    const supabase = createSupabaseAdmin(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_KEY);
+
+    let userId: string | null = null;
+    if (token) {
+      const { createClient } = await import('@supabase/supabase-js');
+      const userSupabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_ANON_KEY || c.env.SUPABASE_SERVICE_KEY);
+      const { data: { user } } = await userSupabase.auth.getUser(token);
+      userId = user?.id || null;
+    }
+    if (!userId) {
+      return c.json({ success: false, error: '로그인이 필요합니다.' }, 401);
+    }
+
+    // 무료 크레딧으로 환불
+    const { data: userData } = await supabase
+      .from('users')
+      .select('free_credits, paid_credits')
+      .eq('id', userId)
+      .single();
+
+    if (!userData) {
+      return c.json({ success: false, error: '사용자를 찾을 수 없습니다.' }, 404);
+    }
+
+    const newFree = (userData.free_credits || 0) + amount;
+    await supabase
+      .from('users')
+      .update({ free_credits: newFree })
+      .eq('id', userId);
+
+    await supabase.from('credit_transactions').insert({
+      user_id: userId,
+      amount: amount,
+      balance_after: newFree + (userData.paid_credits || 0),
+      type: 'refund',
+      description: `${feature || '기능'} 실패 환불 (${amount}크레딧)`
+    });
+
+    return c.json({
+      success: true,
+      refunded: amount,
+      free_credits: newFree,
+      paid_credits: userData.paid_credits || 0
+    });
+  } catch (err: any) {
+    console.error('크레딧 환불 오류:', err);
+    return c.json({ success: false, error: '크레딧 환불 중 오류가 발생했습니다.' }, 500);
+  }
+});
+
+// ========================================
 // 이미지 도구 API 라우트
 // ========================================
 
@@ -7563,6 +7679,397 @@ THUMBNAIL DESIGN PRINCIPLES:
   } catch (error: any) {
     console.error('❌ AI 썸네일 API 오류:', error);
     return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// POST /api/images/generate-card-news - AI 카드뉴스 생성 (5크레딧)
+app.post('/api/images/generate-card-news', async (c) => {
+  try {
+    const { content, platform, slideCount, style, user_id } = await c.req.json();
+    
+    if (!content || typeof content !== 'string') {
+      return c.json({ success: false, error: '콘텐츠 내용을 입력해주세요' }, 400);
+    }
+    if (!user_id) {
+      return c.json({ success: false, error: 'user_id는 필수입니다' }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_KEY);
+    const geminiApiKey = c.env.GEMINI_API_KEY;
+    if (!geminiApiKey) {
+      return c.json({ success: false, error: 'GEMINI_API_KEY가 설정되지 않았습니다' }, 500);
+    }
+    
+    const requiredCredits = 5;
+    const proxyBase = 'https://gemini-proxy.kyh1987128.workers.dev';
+    
+    // 크레딧 차감
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('free_credits, paid_credits')
+      .eq('id', user_id)
+      .single();
+    
+    if (userError || !user) {
+      return c.json({ success: false, error: '사용자를 찾을 수 없습니다' }, 404);
+    }
+    
+    const totalCredits = (user.free_credits || 0) + (user.paid_credits || 0);
+    if (totalCredits < requiredCredits) {
+      return c.json({ success: false, error: '크레딧이 부족합니다', required: requiredCredits, free_credits: user.free_credits || 0, paid_credits: user.paid_credits || 0 }, 402);
+    }
+    
+    const usedFree = Math.min(requiredCredits, user.free_credits || 0);
+    const usedPaid = requiredCredits - usedFree;
+    const newFree = (user.free_credits || 0) - usedFree;
+    const newPaid = (user.paid_credits || 0) - usedPaid;
+    
+    await supabase.from('users').update({ free_credits: newFree, paid_credits: newPaid }).eq('id', user_id);
+    await supabase.from('credit_transactions').insert({
+      user_id,
+      amount: -requiredCredits,
+      balance_after: newFree + newPaid,
+      type: 'usage',
+      description: `AI 카드뉴스 생성 (${slideCount}장)`
+    });
+    
+    const groupId = 'cardnews_' + Date.now();
+    
+    // withTimeout
+    function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+      return Promise.race([
+        promise,
+        new Promise<T>((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms))
+      ]);
+    }
+    
+    // Step 1: 콘텐츠 분할 (Gemini text, 10초)
+    let slidePlan: any;
+    try {
+      console.log('📋 [카드뉴스] Step 1: 콘텐츠 분할 시작...');
+      const planRes = await withTimeout(
+        fetch(`${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `You are a social media content strategist. Split the following content into exactly ${slideCount} slides for a ${platform} carousel post.
+
+Return JSON only (no markdown, no code fences):
+{
+  "slides": [
+    {
+      "role": "cover",
+      "visual_concept": "English description of background image, 2-3 sentences",
+      "text_overlay": "Korean text for this slide, max 20 characters",
+      "text_position": "center"
+    },
+    {
+      "role": "body",
+      "visual_concept": "...",
+      "text_overlay": "...",
+      "text_position": "center"
+    }
+  ],
+  "group_name": "Korean title for this card news set, max 20 chars"
+}
+
+Rules:
+- First slide role must be "cover" with attention-grabbing hook text
+- Middle slides role "body" with key information
+- Last slide role "cta" with call-to-action
+- text_overlay must be in Korean, compelling and concise
+- visual_concept must be in English, highly descriptive for image generation
+- Style: ${style}
+- text_position: one of "top", "center", "bottom"
+
+Content:
+${content.substring(0, 3000)}` }] }],
+            generationConfig: { maxOutputTokens: 1000, temperature: 0.7 }
+          })
+        }),
+        10000
+      );
+      
+      if (planRes.ok) {
+        const planData: any = await planRes.json();
+        const planText = planData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const jsonMatch = planText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          slidePlan = JSON.parse(jsonMatch[0]);
+        }
+      }
+    } catch (e: any) {
+      console.warn('⚠️ [카드뉴스] Step 1 실패, fallback 사용:', e?.message);
+    }
+    
+    // fallback
+    if (!slidePlan || !slidePlan.slides || slidePlan.slides.length === 0) {
+      const sentences = content.split(/[.!?。！？\n]+/).filter((s: string) => s.trim().length > 0);
+      const perSlide = Math.max(1, Math.ceil(sentences.length / slideCount));
+      const fallbackSlides = [];
+      for (let i = 0; i < slideCount; i++) {
+        const chunk = sentences.slice(i * perSlide, (i + 1) * perSlide).join('. ');
+        const role = i === 0 ? 'cover' : (i === slideCount - 1 ? 'cta' : 'body');
+        fallbackSlides.push({
+          role,
+          visual_concept: `A ${style} styled background image for social media, abstract and minimal`,
+          text_overlay: chunk.substring(0, 40) || `슬라이드 ${i + 1}`,
+          text_position: 'center'
+        });
+      }
+      slidePlan = { slides: fallbackSlides, group_name: 'AI 카드뉴스' };
+    }
+    
+    // Step 2: 슬라이드별 이미지 생성 (병렬, 배치 3개)
+    const slides: any[] = [];
+    const models = ['gemini-2.0-flash-preview-image-generation', 'gemini-2.0-flash-exp-image-generation'];
+    const batchSize = 3;
+    
+    for (let i = 0; i < slidePlan.slides.length; i += batchSize) {
+      const batch = slidePlan.slides.slice(i, i + batchSize);
+      const batchResults = await Promise.allSettled(
+        batch.map(async (slide: any) => {
+          const imagePrompt = `Create a background image for a social media carousel slide.
+Style: ${style}
+Scene: ${slide.visual_concept}
+This is a background image only. Do NOT include any text, letters, numbers, words, characters, watermarks, or logos.
+Leave space at the ${slide.text_position || 'center'} area for text overlay.`;
+
+          for (const model of models) {
+            try {
+              const imgRes = await withTimeout(
+                fetch(`${proxyBase}/v1beta/models/${model}:generateContent`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
+                  body: JSON.stringify({
+                    contents: [{ parts: [{ text: imagePrompt }] }],
+                    generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+                  })
+                }),
+                25000
+              );
+              
+              if (imgRes.ok) {
+                const imgData: any = await imgRes.json();
+                const parts = imgData?.candidates?.[0]?.content?.parts || [];
+                for (const part of parts) {
+                  if (part.inlineData && part.inlineData.data) {
+                    return part.inlineData.data;
+                  }
+                }
+              }
+            } catch (e: any) {
+              console.warn(`⚠️ [카드뉴스] ${model} 실패:`, e?.message);
+            }
+          }
+          return null;
+        })
+      );
+      
+      batchResults.forEach((result, j) => {
+        const slideIndex = i + j;
+        if (slideIndex < slidePlan.slides.length) {
+          const imageData = result.status === 'fulfilled' ? result.value : null;
+          if (imageData) {
+            slides.push({
+              image: imageData,
+              text_overlay: slidePlan.slides[slideIndex].text_overlay,
+              role: slidePlan.slides[slideIndex].role,
+              text_position: slidePlan.slides[slideIndex].text_position,
+              order: slideIndex + 1
+            });
+          }
+        }
+      });
+    }
+    
+    if (slides.length === 0) {
+      // 전체 실패 시 환불
+      await supabase.from('users').update({ free_credits: user.free_credits, paid_credits: user.paid_credits }).eq('id', user_id);
+      await supabase.from('credit_transactions').insert({
+        user_id, amount: requiredCredits, balance_after: (user.free_credits || 0) + (user.paid_credits || 0),
+        type: 'refund', description: 'AI 카드뉴스 생성 실패 환불'
+      });
+      return c.json({ success: false, error: '카드뉴스 이미지 생성에 실패했습니다. 크레딧이 환불되었습니다.', refunded: true, free_credits: user.free_credits || 0, paid_credits: user.paid_credits || 0 }, 504);
+    }
+    
+    return c.json({
+      success: true,
+      slides,
+      total: slides.length,
+      groupId,
+      groupName: slidePlan.group_name || 'AI 카드뉴스',
+      free_credits: newFree,
+      paid_credits: newPaid
+    });
+    
+  } catch (error: any) {
+    console.error('❌ AI 카드뉴스 API 오류:', error);
+    return c.json({ success: false, error: error.message || 'AI 카드뉴스 생성 중 오류가 발생했습니다.' }, 500);
+  }
+});
+
+// POST /api/images/design-feedback - AI 디자인 피드백 (1크레딧)
+app.post('/api/images/design-feedback', async (c) => {
+  try {
+    const { image, platform, usage, user_id } = await c.req.json();
+    
+    if (!image) {
+      return c.json({ success: false, error: '분석할 이미지가 없습니다' }, 400);
+    }
+    if (!user_id) {
+      return c.json({ success: false, error: 'user_id는 필수입니다' }, 400);
+    }
+    
+    const supabase = createSupabaseAdmin(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_KEY);
+    const geminiApiKey = c.env.GEMINI_API_KEY;
+    if (!geminiApiKey) {
+      return c.json({ success: false, error: 'GEMINI_API_KEY가 설정되지 않았습니다' }, 500);
+    }
+    
+    const requiredCredits = 1;
+    const proxyBase = 'https://gemini-proxy.kyh1987128.workers.dev';
+    
+    // 크레딧 차감
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('free_credits, paid_credits')
+      .eq('id', user_id)
+      .single();
+    
+    if (userError || !user) {
+      return c.json({ success: false, error: '사용자를 찾을 수 없습니다' }, 404);
+    }
+    
+    const totalCredits = (user.free_credits || 0) + (user.paid_credits || 0);
+    if (totalCredits < requiredCredits) {
+      return c.json({ success: false, error: '크레딧이 부족합니다' }, 402);
+    }
+    
+    const usedFree = Math.min(requiredCredits, user.free_credits || 0);
+    const usedPaid = requiredCredits - usedFree;
+    const newFree = (user.free_credits || 0) - usedFree;
+    const newPaid = (user.paid_credits || 0) - usedPaid;
+    
+    await supabase.from('users').update({ free_credits: newFree, paid_credits: newPaid }).eq('id', user_id);
+    
+    function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+      return Promise.race([
+        promise,
+        new Promise<T>((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms))
+      ]);
+    }
+    
+    const platformFocus: Record<string, string> = {
+      youtube: 'YouTube thumbnail optimization. Focus on: CTR optimization, mobile thumbnail visibility, face/expression usage, text-to-image ratio, color contrast.',
+      instagram: 'Instagram post/carousel optimization. Focus on: thumb-stopping power, save and share motivation, aesthetic cohesion.',
+      threads: 'Threads post optimization. Focus on: text clarity, conversation triggering, mobile-first design.',
+      blog: 'Blog featured image optimization. Focus on: information density, professional credibility, readability.'
+    };
+    
+    const usageFocus: Record<string, string> = {
+      thumbnail: 'This is a thumbnail/hero image. Primary goal: maximize click-through rate.',
+      card_cover: 'This is a card news cover slide. Primary goal: stop scrolling and trigger swipe.',
+      card_body: 'This is a card news body slide. Primary goal: deliver information clearly.',
+      general: 'This is a general purpose image. Evaluate overall design quality.'
+    };
+    
+    // 이미지 base64 추출
+    let imageBase64 = image;
+    let mimeType = 'image/png';
+    if (image.startsWith('data:')) {
+      const match = image.match(/^data:(image\/\w+);base64,(.+)$/);
+      if (match) {
+        mimeType = match[1];
+        imageBase64 = match[2];
+      }
+    }
+    
+    try {
+      const visionRes = await withTimeout(
+        fetch(`${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { inlineData: { mimeType, data: imageBase64 } },
+                { text: `You are a professional digital marketing design consultant.
+
+${platformFocus[platform] || platformFocus.youtube}
+${usageFocus[usage] || usageFocus.general}
+
+Analyze this image and return JSON only (no markdown, no code fences):
+{
+  "overall_score": (1-5 integer),
+  "scores": {
+    "visual_impact": { "score": (1-5), "comment": "Korean explanation, 1-2 sentences" },
+    "text_readability": { "score": (1-5), "comment": "Korean explanation" },
+    "color_harmony": { "score": (1-5), "comment": "Korean explanation" },
+    "platform_fit": { "score": (1-5), "comment": "Korean explanation" },
+    "click_inducement": { "score": (1-5), "comment": "Korean explanation" }
+  },
+  "strengths": ["Korean strength 1", "Korean strength 2"],
+  "improvements": ["Korean improvement 1", "Korean improvement 2", "Korean improvement 3"],
+  "ab_test_suggestion": "Korean A/B test suggestion"
+}
+
+Be honest but constructive. Score strictly: 5=top 1%, 4=above average, 3=average, 2=below average, 1=needs major work.` }
+              ]
+            }],
+            generationConfig: { maxOutputTokens: 800, temperature: 0.4 }
+          })
+        }),
+        15000
+      );
+      
+      if (!visionRes.ok) {
+        throw new Error('Gemini API 응답 오류: ' + visionRes.status);
+      }
+      
+      const visionData: any = await visionRes.json();
+      const resultText = visionData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const jsonMatch = resultText.match(/\{[\s\S]*\}/);
+      
+      if (!jsonMatch) {
+        throw new Error('AI 응답에서 JSON을 추출할 수 없습니다');
+      }
+      
+      const feedback = JSON.parse(jsonMatch[0]);
+      
+      await supabase.from('credit_transactions').insert({
+        user_id, amount: -requiredCredits, balance_after: newFree + newPaid,
+        type: 'usage', description: `AI 디자인 피드백 (${platform}/${usage})`
+      });
+      
+      return c.json({
+        success: true,
+        feedback,
+        free_credits: newFree,
+        paid_credits: newPaid
+      });
+      
+    } catch (err: any) {
+      // 환불
+      await supabase.from('users').update({ free_credits: user.free_credits, paid_credits: user.paid_credits }).eq('id', user_id);
+      await supabase.from('credit_transactions').insert({
+        user_id, amount: requiredCredits, balance_after: (user.free_credits || 0) + (user.paid_credits || 0),
+        type: 'refund', description: 'AI 디자인 피드백 실패 환불'
+      });
+      
+      const isTimeout = err?.message === 'TIMEOUT';
+      return c.json({
+        success: false,
+        error: isTimeout ? 'AI 분석 시간 초과. 크레딧이 환불되었습니다.' : 'AI 피드백 분석에 실패했습니다. 크레딧이 환불되었습니다.',
+        refunded: true,
+        free_credits: user.free_credits || 0,
+        paid_credits: user.paid_credits || 0
+      }, isTimeout ? 504 : 500);
+    }
+    
+  } catch (error: any) {
+    console.error('❌ AI 디자인 피드백 API 오류:', error);
+    return c.json({ success: false, error: error.message || 'AI 디자인 피드백 중 오류가 발생했습니다.' }, 500);
   }
 });
 
