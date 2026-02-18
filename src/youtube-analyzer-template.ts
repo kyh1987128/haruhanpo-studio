@@ -80,6 +80,8 @@ export function youtubeAnalyzerTemplate() {
       padding: 24px;
       overflow-y: auto;
       background: #f9fafb;
+      position: relative;
+      z-index: 10;
     }
     
     /* 우측 상세 패널 */
@@ -1364,7 +1366,7 @@ export function youtubeAnalyzerTemplate() {
                   onmouseout="this.style.background='#00B87D'"
                 >
                   <i class="fas fa-search mr-2"></i>
-                  분석 시작 (1크레딧)
+                  🔍 분석 시작 (1크레딧)
                 </button>
               </div>
               <p class="text-sm text-gray-500 mt-2">

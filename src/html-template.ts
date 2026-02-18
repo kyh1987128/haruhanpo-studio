@@ -439,8 +439,7 @@ export const htmlTemplate = `
                         </div>
                         
                         <p class="text-sm mb-4 opacity-95 leading-relaxed">
-                            키워드 분석 시 <strong>크레딧 1개</strong>가 차감됩니다.<br>
-                            무료 크레딧부터 우선 사용됩니다.
+                            키워드 분석 시 <span class="text-yellow-300 font-bold">크레딧 1개</span>가 차감됩니다.
                         </p>
                         
                         <!-- 입력 필드 -->

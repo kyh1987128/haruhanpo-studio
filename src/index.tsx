@@ -7077,15 +7077,9 @@ app.post('/api/images/generate-ai', async (c) => {
       description: `AI 이미지 생성: ${keyword}`
     });
     
-    // ── withTimeout 헬퍼 ──
-    function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-      return Promise.race([
-        promise,
-        new Promise<T>((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms))
-      ]);
-    }
+    // ── withTimeout 헬퍼 (제거됨 — 추후 재적용 예정) ──
     
-    // ── STEP 1: 콘텐츠 분석 (Gemini 텍스트 모델, 10초 타임아웃) ──
+    // ── STEP 1: 콘텐츠 분석 (Gemini 텍스트 모델) ──
     const proxyBase = 'https://gemini-proxy.kyh1987128.workers.dev';
     const styleHint = style || 'professional marketing photo';
     
@@ -7113,17 +7107,14 @@ Return ONLY valid JSON (no markdown, no code fences):
   "english_prompt": "Complete English image generation prompt combining all elements above. Max 150 words. Must be specific, vivid, and optimized for AI image generation. Include style: ${styleHint}. Include: specific details about composition, lighting direction, color palette, textures. Do NOT include any text or typography in the scene."
 }`;
 
-      const analysisRes = await withTimeout(
-        fetch(`${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: analysisPrompt }] }],
-            generationConfig: { maxOutputTokens: 400, temperature: 0.7 }
-          })
-        }),
-        10000
-      );
+      const analysisRes = await fetch(`${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: analysisPrompt }] }],
+          generationConfig: { maxOutputTokens: 400, temperature: 0.7 }
+        })
+      });
       
       if (analysisRes.ok) {
         const analysisData: any = await analysisRes.json();
@@ -7140,18 +7131,16 @@ Return ONLY valid JSON (no markdown, no code fences):
         }
       }
     } catch (e: any) {
-      console.warn('⚠️ Step 1 분석 타임아웃/실패, 기본 프롬프트 사용:', e?.message);
+      console.warn('⚠️ Step 1 분석 실패, 기본 프롬프트 사용:', e?.message);
     }
     
-    // ── STEP 2: Gemini 이미지 생성 (25초 타임아웃) ──
+    // ── STEP 2: Gemini 이미지 생성 ──
     const englishPrompt = analysisResult.english_prompt + '\n\nIMPORTANT: Do NOT include any text, letters, words, numbers, watermarks, or typography in the image. The image must be purely visual with NO text elements.';
     console.log(`🎨 Step 2: 이미지 생성 프롬프트: ${englishPrompt.substring(0, 200)}...`);
     
-    // ── Gemini 2.0 Flash (이미지 생성 모드) 호출 ──
     let imageData: string | null = null;
     let lastError = '';
     
-    // 모델 우선순위: 1차 → 2차 폴백
     const models = [
       'gemini-2.0-flash-exp-image-generation',
       'gemini-2.0-flash-exp'
@@ -7161,26 +7150,23 @@ Return ONLY valid JSON (no markdown, no code fences):
       try {
         console.log(`🎨 Gemini 이미지 생성 시도: ${model}`);
         
-        const imagenRes = await withTimeout(
-          fetch(
-            `${proxyBase}/v1beta/models/${model}:generateContent`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${geminiApiKey}`
-              },
-              body: JSON.stringify({
-                contents: [{
-                  parts: [{ text: englishPrompt }]
-                }],
-                generationConfig: {
-                  responseModalities: ['TEXT', 'IMAGE']
-                }
-              })
-            }
-          ),
-          25000
+        const imagenRes = await fetch(
+          `${proxyBase}/v1beta/models/${model}:generateContent`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${geminiApiKey}`
+            },
+            body: JSON.stringify({
+              contents: [{
+                parts: [{ text: englishPrompt }]
+              }],
+              generationConfig: {
+                responseModalities: ['TEXT', 'IMAGE']
+              }
+            })
+          }
         );
         
         console.log(`🎨 ${model} 응답 상태: ${imagenRes.status}`);
@@ -7201,7 +7187,7 @@ Return ONLY valid JSON (no markdown, no code fences):
             }
           }
           
-          if (imageData) break; // 성공 시 루프 탈출
+          if (imageData) break;
           
           lastError = `${model}: 응답에서 이미지 데이터를 찾을 수 없음`;
           console.error(`❌ ${lastError}`);
@@ -7210,51 +7196,24 @@ Return ONLY valid JSON (no markdown, no code fences):
           lastError = `${model}: API 오류 (${imagenRes.status})`;
           console.error(`❌ ${lastError}:`, errText.substring(0, 300));
           
-          // 401/403은 API 키 문제이므로 폴백 불필요
           if (imagenRes.status === 401 || imagenRes.status === 403) {
             lastError = 'API 키 인증 오류입니다. 관리자에게 문의해주세요.';
             break;
           }
         }
       } catch (e: any) {
-        if (e?.message === 'TIMEOUT' || e?.name === 'AbortError') {
-          lastError = `${model}: 서버 타임아웃 (25초 초과)`;
-          console.error(`❌ ${lastError}`);
-          continue;
-        }
         lastError = `${model}: ${e?.message || '알 수 없는 오류'}`;
         console.error(`❌ ${model} 예외:`, lastError);
       }
     }
     
-    // 모든 모델 실패 시 환불
     if (!imageData) {
-      await supabase
-        .from('users')
-        .update({ free_credits: user.free_credits, paid_credits: user.paid_credits })
-        .eq('id', user_id);
-      
-      await supabase.from('credit_transactions').insert({
-        user_id,
-        amount: requiredCredits,
-        balance_after: (user.free_credits || 0) + (user.paid_credits || 0),
-        type: 'refund',
-        description: `AI 이미지 생성 실패 환불: ${keyword}`
-      });
-      
-      const isTimeout = lastError.includes('타임아웃') || lastError.includes('TIMEOUT');
-      const statusCode = isTimeout ? 504 : 500;
-      const errorMsg = isTimeout 
-        ? 'AI 생성 시간 초과. 크레딧이 환불되었습니다. 다시 시도해주세요.'
-        : (lastError || 'AI 이미지 생성에 실패했습니다. 크레딧이 환불되었습니다.');
-      
       return c.json({
         success: false,
-        error: errorMsg,
-        refunded: true,
-        free_credits: user.free_credits || 0,
-        paid_credits: user.paid_credits || 0
-      }, statusCode);
+        error: lastError || 'AI 이미지 생성에 실패했습니다. 다시 시도해주세요.',
+        free_credits: newFree,
+        paid_credits: newPaid
+      }, 500);
     }
     
     // 크레딧 변동 이벤트 정보
@@ -7431,13 +7390,6 @@ app.post('/api/images/generate-thumbnail', async (c) => {
     
     try {
       console.log('🔍 Step 1: 컨셉 추출 시작...');
-      // withTimeout 헬퍼 (thumbnail 내부용)
-      function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-        return Promise.race([
-          promise,
-          new Promise<T>((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms))
-        ]);
-      }
       
       const conceptPrompt = `You are a world-class thumbnail designer who has created 10,000+ high-CTR thumbnails.
 
@@ -7466,8 +7418,7 @@ RULES:
 - Apply EVERY platform-specific strategy point to maximize CTR`;
 
 
-      const conceptRes = await withTimeout(
-        fetch(
+      const conceptRes = await fetch(
           `${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`,
           {
             method: 'POST',
@@ -7477,9 +7428,7 @@ RULES:
               generationConfig: { maxOutputTokens: 400, temperature: 0.7 }
             })
           }
-        ),
-        15000
-      );
+        );
       
       if (conceptRes.ok) {
         const conceptData: any = await conceptRes.json();
@@ -7517,11 +7466,7 @@ RULES:
         console.warn('⚠️ 컨셉 추출 API 오류:', conceptRes.status);
       }
     } catch (conceptErr: any) {
-      if (conceptErr?.message === 'TIMEOUT' || conceptErr?.name === 'AbortError') {
-        console.warn('⚠️ 컨셉 추출 타임아웃 (15초)');
-      } else {
-        console.error('⚠️ 컨셉 추출 실패:', conceptErr);
-      }
+      console.error('⚠️ 컨셉 추출 실패:', conceptErr?.message);
       // Fallback hook
       const hookMatch = content.match(/[가-힣]{2,15}/);
       if (hookMatch) textLines = [hookMatch[0]];
@@ -7578,8 +7523,7 @@ THUMBNAIL DESIGN PRINCIPLES:
       try {
         console.log(`🖼️ 썸네일 생성 시도: ${model}`);
         
-        const imagenRes = await withTimeout(
-          fetch(
+        const imagenRes = await fetch(
             `${proxyBase}/v1beta/models/${model}:generateContent`,
             {
               method: 'POST',
@@ -7589,9 +7533,7 @@ THUMBNAIL DESIGN PRINCIPLES:
                 generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
               })
             }
-          ),
-          25000
-        );
+          );
         
         if (imagenRes.ok) {
           const imagenData: any = await imagenRes.json();
@@ -7631,38 +7573,18 @@ THUMBNAIL DESIGN PRINCIPLES:
           }
         }
       } catch (e: any) {
-        if (e?.message === 'TIMEOUT' || e?.name === 'AbortError') {
-          thumbLastError = `${model}: 이미지 생성 시간 초과 (25초)`;
-          console.warn(`⚠️ ${thumbLastError}`);
-        } else {
-          thumbLastError = `${model}: ${e?.message || '알 수 없는 오류'}`;
-          console.error(`❌ 썸네일 ${thumbLastError}`);
-        }
+        thumbLastError = `${model}: ${e?.message || '알 수 없는 오류'}`;
+        console.error(`❌ 썸네일 ${thumbLastError}`);
       }
     }
     
     if (!imageData) {
-      // 환불
-      await supabase.from('users').update({ free_credits: user.free_credits, paid_credits: user.paid_credits }).eq('id', user_id);
-      await supabase.from('credit_transactions').insert({
-        user_id, amount: requiredCredits,
-        balance_after: (user.free_credits || 0) + (user.paid_credits || 0),
-        type: 'refund', description: `AI 썸네일 생성 실패 환불`
-      });
-      
-      const isTimeout = thumbLastError.includes('시간 초과') || thumbLastError.includes('TIMEOUT');
-      const statusCode = isTimeout ? 504 : 500;
-      const errorMsg = isTimeout 
-        ? 'AI 생성 시간 초과. 크레딧이 환불되었습니다. 다시 시도해주세요.'
-        : (thumbLastError || 'AI 썸네일 생성에 실패했습니다. 크레딧이 환불되었습니다.');
-      
       return c.json({ 
         success: false, 
-        error: errorMsg, 
-        refunded: true, 
-        free_credits: user.free_credits || 0, 
-        paid_credits: user.paid_credits || 0 
-      }, statusCode);
+        error: thumbLastError || 'AI 썸네일 생성에 실패했습니다. 다시 시도해주세요.',
+        free_credits: newFree, 
+        paid_credits: newPaid 
+      }, 500);
     }
     
     return c.json({
@@ -7686,6 +7608,15 @@ THUMBNAIL DESIGN PRINCIPLES:
 app.post('/api/images/generate-card-news', async (c) => {
   try {
     const { content, platform, slideCount, style, user_id } = await c.req.json();
+    
+    // 플랫폼별 비율 매핑
+    const platformSizeMap: Record<string, { width: number; height: number; ratio: string }> = {
+      'instagram_square': { width: 1080, height: 1080, ratio: '1:1' },
+      'instagram_portrait': { width: 1080, height: 1350, ratio: '4:5' },
+      'instagram_story': { width: 1080, height: 1920, ratio: '9:16' },
+      'threads': { width: 1080, height: 1080, ratio: '1:1' }
+    };
+    const platformSize = platformSizeMap[platform] || platformSizeMap['instagram_square'];
     
     if (!content || typeof content !== 'string') {
       return c.json({ success: false, error: '콘텐츠 내용을 입력해주세요' }, 400);
@@ -7735,20 +7666,11 @@ app.post('/api/images/generate-card-news', async (c) => {
     
     const groupId = 'cardnews_' + Date.now();
     
-    // withTimeout
-    function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-      return Promise.race([
-        promise,
-        new Promise<T>((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms))
-      ]);
-    }
-    
-    // Step 1: 콘텐츠 분할 (Gemini text, 10초)
+    // Step 1: 콘텐츠 분할 (Gemini text)
     let slidePlan: any;
     try {
       console.log('📋 [카드뉴스] Step 1: 콘텐츠 분할 시작...');
-      const planRes = await withTimeout(
-        fetch(`${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`, {
+      const planRes = await fetch(`${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
           body: JSON.stringify({
@@ -7786,9 +7708,7 @@ Content:
 ${content.substring(0, 3000)}` }] }],
             generationConfig: { maxOutputTokens: 1000, temperature: 0.7 }
           })
-        }),
-        10000
-      );
+        });
       
       if (planRes.ok) {
         const planData: any = await planRes.json();
@@ -7831,23 +7751,21 @@ ${content.substring(0, 3000)}` }] }],
         batch.map(async (slide: any) => {
           const imagePrompt = `Create a background image for a social media carousel slide.
 Style: ${style}
+Aspect ratio: ${platformSize.ratio} (${platformSize.width}x${platformSize.height} pixels)
 Scene: ${slide.visual_concept}
 This is a background image only. Do NOT include any text, letters, numbers, words, characters, watermarks, or logos.
 Leave space at the ${slide.text_position || 'center'} area for text overlay.`;
 
           for (const model of models) {
             try {
-              const imgRes = await withTimeout(
-                fetch(`${proxyBase}/v1beta/models/${model}:generateContent`, {
+              const imgRes = await fetch(`${proxyBase}/v1beta/models/${model}:generateContent`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
                   body: JSON.stringify({
                     contents: [{ parts: [{ text: imagePrompt }] }],
                     generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
                   })
-                }),
-                25000
-              );
+                });
               
               if (imgRes.ok) {
                 const imgData: any = await imgRes.json();
@@ -7884,13 +7802,7 @@ Leave space at the ${slide.text_position || 'center'} area for text overlay.`;
     }
     
     if (slides.length === 0) {
-      // 전체 실패 시 환불
-      await supabase.from('users').update({ free_credits: user.free_credits, paid_credits: user.paid_credits }).eq('id', user_id);
-      await supabase.from('credit_transactions').insert({
-        user_id, amount: requiredCredits, balance_after: (user.free_credits || 0) + (user.paid_credits || 0),
-        type: 'refund', description: 'AI 카드뉴스 생성 실패 환불'
-      });
-      return c.json({ success: false, error: '카드뉴스 이미지 생성에 실패했습니다. 크레딧이 환불되었습니다.', refunded: true, free_credits: user.free_credits || 0, paid_credits: user.paid_credits || 0 }, 504);
+      return c.json({ success: false, error: '카드뉴스 이미지 생성에 실패했습니다. 다시 시도해주세요.', free_credits: newFree, paid_credits: newPaid }, 500);
     }
     
     return c.json({
@@ -7953,13 +7865,6 @@ app.post('/api/images/design-feedback', async (c) => {
     
     await supabase.from('users').update({ free_credits: newFree, paid_credits: newPaid }).eq('id', user_id);
     
-    function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-      return Promise.race([
-        promise,
-        new Promise<T>((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms))
-      ]);
-    }
-    
     const platformFocus: Record<string, string> = {
       youtube: 'YouTube thumbnail optimization. Focus on: CTR optimization, mobile thumbnail visibility, face/expression usage, text-to-image ratio, color contrast.',
       instagram: 'Instagram post/carousel optimization. Focus on: thumb-stopping power, save and share motivation, aesthetic cohesion.',
@@ -7986,8 +7891,7 @@ app.post('/api/images/design-feedback', async (c) => {
     }
     
     try {
-      const visionRes = await withTimeout(
-        fetch(`${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`, {
+      const visionRes = await fetch(`${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
           body: JSON.stringify({
@@ -8019,9 +7923,7 @@ Be honest but constructive. Score strictly: 5=top 1%, 4=above average, 3=average
             }],
             generationConfig: { maxOutputTokens: 800, temperature: 0.4 }
           })
-        }),
-        15000
-      );
+        });
       
       if (!visionRes.ok) {
         throw new Error('Gemini API 응답 오류: ' + visionRes.status);
@@ -8050,21 +7952,12 @@ Be honest but constructive. Score strictly: 5=top 1%, 4=above average, 3=average
       });
       
     } catch (err: any) {
-      // 환불
-      await supabase.from('users').update({ free_credits: user.free_credits, paid_credits: user.paid_credits }).eq('id', user_id);
-      await supabase.from('credit_transactions').insert({
-        user_id, amount: requiredCredits, balance_after: (user.free_credits || 0) + (user.paid_credits || 0),
-        type: 'refund', description: 'AI 디자인 피드백 실패 환불'
-      });
-      
-      const isTimeout = err?.message === 'TIMEOUT';
       return c.json({
         success: false,
-        error: isTimeout ? 'AI 분석 시간 초과. 크레딧이 환불되었습니다.' : 'AI 피드백 분석에 실패했습니다. 크레딧이 환불되었습니다.',
-        refunded: true,
-        free_credits: user.free_credits || 0,
-        paid_credits: user.paid_credits || 0
-      }, isTimeout ? 504 : 500);
+        error: 'AI 피드백 분석에 실패했습니다. 다시 시도해주세요.',
+        free_credits: newFree,
+        paid_credits: newPaid
+      }, 500);
     }
     
   } catch (error: any) {

@@ -33,6 +33,7 @@ window.CardNewsGenerator = {
             '<select id="cardNewsPlatform" class="w-full px-2 py-2 border rounded-lg text-sm">' +
               '<option value="instagram_square">📷 인스타 (1:1)</option>' +
               '<option value="instagram_portrait">📷 인스타 (4:5)</option>' +
+              '<option value="instagram_story">📷 인스타 스토리/릴스 (9:16)</option>' +
               '<option value="threads">🧵 스레드 (1:1)</option>' +
             '</select>' +
           '</div>' +
