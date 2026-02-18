@@ -18,14 +18,58 @@
   var _filters = { brightness: 100, contrast: 100, saturate: 100 };
 
   var FONTS = [
-    { label: '기본 고딕', value: 'sans-serif', css: 'sans-serif' },
-    { label: '나눔고딕', value: '"Nanum Gothic", sans-serif', css: 'Nanum Gothic' },
-    { label: '나눔명조', value: '"Nanum Myeongjo", serif', css: 'Nanum Myeongjo' },
-    { label: '나눔스퀘어', value: '"Nanum Square", sans-serif', css: 'Nanum Square' },
-    { label: '주아', value: '"Jua", sans-serif', css: 'Jua' },
-    { label: '블랙한산스', value: '"Black Han Sans", sans-serif', css: 'Black Han Sans' },
-    { label: 'Pretendard', value: '"Pretendard Variable", Pretendard, sans-serif', css: 'Pretendard Variable' }
+    // 기본
+    { label: '기본 고딕', value: '기본 고딕', css: null, group: '기본' },
+    { label: 'Pretendard', value: 'Pretendard', css: null, group: '기본' },
+    // 고딕 계열
+    { label: 'Noto Sans KR', value: 'Noto Sans KR', css: 'Noto+Sans+KR', group: '고딕 계열' },
+    { label: 'Gothic A1', value: 'Gothic A1', css: 'Gothic+A1', group: '고딕 계열' },
+    { label: '나눔고딕', value: 'NanumGothic', css: 'Nanum+Gothic', group: '고딕 계열' },
+    { label: '나눔스퀘어', value: 'NanumSquare', css: 'Nanum+Gothic', group: '고딕 계열' },
+    { label: '나눔바른고딕', value: 'NanumBarunGothic', css: 'Nanum+Gothic', group: '고딕 계열' },
+    // 명조 계열
+    { label: 'Noto Serif KR', value: 'Noto Serif KR', css: 'Noto+Serif+KR', group: '명조 계열' },
+    { label: '나눔명조', value: 'NanumMyeongjo', css: 'Nanum+Myeongjo', group: '명조 계열' },
+    // 디자인 폰트
+    { label: '도현', value: 'Do Hyeon', css: 'Do+Hyeon', group: '디자인 폰트' },
+    { label: '주아', value: 'Jua', css: 'Jua', group: '디자인 폰트' },
+    { label: '블랙한산스', value: 'Black Han Sans', css: 'Black+Han+Sans', group: '디자인 폰트' },
+    { label: '해바라기', value: 'Sunflower', css: 'Sunflower', group: '디자인 폰트' },
+    { label: 'Stylish', value: 'Stylish', css: 'Stylish', group: '디자인 폰트' },
+    // 손글씨 / 캐주얼
+    { label: '감자꽃', value: 'Gamja Flower', css: 'Gamja+Flower', group: '손글씨 / 캐주얼' },
+    { label: '개구', value: 'Gaegu', css: 'Gaegu', group: '손글씨 / 캐주얼' },
+    { label: '하이멜로디', value: 'Hi Melody', css: 'Hi+Melody', group: '손글씨 / 캐주얼' },
+    { label: '푸어스토리', value: 'Poor Story', css: 'Poor+Story', group: '손글씨 / 캐주얼' },
+    { label: '연성', value: 'Yeon Sung', css: 'Yeon+Sung', group: '손글씨 / 캐주얼' },
+    { label: '동해독도', value: 'East Sea Dokdo', css: 'East+Sea+Dokdo', group: '손글씨 / 캐주얼' }
   ];
+
+  var _loadedFonts = {};
+
+  function _loadFont(fontValue) {
+    if (fontValue === '기본 고딕' || _loadedFonts[fontValue]) return;
+    var font = FONTS.find(function(f) { return f.value === fontValue; });
+    if (!font) return;
+    if (fontValue === 'Pretendard') {
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css';
+      document.head.appendChild(link);
+    } else if (font.css) {
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://fonts.googleapis.com/css2?family=' + font.css + ':wght@300;400;500;600;700&display=swap';
+      document.head.appendChild(link);
+    }
+    _loadedFonts[fontValue] = true;
+  }
+
+  function _getFontCss(fontValue) {
+    if (fontValue === '기본 고딕') return 'sans-serif';
+    if (fontValue === 'Pretendard') return '"Pretendard Variable", Pretendard, sans-serif';
+    return '"' + fontValue + '", sans-serif';
+  }
 
   window.ImageEditor = { open: open, close: close, addTextLayer: addTextLayer };
 
@@ -40,8 +84,8 @@
       y: opts.y || (25 + _textOverlays.length * 15),
       shadow: true,
       shadowStrength: 5,
-      fontFamily: FONTS[0].value,
-      fontIndex: 0,
+      fontFamily: _getFontCss(FONTS[0].value),
+      fontIndex: 0, fontValue: FONTS[0].value,
       fontWeight: opts.fontWeight || 700,
       bgEnabled: false,
       bgColorRGB: '0,0,0',
@@ -261,7 +305,7 @@
       text: defaultText, fontSize: 24, color: '#ffffff',
       x: 50, y: 25 + (_textOverlays.length * 15),
       shadow: true, shadowStrength: 5,
-      fontFamily: FONTS[0].value, fontIndex: 0,
+      fontFamily: _getFontCss(FONTS[0].value), fontIndex: 0, fontValue: FONTS[0].value,
       fontWeight: 700,
       bgEnabled: false, bgColorRGB: '0,0,0', bgOpacity: 60,
       backgroundColor: 'rgba(0,0,0,0.6)'
@@ -302,9 +346,18 @@
     }
     var ov = _textOverlays[_activeOverlayIndex] || _textOverlays[0];
     var idx = _activeOverlayIndex >= 0 ? _activeOverlayIndex : 0;
-    var fontOpts = FONTS.map(function (f, fi) {
-      return '<option value="' + fi + '"' + (ov.fontIndex === fi ? ' selected' : '') + ' style="font-family:' + f.value + '">' + f.label + '</option>';
-    }).join('');
+    // 그룹화된 폰트 옵션 생성
+    var fontOpts = '';
+    var currentGroup = '';
+    FONTS.forEach(function (f, fi) {
+      if (f.group !== currentGroup) {
+        if (currentGroup) fontOpts += '</optgroup>';
+        fontOpts += '<optgroup label="' + f.group + '">';
+        currentGroup = f.group;
+      }
+      fontOpts += '<option value="' + fi + '"' + (ov.fontIndex === fi ? ' selected' : '') + ' style="font-family:' + _getFontCss(f.value) + '">' + f.label + '</option>';
+    });
+    if (currentGroup) fontOpts += '</optgroup>';
 
     // 24색 컬러 프리셋
     var COLORS_24 = [
@@ -464,10 +517,16 @@
   // ── 폰트 ──
   window.ImageEditor._setFont = function (idx, fi) {
     if (_textOverlays[idx] && FONTS[fi]) {
-      _textOverlays[idx].fontFamily = FONTS[fi].value;
+      var font = FONTS[fi];
+      _textOverlays[idx].fontValue = font.value;
+      _textOverlays[idx].fontFamily = _getFontCss(font.value);
       _textOverlays[idx].fontIndex = fi;
-      _renderTextControls();
-      _renderTextPreview();
+      _loadFont(font.value);
+      // 폰트 로딩 완료 후 재렌더링
+      document.fonts.ready.then(function() {
+        _renderTextControls();
+        _renderTextPreview();
+      });
     }
   };
 
@@ -620,7 +679,7 @@
       // 배경 반투명 박스 (사용자 지정 색상 + 투명도)
       if (ov.bgEnabled) {
         ctx.save();
-        ctx.font = (ov.fontWeight || 700) + ' ' + fontSize + 'px ' + ov.fontFamily;
+        ctx.font = (ov.fontWeight || 700) + ' ' + fontSize + 'px ' + (ov.fontFamily || _getFontCss(ov.fontValue || '기본 고딕'));
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         var metrics = ctx.measureText(ov.text);
@@ -648,7 +707,7 @@
 
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.font = (ov.fontWeight || 700) + ' ' + fontSize + 'px ' + ov.fontFamily;
+      ctx.font = (ov.fontWeight || 700) + ' ' + fontSize + 'px ' + (ov.fontFamily || _getFontCss(ov.fontValue || '기본 고딕'));
 
       if (ov.shadow) {
         var s = ov.shadowStrength || 5;

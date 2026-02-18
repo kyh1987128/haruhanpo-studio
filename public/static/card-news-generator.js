@@ -152,7 +152,9 @@ window.CardNewsGenerator = {
       var roleLabel = slide.role === 'cover' ? '📌 표지' : slide.role === 'cta' ? '📢 CTA' : '📄 ' + (i + 1) + '/' + data.slides.length;
       return '<div class="relative group rounded-lg overflow-hidden border shadow-sm cursor-pointer" ' +
         'onclick="CardNewsGenerator._editSlide(\'' + data.groupId + '\', ' + i + ')">' +
-        '<img src="data:image/png;base64,' + slide.image + '" class="w-full aspect-square object-cover">' +
+        '<div class="w-full max-h-[200px] bg-gray-100 overflow-hidden flex items-center justify-center">' +
+        '<img src="data:image/png;base64,' + slide.image + '" class="w-full h-full object-contain">' +
+        '</div>' +
         '<div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white p-2">' +
           '<p class="text-[10px] font-medium">' + roleLabel + '</p>' +
           '<p class="text-[10px] truncate">' + (slide.text_overlay || '') + '</p>' +

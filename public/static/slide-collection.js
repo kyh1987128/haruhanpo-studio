@@ -82,7 +82,9 @@
     var displaySlides = _showAll ? _slides : _slides.slice(0, 4);
     grid.innerHTML = displaySlides.map(function (s, i) {
       return '<div class="relative group rounded-lg overflow-hidden border border-gray-200 bg-white">' +
-        '<img src="' + s.image + '" alt="' + s.title + '" class="w-full h-20 object-cover cursor-pointer" onclick="window.SlideCollection.edit(' + i + ')">' +
+        '<div class="w-full max-h-[200px] bg-gray-100 rounded-t-lg overflow-hidden flex items-center justify-center" onclick="window.SlideCollection.edit(' + i + ')" style="cursor:pointer">' +
+          '<img src="' + s.image + '" alt="' + s.title + '" class="w-full h-full object-contain">' +
+        '</div>' +
         '<div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">' +
           '<button onclick="event.stopPropagation();window.SlideCollection.edit(' + i + ')" class="px-1 py-0.5 text-[8px] bg-white/90 text-purple-600 rounded font-bold"><i class="fas fa-edit"></i></button>' +
           '<button onclick="event.stopPropagation();window.SlideCollection.download(' + i + ')" class="px-1 py-0.5 text-[8px] bg-white/90 text-blue-600 rounded font-bold"><i class="fas fa-download"></i></button>' +
