@@ -1308,8 +1308,19 @@ export function youtubeAnalyzerTemplate() {
               </button>
             </div>
 
+            <!-- 불러오기 버튼 (초기 상태) -->
+            <div id="trendLoadArea" class="flex flex-col items-center justify-center py-16">
+              <i class="fas fa-fire text-5xl text-orange-300 mb-4"></i>
+              <p class="text-gray-500 text-sm mb-4">인기 영상 데이터를 불러오려면 아래 버튼을 클릭하세요</p>
+              <button id="trendLoadBtn" onclick="loadTrendWithCredit()"
+                class="px-6 py-3 bg-gradient-to-r from-orange-400 to-red-400 text-white rounded-lg font-medium hover:from-orange-500 hover:to-red-500 transition shadow-lg">
+                🔥 인기 영상 불러오기 (1크레딧)
+              </button>
+              <p class="text-xs text-gray-400 mt-2">같은 국가 데이터는 세션 중 재사용 가능 (카테고리 전환 무료)</p>
+            </div>
+
             <!-- 로딩 상태 -->
-            <div id="videos-loading" class="text-center py-8">
+            <div id="videos-loading" class="hidden text-center py-8">
               <i class="fas fa-spinner fa-spin text-3xl text-gray-400 mb-3"></i>
               <p class="text-gray-500">인기 영상을 불러오는 중...</p>
             </div>

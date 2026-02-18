@@ -101,10 +101,17 @@ function _showTrendLoadButton() {
   const loadingEl = document.getElementById('videos-loading');
   const listEl = document.getElementById('videos-list');
   const emptyEl = document.getElementById('videos-empty');
+  const loadArea = document.getElementById('trendLoadArea');
   
   if (loadingEl) loadingEl.classList.add('hidden');
   if (listEl) listEl.classList.add('hidden');
-  if (emptyEl) {
+  if (emptyEl) emptyEl.classList.add('hidden');
+  
+  // trendLoadArea가 HTML 템플릿에 있으면 그것을 표시
+  if (loadArea) {
+    loadArea.classList.remove('hidden');
+  } else if (emptyEl) {
+    // fallback: emptyEl에 동적 삽입
     emptyEl.classList.remove('hidden');
     emptyEl.innerHTML = `
       <div class="flex flex-col items-center justify-center py-12">
@@ -122,7 +129,9 @@ function _showTrendLoadButton() {
 
 function _showTrendVideos() {
   const emptyEl = document.getElementById('videos-empty');
+  const loadArea = document.getElementById('trendLoadArea');
   if (emptyEl) emptyEl.classList.add('hidden');
+  if (loadArea) loadArea.classList.add('hidden');
 }
 
 /**
@@ -191,6 +200,10 @@ async function loadAllTrendData(regionCode) {
   const listEl = document.getElementById('videos-list');
   const emptyEl = document.getElementById('videos-empty');
   const updateEl = document.getElementById('videos-last-update');
+  
+  // trendLoadArea 숨기기
+  const loadArea = document.getElementById('trendLoadArea');
+  if (loadArea) loadArea.classList.add('hidden');
   
   // 로딩 UI 표시
   if (loadingEl) loadingEl.classList.remove('hidden');
@@ -653,3 +666,10 @@ function escapeHtml(text) {
 }
 
 console.log('✅ [YouTube Trends] 다국가 캐시 기반 버전 로드 완료');
+
+// window 명시적 노출 (다른 스크립트에서 접근 가능하도록)
+window.loadTrendWithCredit = loadTrendWithCredit;
+window.initTrendsInsights = initTrendsInsights;
+window.loadTrendVideos = loadTrendVideos;
+window.renderTrendVideos = renderTrendVideos;
+window.updateTrendDetailPanel = updateTrendDetailPanel;

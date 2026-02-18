@@ -5826,6 +5826,27 @@ async function handleChannelSearch() {
     return;
   }
   
+  // ── 크레딧 차감 (1크레딧) ──
+  try {
+    const creditRes = await fetch('/api/credits/deduct', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: 1, feature: 'youtube_channel_search', user_id: window.currentUser?.id })
+    });
+    const creditData = await creditRes.json();
+    if (!creditData.success) {
+      alert(creditData.error || '크레딧이 부족합니다.');
+      return;
+    }
+    if (creditData.free_credits !== undefined) {
+      window.dispatchEvent(new CustomEvent('userUpdated', { detail: { ...window.currentUser, free_credits: creditData.free_credits, paid_credits: creditData.paid_credits } }));
+    }
+  } catch (e) {
+    console.error('크레딧 차감 오류:', e);
+    alert('크레딧 확인 중 오류가 발생했습니다.');
+    return;
+  }
+  
   console.log(`🔍 [채널 검색] Channel ID: ${channelId}`);
   
   const btn = document.getElementById('market-search-btn');
@@ -5881,6 +5902,27 @@ async function handleCategorySearch() {
   
   if (!categoryId) {
     alert('⚠️ 카테고리를 선택해주세요.');
+    return;
+  }
+  
+  // ── 크레딧 차감 (1크레딧) ──
+  try {
+    const creditRes = await fetch('/api/credits/deduct', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: 1, feature: 'youtube_category_search', user_id: window.currentUser?.id })
+    });
+    const creditData = await creditRes.json();
+    if (!creditData.success) {
+      alert(creditData.error || '크레딧이 부족합니다.');
+      return;
+    }
+    if (creditData.free_credits !== undefined) {
+      window.dispatchEvent(new CustomEvent('userUpdated', { detail: { ...window.currentUser, free_credits: creditData.free_credits, paid_credits: creditData.paid_credits } }));
+    }
+  } catch (e) {
+    console.error('크레딧 차감 오류:', e);
+    alert('크레딧 확인 중 오류가 발생했습니다.');
     return;
   }
   

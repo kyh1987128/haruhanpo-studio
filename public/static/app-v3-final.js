@@ -2206,8 +2206,8 @@ function renderImagePreview(index) {
   const images = contentBlocks[index].images || [];
   
   container.innerHTML = images.map((img, imgIdx) => `
-    <div class="relative group">
-      <img src="${img.base64}" class="w-full h-20 object-cover rounded-lg border-2 border-gray-200" />
+    <div class="relative group w-full max-h-[200px] bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center border-2 border-gray-200">
+      <img src="${img.base64}" class="w-full h-full object-contain" />
       <button
         type="button"
         onclick="removeContentImage(${index}, ${imgIdx})"
