@@ -1,6 +1,6 @@
 /**
- * AI 이미지 생성 모듈 v1.5
- * 버튼 항상 활성 / 키워드 4단계 우선순위 / 자동로딩 없음
+ * AI 이미지 생성 모듈 v2.0
+ * 버튼 항상 활성 / 키워드 4단계 우선순위 / 자동로딩 없음 / 3크레딧
  */
 (function () {
   'use strict';
@@ -97,7 +97,7 @@
         </div>\
         <button id="aiGenBtn" onclick="window.ImageGenerator._generate()"\
                 class="w-full py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-lg font-bold text-xs disabled:opacity-50">\
-          ✨ AI 이미지 생성 (2크레딧)\
+          ✨ AI 이미지 생성 (3크레딧)\
         </button>\
         <p class="text-[9px] text-gray-400 text-center">생성 버튼을 눌러야 크레딧이 차감됩니다</p>\
         <div class="border-t border-gray-200 pt-2">\
@@ -125,8 +125,8 @@
     }
 
     var totalCredits = (user.free_credits || 0) + (user.paid_credits || 0);
-    if (totalCredits < 2) {
-      if (confirm('크레딧이 부족합니다 (2크레딧 필요). 충전 페이지로 이동하시겠습니까?')) {
+    if (totalCredits < 3) {
+      if (confirm('크레딧이 부족합니다 (3크레딧 필요). 충전 페이지로 이동하시겠습니까?')) {
         location.href = '/payment';
       }
       return;
@@ -162,7 +162,7 @@
         });
         if (data.cost_info) _syncCredits(data.cost_info);
         _renderHistory();
-        _showToast('✅ AI 이미지가 생성되었습니다! (2크레딧 차감)');
+        _showToast('✅ AI 이미지가 생성되었습니다! (3크레딧 차감)');
       } else {
         var errMsg = data.error || 'AI 이미지 생성에 실패했습니다';
         if (data.refunded) {
@@ -220,6 +220,7 @@
           '<div class="flex gap-1 mt-1">' +
             '<button onclick="window.ImageGenerator._openEditor(' + i + ')" class="px-1.5 py-0.5 text-[9px] bg-teal-500 text-white rounded font-bold"><i class="fas fa-crop-alt mr-0.5"></i>편집</button>' +
             '<button onclick="window.ImageGenerator._download(' + i + ')" class="px-1.5 py-0.5 text-[9px] bg-gray-200 text-gray-600 rounded font-bold"><i class="fas fa-download mr-0.5"></i>저장</button>' +
+            '<button onclick="window.ImageGenerator._addToSlides(' + i + ')" class="px-1.5 py-0.5 text-[9px] bg-indigo-500 text-white rounded font-bold">+ 장표</button>' +
           '</div></div></div></div>';
     }).join('');
   }
@@ -252,11 +253,16 @@
       btn.style.cursor = 'not-allowed';
     } else {
       btn.disabled = false;
-      btn.textContent = btn.dataset.originalText || '✨ AI 이미지 생성 (2크레딧)';
+      btn.textContent = btn.dataset.originalText || '✨ AI 이미지 생성 (3크레딧)';
       btn.style.opacity = '1';
       btn.style.cursor = 'pointer';
     }
   }
+
+  window.ImageGenerator._addToSlides = function (index) {
+    var item = _history[index];
+    if (item && window.SlideCollection) window.SlideCollection.add(item.image, item.keyword, 'aigen');
+  };
 
   window.ImageGenerator._generate = _generate;
 })();

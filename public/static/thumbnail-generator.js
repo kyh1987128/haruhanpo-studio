@@ -1,6 +1,6 @@
 /**
- * AI 썸네일 생성 모듈 v1.1
- * 콘텐츠 기반 플랫폼 최적화 썸네일 생성 (3크레딧)
+ * AI 썸네일 생성 모듈 v2.0
+ * 콘텐츠 기반 플랫폼 최적화 썸네일 생성 (3크레딧) + 자동 텍스트 레이어
  */
 (function () {
   'use strict';
@@ -183,11 +183,37 @@
       if (data.success && data.image) {
         _history.unshift({
           image: data.image, platform: platform, content: content.substring(0, 50),
-          timestamp: new Date().toLocaleTimeString('ko-KR')
+          timestamp: new Date().toLocaleTimeString('ko-KR'),
+          suggested_texts: data.suggested_texts || data.text_lines || [],
+          text_colors: data.text_colors || ['#FFFFFF', '#FFD700'],
+          layout: data.layout || 'center'
         });
         if (data.cost_info) _syncCredits(data.cost_info);
         _renderHistory();
         _showToast('✅ AI 썸네일이 생성되었습니다! (3크레딧 차감)');
+        
+        // 자동으로 에디터 열면서 텍스트 레이어 추가
+        var lastItem = _history[0];
+        if (window.ImageEditor) {
+          window.ImageEditor.open(lastItem.image, lastItem.content, '', 'thumbnail');
+          // addTextLayer가 있으면 suggested_texts 자동 추가
+          if (lastItem.suggested_texts && lastItem.suggested_texts.length > 0 && window.ImageEditor.addTextLayer) {
+            var colors = lastItem.text_colors || ['#FFFFFF', '#FFD700'];
+            var isBottom = (lastItem.layout || '').toLowerCase().includes('bottom');
+            var isTop = (lastItem.layout || '').toLowerCase().includes('top');
+            lastItem.suggested_texts.forEach(function(text, i) {
+              var yPos = isTop ? (20 + i * 15) : isBottom ? (70 + i * 15) : (40 + i * 15);
+              window.ImageEditor.addTextLayer({
+                text: text,
+                fontSize: i === 0 ? 48 : 32,
+                fontWeight: i === 0 ? 700 : 500,
+                color: colors[i] || colors[0],
+                x: 50,
+                y: yPos
+              });
+            });
+          }
+        }
       } else {
         var errMsg = data.error || 'AI 썸네일 생성에 실패했습니다';
         if (data.refunded) {
@@ -245,6 +271,7 @@
           '<div class="flex gap-1 mt-1">' +
             '<button onclick="window.ThumbnailGenerator._openEditor(' + i + ')" class="px-1.5 py-0.5 text-[9px] bg-teal-500 text-white rounded font-bold"><i class="fas fa-crop-alt mr-0.5"></i>편집</button>' +
             '<button onclick="window.ThumbnailGenerator._download(' + i + ')" class="px-1.5 py-0.5 text-[9px] bg-gray-200 text-gray-600 rounded font-bold"><i class="fas fa-download mr-0.5"></i>저장</button>' +
+            '<button onclick="window.ThumbnailGenerator._addToSlides(' + i + ')" class="px-1.5 py-0.5 text-[9px] bg-indigo-500 text-white rounded font-bold">+ 장표</button>' +
           '</div></div></div></div>';
     }).join('');
   }
@@ -282,6 +309,11 @@
       btn.style.cursor = 'pointer';
     }
   }
+
+  window.ThumbnailGenerator._addToSlides = function (index) {
+    var item = _history[index];
+    if (item && window.SlideCollection) window.SlideCollection.add(item.image, item.content, 'thumbnail');
+  };
 
   window.ThumbnailGenerator._generate = _generate;
 })();

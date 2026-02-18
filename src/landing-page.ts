@@ -11,7 +11,7 @@ export const landingPageTemplate = `
     <meta name="naver-site-verification" content="a0d894323b50af92ad799b57c3316d8b74eca14b" />
     <title>마케팅허브 AI 스튜디오 - AI로 콘텐츠 제작을 10배 빠르게</title>
     <meta name="description" content="30초 만에 9개 플랫폼 콘텐츠 자동 생성, 유튜브 AI 분석, 영상 스토리보드 제작까지. 1개 계정으로 3개 서비스 모두 이용하세요.">
-    <link href="/static/styles.css?v=2.2.1" rel="stylesheet">
+    <link href="/static/styles.css?v=3.0.0" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">

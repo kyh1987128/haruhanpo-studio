@@ -19,7 +19,7 @@ export const htmlTemplate = `
     </script>
     
     <!-- Tailwind CSS - Built by Vite -->
-    <link href="/static/styles.css?v=2.2.1" rel="stylesheet">
+    <link href="/static/styles.css?v=3.0.0" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     
     <!-- FullCalendar CSS -->
@@ -531,7 +531,7 @@ export const htmlTemplate = `
                     <button id="aiImageGenBtn" class="img-tool-btn" onclick="window.ImageGenerator && window.ImageGenerator.open()">
                         <i class="fas fa-magic text-lg text-purple-600"></i>
                         <span class="text-xs mt-1 font-semibold text-gray-700">AI 이미지 생성</span>
-                        <span class="text-[9px] text-orange-500 font-bold">2 크레딧</span>
+                        <span class="text-[9px] text-orange-500 font-bold">3 크레딧</span>
                     </button>
                     <button id="aiThumbnailGenBtn" class="img-tool-btn" onclick="window.ThumbnailGenerator && window.ThumbnailGenerator.open()">
                         <i class="fas fa-image text-lg text-pink-600"></i>
@@ -556,6 +556,31 @@ export const htmlTemplate = `
                     <div id="tabContentEditor" class="hidden">
                         <!-- image-editor.js가 여기에 렌더링 -->
                     </div>
+                </div>
+            </div>
+
+            <!-- 장표 컬렉션 패널 -->
+            <div id="slideCollectionPanel" class="mb-6">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-layer-group text-indigo-500"></i>
+                        장표 컬렉션 <span id="slideCollectionCount" class="text-sm font-normal text-gray-400">0</span>장
+                    </h3>
+                    <div class="flex gap-1">
+                        <button onclick="window.SlideCollection && window.SlideCollection.downloadAll()" class="px-2 py-1 text-[9px] bg-indigo-500 text-white rounded font-bold hover:bg-indigo-600">
+                            <i class="fas fa-download mr-0.5"></i>전체 다운로드
+                        </button>
+                        <button onclick="window.SlideCollection && window.SlideCollection.clearAll()" class="px-2 py-1 text-[9px] bg-gray-200 text-gray-600 rounded font-bold hover:bg-gray-300">
+                            <i class="fas fa-trash mr-0.5"></i>전체 삭제
+                        </button>
+                    </div>
+                </div>
+                <div id="slideCollectionGrid" class="grid grid-cols-2 gap-2"></div>
+                <div class="text-center mt-2">
+                    <button id="slideCollectionMore" class="hidden w-full py-1.5 border border-dashed border-gray-300 rounded-lg text-[10px] text-gray-500 hover:border-indigo-400 hover:text-indigo-500"
+                            onclick="window.SlideCollection && window.SlideCollection.showAll()">
+                        📋 전체 보기
+                    </button>
                 </div>
             </div>
             
@@ -2159,7 +2184,7 @@ export const htmlTemplate = `
     </div><!-- layout-container -->
     
     <!-- JavaScript -->
-    <script src="/static/i18n.js?v=2.2.1"></script>
+    <script src="/static/i18n.js?v=3.0.0"></script>
     
     <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
@@ -2168,18 +2193,18 @@ export const htmlTemplate = `
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ko.js"></script>
     
-    <script src="/static/app-v3-final.js?v=2.2.1"></script>
-    <script src="/static/keyword-analysis.js?v=2.2.1"></script>
-    <script src="/static/keyword-extended.js?v=2.2.1"></script>
+    <script src="/static/app-v3-final.js?v=3.0.0"></script>
+    <script src="/static/keyword-analysis.js?v=3.0.0"></script>
+    <script src="/static/keyword-extended.js?v=3.0.0"></script>
     
     <!-- 온보딩 시스템 로드 -->
-    <script src="/static/onboarding-integration.js?v=2.2.1"></script>
+    <script src="/static/onboarding-integration.js?v=3.0.0"></script>
     
     <!-- 스마트 추천 시스템 로드 -->
-    <script src="/static/smart-recommendations.js?v=2.2.1"></script>
+    <script src="/static/smart-recommendations.js?v=3.0.0"></script>
     
     <!-- 자동 저장 및 이어서 작업하기 시스템 로드 -->
-    <script src="/static/auto-save.js?v=2.2.1"></script>
+    <script src="/static/auto-save.js?v=3.0.0"></script>
     
     <!-- Cropper.js CDN (이미지 크롭 에디터) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css">
@@ -2192,10 +2217,11 @@ export const htmlTemplate = `
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
     
     <!-- 이미지 도구 모듈 -->
-    <script src="/static/image-search.js?v=2.2.1"></script>
-    <script src="/static/image-generator.js?v=2.2.1"></script>
-    <script src="/static/image-editor.js?v=2.2.1"></script>
-    <script src="/static/thumbnail-generator.js?v=2.2.1"></script>
+    <script src="/static/image-search.js?v=3.0.0"></script>
+    <script src="/static/image-generator.js?v=3.0.0"></script>
+    <script src="/static/image-editor.js?v=3.0.0"></script>
+    <script src="/static/thumbnail-generator.js?v=3.0.0"></script>
+    <script src="/static/slide-collection.js?v=3.0.0"></script>
     
     <script>
       // ========================================

@@ -27,7 +27,32 @@
     { label: 'Pretendard', value: '"Pretendard Variable", Pretendard, sans-serif', css: 'Pretendard Variable' }
   ];
 
-  window.ImageEditor = { open: open, close: close };
+  window.ImageEditor = { open: open, close: close, addTextLayer: addTextLayer };
+
+  // ── 외부에서 텍스트 레이어 추가 (썸네일 등에서 호출) ──
+  function addTextLayer(opts) {
+    if (!opts || !opts.text) return;
+    _textOverlays.push({
+      text: opts.text,
+      fontSize: opts.fontSize || 24,
+      color: opts.color || '#ffffff',
+      x: opts.x || 50,
+      y: opts.y || (25 + _textOverlays.length * 15),
+      shadow: true,
+      shadowStrength: 5,
+      fontFamily: FONTS[0].value,
+      fontIndex: 0,
+      fontWeight: opts.fontWeight || 700,
+      bgEnabled: false,
+      bgColorRGB: '0,0,0',
+      bgOpacity: 60,
+      backgroundColor: 'rgba(0,0,0,0.6)'
+    });
+    _activeOverlayIndex = _textOverlays.length - 1;
+    _renderTextList();
+    _renderTextControls();
+    _renderTextPreview();
+  }
 
   function open(imageUrl, alt, keyword, source) {
     _imageUrl = imageUrl;
@@ -85,6 +110,9 @@
             <button id="editorClipboardBtn" onclick="window.ImageEditor._copyClipboard()" class="px-2 py-0.5 text-[9px] bg-blue-500 text-white rounded font-bold">\
               <i class="fas fa-copy mr-0.5"></i>복사\
             </button>\
+            <button onclick="window.ImageEditor._addToSlides()" class="px-2 py-0.5 text-[9px] bg-indigo-500 text-white rounded font-bold">\
+              + 장표\
+            </button>\
           </div>\
         </div>\
         <!-- 비율 버튼 -->\
@@ -99,6 +127,31 @@
         <div class="relative bg-gray-900 rounded-lg overflow-hidden flex-shrink-0" style="height:340px;">\
           <div id="editorTextPreview" class="absolute inset-0 pointer-events-none z-10"></div>\
           <img id="editorImage" src="" alt="" class="block w-full h-full" style="object-fit:contain;">\
+        </div>\
+        <!-- 이미지 교체 -->\
+        <div class="mt-1 mb-1">\
+          <button onclick="window.ImageEditor._showReplacePanel()" class="w-full py-1.5 border border-dashed border-gray-300 rounded-lg text-[10px] text-gray-500 hover:border-purple-400 hover:text-purple-500 transition-colors">\
+            <i class="fas fa-exchange-alt mr-1"></i>이미지 교체 (업로드 / 검색)\
+          </button>\
+          <input type="file" id="editorReplaceFile" accept="image/*" class="hidden" onchange="window.ImageEditor._onReplaceFileSelected(this)">\
+          <div id="editorReplacePanel" class="hidden mt-1 border border-gray-200 rounded-lg p-2">\
+            <div class="flex gap-1 mb-2">\
+              <button onclick="window.ImageEditor._switchImageTab(\'upload\')" class="replace-tab-btn px-2 py-0.5 text-[9px] rounded font-bold bg-purple-100 text-purple-700 border border-purple-300">📤 업로드</button>\
+              <button onclick="window.ImageEditor._switchImageTab(\'search\')" class="replace-tab-btn px-2 py-0.5 text-[9px] rounded font-bold bg-gray-100 text-gray-500 border border-gray-200">🔍 검색</button>\
+            </div>\
+            <div id="replaceTabUpload">\
+              <button onclick="document.getElementById(\'editorReplaceFile\').click()" class="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-[10px] text-gray-400 hover:border-purple-400 hover:text-purple-500">\
+                <i class="fas fa-cloud-upload-alt mr-1"></i>파일 선택 또는 드래그\
+              </button>\
+            </div>\
+            <div id="replaceTabSearch" class="hidden">\
+              <div class="flex gap-1">\
+                <input type="text" id="replaceSearchKeyword" placeholder="영문 키워드 입력" class="flex-1 px-2 py-1 border rounded text-[10px] focus:ring-1 focus:ring-purple-400 focus:outline-none">\
+                <button onclick="window.ImageEditor._searchReplaceImages()" class="px-2 py-1 text-[9px] bg-teal-500 text-white rounded font-bold">검색</button>\
+              </div>\
+              <div id="replaceSearchGrid" class="grid grid-cols-4 gap-1 mt-1"></div>\
+            </div>\
+          </div>\
         </div>\
         <!-- 필터 슬라이더 (이미지 아래, 간격 개선) -->\
         <div class="mt-2 mb-2 space-y-2">\
@@ -209,6 +262,7 @@
       x: 50, y: 25 + (_textOverlays.length * 15),
       shadow: true, shadowStrength: 5,
       fontFamily: FONTS[0].value, fontIndex: 0,
+      fontWeight: 700,
       bgEnabled: false, bgColorRGB: '0,0,0', bgOpacity: 60,
       backgroundColor: 'rgba(0,0,0,0.6)'
     });
@@ -252,19 +306,52 @@
       return '<option value="' + fi + '"' + (ov.fontIndex === fi ? ' selected' : '') + ' style="font-family:' + f.value + '">' + f.label + '</option>';
     }).join('');
 
+    // 24색 컬러 프리셋
+    var COLORS_24 = [
+      '#FFFFFF','#000000','#FF0000','#00FF00','#0000FF','#FFFF00',
+      '#FF6600','#FF00FF','#00FFFF','#800080','#008000','#800000',
+      '#FFC0CB','#FFD700','#FF4500','#1E90FF','#32CD32','#FF69B4',
+      '#4B0082','#2F4F4F','#DC143C','#00CED1','#FF8C00','#7B68EE'
+    ];
+    
+    // 텍스트 색상 (24색 + hex 입력)
+    var colorBtns = COLORS_24.map(function(hex) {
+      return '<button onclick="window.ImageEditor._updateText(' + idx + ',\'color\',\'' + hex + '\')" class="w-6 h-6 rounded-full border-2 cursor-pointer ' +
+        (ov.color === hex ? 'border-purple-500 ring-2 ring-purple-300' : 'border-gray-300') + '" style="background:' + hex + '"></button>';
+    }).join('');
+    
+    var colorHtml =
+      '<div class="flex gap-1 items-center flex-wrap">' +
+        '<span class="text-[9px] text-gray-400 flex-shrink-0 w-full mb-0.5">텍스트색</span>' +
+        colorBtns +
+      '</div>' +
+      '<div class="flex gap-1 items-center mt-1">' +
+        '<span class="text-[9px] text-gray-400 flex-shrink-0">Hex</span>' +
+        '<input type="text" id="textColorHex_' + idx + '" value="' + ov.color + '" maxlength="7" placeholder="#RRGGBB" class="flex-1 px-1.5 py-0.5 border rounded text-[10px] font-mono w-16 focus:ring-1 focus:ring-purple-400 focus:outline-none">' +
+        '<button onclick="window.ImageEditor._applyHexColor(' + idx + ',\'text\')" class="px-1.5 py-0.5 text-[9px] bg-purple-500 text-white rounded font-bold">적용</button>' +
+        '<input type="color" value="' + ov.color + '" onchange="window.ImageEditor._updateText(' + idx + ',\'color\',this.value)" class="w-6 h-6 rounded cursor-pointer border-0 p-0 flex-shrink-0">' +
+      '</div>';
+
     // 배경 옵션 HTML (bgEnabled일 때만 보임)
     var bgOptsHtml = '';
     if (ov.bgEnabled) {
+      var bgColorBtns = COLORS_24.map(function(hex) {
+        var rgb = _hexToRgb(hex);
+        return '<button onclick="window.ImageEditor._setBgColor(' + idx + ',\'' + rgb + '\')" class="w-6 h-6 rounded-full border-2 cursor-pointer ' +
+          (ov.bgColorRGB === rgb ? 'border-purple-500 ring-2 ring-purple-300' : 'border-gray-300') + '" style="background:' + hex + '"></button>';
+      }).join('');
+      
       bgOptsHtml =
         '<div class="mt-2 space-y-2">' +
           '<div class="flex gap-1 items-center flex-wrap">' +
-            '<span class="text-[9px] text-purple-500 flex-shrink-0">색상</span>' +
-            '<button onclick="window.ImageEditor._setBgColor(' + idx + ',\'0,0,0\')" class="w-5 h-5 rounded-full border-2 cursor-pointer ' + (ov.bgColorRGB === '0,0,0' ? 'border-purple-500' : 'border-gray-300') + '" style="background:#000"></button>' +
-            '<button onclick="window.ImageEditor._setBgColor(' + idx + ',\'255,255,255\')" class="w-5 h-5 rounded-full border-2 cursor-pointer ' + (ov.bgColorRGB === '255,255,255' ? 'border-purple-500' : 'border-gray-300') + '" style="background:#fff"></button>' +
-            '<button onclick="window.ImageEditor._setBgColor(' + idx + ',\'30,58,138\')" class="w-5 h-5 rounded-full border-2 cursor-pointer ' + (ov.bgColorRGB === '30,58,138' ? 'border-purple-500' : 'border-gray-300') + '" style="background:#1e3a8a"></button>' +
-            '<button onclick="window.ImageEditor._setBgColor(' + idx + ',\'220,38,38\')" class="w-5 h-5 rounded-full border-2 cursor-pointer ' + (ov.bgColorRGB === '220,38,38' ? 'border-purple-500' : 'border-gray-300') + '" style="background:#dc2626"></button>' +
-            '<button onclick="window.ImageEditor._setBgColor(' + idx + ',\'21,128,61\')" class="w-5 h-5 rounded-full border-2 cursor-pointer ' + (ov.bgColorRGB === '21,128,61' ? 'border-purple-500' : 'border-gray-300') + '" style="background:#15803d"></button>' +
-            '<input type="color" value="' + _rgbToHex(ov.bgColorRGB) + '" onchange="window.ImageEditor._setBgColorHex(' + idx + ',this.value)" class="w-5 h-5 rounded cursor-pointer border-0 p-0">' +
+            '<span class="text-[9px] text-purple-500 flex-shrink-0 w-full mb-0.5">배경색</span>' +
+            bgColorBtns +
+          '</div>' +
+          '<div class="flex gap-1 items-center mt-1">' +
+            '<span class="text-[9px] text-purple-500 flex-shrink-0">Hex</span>' +
+            '<input type="text" id="bgColorHex_' + idx + '" value="' + _rgbToHex(ov.bgColorRGB) + '" maxlength="7" placeholder="#RRGGBB" class="flex-1 px-1.5 py-0.5 border rounded text-[10px] font-mono w-16 focus:ring-1 focus:ring-purple-400 focus:outline-none">' +
+            '<button onclick="window.ImageEditor._applyHexColor(' + idx + ',\'bg\')" class="px-1.5 py-0.5 text-[9px] bg-purple-500 text-white rounded font-bold">적용</button>' +
+            '<input type="color" value="' + _rgbToHex(ov.bgColorRGB) + '" onchange="window.ImageEditor._setBgColorHex(' + idx + ',this.value)" class="w-6 h-6 rounded cursor-pointer border-0 p-0 flex-shrink-0">' +
           '</div>' +
           '<div class="flex items-center gap-1">' +
             '<span class="text-[9px] text-purple-500 flex-shrink-0">불투명도</span>' +
@@ -285,6 +372,20 @@
         '</div>';
     }
 
+    // 폰트 굵기 5단계
+    var WEIGHTS = [
+      { label: 'L', value: 300 },
+      { label: 'N', value: 400 },
+      { label: 'M', value: 500 },
+      { label: 'SB', value: 600 },
+      { label: 'B', value: 700 }
+    ];
+    var weightBtns = WEIGHTS.map(function(w) {
+      var active = (ov.fontWeight || 700) === w.value;
+      return '<button onclick="window.ImageEditor._setFontWeight(' + idx + ',' + w.value + ')" class="px-1.5 py-0.5 text-[9px] rounded font-bold border ' +
+        (active ? 'bg-purple-500 text-white border-purple-500' : 'bg-white text-gray-600 border-gray-300 hover:bg-purple-50') + '">' + w.label + '</button>';
+    }).join('');
+
     panel.innerHTML =
       '<div class="space-y-3">' +
         // 텍스트 입력 + 삭제
@@ -299,18 +400,15 @@
           '<input type="range" min="10" max="60" value="' + ov.fontSize + '" oninput="window.ImageEditor._updateText(' + idx + ',\'fontSize\',parseInt(this.value))" class="w-16 h-1.5 accent-purple-500 flex-shrink-0">' +
           '<span class="text-[9px] text-gray-500 w-5 flex-shrink-0">' + ov.fontSize + '</span>' +
         '</div>' +
+        // 폰트 굵기
+        '<div class="flex gap-1 items-center">' +
+          '<span class="text-[9px] text-gray-400 flex-shrink-0">굵기</span>' +
+          weightBtns +
+        '</div>' +
         // 구분선
         '<div class="border-b border-gray-200"></div>' +
-        // 텍스트 색상
-        '<div class="flex gap-1 items-center flex-wrap">' +
-          '<span class="text-[9px] text-gray-400 flex-shrink-0">텍스트색</span>' +
-          '<button onclick="window.ImageEditor._updateText(' + idx + ',\'color\',\'#ffffff\')" class="w-5 h-5 rounded-full bg-white border-2 cursor-pointer ' + (ov.color === '#ffffff' ? 'border-purple-500' : 'border-gray-300') + '"></button>' +
-          '<button onclick="window.ImageEditor._updateText(' + idx + ',\'color\',\'#000000\')" class="w-5 h-5 rounded-full bg-black border-2 cursor-pointer ' + (ov.color === '#000000' ? 'border-purple-500' : 'border-gray-300') + '"></button>' +
-          '<button onclick="window.ImageEditor._updateText(' + idx + ',\'color\',\'#ef4444\')" class="w-5 h-5 rounded-full border-2 cursor-pointer ' + (ov.color === '#ef4444' ? 'border-purple-500' : 'border-gray-300') + '" style="background:#ef4444"></button>' +
-          '<button onclick="window.ImageEditor._updateText(' + idx + ',\'color\',\'#3b82f6\')" class="w-5 h-5 rounded-full border-2 cursor-pointer ' + (ov.color === '#3b82f6' ? 'border-purple-500' : 'border-gray-300') + '" style="background:#3b82f6"></button>' +
-          '<button onclick="window.ImageEditor._updateText(' + idx + ',\'color\',\'#facc15\')" class="w-5 h-5 rounded-full border-2 cursor-pointer ' + (ov.color === '#facc15' ? 'border-purple-500' : 'border-gray-300') + '" style="background:#facc15"></button>' +
-          '<input type="color" value="' + ov.color + '" onchange="window.ImageEditor._updateText(' + idx + ',\'color\',this.value)" class="w-5 h-5 rounded cursor-pointer border-0 p-0 flex-shrink-0">' +
-        '</div>' +
+        // 텍스트 색상 (24색 + hex)
+        colorHtml +
         // 구분선
         '<div class="border-b border-gray-200"></div>' +
         // 배경 체크박스 + 색상 + 불투명도
@@ -437,7 +535,7 @@
         shadowStyle = 'text-shadow:' + off + 'px ' + off + 'px ' + blur + 'px rgba(0,0,0,' + (0.3 + s * 0.07) + '),' + (-off * 0.5) + 'px ' + (-off * 0.5) + 'px ' + (blur * 0.5) + 'px rgba(0,0,0,' + (0.1 + s * 0.03) + ');';
       }
       el.style.cssText = 'position:absolute;left:' + ov.x + '%;top:' + ov.y + '%;transform:translate(-50%,-50%);' +
-        'font-family:' + ov.fontFamily + ';font-size:' + ov.fontSize + 'px;color:' + ov.color + ';font-weight:bold;' +
+        'font-family:' + ov.fontFamily + ';font-size:' + ov.fontSize + 'px;color:' + ov.color + ';font-weight:' + (ov.fontWeight || 700) + ';' +
         'cursor:move;user-select:none;pointer-events:auto;z-index:10;white-space:nowrap;' +
         bgStyle + shadowStyle +
         (_activeOverlayIndex === i ? 'outline:2px dashed rgba(147,51,234,0.7);outline-offset:3px;' : '');
@@ -522,7 +620,7 @@
       // 배경 반투명 박스 (사용자 지정 색상 + 투명도)
       if (ov.bgEnabled) {
         ctx.save();
-        ctx.font = 'bold ' + fontSize + 'px ' + ov.fontFamily;
+        ctx.font = (ov.fontWeight || 700) + ' ' + fontSize + 'px ' + ov.fontFamily;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         var metrics = ctx.measureText(ov.text);
@@ -550,7 +648,7 @@
 
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.font = 'bold ' + fontSize + 'px ' + ov.fontFamily;
+      ctx.font = (ov.fontWeight || 700) + ' ' + fontSize + 'px ' + ov.fontFamily;
 
       if (ov.shadow) {
         var s = ov.shadowStrength || 5;
@@ -606,10 +704,112 @@
     }, 'image/png');
   };
 
+  // ── 이미지 교체 기능 ──
+  window.ImageEditor._showReplacePanel = function() {
+    var panel = document.getElementById('editorReplacePanel');
+    if (panel) panel.classList.toggle('hidden');
+  };
+  
+  window.ImageEditor._switchImageTab = function(tab) {
+    var upload = document.getElementById('replaceTabUpload');
+    var search = document.getElementById('replaceTabSearch');
+    if (upload) upload.classList.toggle('hidden', tab !== 'upload');
+    if (search) search.classList.toggle('hidden', tab !== 'search');
+    // 탭 버튼 스타일
+    document.querySelectorAll('.replace-tab-btn').forEach(function(btn) {
+      btn.className = 'replace-tab-btn px-2 py-0.5 text-[9px] rounded font-bold ' +
+        (btn.textContent.includes(tab === 'upload' ? '업로드' : '검색') ? 'bg-purple-100 text-purple-700 border border-purple-300' : 'bg-gray-100 text-gray-500 border border-gray-200');
+    });
+  };
+  
+  window.ImageEditor._onReplaceFileSelected = function(input) {
+    if (!input.files || !input.files[0]) return;
+    var file = input.files[0];
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      _imageUrl = e.target.result;
+      _initCropper();
+      var panel = document.getElementById('editorReplacePanel');
+      if (panel) panel.classList.add('hidden');
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+  };
+  
+  window.ImageEditor._searchReplaceImages = function() {
+    var input = document.getElementById('replaceSearchKeyword');
+    var grid = document.getElementById('replaceSearchGrid');
+    if (!input || !grid) return;
+    var kw = input.value.trim();
+    if (!kw) return;
+    grid.innerHTML = '<p class="col-span-4 text-center text-[9px] text-gray-400 py-2">검색 중...</p>';
+    fetch('/api/images/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keyword: kw, page: 1 })
+    }).then(function(res) { return res.json(); }).then(function(data) {
+      if (data.success && data.images && data.images.length > 0) {
+        grid.innerHTML = data.images.slice(0, 8).map(function(img) {
+          return '<div class="cursor-pointer rounded overflow-hidden border border-gray-100 hover:border-purple-400" onclick="window.ImageEditor._replaceWithUrl(\'' + img.url.replace(/'/g, "\\'") + '\')">' +
+            '<img src="' + img.thumb + '" class="w-full h-12 object-cover" loading="lazy">' +
+          '</div>';
+        }).join('');
+      } else {
+        grid.innerHTML = '<p class="col-span-4 text-center text-[9px] text-gray-400 py-2">결과 없음</p>';
+      }
+    }).catch(function() {
+      grid.innerHTML = '<p class="col-span-4 text-center text-[9px] text-red-400 py-2">오류 발생</p>';
+    });
+  };
+  
+  window.ImageEditor._replaceWithUrl = function(url) {
+    _imageUrl = url;
+    _initCropper();
+    var panel = document.getElementById('editorReplacePanel');
+    if (panel) panel.classList.add('hidden');
+  };
+
+  // ── Hex 색상 적용 ──
+  window.ImageEditor._applyHexColor = function(idx, type) {
+    if (!_textOverlays[idx]) return;
+    var inputId = type === 'bg' ? 'bgColorHex_' + idx : 'textColorHex_' + idx;
+    var input = document.getElementById(inputId);
+    if (!input) return;
+    var hex = input.value.trim();
+    if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+      alert('올바른 Hex 색상 코드를 입력해주세요 (예: #FF0000)');
+      return;
+    }
+    if (type === 'bg') {
+      window.ImageEditor._setBgColorHex(idx, hex);
+    } else {
+      window.ImageEditor._updateText(idx, 'color', hex);
+    }
+  };
+
+  // ── 폰트 굵기 설정 ──
+  window.ImageEditor._setFontWeight = function(idx, weight) {
+    if (!_textOverlays[idx]) return;
+    _textOverlays[idx].fontWeight = weight;
+    _renderTextControls();
+    _renderTextPreview();
+  };
+
   function _showToast(msg, isError) {
     if (window.showToast) window.showToast(msg, isError ? 'error' : 'success');
     else alert(msg);
   }
 
   window.ImageEditor._back = function () { close(); };
+
+  // ── 장표 컬렉션에 추가 ──
+  window.ImageEditor._addToSlides = function () {
+    if (!_cropper) { alert('이미지를 먼저 로드해주세요'); return; }
+    var canvas = _renderCanvas();
+    if (!canvas) { alert('크롭 영역을 선택해주세요'); return; }
+    var dataUrl = canvas.toDataURL('image/png');
+    if (window.SlideCollection) {
+      window.SlideCollection.add(dataUrl, _imageAlt || _keyword || '편집 이미지', 'editor');
+    }
+  };
 })();

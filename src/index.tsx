@@ -6710,7 +6710,7 @@ app.route('/', channelsApi);
 // 이미지 도구 API 라우트
 // ========================================
 
-// POST /api/images/search - 무료 이미지 검색 (Pexels 3 + Unsplash 3 + Pixabay 2 병렬)
+// POST /api/images/search - 무료 이미지 검색 (AI 번역 + Pexels + Unsplash + Pixabay 병렬)
 app.post('/api/images/search', async (c) => {
   try {
     const { keyword, page } = await c.req.json();
@@ -6722,23 +6722,65 @@ app.post('/api/images/search', async (c) => {
     const pexelsKey = c.env.PEXELS_API_KEY;
     const unsplashKey = c.env.UNSPLASH_ACCESS_KEY;
     const pixabayKey = c.env.PIXABAY_API_KEY;
+    const geminiApiKey = c.env.GEMINI_API_KEY;
     
     const pageNum = page || 1;
     
-    // 각 소스별 할당량 (최소 4장씩 요청하여 interleave 후 8장 이상 반환)
-    const pexelsCount = 4;
-    const unsplashCount = 4;
-    const pixabayCount = 4;  // API 최소값 3
-    // orientation 파라미터 제거 — 모든 방향의 이미지를 반환
+    // ── STEP 1: AI 키워드 번역 (5초 타임아웃) ──
+    let searchTerms = [keyword, keyword, keyword]; // fallback: 원본 키워드 3회
     
-    // 병렬로 3개 소스 동시 호출
-    const [pexelsResults, unsplashResults, pixabayResults] = await Promise.all([
-      // Pexels
+    if (geminiApiKey) {
+      try {
+        const proxyBase = 'https://gemini-proxy.kyh1987128.workers.dev';
+        function withTimeoutSearch<T>(promise: Promise<T>, ms: number): Promise<T> {
+          return Promise.race([
+            promise,
+            new Promise<T>((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms))
+          ]);
+        }
+        
+        const translateRes = await withTimeoutSearch(
+          fetch(`${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: `Translate the following Korean keyword into 3 different English search terms for stock photo search. Each term should capture a different aspect or synonym. Return ONLY a JSON array of 3 strings, nothing else. Example: ["sunset beach", "ocean twilight", "coastal evening"]. Keyword: "${keyword}"` }] }],
+              generationConfig: { maxOutputTokens: 100, temperature: 0.5 }
+            })
+          }),
+          5000
+        );
+        
+        if (translateRes.ok) {
+          const translateData: any = await translateRes.json();
+          let rawText = translateData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          rawText = rawText.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+          try {
+            const parsed = JSON.parse(rawText);
+            if (Array.isArray(parsed) && parsed.length >= 3) {
+              searchTerms = parsed.slice(0, 3).map((t: any) => String(t));
+              console.log(`✅ 검색 키워드 AI 번역: ${keyword} → [${searchTerms.join(', ')}]`);
+            }
+          } catch (e) {
+            console.warn('⚠️ 검색 키워드 번역 JSON 파싱 실패');
+          }
+        }
+      } catch (e: any) {
+        console.warn('⚠️ 검색 키워드 번역 타임아웃/실패:', e?.message);
+      }
+    }
+    
+    // 각 소스별 할당량 (최소 4장씩 요청하여 interleave 후 12장 이상 반환)
+    const perSourceCount = 4;
+    
+    // ── STEP 2: 병렬 검색 (Promise.allSettled로 안전하게) ──
+    const [pexelsResult, unsplashResult, pixabayResult] = await Promise.allSettled([
+      // Pexels (키워드 1)
       (async () => {
         if (!pexelsKey) return [];
         try {
           const res = await fetch(
-            `https://api.pexels.com/v1/search?query=${encodeURIComponent(keyword)}&per_page=${pexelsCount}&page=${pageNum}`,  // orientation 제거
+            `https://api.pexels.com/v1/search?query=${encodeURIComponent(searchTerms[0])}&per_page=${perSourceCount}&page=${pageNum}`,
             { headers: { 'Authorization': pexelsKey } }
           );
           if (!res.ok) return [];
@@ -6757,12 +6799,12 @@ app.post('/api/images/search', async (c) => {
           return [];
         }
       })(),
-      // Unsplash
+      // Unsplash (키워드 3) - UNSPLASH_ACCESS_KEY 사용
       (async () => {
         if (!unsplashKey) return [];
         try {
           const res = await fetch(
-            `https://api.unsplash.com/search/photos?query=${encodeURIComponent(keyword)}&per_page=${unsplashCount}&page=${pageNum}`,  // orientation 제거
+            `https://api.unsplash.com/search/photos?query=${encodeURIComponent(searchTerms[2])}&per_page=${perSourceCount}&page=${pageNum}`,
             { headers: { 'Authorization': `Client-ID ${unsplashKey}` } }
           );
           if (!res.ok) return [];
@@ -6781,12 +6823,12 @@ app.post('/api/images/search', async (c) => {
           return [];
         }
       })(),
-      // Pixabay
+      // Pixabay (키워드 2)
       (async () => {
         if (!pixabayKey) return [];
         try {
           const res = await fetch(
-            `https://pixabay.com/api/?key=${pixabayKey}&q=${encodeURIComponent(keyword)}&image_type=photo&per_page=${pixabayCount}&page=${pageNum}`  // orientation 제거
+            `https://pixabay.com/api/?key=${pixabayKey}&q=${encodeURIComponent(searchTerms[1])}&image_type=photo&per_page=${perSourceCount}&page=${pageNum}`
           );
           if (!res.ok) return [];
           const data: any = await res.json();
@@ -6806,6 +6848,11 @@ app.post('/api/images/search', async (c) => {
       })()
     ]);
     
+    // Promise.allSettled 결과 추출
+    const pexelsResults = pexelsResult.status === 'fulfilled' ? pexelsResult.value : [];
+    const unsplashResults = unsplashResult.status === 'fulfilled' ? unsplashResult.value : [];
+    const pixabayResults = pixabayResult.status === 'fulfilled' ? pixabayResult.value : [];
+    
     // 결과 합치기 (소스 섞기: pexels→unsplash→pixabay 번갈아)
     const results: any[] = [];
     const maxLen = Math.max(pexelsResults.length, unsplashResults.length, pixabayResults.length);
@@ -6815,13 +6862,13 @@ app.post('/api/images/search', async (c) => {
       if (i < pixabayResults.length) results.push(pixabayResults[i]);
     }
     
-    console.log(`✅ 이미지 검색: Pexels ${pexelsResults.length}, Unsplash ${unsplashResults.length}, Pixabay ${pixabayResults.length} → 총 ${results.length}개 (목표 10개 이상)`);
+    console.log(`✅ 이미지 검색: Pexels ${pexelsResults.length}, Unsplash ${unsplashResults.length}, Pixabay ${pixabayResults.length} → 총 ${results.length}개 (AI 번역: ${searchTerms.join(' / ')})`);
     
     return c.json({
       success: true,
       images: results,
       page: pageNum,
-      hasMore: results.length >= 6  // 6장 이상이면 더 보기 가능
+      hasMore: results.length >= 6
     });
     
   } catch (error: any) {
@@ -6849,8 +6896,8 @@ app.post('/api/images/generate-ai', async (c) => {
       return c.json({ success: false, error: 'GEMINI_API_KEY가 설정되지 않았습니다' }, 500);
     }
     
-    // ── 크레딧 차감 (2크레딧, 무료 우선) ──
-    const requiredCredits = 2;
+    // ── 크레딧 차감 (3크레딧, 무료 우선) ──
+    const requiredCredits = 3;
     
     const { data: user, error: userError } = await supabase
       .from('users')
@@ -6903,7 +6950,7 @@ app.post('/api/images/generate-ai', async (c) => {
       return c.json({ success: false, error: '크레딧 차감 실패' }, 500);
     }
     
-    console.log(`✅ AI 이미지 크레딧 차감: 무료 ${usedFree} + 유료 ${usedPaid} = ${requiredCredits}`);
+    console.log(`✅ AI 이미지 크레딧 차감: 무료 ${usedFree} + 유료 ${usedPaid} = ${requiredCredits} (3크레딧)`);
     
     // 거래 기록
     await supabase.from('credit_transactions').insert({
@@ -6914,40 +6961,75 @@ app.post('/api/images/generate-ai', async (c) => {
       description: `AI 이미지 생성: ${keyword}`
     });
     
-    // ── 영문 프롬프트 생성 (Gemini) ──
-    const styleHint = style || 'professional marketing photo';
-    const proxyBase = 'https://gemini-proxy.kyh1987128.workers.dev';
-    
-    let englishPrompt = `A high-quality ${styleHint} for: ${keyword}`;
-    
-    try {
-      const promptRes = await fetch(
-        `${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${geminiApiKey}`
-          },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: `Translate the following Korean marketing keyword into a detailed English image generation prompt. The image should be suitable for social media marketing. Keep it under 100 words. Style: ${styleHint}. Keyword: "${keyword}". Output only the English prompt, nothing else.` }] }],
-            generationConfig: { maxOutputTokens: 200, temperature: 0.7 }
-          })
-        }
-      );
-      
-      if (promptRes.ok) {
-        const promptData: any = await promptRes.json();
-        const generatedPrompt = promptData?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (generatedPrompt) {
-          englishPrompt = generatedPrompt.trim();
-        }
-      }
-    } catch (e) {
-      console.error('⚠️ 프롬프트 번역 실패, 기본 프롬프트 사용:', e);
+    // ── withTimeout 헬퍼 ──
+    function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+      return Promise.race([
+        promise,
+        new Promise<T>((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms))
+      ]);
     }
     
-    console.log(`🎨 AI 이미지 생성 프롬프트: ${englishPrompt}`);
+    // ── STEP 1: 콘텐츠 분석 (Gemini 텍스트 모델, 10초 타임아웃) ──
+    const proxyBase = 'https://gemini-proxy.kyh1987128.workers.dev';
+    const styleHint = style || 'professional marketing photo';
+    
+    let analysisResult = {
+      subject: keyword,
+      scene: 'professional studio setting',
+      mood: 'bright and inviting',
+      camera: 'eye-level shot, shallow depth of field',
+      english_prompt: `A high-quality ${styleHint} of ${keyword}. Professional studio lighting, sharp focus, vibrant colors.`
+    };
+    
+    try {
+      console.log('🔍 Step 1: 콘텐츠 분석 시작...');
+      const analysisPrompt = `You are an expert image prompt engineer. Analyze the following Korean content/keyword and create a detailed image generation prompt.
+
+CONTENT: "${keyword}"
+STYLE: ${styleHint}
+
+Return ONLY valid JSON (no markdown, no code fences):
+{
+  "subject": "main subject description in English",
+  "scene": "detailed scene/environment description",
+  "mood": "mood, atmosphere, lighting description",
+  "camera": "camera angle, lens, depth of field",
+  "english_prompt": "Complete English image generation prompt combining all elements above. Max 150 words. Must be specific, vivid, and optimized for AI image generation. Include style: ${styleHint}. Include: specific details about composition, lighting direction, color palette, textures. Do NOT include any text or typography in the scene."
+}`;
+
+      const analysisRes = await withTimeout(
+        fetch(`${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: analysisPrompt }] }],
+            generationConfig: { maxOutputTokens: 400, temperature: 0.7 }
+          })
+        }),
+        10000
+      );
+      
+      if (analysisRes.ok) {
+        const analysisData: any = await analysisRes.json();
+        let rawText = analysisData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        rawText = rawText.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+        try {
+          const parsed = JSON.parse(rawText);
+          if (parsed.english_prompt) {
+            analysisResult = { ...analysisResult, ...parsed };
+            console.log('✅ Step 1 콘텐츠 분석 성공:', analysisResult.english_prompt.substring(0, 100));
+          }
+        } catch (e) {
+          console.warn('⚠️ 분석 JSON 파싱 실패, 기본값 사용');
+        }
+      }
+    } catch (e: any) {
+      console.warn('⚠️ Step 1 분석 타임아웃/실패, 기본 프롬프트 사용:', e?.message);
+    }
+    
+    // ── STEP 2: Gemini 이미지 생성 (25초 타임아웃) ──
+    const englishPrompt = analysisResult.english_prompt + '\n\nIMPORTANT: Do NOT include any text, letters, words, numbers, watermarks, or typography in the image. The image must be purely visual with NO text elements.';
+    console.log(`🎨 Step 2: 이미지 생성 프롬프트: ${englishPrompt.substring(0, 200)}...`);
     
     // ── Gemini 2.0 Flash (이미지 생성 모드) 호출 ──
     let imageData: string | null = null;
@@ -6963,30 +7045,27 @@ app.post('/api/images/generate-ai', async (c) => {
       try {
         console.log(`🎨 Gemini 이미지 생성 시도: ${model}`);
         
-        // 25초 서버 타임아웃
-        const imgController = new AbortController();
-        const imgTimeout = setTimeout(() => imgController.abort(), 25000);
-        
-        const imagenRes = await fetch(
-          `${proxyBase}/v1beta/models/${model}:generateContent`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${geminiApiKey}`
-            },
-            body: JSON.stringify({
-              contents: [{
-                parts: [{ text: englishPrompt }]
-              }],
-              generationConfig: {
-                responseModalities: ['TEXT', 'IMAGE']
-              }
-            }),
-            signal: imgController.signal
-          }
+        const imagenRes = await withTimeout(
+          fetch(
+            `${proxyBase}/v1beta/models/${model}:generateContent`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${geminiApiKey}`
+              },
+              body: JSON.stringify({
+                contents: [{
+                  parts: [{ text: englishPrompt }]
+                }],
+                generationConfig: {
+                  responseModalities: ['TEXT', 'IMAGE']
+                }
+              })
+            }
+          ),
+          25000
         );
-        clearTimeout(imgTimeout);
         
         console.log(`🎨 ${model} 응답 상태: ${imagenRes.status}`);
         
@@ -7022,7 +7101,7 @@ app.post('/api/images/generate-ai', async (c) => {
           }
         }
       } catch (e: any) {
-        if (e?.name === 'AbortError') {
+        if (e?.message === 'TIMEOUT' || e?.name === 'AbortError') {
           lastError = `${model}: 서버 타임아웃 (25초 초과)`;
           console.error(`❌ ${lastError}`);
           continue;
@@ -7047,13 +7126,19 @@ app.post('/api/images/generate-ai', async (c) => {
         description: `AI 이미지 생성 실패 환불: ${keyword}`
       });
       
+      const isTimeout = lastError.includes('타임아웃') || lastError.includes('TIMEOUT');
+      const statusCode = isTimeout ? 504 : 500;
+      const errorMsg = isTimeout 
+        ? 'AI 생성 시간 초과. 크레딧이 환불되었습니다. 다시 시도해주세요.'
+        : (lastError || 'AI 이미지 생성에 실패했습니다. 크레딧이 환불되었습니다.');
+      
       return c.json({
         success: false,
-        error: lastError || 'AI 이미지 생성에 실패했습니다. 크레딧이 환불되었습니다.',
+        error: errorMsg,
         refunded: true,
         free_credits: user.free_credits || 0,
         paid_credits: user.paid_credits || 0
-      }, 500);
+      }, statusCode);
     }
     
     // 크레딧 변동 이벤트 정보
@@ -7230,8 +7315,13 @@ app.post('/api/images/generate-thumbnail', async (c) => {
     
     try {
       console.log('🔍 Step 1: 컨셉 추출 시작...');
-      const conceptController = new AbortController();
-      const conceptTimeout = setTimeout(() => conceptController.abort(), 15000);
+      // withTimeout 헬퍼 (thumbnail 내부용)
+      function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+        return Promise.race([
+          promise,
+          new Promise<T>((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms))
+        ]);
+      }
       
       const conceptPrompt = `You are a world-class thumbnail designer who has created 10,000+ high-CTR thumbnails.
 
@@ -7260,19 +7350,20 @@ RULES:
 - Apply EVERY platform-specific strategy point to maximize CTR`;
 
 
-      const conceptRes = await fetch(
-        `${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: conceptPrompt }] }],
-            generationConfig: { maxOutputTokens: 400, temperature: 0.7 }
-          }),
-          signal: conceptController.signal
-        }
+      const conceptRes = await withTimeout(
+        fetch(
+          `${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: conceptPrompt }] }],
+              generationConfig: { maxOutputTokens: 400, temperature: 0.7 }
+            })
+          }
+        ),
+        15000
       );
-      clearTimeout(conceptTimeout);
       
       if (conceptRes.ok) {
         const conceptData: any = await conceptRes.json();
@@ -7310,7 +7401,7 @@ RULES:
         console.warn('⚠️ 컨셉 추출 API 오류:', conceptRes.status);
       }
     } catch (conceptErr: any) {
-      if (conceptErr.name === 'AbortError') {
+      if (conceptErr?.message === 'TIMEOUT' || conceptErr?.name === 'AbortError') {
         console.warn('⚠️ 컨셉 추출 타임아웃 (15초)');
       } else {
         console.error('⚠️ 컨셉 추출 실패:', conceptErr);
@@ -7370,22 +7461,21 @@ THUMBNAIL DESIGN PRINCIPLES:
     for (const model of thumbModels) {
       try {
         console.log(`🖼️ 썸네일 생성 시도: ${model}`);
-        const imgController = new AbortController();
-        const imgTimeout = setTimeout(() => imgController.abort(), 25000);
         
-        const imagenRes = await fetch(
-          `${proxyBase}/v1beta/models/${model}:generateContent`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: finalPrompt }] }],
-              generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
-            }),
-            signal: imgController.signal
-          }
+        const imagenRes = await withTimeout(
+          fetch(
+            `${proxyBase}/v1beta/models/${model}:generateContent`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: finalPrompt }] }],
+                generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+              })
+            }
+          ),
+          25000
         );
-        clearTimeout(imgTimeout);
         
         if (imagenRes.ok) {
           const imagenData: any = await imagenRes.json();
@@ -7425,7 +7515,7 @@ THUMBNAIL DESIGN PRINCIPLES:
           }
         }
       } catch (e: any) {
-        if (e.name === 'AbortError') {
+        if (e?.message === 'TIMEOUT' || e?.name === 'AbortError') {
           thumbLastError = `${model}: 이미지 생성 시간 초과 (25초)`;
           console.warn(`⚠️ ${thumbLastError}`);
         } else {
@@ -7443,19 +7533,29 @@ THUMBNAIL DESIGN PRINCIPLES:
         balance_after: (user.free_credits || 0) + (user.paid_credits || 0),
         type: 'refund', description: `AI 썸네일 생성 실패 환불`
       });
+      
+      const isTimeout = thumbLastError.includes('시간 초과') || thumbLastError.includes('TIMEOUT');
+      const statusCode = isTimeout ? 504 : 500;
+      const errorMsg = isTimeout 
+        ? 'AI 생성 시간 초과. 크레딧이 환불되었습니다. 다시 시도해주세요.'
+        : (thumbLastError || 'AI 썸네일 생성에 실패했습니다. 크레딧이 환불되었습니다.');
+      
       return c.json({ 
         success: false, 
-        error: thumbLastError || 'AI 썸네일 생성에 실패했습니다. 크레딧이 환불되었습니다.', 
+        error: errorMsg, 
         refunded: true, 
         free_credits: user.free_credits || 0, 
         paid_credits: user.paid_credits || 0 
-      }, 500);
+      }, statusCode);
     }
     
     return c.json({
       success: true,
       image: `data:image/png;base64,${imageData}`,
       text_lines: textLines,
+      suggested_texts: textLines,
+      text_colors: textColors,
+      layout: layout,
       prompt: finalPrompt.substring(0, 300),
       cost_info: { credits_used: requiredCredits, free_used: usedFree, paid_used: usedPaid, free_credits: newFree, paid_credits: newPaid, total_remaining: newFree + newPaid }
     });
