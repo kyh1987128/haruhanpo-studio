@@ -11,6 +11,13 @@ export const headerStyles = `
     z-index: 1000;
   }
 
+  /* 헤더 높이를 CSS 변수로 동적 관리 (JS에서 측정하여 설정) */
+  :root {
+    --header-height: 56px;
+    --subnav-height: 48px;
+    --total-nav-height: calc(var(--header-height) + var(--subnav-height));
+  }
+
   .header-container {
     width: 100%;
     margin: 0 auto;
@@ -410,6 +417,20 @@ export const headerScript = `
     // 초기화 시작
     console.log('🚀 [헤더] waitForSupabaseAndSync 시작');
     waitForSupabaseAndSync();
+
+    // ✅ 헤더 높이 측정 → CSS 변수 업데이트
+    function measureHeader() {
+      const headerEl = document.querySelector('.unified-header');
+      if (headerEl) {
+        const h = headerEl.offsetHeight;
+        document.documentElement.style.setProperty('--header-height', h + 'px');
+        console.log('📏 [헤더] 높이 측정:', h + 'px');
+      }
+    }
+    // DOM 로드 후, 리사이즈 시 재측정
+    measureHeader();
+    window.addEventListener('resize', measureHeader);
+    setTimeout(measureHeader, 300);
   })();
 </script>
 `;

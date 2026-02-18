@@ -25,15 +25,20 @@ export function youtubeAnalyzerTemplate() {
       background: #ffffff;
       border-bottom: 2px solid #e5e7eb;
       position: sticky;
-      top: 64px; /* 공통 헤더 높이 */
+      top: var(--header-height, 56px); /* CSS 변수 사용, 폴백 56px */
       z-index: 40;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    }
+
+    /* 탭 콘텐츠가 sticky 헤더+서브네비에 가려지지 않도록 */
+    .tab-content {
+      scroll-margin-top: var(--total-nav-height, 104px);
     }
     
     /* 3단 레이아웃 컨테이너 */
     .three-column-layout {
       display: flex;
-      height: calc(100vh - 120px); /* 헤더 + 서브네비 제외 */
+      height: calc(100vh - var(--total-nav-height, 104px)); /* 헤더 + 서브네비 제외 */
       overflow: hidden;
       max-width: 100%;
       margin: 0;
@@ -46,8 +51,8 @@ export function youtubeAnalyzerTemplate() {
       border-right: 1px solid #e5e7eb;
       overflow-y: auto;
       position: sticky;
-      top: 120px;
-      height: calc(100vh - 120px);
+      top: var(--total-nav-height, 104px);
+      height: calc(100vh - var(--total-nav-height, 104px));
       flex-shrink: 0;
     }
     
@@ -84,8 +89,8 @@ export function youtubeAnalyzerTemplate() {
       border-left: 1px solid #e5e7eb;
       overflow-y: auto;
       position: sticky;
-      top: 120px;
-      height: calc(100vh - 120px);
+      top: var(--total-nav-height, 104px);
+      height: calc(100vh - var(--total-nav-height, 104px));
       flex-shrink: 0;
     }
     
@@ -166,7 +171,7 @@ export function youtubeAnalyzerTemplate() {
       gap: 0;
       max-width: 1440px;
       margin: 0 auto;
-      min-height: calc(100vh - 180px);
+      min-height: calc(100vh - var(--total-nav-height, 104px) - 80px);
     }
     
     /* 좌측 사이드바 */
@@ -176,8 +181,8 @@ export function youtubeAnalyzerTemplate() {
       border-right: 1px solid #e5e7eb;
       padding: 24px;
       position: sticky;
-      top: 120px; /* 공통헤더 + 서브네비 */
-      height: calc(100vh - 120px);
+      top: var(--total-nav-height, 104px); /* 공통헤더 + 서브네비 (CSS 변수) */
+      height: calc(100vh - var(--total-nav-height, 104px));
       overflow-y: auto;
     }
     
@@ -2868,6 +2873,9 @@ export function youtubeAnalyzerTemplate() {
         } else if (tab === 'channel-analysis') {
           document.getElementById('tab-channel-analysis')?.classList.remove('hidden');
         }
+
+        // 탭 전환 시 스크롤 위치를 상단으로 리셋 (헤더 아래 가림 방지)
+        window.scrollTo({ top: 0, behavior: 'instant' });
       });
     });
     
