@@ -1035,7 +1035,7 @@ export function youtubeAnalyzerTemplate() {
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
               키워드 검색
             </span>
-            <span class="px-2 py-0.5 bg-white/20 rounded-lg text-xs font-bold">1C</span>
+            <span class="px-2 py-0.5 bg-white/20 rounded-lg text-xs font-bold">1크레딧</span>
           </button>
         </div>
       </aside>
@@ -1321,7 +1321,7 @@ export function youtubeAnalyzerTemplate() {
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z"/></svg>
                   인기 영상
                 </span>
-                <span class="px-2 py-0.5 bg-white/20 rounded-lg text-xs font-bold">1C</span>
+                <span class="px-2 py-0.5 bg-white/20 rounded-lg text-xs font-bold">1크레딧</span>
               </button>
               <p class="text-xs text-gray-400 mt-2">같은 국가 데이터는 세션 중 재사용 가능 (카테고리 전환 무료)</p>
             </div>
@@ -1384,7 +1384,7 @@ export function youtubeAnalyzerTemplate() {
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
                     채널 분석
                   </span>
-                  <span class="px-2 py-0.5 bg-white/20 rounded-lg text-xs font-bold">1C</span>
+                  <span class="px-2 py-0.5 bg-white/20 rounded-lg text-xs font-bold">1크레딧</span>
                 </button>
               </div>
               <p class="text-sm text-gray-500 mt-2">
@@ -2856,16 +2856,16 @@ export function youtubeAnalyzerTemplate() {
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <!-- 공통 인증 및 크레딧 시스템 (Supabase 초기화 포함) -->
-  <script src="/static/app-v3-final.js?v=8.0.0"></script>
+  <script src="/static/app-v3-final.js?v=8.1.0"></script>
   
   <!-- YouTube 분석기 (app-v3-final.js 의존) -->
-  <script src="/static/youtube-analyzer.js?v=8.0.0"></script>
+  <script src="/static/youtube-analyzer.js?v=8.1.0"></script>
   
   <!-- Phase 2: YouTube Finder 검색 기능 -->
-  <script src="/static/youtube-finder.js?v=8.0.0"></script>
+  <script src="/static/youtube-finder.js?v=8.1.0"></script>
   
   <!-- Phase 2.5: Trends Insights (Supabase 연동) -->
-  <script src="/static/youtube-trends.js?v=8.0.0"></script>
+  <script src="/static/youtube-trends.js?v=8.1.0"></script>
   
   <!-- Phase 5A: 3-Tab 전환 스크립트 -->
   <script>
