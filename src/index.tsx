@@ -7604,6 +7604,106 @@ THUMBNAIL DESIGN PRINCIPLES:
   }
 });
 
+// POST /api/card-news/analyze - 카드뉴스 콘텐츠 전략 분석 (크레딧 불필요, generate에서 차감)
+app.post('/api/card-news/analyze', async (c) => {
+  try {
+    const { content, platform, slideCount, style } = await c.req.json();
+    
+    if (!content || typeof content !== 'string') {
+      return c.json({ success: false, error: '콘텐츠 내용을 입력해주세요' }, 400);
+    }
+    
+    const geminiApiKey = c.env.GEMINI_API_KEY;
+    if (!geminiApiKey) {
+      return c.json({ success: false, error: 'GEMINI_API_KEY가 설정되지 않았습니다' }, 500);
+    }
+    
+    const proxyBase = 'https://gemini-proxy.kyh1987128.workers.dev';
+    
+    const platformSizeMap: Record<string, { width: number; height: number; ratio: string }> = {
+      'instagram_square': { width: 1080, height: 1080, ratio: '1:1' },
+      'instagram_portrait': { width: 1080, height: 1350, ratio: '4:5' },
+      'instagram_story': { width: 1080, height: 1920, ratio: '9:16' },
+      'threads': { width: 1080, height: 1080, ratio: '1:1' }
+    };
+    const platformSize = platformSizeMap[platform] || platformSizeMap['instagram_square'];
+    
+    console.log('📊 [카드뉴스 분석] 시작 - 플랫폼:', platform, '슬라이드:', slideCount);
+    
+    const analysisRes = await fetch(`${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: `You are a top-tier social media content strategist. Analyze the following content and create a detailed card-news strategy.
+
+Return JSON only (no markdown, no code fences):
+{
+  "industry": "detected industry/niche",
+  "tone": "recommended tone (professional/casual/bold/elegant/playful)",
+  "target_audience": "target audience description in Korean",
+  "color_palette": ["#hex1", "#hex2", "#hex3"],
+  "slides": [
+    {
+      "role": "cover|body|cta",
+      "layout": "fullImageOverlay|topTitleCenterImage|splitLeftRight|centerTextGradient|cardStyle|numberedStep|quoteStyle|ctaStyle",
+      "visual_concept": "detailed English description of the background image for AI generation, 3-4 sentences",
+      "text_overlay": "Korean text for this slide",
+      "text_position": "top|center|bottom",
+      "font_size": "large|medium|small",
+      "keywords_for_image_search": ["English keyword1", "keyword2"]
+    }
+  ],
+  "overall_keywords": ["keyword1", "keyword2", "keyword3"],
+  "seo_hashtags": ["#해시태그1", "#해시태그2"],
+  "group_name": "Korean title max 20 chars"
+}
+
+Rules:
+- Exactly ${slideCount} slides
+- First slide: role "cover", layout "fullImageOverlay" or "centerTextGradient"
+- Last slide: role "cta", layout "ctaStyle"  
+- Middle slides: role "body", vary layouts for visual interest
+- text_overlay: Korean, compelling, concise (max 30 chars)
+- visual_concept: English, highly descriptive for image generation
+- Style preference: ${style}
+- Platform: ${platform} (${platformSize.ratio})
+- color_palette: 3 harmonious hex colors matching the content mood
+
+Content:
+${content.substring(0, 3000)}` }] }],
+        generationConfig: { maxOutputTokens: 2000, temperature: 0.7 }
+      })
+    });
+    
+    if (!analysisRes.ok) {
+      return c.json({ success: false, error: '분석 API 호출 실패' }, 500);
+    }
+    
+    const analysisData: any = await analysisRes.json();
+    const analysisText = analysisData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+    
+    if (!jsonMatch) {
+      return c.json({ success: false, error: '분석 결과 파싱 실패' }, 500);
+    }
+    
+    const strategy = JSON.parse(jsonMatch[0]);
+    console.log('📊 [카드뉴스 분석] 완료 -', strategy.industry, '/', strategy.tone);
+    
+    return c.json({
+      success: true,
+      strategy,
+      platform,
+      platformSize,
+      slideCount
+    });
+    
+  } catch (error: any) {
+    console.error('❌ 카드뉴스 분석 오류:', error);
+    return c.json({ success: false, error: error.message || '분석 중 오류 발생' }, 500);
+  }
+});
+
 // POST /api/images/generate-card-news - AI 카드뉴스 생성 (5크레딧)
 app.post('/api/images/generate-card-news', async (c) => {
   try {
@@ -7631,7 +7731,7 @@ app.post('/api/images/generate-card-news', async (c) => {
       return c.json({ success: false, error: 'GEMINI_API_KEY가 설정되지 않았습니다' }, 500);
     }
     
-    const requiredCredits = 5;
+    const requiredCredits = Math.min(Math.max(slideCount || 5, 3), 7); // 3장=3C, 5장=5C, 7장=7C
     const proxyBase = 'https://gemini-proxy.kyh1987128.workers.dev';
     
     // 크레딧 차감
@@ -7740,15 +7840,68 @@ ${content.substring(0, 3000)}` }] }],
       slidePlan = { slides: fallbackSlides, group_name: 'AI 카드뉴스' };
     }
     
-    // Step 2: 슬라이드별 이미지 생성 (병렬, 배치 3개)
+    // Step 2: 슬라이드별 이미지 소스 확보 (Pexels → AI 생성 폴백)
     const slides: any[] = [];
     const models = ['gemini-2.0-flash-preview-image-generation', 'gemini-2.0-flash-exp-image-generation'];
     const batchSize = 3;
+    const pexelsKey = c.env.PEXELS_API_KEY;
+    
+    // 무료 이미지 검색 헬퍼
+    async function searchFreeImage(query: string): Promise<string | null> {
+      if (!pexelsKey) return null;
+      try {
+        const res = await fetch(
+          `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1&orientation=portrait`,
+          { headers: { 'Authorization': pexelsKey } }
+        );
+        if (!res.ok) return null;
+        const data: any = await res.json();
+        const photo = data?.photos?.[0];
+        if (!photo) return null;
+        // 고해상도 URL 반환 (최소 1080px)
+        return photo.src?.large2x || photo.src?.large || photo.src?.original || null;
+      } catch { return null; }
+    }
+    
+    // 이미지 URL → base64 변환 헬퍼
+    async function urlToBase64(url: string): Promise<string | null> {
+      try {
+        const res = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+            'Accept': 'image/png,image/*,*/*'
+          }
+        });
+        if (!res.ok) return null;
+        const buf = await res.arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i += 8192) {
+          const chunk = bytes.subarray(i, Math.min(i + 8192, bytes.length));
+          for (let j = 0; j < chunk.length; j++) {
+            binary += String.fromCharCode(chunk[j]);
+          }
+        }
+        return btoa(binary);
+      } catch { return null; }
+    }
     
     for (let i = 0; i < slidePlan.slides.length; i += batchSize) {
       const batch = slidePlan.slides.slice(i, i + batchSize);
       const batchResults = await Promise.allSettled(
         batch.map(async (slide: any) => {
+          // 1차: 무료 이미지 소스 검색
+          const searchKeywords = (slide.keywords_for_image_search || []).join(' ') || slide.visual_concept?.split('.')[0] || '';
+          if (searchKeywords) {
+            const freeImageUrl = await searchFreeImage(searchKeywords);
+            if (freeImageUrl) {
+              console.log(`✅ [카드뉴스] 무료 이미지 발견: ${searchKeywords}`);
+              const b64 = await urlToBase64(freeImageUrl);
+              if (b64) return b64;
+            }
+          }
+          
+          // 2차: AI 이미지 생성 (폴백)
           const imagePrompt = `Create a background image for a social media carousel slide.
 Style: ${style}
 Aspect ratio: ${platformSize.ratio} (${platformSize.width}x${platformSize.height} pixels)

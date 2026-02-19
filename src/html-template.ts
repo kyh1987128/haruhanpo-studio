@@ -19,7 +19,7 @@ export const htmlTemplate = `
     </script>
     
     <!-- Tailwind CSS - Built by Vite -->
-    <link href="/static/styles.css?v=4.1.0" rel="stylesheet">
+    <link href="/static/styles.css?v=8.0.0" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     
     <!-- FullCalendar CSS -->
@@ -573,6 +573,29 @@ export const htmlTemplate = `
                     </div>
                 </div>
             </div>
+
+            <!-- ========================================
+                 Section 2: 이미지 에디터 섹션
+                 ======================================== -->
+            <div class="border-t border-gray-200 my-4"></div>
+            <div id="imageEditorSection" class="mb-6 hidden">
+                <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <i class="fas fa-palette text-purple-500"></i>
+                    이미지 편집
+                </h3>
+                <div id="editorSectionContent" class="bg-white border border-gray-200 rounded-xl p-3">
+                    <div class="text-center py-6 text-gray-400">
+                        <i class="fas fa-image text-3xl mb-2 opacity-30"></i>
+                        <p class="text-xs">이미지를 선택하면 여기에 표시됩니다</p>
+                        <p class="text-[9px]">이미지 도구 또는 장표 컬렉션에서 선택하세요</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================
+                 Section 3: 장표 컬렉션 패널
+                 ======================================== -->
+            <div class="border-t border-gray-200 my-4"></div>
 
             <!-- 장표 컬렉션 패널 -->
             <div id="slideCollectionPanel" class="mb-6">
@@ -2199,7 +2222,7 @@ export const htmlTemplate = `
     </div><!-- layout-container -->
     
     <!-- JavaScript -->
-    <script src="/static/i18n.js?v=4.1.0"></script>
+    <script src="/static/i18n.js?v=8.0.0"></script>
     
     <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
@@ -2208,18 +2231,18 @@ export const htmlTemplate = `
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ko.js"></script>
     
-    <script src="/static/app-v3-final.js?v=4.1.0"></script>
-    <script src="/static/keyword-analysis.js?v=4.1.0"></script>
-    <script src="/static/keyword-extended.js?v=4.1.0"></script>
+    <script src="/static/app-v3-final.js?v=8.0.0"></script>
+    <script src="/static/keyword-analysis.js?v=8.0.0"></script>
+    <script src="/static/keyword-extended.js?v=8.0.0"></script>
     
     <!-- 온보딩 시스템 로드 -->
-    <script src="/static/onboarding-integration.js?v=4.1.0"></script>
+    <script src="/static/onboarding-integration.js?v=8.0.0"></script>
     
     <!-- 스마트 추천 시스템 로드 -->
-    <script src="/static/smart-recommendations.js?v=4.1.0"></script>
+    <script src="/static/smart-recommendations.js?v=8.0.0"></script>
     
     <!-- 자동 저장 및 이어서 작업하기 시스템 로드 -->
-    <script src="/static/auto-save.js?v=4.1.0"></script>
+    <script src="/static/auto-save.js?v=8.0.0"></script>
     
     <!-- Cropper.js CDN (이미지 크롭 에디터) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css">
@@ -2232,13 +2255,16 @@ export const htmlTemplate = `
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
     
     <!-- 이미지 도구 모듈 -->
-    <script src="/static/image-search.js?v=4.1.0"></script>
-    <script src="/static/image-generator.js?v=4.1.0"></script>
-    <script src="/static/image-editor.js?v=4.1.0"></script>
-    <script src="/static/thumbnail-generator.js?v=4.1.0"></script>
-    <script src="/static/slide-collection.js?v=4.1.0"></script>
-    <script src="/static/card-news-generator.js?v=4.1.0"></script>
-    <script src="/static/design-feedback.js?v=4.1.0"></script>
+    <script src="/static/indexeddb-helper.js?v=8.0.0"></script>
+    <script src="/static/image-search.js?v=8.0.0"></script>
+    <script src="/static/image-generator.js?v=8.0.0"></script>
+    <script src="/static/image-editor.js?v=8.0.0"></script>
+    <script src="/static/thumbnail-generator.js?v=8.0.0"></script>
+    <script src="/static/image-editor-section.js?v=8.0.0"></script>
+    <script src="/static/slide-collection.js?v=8.0.0"></script>
+    <script src="/static/card-news-templates.js?v=8.0.0"></script>
+    <script src="/static/card-news-generator.js?v=8.0.0"></script>
+    <script src="/static/design-feedback.js?v=8.0.0"></script>
     
     <script>
       // ========================================

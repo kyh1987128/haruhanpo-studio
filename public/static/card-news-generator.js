@@ -64,12 +64,22 @@ window.CardNewsGenerator = {
 
         '<button id="cardNewsGenBtn" onclick="CardNewsGenerator.generate()" ' +
           'class="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-medium hover:from-green-600 hover:to-emerald-600 transition">' +
-          '📋 카드뉴스 생성 (5크레딧)' +
+          '📋 카드뉴스 생성 (<span id="cardNewsCreditCost">5</span>크레딧)' +
         '</button>' +
         '<p class="text-xs text-gray-400 text-center mt-1">크레딧이 차감됩니다</p>' +
 
         '<div id="cardNewsResult" class="mt-4"></div>' +
       '</div>';
+
+    // 슬라이드 수 변경 시 크레딧 표시 업데이트
+    var slideCountSel = document.getElementById('cardNewsSlideCount');
+    if (slideCountSel) {
+      slideCountSel.addEventListener('change', function() {
+        var cost = parseInt(this.value) || 5;
+        var costEl = document.getElementById('cardNewsCreditCost');
+        if (costEl) costEl.textContent = cost;
+      });
+    }
   },
 
   hide() {
@@ -136,11 +146,12 @@ window.CardNewsGenerator = {
     if (!btn) return;
     if (loading) {
       btn.disabled = true;
-      btn.textContent = '⏳ 카드뉴스 생성 중... (최대 2분)';
+      btn.innerHTML = '⏳ 카드뉴스 생성 중... (최대 2분)';
       btn.classList.add('opacity-50', 'cursor-not-allowed');
     } else {
       btn.disabled = false;
-      btn.textContent = '📋 카드뉴스 생성 (5크레딧)';
+      var cost = parseInt(document.getElementById('cardNewsSlideCount')?.value) || 5;
+      btn.innerHTML = '📋 카드뉴스 생성 (<span id="cardNewsCreditCost">' + cost + '</span>크레딧)';
       btn.classList.remove('opacity-50', 'cursor-not-allowed');
     }
   },
@@ -180,24 +191,34 @@ window.CardNewsGenerator = {
 
   _addToSlideCollection(data) {
     if (typeof SlideCollection === 'undefined') return;
-    var allSlides = SlideCollection.getAll();
-    data.slides.forEach(function(slide, i) {
-      allSlides.push({
-        id: 'slide_' + Date.now() + '_' + i,
-        image: 'data:image/png;base64,' + slide.image,
+    // IndexedDB 기반: SlideDB.add 사용
+    var promises = data.slides.map(function(slide, i) {
+      var imageData = 'data:image/png;base64,' + slide.image;
+      var slideItem = {
+        id: 'cardnews_' + Date.now() + '_' + i,
         source: 'card-news',
-        title: slide.text_overlay || ('슬라이드 ' + (i + 1)),
-        timestamp: new Date().toLocaleTimeString('ko-KR'),
-        date: new Date().toLocaleDateString('ko-KR'),
+        label: slide.text_overlay || ('슬라이드 ' + (i + 1)),
+        imageData: imageData,
         groupId: data.groupId,
         groupName: data.groupName || 'AI 카드뉴스',
         groupOrder: i + 1,
         groupTotal: data.slides.length,
         role: slide.role
-      });
+      };
+      if (window.SlideDB) {
+        return window.SlideDB.add(slideItem);
+      } else {
+        // 폴백: SlideCollection.add
+        SlideCollection.add(imageData, slideItem.label, 'card-news');
+        return Promise.resolve();
+      }
     });
-    localStorage.setItem('slideCollection', JSON.stringify(allSlides));
-    SlideCollection.render();
+    Promise.all(promises).then(function() {
+      SlideCollection.render();
+    }).catch(function(err) {
+      console.error('[CardNews] 장표 추가 실패:', err);
+      SlideCollection.render();
+    });
   },
 
   _editSlide(groupId, index) {

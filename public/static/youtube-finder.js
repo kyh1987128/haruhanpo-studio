@@ -3135,14 +3135,26 @@ function renderDetailPanel(video) {
       </div>
       
       <!-- AI 분석 버튼 -->
-      <div class="mb-4">
+      <div class="mb-4 space-y-2">
         <button 
           onclick="generateVideoSummary('${videoId}')"
           class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium text-sm"
         >
           <i class="fas fa-sparkles mr-1"></i>영상 요약
         </button>
+        <button 
+          id="extractKeywordsBtn"
+          onclick="extractVideoKeywords('${videoId}', '${escapeHtml(title).replace(/'/g, "\\'")}', '${escapeHtml(channelTitle).replace(/'/g, "\\'")}')"
+          class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-2 px-4 rounded-lg hover:from-emerald-600 hover:to-teal-600 transition-all font-medium text-sm flex items-center justify-center gap-2"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          🔑 키워드 추출
+          <span class="inline-flex items-center justify-center px-1.5 py-0.5 bg-white/20 rounded text-[10px] font-bold">1C</span>
+        </button>
       </div>
+      
+      <!-- 키워드 추출 결과 영역 -->
+      <div id="keywordExtractResult" class="hidden mb-4"></div>
       
       <!-- 태그 분석 -->
       ${tags.length > 0 ? `
@@ -8115,4 +8127,124 @@ async function generateVideoScript(videoId) {
 // 전역 함수 노출
 window.generateVideoSummary = generateVideoSummary;
 // window.generateVideoScript = generateVideoScript;  // ❌ 비활성화
+
+// ========================================
+// 🔑 키워드 추출 기능 (1크레딧)
+// ========================================
+async function extractVideoKeywords(videoId, title, channel) {
+  const btn = document.getElementById('extractKeywordsBtn');
+  const resultEl = document.getElementById('keywordExtractResult');
+  
+  if (!btn || !resultEl) return;
+  
+  // 크레딧 차감
+  try {
+    const creditRes = await fetch('/api/credits/deduct', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: 1,
+        feature: 'youtube_keyword_extract',
+        user_id: window.currentUser?.id
+      })
+    });
+    const creditData = await creditRes.json();
+    if (!creditData.success) {
+      alert('크레딧이 부족합니다. 크레딧을 충전해주세요.');
+      return;
+    }
+    // 헤더 크레딧 업데이트
+    window.dispatchEvent(new CustomEvent('userUpdated', {
+      detail: { ...window.currentUser, free_credits: creditData.remaining?.free, paid_credits: creditData.remaining?.paid }
+    }));
+  } catch (err) {
+    console.error('크레딧 차감 실패:', err);
+    alert('크레딧 차감 중 오류가 발생했습니다.');
+    return;
+  }
+  
+  // 버튼 로딩 상태
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 키워드 분석 중...';
+  
+  try {
+    const res = await fetch('/api/youtube/extract-keywords', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (localStorage.getItem('postflow_token') || '')
+      },
+      body: JSON.stringify({
+        videoTitle: title,
+        videoDescription: '',
+        channelName: channel,
+        user_id: window.currentUser?.id
+      })
+    });
+    
+    const data = await res.json();
+    
+    if (!data.success) {
+      throw new Error(data.error?.message || '키워드 추출 실패');
+    }
+    
+    const kw = data.data;
+    resultEl.classList.remove('hidden');
+    resultEl.innerHTML = `
+      <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+        <h4 class="font-bold text-sm text-emerald-800 mb-2">🔑 키워드 추출 결과</h4>
+        
+        ${kw.summary ? `<p class="text-xs text-gray-600 mb-2 bg-white p-2 rounded">${kw.summary}</p>` : ''}
+        
+        <div class="mb-2">
+          <span class="text-[10px] font-bold text-emerald-700">핵심 키워드</span>
+          <div class="flex flex-wrap gap-1 mt-1">
+            ${(kw.main_keywords || []).map(k => `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded text-xs cursor-pointer hover:bg-emerald-200" onclick="navigator.clipboard.writeText('${k}'); this.textContent='✓ 복사'">${k}</span>`).join('')}
+          </div>
+        </div>
+        
+        <div class="mb-2">
+          <span class="text-[10px] font-bold text-blue-700">SEO 키워드</span>
+          <div class="flex flex-wrap gap-1 mt-1">
+            ${(kw.seo_keywords || []).map(k => `<span class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs cursor-pointer hover:bg-blue-200" onclick="navigator.clipboard.writeText('${k}'); this.textContent='✓ 복사'">${k}</span>`).join('')}
+          </div>
+        </div>
+        
+        <div class="mb-2">
+          <span class="text-[10px] font-bold text-purple-700">해시태그</span>
+          <div class="flex flex-wrap gap-1 mt-1">
+            ${(kw.hashtags || []).map(h => `<span class="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs cursor-pointer hover:bg-purple-200" onclick="navigator.clipboard.writeText('${h}'); this.textContent='✓ 복사'">${h}</span>`).join('')}
+          </div>
+        </div>
+        
+        ${kw.suggested_titles ? `
+        <div>
+          <span class="text-[10px] font-bold text-orange-700">추천 제목</span>
+          <div class="space-y-1 mt-1">
+            ${kw.suggested_titles.map(t => `<p class="text-xs text-gray-700 bg-white p-1.5 rounded cursor-pointer hover:bg-orange-50" onclick="navigator.clipboard.writeText('${t.replace(/'/g, "\\'")}'); alert('제목 복사됨!')">${t}</p>`).join('')}
+          </div>
+        </div>` : ''}
+        
+        <button onclick="navigator.clipboard.writeText('${(kw.hashtags || []).join(' ').replace(/'/g, "\\'")}'); alert('전체 해시태그 복사됨!')" 
+          class="mt-2 w-full py-1.5 bg-emerald-500 text-white rounded text-xs font-bold hover:bg-emerald-600">
+          📋 전체 해시태그 복사
+        </button>
+      </div>
+    `;
+    
+  } catch (err) {
+    console.error('키워드 추출 오류:', err);
+    resultEl.classList.remove('hidden');
+    resultEl.innerHTML = `<div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-600">${err.message || '키워드 추출 중 오류가 발생했습니다.'}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      🔑 키워드 추출
+      <span class="inline-flex items-center justify-center px-1.5 py-0.5 bg-white/20 rounded text-[10px] font-bold">1C</span>
+    `;
+  }
+}
+
+window.extractVideoKeywords = extractVideoKeywords;
 

@@ -3116,4 +3116,83 @@ app.post('/api/youtube/comment-sentiment', async (c) => {
   }
 })
 
+// POST /api/youtube/extract-keywords - 키워드 추출 (1크레딧)
+app.post('/api/youtube/extract-keywords', async (c) => {
+  try {
+    const { videoTitle, videoDescription, channelName, user_id } = await c.req.json();
+    
+    if (!videoTitle) {
+      return c.json({ success: false, error: { code: 'MISSING_TITLE', message: '영상 제목이 필요합니다' } }, 400);
+    }
+    
+    const geminiApiKey = c.env.GEMINI_API_KEY;
+    if (!geminiApiKey) {
+      return c.json({ success: false, error: { code: 'NO_API_KEY', message: 'API 키가 설정되지 않았습니다' } }, 500);
+    }
+    
+    // 크레딧 차감 (프론트에서 /api/credits/deduct 호출하므로 여기서는 미차감)
+    // 프론트엔드에서 먼저 크레딧을 차감한 후 이 API를 호출
+    
+    const proxyBase = 'https://gemini-proxy.kyh1987128.workers.dev';
+    
+    const prompt = `You are a YouTube SEO expert. Analyze this video info and extract keywords.
+
+Video Title: ${videoTitle}
+${videoDescription ? `Description (first 500 chars): ${videoDescription.substring(0, 500)}` : ''}
+${channelName ? `Channel: ${channelName}` : ''}
+
+Return JSON only (no markdown):
+{
+  "main_keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
+  "seo_keywords": ["SEO keyword1", "SEO keyword2", "SEO keyword3"],
+  "hashtags": ["#태그1", "#태그2", "#태그3", "#태그4", "#태그5"],
+  "summary": "Korean 1-line summary of the video content",
+  "category": "detected content category in Korean",
+  "suggested_titles": ["alternative title 1 in Korean", "alternative title 2 in Korean"]
+}
+
+Rules:
+- main_keywords: 5 core keywords (Korean + English mixed)
+- seo_keywords: 3 YouTube search-optimized keywords (Korean)
+- hashtags: 5 Korean hashtags starting with #
+- summary: 1-line Korean summary
+- All text in Korean unless English is more natural`;
+
+    const res = await fetch(`${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 800, temperature: 0.5 }
+      })
+    });
+    
+    if (!res.ok) {
+      return c.json({ success: false, error: { code: 'AI_ERROR', message: 'AI 분석 실패' } }, 500);
+    }
+    
+    const data: any = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    
+    if (!jsonMatch) {
+      return c.json({ success: false, error: { code: 'PARSE_ERROR', message: '결과 파싱 실패' } }, 500);
+    }
+    
+    const result = JSON.parse(jsonMatch[0]);
+    
+    return c.json({
+      success: true,
+      data: result
+    });
+    
+  } catch (error: any) {
+    console.error('키워드 추출 오류:', error);
+    return c.json({
+      success: false,
+      error: { code: 'EXTRACT_ERROR', message: error.message || '키워드 추출 중 오류가 발생했습니다' }
+    }, 500);
+  }
+})
+
 export default app
