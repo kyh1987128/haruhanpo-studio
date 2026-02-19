@@ -603,6 +603,18 @@ function updateTrendDetailPanel(video) {
             </div>
           </div>
         </div>
+        <div class="border-t pt-3">
+          <button data-video-id="${video.videoId}" 
+            data-title="${encodeURIComponent(video.title)}" 
+            data-channel="${encodeURIComponent(video.channel)}"
+            onclick="if(typeof extractVideoKeywords==='function'){extractVideoKeywords(this.dataset.videoId, decodeURIComponent(this.dataset.title), decodeURIComponent(this.dataset.channel))}else{alert('키워드 추출 기능을 불러오는 중입니다.')}"
+            class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+            키워드 추출
+            <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs">1C</span>
+          </button>
+          <div id="keyword-result-trend-${video.videoId}" class="mt-2"></div>
+        </div>
         <div class="border-t pt-3 pb-2">
           <a href="https://www.youtube.com/watch?v=${video.videoId}" 
              target="_blank"

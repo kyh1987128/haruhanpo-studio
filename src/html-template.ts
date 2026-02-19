@@ -574,54 +574,6 @@ export const htmlTemplate = `
                 </div>
             </div>
 
-            <!-- ========================================
-                 Section 2: 이미지 에디터 섹션
-                 ======================================== -->
-            <div class="border-t border-gray-200 my-4"></div>
-            <div id="imageEditorSection" class="mb-6 hidden">
-                <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-                    <i class="fas fa-palette text-purple-500"></i>
-                    이미지 편집
-                </h3>
-                <div id="editorSectionContent" class="bg-white border border-gray-200 rounded-xl p-3">
-                    <div class="text-center py-6 text-gray-400">
-                        <i class="fas fa-image text-3xl mb-2 opacity-30"></i>
-                        <p class="text-xs">이미지를 선택하면 여기에 표시됩니다</p>
-                        <p class="text-[9px]">이미지 도구 또는 장표 컬렉션에서 선택하세요</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ========================================
-                 Section 3: 장표 컬렉션 패널
-                 ======================================== -->
-            <div class="border-t border-gray-200 my-4"></div>
-
-            <!-- 장표 컬렉션 패널 -->
-            <div id="slideCollectionPanel" class="mb-6">
-                <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                        <i class="fas fa-layer-group text-indigo-500"></i>
-                        장표 컬렉션 <span id="slideCollectionCount" class="text-sm font-normal text-gray-400">0</span>장
-                    </h3>
-                    <div class="flex gap-1">
-                        <button onclick="window.SlideCollection && window.SlideCollection.downloadAll()" class="px-2 py-1 text-[9px] bg-indigo-500 text-white rounded font-bold hover:bg-indigo-600">
-                            <i class="fas fa-download mr-0.5"></i>전체 다운로드
-                        </button>
-                        <button onclick="window.SlideCollection && window.SlideCollection.clearAll()" class="px-2 py-1 text-[9px] bg-gray-200 text-gray-600 rounded font-bold hover:bg-gray-300">
-                            <i class="fas fa-trash mr-0.5"></i>전체 삭제
-                        </button>
-                    </div>
-                </div>
-                <div id="slideCollectionGrid" class="grid grid-cols-2 gap-2"></div>
-                <div class="text-center mt-2">
-                    <button id="slideCollectionMore" class="hidden w-full py-1.5 border border-dashed border-gray-300 rounded-lg text-[10px] text-gray-500 hover:border-indigo-400 hover:text-indigo-500"
-                            onclick="window.SlideCollection && window.SlideCollection.showAll()">
-                        📋 전체 보기
-                    </button>
-                </div>
-            </div>
-            
             <style>
                 .sample-btn {
                     background: rgba(255,255,255,0.2);
@@ -838,6 +790,50 @@ export const htmlTemplate = `
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- ========================================
+             이미지 편집 섹션 (메인 콘텐츠 영역)
+             ======================================== -->
+        <div id="imageEditorSection" class="hidden bg-white rounded-2xl shadow-lg border p-4 mb-6 mx-0">
+            <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                <i class="fas fa-palette text-purple-500"></i>
+                이미지 편집
+            </h3>
+            <div id="editorSectionContent">
+                <div class="text-center py-6 text-gray-400">
+                    <i class="fas fa-image text-3xl mb-2 opacity-30"></i>
+                    <p class="text-xs">이미지를 선택하면 여기에 표시됩니다</p>
+                    <p class="text-[9px]">이미지 도구 또는 장표 컬렉션에서 선택하세요</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================
+             장표 컬렉션 패널 (메인 콘텐츠 영역)
+             ======================================== -->
+        <div id="slideCollectionPanel" class="bg-white rounded-2xl shadow-lg border p-4 mb-6 mx-0">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <i class="fas fa-layer-group text-indigo-500"></i>
+                    장표 컬렉션 <span id="slideCollectionCount" class="text-sm font-normal text-gray-400">0</span>장
+                </h3>
+                <div class="flex gap-1">
+                    <button onclick="window.SlideCollection && window.SlideCollection.downloadAll()" class="px-2 py-1 text-[9px] bg-indigo-500 text-white rounded font-bold hover:bg-indigo-600">
+                        <i class="fas fa-download mr-0.5"></i>전체 다운로드
+                    </button>
+                    <button onclick="window.SlideCollection && window.SlideCollection.clearAll()" class="px-2 py-1 text-[9px] bg-gray-200 text-gray-600 rounded font-bold hover:bg-gray-300">
+                        <i class="fas fa-trash mr-0.5"></i>전체 삭제
+                    </button>
+                </div>
+            </div>
+            <div id="slideCollectionGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2"></div>
+            <div class="text-center mt-2">
+                <button id="slideCollectionMore" class="hidden w-full py-1.5 border border-dashed border-gray-300 rounded-lg text-[10px] text-gray-500 hover:border-indigo-400 hover:text-indigo-500"
+                        onclick="window.SlideCollection && window.SlideCollection.showAll()">
+                    📋 전체 보기
+                </button>
             </div>
         </div>
 

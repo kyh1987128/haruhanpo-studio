@@ -3144,12 +3144,15 @@ function renderDetailPanel(video) {
         </button>
         <button 
           id="extractKeywordsBtn"
-          onclick="extractVideoKeywords('${videoId}', '${escapeHtml(title).replace(/'/g, "\\'")}', '${escapeHtml(channelTitle).replace(/'/g, "\\'")}')"
-          class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-2 px-4 rounded-lg hover:from-emerald-600 hover:to-teal-600 transition-all font-medium text-sm flex items-center justify-center gap-2"
+          data-video-id="${videoId}"
+          data-title="${encodeURIComponent(title)}"
+          data-channel="${encodeURIComponent(channelTitle)}"
+          onclick="extractVideoKeywords(this.dataset.videoId, decodeURIComponent(this.dataset.title), decodeURIComponent(this.dataset.channel))"
+          class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          🔑 키워드 추출
-          <span class="inline-flex items-center justify-center px-1.5 py-0.5 bg-white/20 rounded text-[10px] font-bold">1C</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+          키워드 추출
+          <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1C</span>
         </button>
       </div>
       
@@ -8132,10 +8135,14 @@ window.generateVideoSummary = generateVideoSummary;
 // 🔑 키워드 추출 기능 (1크레딧)
 // ========================================
 async function extractVideoKeywords(videoId, title, channel) {
-  const btn = document.getElementById('extractKeywordsBtn');
-  const resultEl = document.getElementById('keywordExtractResult');
+  // 버튼: 클릭한 버튼을 찾음 (영상 발굴 or 트렌드)
+  const btn = document.querySelector('[data-video-id="' + videoId + '"][onclick*="extractVideoKeywords"]') 
+              || document.getElementById('extractKeywordsBtn');
+  // 결과 영역: 트렌드 패널용 or 영상 발굴용
+  const resultEl = document.getElementById('keyword-result-trend-' + videoId) 
+                   || document.getElementById('keywordExtractResult');
   
-  if (!btn || !resultEl) return;
+  if (!resultEl) { console.warn('키워드 결과 영역 없음'); return; }
   
   // 크레딧 차감
   try {
@@ -8164,8 +8171,10 @@ async function extractVideoKeywords(videoId, title, channel) {
   }
   
   // 버튼 로딩 상태
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 키워드 분석 중...';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 키워드 분석 중...';
+  }
   
   try {
     const res = await fetch('/api/youtube/extract-keywords', {
@@ -8237,12 +8246,14 @@ async function extractVideoKeywords(videoId, title, channel) {
     resultEl.classList.remove('hidden');
     resultEl.innerHTML = `<div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-600">${err.message || '키워드 추출 중 오류가 발생했습니다.'}</div>`;
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = `
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      🔑 키워드 추출
-      <span class="inline-flex items-center justify-center px-1.5 py-0.5 bg-white/20 rounded text-[10px] font-bold">1C</span>
-    `;
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+        키워드 추출
+        <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1C</span>
+      `;
+    }
   }
 }
 
