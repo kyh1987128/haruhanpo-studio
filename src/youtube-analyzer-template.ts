@@ -2849,16 +2849,16 @@ export function youtubeAnalyzerTemplate() {
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <!-- 공통 인증 및 크레딧 시스템 (Supabase 초기화 포함) -->
-  <script src="/static/app-v3-final.js?v=4.0.0"></script>
+  <script src="/static/app-v3-final.js?v=4.1.0"></script>
   
   <!-- YouTube 분석기 (app-v3-final.js 의존) -->
-  <script src="/static/youtube-analyzer.js"></script>
+  <script src="/static/youtube-analyzer.js?v=4.1.0"></script>
   
   <!-- Phase 2: YouTube Finder 검색 기능 -->
-  <script src="/static/youtube-finder.js"></script>
+  <script src="/static/youtube-finder.js?v=4.1.0"></script>
   
   <!-- Phase 2.5: Trends Insights (Supabase 연동) -->
-  <script src="/static/youtube-trends.js"></script>
+  <script src="/static/youtube-trends.js?v=4.1.0"></script>
   
   <!-- Phase 5A: 3-Tab 전환 스크립트 -->
   <script>

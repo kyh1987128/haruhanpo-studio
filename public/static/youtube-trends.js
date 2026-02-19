@@ -380,18 +380,13 @@ function renderVideos(videos) {
   const listEl = document.getElementById('videos-list');
   if (!listEl) return;
   
+  // 영상 데이터를 전역 배열에 저장 (클릭 시 인덱스로 접근)
+  window._trendVideosList = videos;
+  
   listEl.innerHTML = videos.map((video, index) => `
-    <div class="flex items-start gap-4 p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition cursor-pointer"
-         onclick="updateTrendDetailPanel({
-           videoId: '${video.video_id}',
-           title: '${escapeHtml(video.title).replace(/'/g, "\\'")}',
-           channel: '${escapeHtml(video.channel_title).replace(/'/g, "\\'")}',
-           thumbnailUrl: 'https://i.ytimg.com/vi/${video.video_id}/hqdefault.jpg',
-           views: ${video.views},
-           likes: ${video.likes || 0},
-           publishedAt: '${video.published_at}',
-           category: '${video.category}'
-         })">
+    <div class="trend-video-row flex items-start gap-4 p-4 bg-white border border-gray-200 rounded-lg hover:shadow-md transition cursor-pointer"
+         data-trend-index="${index}"
+         data-video-id="${video.video_id}">
       <!-- 순위 -->
       <div class="flex-shrink-0 w-8 text-center">
         <span class="text-lg font-bold ${index < 3 ? 'text-orange-600' : 'text-gray-400'}">
@@ -431,6 +426,25 @@ function renderVideos(videos) {
       </div>
     </div>
   `).join('');
+  
+  // 이벤트 위임: 클릭 시 data-trend-index로 영상 데이터 전달
+  listEl.onclick = function(e) {
+    var row = e.target.closest('.trend-video-row');
+    if (!row) return;
+    var idx = parseInt(row.getAttribute('data-trend-index'), 10);
+    var v = window._trendVideosList[idx];
+    if (!v) return;
+    updateTrendDetailPanel({
+      videoId: v.video_id,
+      title: v.title,
+      channel: v.channel_title,
+      thumbnailUrl: 'https://i.ytimg.com/vi/' + v.video_id + '/hqdefault.jpg',
+      views: v.views,
+      likes: v.likes || 0,
+      publishedAt: v.published_at,
+      category: v.category
+    });
+  };
 }
 
 /**
@@ -450,6 +464,22 @@ function updateTrendDetailPanel(video) {
   if (!panelEl) {
     console.error('trend-detail-panel not found');
     return;
+  }
+  
+  // 선택 하이라이트 - 기존 선택 해제
+  var trendTab = document.getElementById('tab-trends-insights');
+  if (trendTab) {
+    trendTab.querySelectorAll('.trend-video-row').forEach(function(el) {
+      el.classList.remove('ring-2', 'ring-green-400', 'bg-green-50');
+      el.classList.add('bg-white');
+    });
+  }
+
+  // 현재 클릭된 행 하이라이트
+  var currentEl = trendTab ? trendTab.querySelector('.trend-video-row[data-video-id="' + video.videoId + '"]') : null;
+  if (currentEl) {
+    currentEl.classList.remove('bg-white');
+    currentEl.classList.add('ring-2', 'ring-green-400', 'bg-green-50');
   }
   
   console.log('📊 영상 데이터:', video);
