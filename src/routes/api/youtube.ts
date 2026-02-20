@@ -2960,73 +2960,10 @@ app.post('/api/youtube/summarize', authMiddleware, async (c) => {
   }
 })
 
-// POST /api/youtube/transcript - 대본 추출 (무료, 크레딧 차감 없음)
-// 서버가 YouTube 페이지에서 자막 트랙 URL을 추출하여 클라이언트에 전달
-// 클라이언트(브라우저)가 직접 자막 XML을 fetch하여 파싱
-app.post('/api/youtube/transcript', async (c) => {
-  try {
-    const { videoId } = await c.req.json()
-    if (!videoId) {
-      return c.json({ success: false, error: 'videoId는 필수입니다.' }, 400)
-    }
-    
-    const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    
-    // YouTube 페이지 HTML에서 captionTracks 추출
-    const pageRes = await fetch('https://www.youtube.com/watch?v=' + videoId, {
-      headers: {
-        'User-Agent': UA,
-        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
-      }
-    })
-    const pageHtml = await pageRes.text()
-    
-    let captionTracks: any = null
-    const captionMatch = pageHtml.match(/"captionTracks"\s*:\s*(\[.*?\])/)
-    if (captionMatch) {
-      try { captionTracks = JSON.parse(captionMatch[1]) } catch (e) {}
-    }
-    
-    if (!captionTracks || captionTracks.length === 0) {
-      return c.json({ success: false, error: '이 영상에는 자막이 없어 대본을 추출할 수 없습니다.' })
-    }
-    
-    // 한국어 트랙 우선, 없으면 첫 번째
-    const selectedTrack = captionTracks.find((t: any) => t.languageCode === 'ko') || captionTracks[0]
-    
-    // 자막 URL을 클라이언트에 전달 (브라우저가 직접 fetch)
-    return c.json({
-      success: true,
-      captionUrl: selectedTrack.baseUrl,
-      language: selectedTrack.languageCode || 'unknown',
-      trackName: selectedTrack.name?.simpleText || ''
-    })
-    
-  } catch (error: any) {
-    console.error('Transcript error:', error)
-    return c.json({ success: false, error: error.message || '대본 추출 중 오류가 발생했습니다.' }, 500)
-  }
-})
-
 // ========================================
-// ❌ DEPRECATED: VTT 시간 파싱 헬퍼 함수 (비활성화)
+// 대본 추출 라우트 삭제 (v8.7.0)
+// 복원 필요 시: git show ab533bf:src/routes/api/youtube.ts
 // ========================================
-// YouTube 정책으로 자막 추출 기능 비활성화
-// 코드는 Git 히스토리에 보존됨 (커밋 aa098b7)
-
-// ========================================
-// ❌ DEPRECATED: YouTube 공식 자막 기반 스크립트 생성 (비활성화)
-// ========================================
-// YouTube의 서버 IP 대역 차단으로 인해 자막 추출이 불가능합니다.
-// Cloudflare Workers IP에서 YouTube Timedtext API 접근 시 빈 응답(0 bytes) 반환.
-// 모든 기술적 우회 방법 시도했으나 실패:
-//   - User-Agent 헤더 추가
-//   - 다중 포맷 시도 (json3, srv3, vtt)
-//   - 빈 응답 검증 로직
-//   - KV 캐싱 시스템
-//   - Gemini 자동 번역
-// 전체 코드는 Git 히스토리에 보존됨 (커밋 aa098b7)
-// 복원 필요 시: git show aa098b7:src/routes/api/youtube.ts
 
 // ========================================
 // 🔧 환경 변수 테스트 엔드포인트 (디버깅용)
@@ -3199,6 +3136,129 @@ SEO키워드: 유튜브 검색에서 상위 노출될 수 있는 키워드
       success: false,
       error: { code: 'EXTRACT_ERROR', message: error.message || '키워드 추출 중 오류가 발생했습니다' }
     }, 500);
+  }
+})
+
+// POST /api/youtube/trending-recommend - 떡상 영상 추천 (1크레딧)
+// 채널 분석 기반 떡상 가능성 높은 영상 주제 추천
+app.post('/api/youtube/trending-recommend', async (c) => {
+  try {
+    const { channelTitle, channelDescription, recentVideos, subscriberCount, avgViews, user_id } = await c.req.json()
+    
+    if (!channelTitle) {
+      return c.json({ success: false, error: { code: 'MISSING_CHANNEL', message: '채널 정보가 필요합니다.' } }, 400)
+    }
+    
+    const geminiApiKey = c.env.GEMINI_API_KEY
+    const youtubeApiKey = c.env.YOUTUBE_API_KEY
+    
+    if (!geminiApiKey) {
+      return c.json({ success: false, error: { code: 'NO_API_KEY', message: 'API 키가 설정되지 않았습니다.' } }, 500)
+    }
+    
+    // 크레딧 차감은 프론트엔드에서 /api/credits/deduct 호출 후 진행
+    
+    const proxyBase = 'https://gemini-proxy.kyh1987128.workers.dev'
+    
+    // 1단계: Gemini에 떡상 주제 추천 요청
+    const recentTitles = (recentVideos || []).slice(0, 10).map((v: any) => v.title).join('\n- ')
+    
+    const prompt = `당신은 유튜브 트렌드 분석 전문가입니다.
+아래 채널 정보를 기반으로 "떡상" (급상승) 가능성이 높은 영상 주제 5개를 추천하세요.
+반드시 아래 JSON 형식으로만 응답하세요.
+
+채널명: ${channelTitle}
+${channelDescription ? `채널 설명: ${channelDescription.substring(0, 300)}` : ''}
+구독자: ${subscriberCount ? subscriberCount.toLocaleString() : '정보없음'}
+평균 조회수: ${avgViews ? avgViews.toLocaleString() : '정보없음'}
+${recentTitles ? `최근 영상:\n- ${recentTitles}` : ''}
+
+{
+  "recommendations": [
+    {
+      "title": "추천 영상 제목 (클릭률 높은 스타일)",
+      "topic": "주제 키워드",
+      "reason": "떡상 가능성이 높은 이유 (1-2문장)",
+      "searchKeywords": ["검색할 키워드1", "검색할 키워드2"],
+      "estimatedViews": "예상 조회수 범위 (예: 10만~50만)",
+      "difficulty": "상/중/하",
+      "trendScore": 85
+    }
+  ]
+}
+
+추천 기준:
+1. 채널의 기존 콘텐츠와 시너지가 있는 주제
+2. 현재 한국에서 트렌드인 주제 (2024-2025 기준)
+3. 구독자 대비 높은 조회수를 기대할 수 있는 주제
+4. 검색량이 높고 경쟁이 상대적으로 낮은 니치 주제
+5. trendScore는 0~100 (떡상 가능성 점수)`
+    
+    const geminiRes = await fetch(`${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 1500, temperature: 0.7 }
+      })
+    })
+    
+    if (!geminiRes.ok) {
+      return c.json({ success: false, error: { code: 'AI_ERROR', message: 'AI 분석 실패' } }, 500)
+    }
+    
+    const geminiData: any = await geminiRes.json()
+    const geminiText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || ''
+    const jsonMatch = geminiText.match(/\{[\s\S]*\}/)
+    
+    if (!jsonMatch) {
+      return c.json({ success: false, error: { code: 'PARSE_ERROR', message: '결과 파싱 실패' } }, 500)
+    }
+    
+    const aiResult = JSON.parse(jsonMatch[0])
+    
+    // 2단계: 각 추천 주제별로 YouTube 검색으로 참고 영상 찾기 (옵션)
+    let enrichedRecommendations = aiResult.recommendations || []
+    
+    if (youtubeApiKey && enrichedRecommendations.length > 0) {
+      const { searchYouTubeVideos } = await import('../../services/youtube-api')
+      
+      // 상위 3개 주제만 검색 (API 쿼터 절약)
+      for (let i = 0; i < Math.min(3, enrichedRecommendations.length); i++) {
+        try {
+          const rec = enrichedRecommendations[i]
+          const searchQuery = rec.searchKeywords?.[0] || rec.topic || rec.title
+          const searchResult = await searchYouTubeVideos(searchQuery, youtubeApiKey, 3)
+          
+          enrichedRecommendations[i].referenceVideos = (searchResult.videos || []).slice(0, 3).map((v: any) => ({
+            videoId: v.videoId,
+            title: v.title,
+            views: v.views,
+            channel: v.channelTitle,
+            thumbnail: v.thumbnail
+          }))
+        } catch (e) {
+          // 검색 실패해도 계속 진행
+          enrichedRecommendations[i].referenceVideos = []
+        }
+      }
+    }
+    
+    return c.json({
+      success: true,
+      data: {
+        channelTitle,
+        recommendations: enrichedRecommendations,
+        generatedAt: new Date().toISOString()
+      }
+    })
+    
+  } catch (error: any) {
+    console.error('떡상 추천 오류:', error)
+    return c.json({
+      success: false,
+      error: { code: 'RECOMMEND_ERROR', message: error.message || '떡상 추천 중 오류가 발생했습니다.' }
+    }, 500)
   }
 })
 

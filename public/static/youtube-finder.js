@@ -1138,6 +1138,7 @@ function showChannelLoading(show) {
 function hideChannelResults() {
   document.getElementById('channel-info-card')?.classList.add('hidden');
   document.getElementById('channel-top-videos')?.classList.add('hidden');
+  document.getElementById('trending-recommend-section')?.classList.add('hidden');
 }
 
 // 채널 정보 표시
@@ -1234,6 +1235,13 @@ function displayChannelInfo(channel, growthStatus, growthRatio) {
   `;
 
   card.classList.remove('hidden');
+  
+  // 떡상 추천 섹션 표시 + 채널 데이터 저장
+  window._currentChannelInfo = channel;
+  var trendSection = document.getElementById('trending-recommend-section');
+  if (trendSection) trendSection.classList.remove('hidden');
+  var trendResult = document.getElementById('trending-recommend-result');
+  if (trendResult) trendResult.innerHTML = '';
 }
 
 // 인기 영상 TOP 10 표시
@@ -1570,8 +1578,7 @@ function updateChannelDetailPanel(video) {
         <div class="border-t pt-3 pb-2 space-y-2">
           <button data-video-id="${video.videoId}" data-title="${encodeURIComponent(video.title)}" data-channel="${encodeURIComponent(video.channel || '')}" onclick="extractVideoKeywords(this.dataset.videoId, decodeURIComponent(this.dataset.title), decodeURIComponent(this.dataset.channel))" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-key mr-1"></i> 키워드 추출 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span></button>
           <button onclick="generateVideoSummary('${video.videoId}')" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-file-alt mr-1"></i> 영상 요약 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span></button>
-          <button data-transcript-video-id="${video.videoId}" onclick="extractTranscript('${video.videoId}', decodeURIComponent('${encodeURIComponent(video.title)}'))" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-scroll mr-1"></i> 대본 추출 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">무료</span></button>
-          <a href="https://www.youtube.com/watch?v=${video.videoId}" 
+          <button data-cart-video-id="${video.videoId}" onclick="addToCart('${video.videoId}', '${encodeURIComponent(video.title)}', '${encodeURIComponent(video.channel || '')}', '${encodeURIComponent(video.thumbnailUrl || '')}', ${video.views || 0})" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-cart-plus mr-1"></i> 장바구니 담기 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">무료</span></button> 
              target="_blank"
              class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition text-sm font-medium">
             <i class="fas fa-external-link-alt"></i>
@@ -3141,7 +3148,7 @@ function renderDetailPanel(video) {
       <div class="mb-4 space-y-2">
         <button data-video-id="${videoId}" data-title="${encodeURIComponent(title)}" data-channel="${encodeURIComponent(channelTitle)}" onclick="extractVideoKeywords(this.dataset.videoId, decodeURIComponent(this.dataset.title), decodeURIComponent(this.dataset.channel))" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-key mr-1"></i> 키워드 추출 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span></button>
         <button onclick="generateVideoSummary('${videoId}')" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-file-alt mr-1"></i> 영상 요약 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span></button>
-        <button data-transcript-video-id="${videoId}" onclick="extractTranscript('${videoId}', decodeURIComponent('${encodeURIComponent(title)}'))" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-scroll mr-1"></i> 대본 추출 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">무료</span></button>
+        <button data-cart-video-id="${videoId}" onclick="addToCart('${videoId}', '${encodeURIComponent(title)}', '${encodeURIComponent(channelTitle)}', '${encodeURIComponent('https://i.ytimg.com/vi/' + videoId + '/hqdefault.jpg')}', ${views})" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-cart-plus mr-1"></i> 장바구니 담기 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">무료</span></button>
       </div>
       
       <!-- 키워드 추출 결과 영역 -->
@@ -7721,7 +7728,7 @@ function renderTrendingDetailPanel(video) {
       <div class="mb-4 space-y-2">
         <button data-video-id="${videoId}" data-title="${encodeURIComponent(title)}" data-channel="${encodeURIComponent(channelTitle)}" onclick="extractVideoKeywords(this.dataset.videoId, decodeURIComponent(this.dataset.title), decodeURIComponent(this.dataset.channel))" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-key mr-1"></i> 키워드 추출 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span></button>
         <button onclick="generateVideoSummary('${videoId}')" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-file-alt mr-1"></i> 영상 요약 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span></button>
-        <button data-transcript-video-id="${videoId}" onclick="extractTranscript('${videoId}', decodeURIComponent('${encodeURIComponent(title)}'))" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-scroll mr-1"></i> 대본 추출 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">무료</span></button>
+        <button data-cart-video-id="${videoId}" onclick="addToCart('${videoId}', '${encodeURIComponent(title)}', '${encodeURIComponent(channelTitle)}', '${encodeURIComponent('https://i.ytimg.com/vi/' + videoId + '/hqdefault.jpg')}', ${views})" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-cart-plus mr-1"></i> 장바구니 담기 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">무료</span></button>
       </div>
       
       <!-- 게시 정보 -->
@@ -8375,104 +8382,300 @@ async function extractVideoKeywords(videoId, title, channel) {
 
 window.extractVideoKeywords = extractVideoKeywords;
 
-async function extractTranscript(videoId, title) {
-  const btn = document.querySelector(`[data-transcript-video-id="${videoId}"]`);
-  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 대본 추출 중...'; }
+// ========================================
+// 🛒 장바구니 (Cart/Bookmark) 기능
+// ========================================
+
+function getCart() {
   try {
-    // 1. 서버에서 자막 URL 가져오기
-    const res = await fetch('/api/youtube/transcript', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ videoId })
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error);
-    
-    // 2. 브라우저에서 직접 자막 fetch (&fmt=json3 → JSON 포맷)
-    var captionUrl = data.captionUrl + '&fmt=json3';
-    var captionRes = await fetch(captionUrl);
-    var captionJson = await captionRes.json();
-    
-    // 3. JSON3 → segments 변환
-    var segments = [];
-    if (captionJson.events) {
-      for (var i = 0; i < captionJson.events.length; i++) {
-        var ev = captionJson.events[i];
-        if (!ev.segs) continue;
-        var text = ev.segs.map(function(s) { return s.utf8 || ''; }).join('').trim();
-        if (!text) continue;
-        segments.push({ start: (ev.tStartMs || 0) / 1000, dur: (ev.dDurationMs || 0) / 1000, text: text });
-      }
-    }
-    if (segments.length === 0) throw new Error('자막 데이터를 파싱할 수 없습니다.');
-    
-    function formatTime(sec) {
-      var m = Math.floor(sec / 60);
-      var s = Math.floor(sec % 60);
-      return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
-    }
-    
-    var transcriptHTML = segments.map(function(s) {
-      return '<div class="flex gap-3 py-1.5 hover:bg-gray-50 rounded px-2">' +
-        '<span class="text-xs text-blue-500 font-mono whitespace-nowrap mt-0.5">[' + formatTime(s.start) + ']</span>' +
-        '<span class="text-sm text-gray-800">' + s.text + '</span></div>';
-    }).join('');
-    
-    var plainText = segments.map(function(s) { return '[' + formatTime(s.start) + '] ' + s.text; }).join('\n');
-    
-    var modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4';
-    modal.onclick = function(e) { if (e.target === modal) document.body.removeChild(modal); };
-    
-    var inner = document.createElement('div');
-    inner.className = 'bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col';
-    inner.onclick = function(e) { e.stopPropagation(); };
-    
-    var header = document.createElement('div');
-    header.className = 'p-4 border-b flex items-center justify-between';
-    header.innerHTML = '<div><h3 class="text-lg font-bold text-gray-900">📝 대본 추출</h3><p class="text-xs text-gray-500 mt-1">' + title + ' | ' + (data.trackName || data.language) + ' | ' + segments.length + '개 구간</p></div>';
-    var closeBtn1 = document.createElement('button');
-    closeBtn1.className = 'text-gray-400 hover:text-gray-600 text-xl';
-    closeBtn1.innerHTML = '&times;';
-    closeBtn1.onclick = function() { document.body.removeChild(modal); };
-    header.appendChild(closeBtn1);
-    
-    var body = document.createElement('div');
-    body.className = 'flex-1 overflow-y-auto p-4';
-    body.innerHTML = transcriptHTML;
-    
-    var footer = document.createElement('div');
-    footer.className = 'p-4 border-t flex gap-2';
-    var copyBtn = document.createElement('button');
-    copyBtn.className = 'flex-1 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold text-sm hover:shadow-lg transition';
-    copyBtn.textContent = '📋 전체 복사';
-    copyBtn.onclick = function() {
-      navigator.clipboard.writeText(plainText).then(function() {
-        copyBtn.textContent = '✅ 복사됨!';
-        setTimeout(function() { copyBtn.textContent = '📋 전체 복사'; }, 2000);
-      });
-    };
-    var closeBtn2 = document.createElement('button');
-    closeBtn2.className = 'px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-300 transition';
-    closeBtn2.textContent = '닫기';
-    closeBtn2.onclick = function() { document.body.removeChild(modal); };
-    footer.appendChild(copyBtn);
-    footer.appendChild(closeBtn2);
-    
-    inner.appendChild(header);
-    inner.appendChild(body);
-    inner.appendChild(footer);
-    modal.appendChild(inner);
-    document.body.appendChild(modal);
-    
-  } catch (err) {
-    alert(err.message || '대본 추출에 실패했습니다.');
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-scroll mr-1"></i> 대본 추출 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">무료</span>';
-    }
+    return JSON.parse(localStorage.getItem('yt_cart') || '[]');
+  } catch (e) {
+    return [];
   }
 }
-window.extractTranscript = extractTranscript;
+
+function saveCart(cart) {
+  localStorage.setItem('yt_cart', JSON.stringify(cart));
+  updateCartBadge();
+}
+
+function addToCart(videoId, encodedTitle, encodedChannel, encodedThumbnail, views) {
+  const cart = getCart();
+  if (cart.find(item => item.videoId === videoId)) {
+    alert('이미 장바구니에 있습니다.');
+    return;
+  }
+  cart.push({
+    videoId: videoId,
+    title: decodeURIComponent(encodedTitle),
+    channel: decodeURIComponent(encodedChannel),
+    thumbnail: decodeURIComponent(encodedThumbnail),
+    views: views || 0,
+    addedAt: new Date().toISOString()
+  });
+  saveCart(cart);
+  
+  // 버튼 시각적 피드백
+  const btn = document.querySelector(`[data-cart-video-id="${videoId}"]`);
+  if (btn) {
+    btn.innerHTML = '<i class="fas fa-check mr-1"></i> 담김!';
+    btn.classList.remove('from-gray-500', 'to-gray-600');
+    btn.classList.add('from-green-500', 'to-green-600');
+    setTimeout(() => {
+      btn.innerHTML = '<i class="fas fa-cart-plus mr-1"></i> 장바구니 담기 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">무료</span>';
+      btn.classList.remove('from-green-500', 'to-green-600');
+      btn.classList.add('from-gray-500', 'to-gray-600');
+    }, 1500);
+  }
+}
+
+function removeFromCart(videoId) {
+  let cart = getCart();
+  cart = cart.filter(item => item.videoId !== videoId);
+  saveCart(cart);
+  // 모달이 열려 있으면 새로 그리기
+  const existingModal = document.getElementById('cart-modal');
+  if (existingModal) {
+    document.body.removeChild(existingModal);
+    openCartModal();
+  }
+}
+
+function updateCartBadge() {
+  const cart = getCart();
+  const badge = document.getElementById('cart-badge');
+  if (badge) {
+    badge.textContent = cart.length;
+    badge.style.display = cart.length > 0 ? 'flex' : 'none';
+  }
+}
+
+function openCartModal() {
+  // 기존 모달 제거
+  const existing = document.getElementById('cart-modal');
+  if (existing) document.body.removeChild(existing);
+  
+  const cart = getCart();
+  
+  const modal = document.createElement('div');
+  modal.id = 'cart-modal';
+  modal.className = 'fixed inset-0 z-[9999] flex items-center justify-center bg-black/60';
+  modal.onclick = function(e) { if (e.target === modal) document.body.removeChild(modal); };
+  
+  const inner = document.createElement('div');
+  inner.className = 'bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 max-h-[80vh] flex flex-col';
+  inner.onclick = function(e) { e.stopPropagation(); };
+  
+  // 헤더
+  const header = document.createElement('div');
+  header.className = 'flex items-center justify-between p-4 border-b';
+  header.innerHTML = `<h2 class="text-lg font-bold"><i class="fas fa-shopping-cart mr-2"></i>장바구니 (${cart.length})</h2>`;
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'text-gray-400 hover:text-gray-700 text-xl';
+  closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+  closeBtn.onclick = function() { document.body.removeChild(modal); };
+  header.appendChild(closeBtn);
+  
+  // 바디
+  const body = document.createElement('div');
+  body.className = 'flex-1 overflow-y-auto p-4';
+  
+  if (cart.length === 0) {
+    body.innerHTML = '<div class="text-center text-gray-400 py-8"><i class="fas fa-shopping-cart text-4xl mb-3"></i><p>장바구니가 비어있습니다.</p></div>';
+  } else {
+    cart.forEach(function(item) {
+      const row = document.createElement('div');
+      row.className = 'flex items-start gap-3 p-3 mb-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition';
+      row.innerHTML = `
+        <img src="${item.thumbnail || 'https://i.ytimg.com/vi/' + item.videoId + '/hqdefault.jpg'}" class="w-24 h-14 object-cover rounded" />
+        <div class="flex-1 min-w-0">
+          <a href="https://www.youtube.com/watch?v=${item.videoId}" target="_blank" class="text-sm font-semibold text-gray-800 hover:text-blue-600 line-clamp-2">${item.title}</a>
+          <p class="text-xs text-gray-500 mt-1">${item.channel}</p>
+          <p class="text-xs text-gray-400">${item.views ? formatNumber(item.views) + '회' : ''}</p>
+        </div>
+        <button onclick="removeFromCart('${item.videoId}')" class="text-red-400 hover:text-red-600 p-1" title="삭제"><i class="fas fa-trash-alt"></i></button>
+      `;
+      body.appendChild(row);
+    });
+  }
+  
+  // 푸터
+  const footer = document.createElement('div');
+  footer.className = 'p-4 border-t flex justify-between items-center';
+  if (cart.length > 0) {
+    const clearBtn = document.createElement('button');
+    clearBtn.className = 'text-sm text-red-500 hover:text-red-700';
+    clearBtn.textContent = '전체 삭제';
+    clearBtn.onclick = function() {
+      if (confirm('장바구니를 비우시겠습니까?')) {
+        saveCart([]);
+        document.body.removeChild(modal);
+        openCartModal();
+      }
+    };
+    footer.appendChild(clearBtn);
+    
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-semibold hover:bg-blue-600 transition';
+    copyBtn.innerHTML = '<i class="fas fa-copy mr-1"></i> URL 전체 복사';
+    copyBtn.onclick = function() {
+      const urls = cart.map(function(item) { return 'https://www.youtube.com/watch?v=' + item.videoId; }).join('\n');
+      navigator.clipboard.writeText(urls).then(function() {
+        copyBtn.innerHTML = '<i class="fas fa-check mr-1"></i> 복사됨!';
+        setTimeout(function() { copyBtn.innerHTML = '<i class="fas fa-copy mr-1"></i> URL 전체 복사'; }, 2000);
+      });
+    };
+    footer.appendChild(copyBtn);
+  } else {
+    const closeBtn2 = document.createElement('button');
+    closeBtn2.className = 'ml-auto px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm';
+    closeBtn2.textContent = '닫기';
+    closeBtn2.onclick = function() { document.body.removeChild(modal); };
+    footer.appendChild(closeBtn2);
+  }
+  
+  inner.appendChild(header);
+  inner.appendChild(body);
+  inner.appendChild(footer);
+  modal.appendChild(inner);
+  document.body.appendChild(modal);
+}
+
+window.getCart = getCart;
+window.saveCart = saveCart;
+window.addToCart = addToCart;
+window.removeFromCart = removeFromCart;
+window.updateCartBadge = updateCartBadge;
+window.openCartModal = openCartModal;
+
+document.addEventListener('DOMContentLoaded', function() {
+  updateCartBadge();
+});
+
+// ========================================
+// 🔥 떡상 영상 추천 기능
+// ========================================
+
+async function getTrendingRecommendation() {
+  var btn = document.getElementById('trending-recommend-btn');
+  var resultDiv = document.getElementById('trending-recommend-result');
+  if (!btn || !resultDiv) return;
+  
+  var channel = window._currentChannelInfo;
+  if (!channel) {
+    alert('먼저 채널 분석을 실행해주세요.');
+    return;
+  }
+  
+  // 크레딧 차감
+  var token = localStorage.getItem('postflow_token');
+  if (!token) {
+    alert('로그인이 필요합니다.');
+    return;
+  }
+  
+  try {
+    var deductRes = await fetch('/api/credits/deduct', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ amount: 1, reason: '떡상 영상 추천' })
+    });
+    var deductData = await deductRes.json();
+    if (!deductRes.ok || !deductData.success) {
+      alert(deductData.error?.message || '크레딧이 부족합니다.');
+      return;
+    }
+  } catch (e) {
+    alert('크레딧 차감 중 오류가 발생했습니다.');
+    return;
+  }
+  
+  // 버튼 비활성화 + 로딩
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> AI 분석 중...';
+  resultDiv.innerHTML = '<div class="flex items-center justify-center py-6 text-gray-400"><i class="fas fa-spinner fa-spin text-2xl mr-3"></i>AI가 떡상 주제를 분석하고 있습니다...</div>';
+  
+  try {
+    // 최근 영상 정보 수집
+    var recentVideos = [];
+    var rows = document.querySelectorAll('#channel-videos-body tr');
+    rows.forEach(function(row) {
+      var titleEl = row.querySelector('td:nth-child(3)');
+      if (titleEl) recentVideos.push({ title: titleEl.textContent.trim() });
+    });
+    
+    var res = await fetch('/api/youtube/trending-recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        channelTitle: channel.title || channel.channelTitle || '',
+        channelDescription: channel.description || '',
+        recentVideos: recentVideos,
+        subscriberCount: channel.subscriberCount || currentChannelSubscribers || 0,
+        avgViews: currentChannelAvgViews || 0
+      })
+    });
+    
+    var data = await res.json();
+    
+    if (!data.success) {
+      throw new Error(data.error?.message || data.error || '추천 실패');
+    }
+    
+    // 결과 렌더링
+    var recs = data.data?.recommendations || [];
+    if (recs.length === 0) {
+      resultDiv.innerHTML = '<div class="text-center text-gray-400 py-4">추천 결과가 없습니다.</div>';
+      return;
+    }
+    
+    var html = '';
+    recs.forEach(function(rec, idx) {
+      var scoreColor = rec.trendScore >= 80 ? 'text-red-600 bg-red-50' : rec.trendScore >= 60 ? 'text-orange-600 bg-orange-50' : 'text-yellow-600 bg-yellow-50';
+      var diffColor = rec.difficulty === '하' ? 'text-green-600' : rec.difficulty === '중' ? 'text-yellow-600' : 'text-red-600';
+      
+      html += '<div class="border rounded-lg p-4 mb-3 hover:shadow-md transition">';
+      html += '<div class="flex items-start justify-between mb-2">';
+      html += '<h4 class="font-bold text-sm text-gray-800 flex-1">' + (idx + 1) + '. ' + (rec.title || rec.topic) + '</h4>';
+      html += '<span class="ml-2 px-2 py-1 rounded-full text-xs font-bold ' + scoreColor + '">' + (rec.trendScore || 0) + '점</span>';
+      html += '</div>';
+      html += '<p class="text-xs text-gray-600 mb-2">' + (rec.reason || '') + '</p>';
+      html += '<div class="flex flex-wrap gap-2 text-xs">';
+      if (rec.estimatedViews) html += '<span class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded">예상 조회수: ' + rec.estimatedViews + '</span>';
+      if (rec.difficulty) html += '<span class="px-2 py-0.5 bg-gray-50 ' + diffColor + ' rounded">난이도: ' + rec.difficulty + '</span>';
+      if (rec.searchKeywords) {
+        rec.searchKeywords.forEach(function(kw) {
+          html += '<span class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded">#' + kw + '</span>';
+        });
+      }
+      html += '</div>';
+      
+      // 참고 영상
+      if (rec.referenceVideos && rec.referenceVideos.length > 0) {
+        html += '<div class="mt-3 pt-2 border-t">';
+        html += '<p class="text-xs text-gray-500 mb-1">📌 참고 영상:</p>';
+        rec.referenceVideos.forEach(function(ref) {
+          html += '<a href="https://www.youtube.com/watch?v=' + ref.videoId + '" target="_blank" class="flex items-center gap-2 py-1 text-xs text-blue-600 hover:text-blue-800">';
+          if (ref.thumbnail) html += '<img src="' + ref.thumbnail + '" class="w-12 h-7 object-cover rounded" />';
+          html += '<span class="flex-1 truncate">' + (ref.title || '') + '</span>';
+          if (ref.views) html += '<span class="text-gray-400">' + formatNumber(ref.views) + '회</span>';
+          html += '</a>';
+        });
+        html += '</div>';
+      }
+      
+      html += '</div>';
+    });
+    
+    resultDiv.innerHTML = html;
+    
+  } catch (err) {
+    resultDiv.innerHTML = '<div class="text-center text-red-500 py-4"><i class="fas fa-exclamation-circle mr-1"></i>' + (err.message || '떡상 추천에 실패했습니다.') + '</div>';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-magic mr-1"></i> AI 추천 받기 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span>';
+  }
+}
+
+window.getTrendingRecommendation = getTrendingRecommendation;
 

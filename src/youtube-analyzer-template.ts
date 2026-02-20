@@ -937,6 +937,14 @@ export function youtubeAnalyzerTemplate() {
         <span class="subnav-icon">📊</span>
         <span class="subnav-text">채널 분석</span>
       </div>
+      
+      <!-- 장바구니 아이콘 (탭이 아닌 액션 버튼) -->
+      <div style="margin-left:auto; display:flex; align-items:center;">
+        <button onclick="openCartModal()" class="relative p-2 text-gray-500 hover:text-blue-600 transition" title="장바구니">
+          <i class="fas fa-shopping-cart text-lg"></i>
+          <span id="cart-badge" style="display:none" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">0</span>
+        </button>
+      </div>
     </div>
   </nav>
 
@@ -1405,6 +1413,26 @@ export function youtubeAnalyzerTemplate() {
             <!-- 채널 정보 카드 -->
             <div id="channel-info-card" class="hidden bg-white rounded-xl shadow-sm border p-6 mb-6">
               <!-- JavaScript로 동적 생성 -->
+            </div>
+
+            <!-- 🔥 떡상 영상 추천 섹션 -->
+            <div id="trending-recommend-section" class="hidden bg-white rounded-xl shadow-sm border p-6 mb-6">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-800">
+                  <span class="mr-2">🔥</span> 떡상 영상 추천
+                </h3>
+                <button id="trending-recommend-btn" onclick="getTrendingRecommendation()" 
+                  class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-orange-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm">
+                  <i class="fas fa-magic mr-1"></i> AI 추천 받기
+                  <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span>
+                </button>
+              </div>
+              <p class="text-sm text-gray-500 mb-3">
+                💡 채널 데이터 기반으로 급상승 가능성 높은 영상 주제를 AI가 추천합니다.
+              </p>
+              <div id="trending-recommend-result">
+                <!-- 결과가 여기에 렌더링 -->
+              </div>
             </div>
 
             <!-- 인기 영상 TOP 10 -->
@@ -2861,10 +2889,10 @@ export function youtubeAnalyzerTemplate() {
   <script src="/static/youtube-analyzer.js?v=8.5.0"></script>
   
   <!-- Phase 2: YouTube Finder 검색 기능 -->
-  <script src="/static/youtube-finder.js?v=8.6.3"></script>
+  <script src="/static/youtube-finder.js?v=8.7.0"></script>
   
   <!-- Phase 2.5: Trends Insights (Supabase 연동) -->
-  <script src="/static/youtube-trends.js?v=8.6.3"></script>
+  <script src="/static/youtube-trends.js?v=8.7.0"></script>
   
   <!-- Phase 5A: 3-Tab 전환 스크립트 -->
   <script>
