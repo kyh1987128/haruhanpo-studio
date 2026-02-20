@@ -2863,9 +2863,9 @@ app.post('/api/youtube/summarize', authMiddleware, async (c) => {
       }, 403)
     }
     
-    // YouTube 영상 정보 가져오기
+    // YouTube 영상 정보 가져오기 (statistics 포함)
     const videoInfo = await fetch(
-      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${c.env.YOUTUBE_API_KEY}`
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoId}&key=${c.env.YOUTUBE_API_KEY}`
     )
     const videoData = await videoInfo.json()
     
@@ -2880,18 +2880,60 @@ app.post('/api/youtube/summarize', authMiddleware, async (c) => {
     }
     
     const video = videoData.items[0]
-    const title = video.snippet.title || '제목 없음'
-    const description = video.snippet.description || '설명이 제공되지 않았습니다.'
+    const snippet = video.snippet
+    const stats = video.statistics || {}
+    const title = snippet.title || '제목 없음'
+    const description = snippet.description || '설명이 제공되지 않았습니다.'
+    const channelTitle = snippet.channelTitle || '알 수 없음'
+    const publishedAt = snippet.publishedAt || ''
+    const viewCount = stats.viewCount || '0'
+    const likeCount = stats.likeCount || '0'
+    const commentCount = stats.commentCount || '0'
     
     console.log('📹 [영상 정보]', { videoId, title, descriptionLength: description.length })
     
-    // Gemini로 요약 생성
-    const summary = await callGemini(
+    // Gemini로 요약 생성 (JSON 형식)
+    const summarizePrompt = `당신은 유튜브 콘텐츠 분석 전문가입니다.
+아래 유튜브 영상 정보를 심층 분석하여 반드시 아래 JSON 형식으로만 응답하세요.
+다른 텍스트 없이 JSON만 출력하세요.
+
+영상 제목: ${title}
+채널명: ${channelTitle}
+조회수: ${viewCount}
+좋아요: ${likeCount}
+댓글수: ${commentCount}
+게시일: ${publishedAt}
+설명: ${description.substring(0, 1000)}
+
+{
+  "oneSentenceSummary": "영상 내용을 한 문장으로 요약",
+  "detailedSummary": "영상의 핵심 내용을 5-7문장으로 상세 요약. 어떤 주제를 다루는지, 핵심 메시지가 무엇인지, 시청자에게 어떤 가치를 제공하는지 포함",
+  "keyPoints": ["핵심포인트1", "핵심포인트2", "핵심포인트3", "핵심포인트4", "핵심포인트5"],
+  "targetAudience": "이 영상의 주요 타겟 시청자층 설명",
+  "contentStyle": "콘텐츠 스타일 분석 (교육형/엔터테인먼트/리뷰/브이로그 등)",
+  "viralFactors": "이 영상이 인기를 끈 이유 또는 바이럴 요소 분석",
+  "improvements": "콘텐츠 개선 포인트 또는 아쉬운 점 2-3가지",
+  "similarContentIdeas": ["유사 콘텐츠 아이디어1", "유사 콘텐츠 아이디어2", "유사 콘텐츠 아이디어3"]
+}`
+
+    const summaryText = await callGemini(
       c.env.GEMINI_API_KEY,
-      '당신은 YouTube 영상을 분석하는 전문가입니다. 영상의 제목과 설명을 바탕으로 핵심 내용을 간결하고 명확하게 요약해주세요. 구분선(━━━, ---, ===)을 사용하지 마세요. 섹션 구분은 ## 제목으로만 하세요. 본문 텍스트에 이모지 사용 금지, 강조는 **굵은 글씨**로.',
-      `다음 YouTube 영상을 요약해주세요:\n\n제목: ${title}\n\n설명: ${description}\n\n요약 형식:\n## 핵심 주제\n1-2문장 요약\n\n## 주요 내용\n- 불릿 포인트 3-5개\n\n## 대상 시청자\n1문장\n\n## 시청 추천도\n1문장`,
-      { temperature: 0.7, maxTokens: 1000 }
+      '당신은 유튜브 콘텐츠 분석 전문가입니다. 반드시 JSON 형식으로만 응답하세요.',
+      summarizePrompt,
+      { temperature: 0.7, maxTokens: 2000 }
     )
+    
+    // JSON 파싱
+    let summaryData: any = {}
+    try {
+      const jsonMatch = summaryText.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        summaryData = JSON.parse(jsonMatch[0])
+      }
+    } catch (parseErr) {
+      console.error('요약 JSON 파싱 실패, 원본 텍스트 반환:', parseErr)
+      summaryData = { oneSentenceSummary: summaryText, detailedSummary: summaryText }
+    }
     
     // 크레딧 차감 (DB 연동 필요 시 여기서 처리)
     const remainingCredit = user.credit - 1
@@ -2899,7 +2941,7 @@ app.post('/api/youtube/summarize', authMiddleware, async (c) => {
     return c.json<ApiResponse<any>>({
       success: true,
       data: {
-        summary,
+        summary: summaryData,
         videoId,
         title,
         remainingCredit
@@ -3135,28 +3177,28 @@ app.post('/api/youtube/extract-keywords', async (c) => {
     
     const proxyBase = 'https://gemini-proxy.kyh1987128.workers.dev';
     
-    const prompt = `You are a YouTube SEO expert. Analyze this video info and extract keywords.
+    const prompt = `당신은 유튜브 SEO 및 콘텐츠 마케팅 전문가입니다.
+아래 유튜브 영상 정보를 분석하여 반드시 아래 JSON 형식으로만 응답하세요.
+다른 텍스트 없이 JSON만 출력하세요.
 
-Video Title: ${videoTitle}
-${videoDescription ? `Description (first 500 chars): ${videoDescription.substring(0, 500)}` : ''}
-${channelName ? `Channel: ${channelName}` : ''}
+영상 제목: ${videoTitle}
+${channelName ? `채널명: ${channelName}` : ''}
+${videoDescription ? `설명 (앞 500자): ${videoDescription.substring(0, 500)}` : ''}
 
-Return JSON only (no markdown):
 {
-  "main_keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
-  "seo_keywords": ["SEO keyword1", "SEO keyword2", "SEO keyword3"],
-  "hashtags": ["#태그1", "#태그2", "#태그3", "#태그4", "#태그5"],
-  "summary": "Korean 1-line summary of the video content",
-  "category": "detected content category in Korean",
-  "suggested_titles": ["alternative title 1 in Korean", "alternative title 2 in Korean"]
+  "summary": "영상의 핵심 내용을 3-4문장으로 요약",
+  "coreKeywords": ["핵심키워드1", "핵심키워드2", "핵심키워드3", "핵심키워드4", "핵심키워드5"],
+  "seoKeywords": ["SEO최적화키워드1", "SEO최적화키워드2", "SEO최적화키워드3", "SEO최적화키워드4", "SEO최적화키워드5"],
+  "longTailKeywords": ["롱테일키워드1 (3-5단어 조합)", "롱테일키워드2", "롱테일키워드3", "롱테일키워드4", "롱테일키워드5"],
+  "hashtags": ["#해시태그1", "#해시태그2", "#해시태그3", "#해시태그4", "#해시태그5", "#해시태그6", "#해시태그7", "#해시태그8", "#해시태그9", "#해시태그10"],
+  "suggestedTitles": ["대안제목1 (클릭률 높은 스타일)", "대안제목2 (검색 최적화 스타일)", "대안제목3 (호기심 유발 스타일)", "대안제목4 (숫자 활용 스타일)", "대안제목5 (문제해결 스타일)"]
 }
 
-Rules:
-- main_keywords: 5 core keywords (Korean + English mixed)
-- seo_keywords: 3 YouTube search-optimized keywords (Korean)
-- hashtags: 5 Korean hashtags starting with #
-- summary: 1-line Korean summary
-- All text in Korean unless English is more natural`;
+핵심키워드: 영상의 주제를 대표하는 단일 키워드
+SEO키워드: 유튜브 검색에서 상위 노출될 수 있는 키워드
+롱테일키워드: 3-5단어로 구성된 구체적 검색어
+해시태그: SNS 공유 시 활용할 해시태그
+대안제목: 동일 콘텐츠로 더 높은 성과를 낼 수 있는 제목`;
 
     const res = await fetch(`${proxyBase}/v1beta/models/gemini-2.0-flash:generateContent`, {
       method: 'POST',

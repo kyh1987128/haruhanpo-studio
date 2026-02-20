@@ -7882,42 +7882,110 @@ async function generateVideoSummary(videoId) {
     // 결과 표시
     const contentEl = document.getElementById('summary-content');
     
-    // summary 안전성 체크
-    const summary = result.data?.summary || result.summary || '요약 내용을 가져올 수 없습니다.';
+    // summary JSON 객체 파싱
+    const s = result.data?.summary || {};
+    const oneSentence = s.oneSentenceSummary || '요약 내용을 가져올 수 없습니다.';
+    const detailed = s.detailedSummary || '';
+    const keyPoints = s.keyPoints || [];
+    const targetAudience = s.targetAudience || '';
+    const contentStyle = s.contentStyle || '';
+    const viralFactors = s.viralFactors || '';
+    const improvements = s.improvements || '';
+    const similarIdeas = s.similarContentIdeas || [];
     
-    // 안전한 이스케이프 처리
-    const escapedSummary = summary
-      .replace(/\\/g, '\\\\')
-      .replace(/`/g, '\\`')
-      .replace(/'/g, "\\'")
-      .replace(/"/g, '&quot;')
-      .replace(/\n/g, '\\n');
+    // 전체 텍스트 (복사용)
+    const fullText = [
+      '📌 한줄 요약: ' + oneSentence,
+      '',
+      '📝 상세 요약: ' + detailed,
+      '',
+      '🎯 핵심 포인트:',
+      ...keyPoints.map((p, i) => (i+1) + '. ' + p),
+      '',
+      '👥 타겟 시청자: ' + targetAudience,
+      '🎬 콘텐츠 스타일: ' + contentStyle,
+      '🔥 바이럴 요소: ' + viralFactors,
+      '💡 개선점: ' + improvements,
+      '',
+      '💭 유사 콘텐츠 아이디어:',
+      ...similarIdeas.map((idea, i) => (i+1) + '. ' + idea)
+    ].join('\n');
     
-    const safeHtmlSummary = summary
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+    const escapedFullText = fullText.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, '\\n');
+    
+    const safeHtml = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     
     contentEl.innerHTML = `
-      <div class="text-left">
-        <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-4">
-          <p class="text-sm text-green-700">✅ 영상 요약이 완료되었습니다.</p>
+      <div class="text-left space-y-4">
+        <!-- 한줄 요약 -->
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+          <h4 class="text-xs font-bold text-blue-600 mb-1">📌 한줄 요약</h4>
+          <p class="text-sm font-semibold text-gray-800">${safeHtml(oneSentence)}</p>
         </div>
-        <div class="prose max-w-none">
-          <div class="whitespace-pre-wrap text-gray-800">${safeHtmlSummary}</div>
-        </div>
-        <div class="mt-6 flex gap-2">
+        
+        <!-- 상세 요약 -->
+        ${detailed ? `
+        <div>
+          <h4 class="text-xs font-bold text-gray-600 mb-2">📝 상세 요약</h4>
+          <p class="text-sm text-gray-700 leading-relaxed bg-gray-50 p-3 rounded-lg">${safeHtml(detailed)}</p>
+        </div>` : ''}
+        
+        <!-- 핵심 포인트 -->
+        ${keyPoints.length > 0 ? `
+        <div>
+          <h4 class="text-xs font-bold text-emerald-600 mb-2">🎯 핵심 포인트</h4>
+          <ul class="space-y-1.5">
+            ${keyPoints.map(p => `<li class="flex items-start gap-2 text-sm text-gray-700"><span class="text-emerald-500 mt-0.5">✓</span><span>${safeHtml(p)}</span></li>`).join('')}
+          </ul>
+        </div>` : ''}
+        
+        <!-- 타겟 시청자 -->
+        ${targetAudience ? `
+        <div class="bg-purple-50 p-3 rounded-lg">
+          <h4 class="text-xs font-bold text-purple-600 mb-1">👥 타겟 시청자</h4>
+          <p class="text-sm text-gray-700">${safeHtml(targetAudience)}</p>
+        </div>` : ''}
+        
+        <!-- 콘텐츠 스타일 -->
+        ${contentStyle ? `
+        <div class="bg-indigo-50 p-3 rounded-lg">
+          <h4 class="text-xs font-bold text-indigo-600 mb-1">🎬 콘텐츠 스타일</h4>
+          <p class="text-sm text-gray-700">${safeHtml(contentStyle)}</p>
+        </div>` : ''}
+        
+        <!-- 바이럴 요소 -->
+        ${viralFactors ? `
+        <div class="bg-red-50 p-3 rounded-lg">
+          <h4 class="text-xs font-bold text-red-600 mb-1">🔥 바이럴 요소</h4>
+          <p class="text-sm text-gray-700">${safeHtml(viralFactors)}</p>
+        </div>` : ''}
+        
+        <!-- 개선점 -->
+        ${improvements ? `
+        <div class="bg-amber-50 p-3 rounded-lg">
+          <h4 class="text-xs font-bold text-amber-600 mb-1">💡 개선점</h4>
+          <p class="text-sm text-gray-700">${safeHtml(improvements)}</p>
+        </div>` : ''}
+        
+        <!-- 유사 콘텐츠 아이디어 -->
+        ${similarIdeas.length > 0 ? `
+        <div>
+          <h4 class="text-xs font-bold text-teal-600 mb-2">💭 유사 콘텐츠 아이디어</h4>
+          <div class="space-y-1.5">
+            ${similarIdeas.map((idea, i) => `<div class="flex items-start gap-2 text-sm text-gray-700 bg-teal-50 p-2.5 rounded-lg"><span class="text-teal-600 font-bold">${i+1}.</span><span>${safeHtml(idea)}</span></div>`).join('')}
+          </div>
+        </div>` : ''}
+        
+        <div class="mt-4 flex gap-2">
           <button 
-            onclick="navigator.clipboard.writeText('${escapedSummary}'); alert('복사 완료!');"
-            class="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
+            onclick="navigator.clipboard.writeText('${escapedFullText}'); alert('복사 완료!');"
+            class="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors text-sm"
           >
-            <i class="fas fa-copy mr-2"></i>요약 복사
+            <i class="fas fa-copy mr-2"></i>전체 복사
           </button>
           <button 
             onclick="document.getElementById('summary-modal').remove()"
-            class="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
+            class="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors text-sm"
           >
             닫기
           </button>
@@ -8245,14 +8313,21 @@ async function extractVideoKeywords(videoId, title, channel) {
           <div class="mb-4">
             <h4 class="text-sm font-bold text-emerald-700 mb-2">🎯 핵심 키워드</h4>
             <div class="flex flex-wrap gap-1.5">
-              ${(kw.main_keywords || []).map(k => `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-sm cursor-pointer hover:bg-emerald-200 transition" onclick="navigator.clipboard.writeText('${k.replace(/'/g, "\\'")}'); this.textContent='✓ 복사됨'">${k}</span>`).join('')}
+              ${(kw.coreKeywords || kw.main_keywords || []).map(k => `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-sm cursor-pointer hover:bg-emerald-200 transition" onclick="navigator.clipboard.writeText('${k.replace(/'/g, "\\'")}'); this.textContent='✓ 복사됨'">${k}</span>`).join('')}
             </div>
           </div>
           
           <div class="mb-4">
             <h4 class="text-sm font-bold text-blue-700 mb-2">🔍 SEO 키워드</h4>
             <div class="flex flex-wrap gap-1.5">
-              ${(kw.seo_keywords || []).map(k => `<span class="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm cursor-pointer hover:bg-blue-200 transition" onclick="navigator.clipboard.writeText('${k.replace(/'/g, "\\'")}'); this.textContent='✓ 복사됨'">${k}</span>`).join('')}
+              ${(kw.seoKeywords || kw.seo_keywords || []).map(k => `<span class="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm cursor-pointer hover:bg-blue-200 transition" onclick="navigator.clipboard.writeText('${k.replace(/'/g, "\\'")}'); this.textContent='✓ 복사됨'">${k}</span>`).join('')}
+            </div>
+          </div>
+          
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-indigo-700 mb-2">🔗 롱테일 키워드</h4>
+            <div class="flex flex-wrap gap-1.5">
+              ${(kw.longTailKeywords || []).map(k => `<span class="px-2.5 py-1 bg-indigo-100 text-indigo-800 rounded-lg text-sm cursor-pointer hover:bg-indigo-200 transition" onclick="navigator.clipboard.writeText('${k.replace(/'/g, "\\'")}'); this.textContent='✓ 복사됨'">${k}</span>`).join('')}
             </div>
           </div>
           
@@ -8263,11 +8338,11 @@ async function extractVideoKeywords(videoId, title, channel) {
             </div>
           </div>
           
-          ${kw.suggested_titles ? `
+          ${(kw.suggestedTitles || kw.suggested_titles || []).length > 0 ? `
           <div class="mb-4">
             <h4 class="text-sm font-bold text-orange-700 mb-2">💡 추천 제목</h4>
             <div class="space-y-1.5">
-              ${kw.suggested_titles.map(t => `<p class="text-sm text-gray-700 bg-orange-50 p-2.5 rounded-lg cursor-pointer hover:bg-orange-100 transition" onclick="navigator.clipboard.writeText('${t.replace(/'/g, "\\'")}'); alert('제목 복사됨!')">${t}</p>`).join('')}
+              ${(kw.suggestedTitles || kw.suggested_titles).map(t => `<p class="text-sm text-gray-700 bg-orange-50 p-2.5 rounded-lg cursor-pointer hover:bg-orange-100 transition" onclick="navigator.clipboard.writeText('${t.replace(/'/g, "\\'")}'); alert('제목 복사됨!')">${t}</p>`).join('')}
             </div>
           </div>` : ''}
           
