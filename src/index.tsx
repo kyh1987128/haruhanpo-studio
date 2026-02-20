@@ -7774,39 +7774,45 @@ app.post('/api/images/generate-card-news', async (c) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${geminiApiKey}` },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: `You are a social media content strategist. Split the following content into exactly ${slideCount} slides for a ${platform} carousel post.
+            contents: [{ parts: [{ text: `당신은 소셜 미디어 카드뉴스 디자인 전문가입니다.
+아래 콘텐츠를 ${slideCount}장의 카드뉴스 슬라이드로 분배하고, 각 슬라이드의 디자인 정보를 JSON으로 반환하세요.
 
-Return JSON only (no markdown, no code fences):
+콘텐츠: ${content.substring(0, 3000)}
+스타일: ${style}
+플랫폼: ${platform} (${platformSize.ratio})
+
+다음 JSON을 정확히 반환하세요 (no markdown, no code fences):
 {
   "slides": [
     {
-      "role": "cover",
-      "visual_concept": "English description of background image, 2-3 sentences",
-      "text_overlay": "Korean text for this slide, max 20 characters",
-      "text_position": "center"
-    },
-    {
-      "role": "body",
-      "visual_concept": "...",
-      "text_overlay": "...",
-      "text_position": "center"
+      "role": "cover | content | cta",
+      "layout": "center | left | right | top | bottom",
+      "title": "슬라이드 제목 (최대 15자)",
+      "subtitle": "부제목 (최대 20자, 없으면 빈 문자열)",
+      "body": "본문 텍스트 (최대 50자, 없으면 빈 문자열)",
+      "textColor": "#FFFFFF 또는 #333333 등 hex 색상",
+      "bgColor": "배경 hex 색상",
+      "bgGradient": "CSS linear-gradient 문자열 (없으면 빈 문자열)",
+      "overlayOpacity": 0.3,
+      "visual_concept": "배경 이미지 생성용 영문 프롬프트 (간결하게)"
     }
   ],
   "group_name": "Korean title for this card news set, max 20 chars"
 }
 
-Rules:
-- First slide role must be "cover" with attention-grabbing hook text
-- Middle slides role "body" with key information
-- Last slide role "cta" with call-to-action
-- text_overlay must be in Korean, compelling and concise
-- visual_concept must be in English, highly descriptive for image generation
-- Style: ${style}
-- text_position: one of "top", "center", "bottom"
-
-Content:
-${content.substring(0, 3000)}` }] }],
-            generationConfig: { maxOutputTokens: 1000, temperature: 0.7 }
+규칙:
+1. 첫 번째 슬라이드는 반드시 role: "cover", 마지막은 role: "cta"
+2. layout은 슬라이드마다 다르게 배치하여 시각적 변화를 줄 것
+   - cover: center 권장
+   - content: left, right를 번갈아 사용
+   - cta: center 또는 bottom 권장
+3. textColor는 배경과 대비가 높은 색상 사용
+4. bgColor와 bgGradient는 선택한 스타일(${style})에 맞는 색상 사용
+5. 모든 슬라이드의 색상 톤은 통일감 유지
+6. visual_concept은 텍스트 없는 배경 이미지용 (Do NOT include text in image)
+7. overlayOpacity는 0.3~0.7 사이 숫자
+8. JSON만 반환, 다른 텍스트 없이` }] }],
+            generationConfig: { maxOutputTokens: 2000, temperature: 0.7 }
           })
         });
       
@@ -7829,12 +7835,19 @@ ${content.substring(0, 3000)}` }] }],
       const fallbackSlides = [];
       for (let i = 0; i < slideCount; i++) {
         const chunk = sentences.slice(i * perSlide, (i + 1) * perSlide).join('. ');
-        const role = i === 0 ? 'cover' : (i === slideCount - 1 ? 'cta' : 'body');
+        const role = i === 0 ? 'cover' : (i === slideCount - 1 ? 'cta' : 'content');
         fallbackSlides.push({
           role,
+          layout: 'center',
+          title: chunk.substring(0, 15) || `슬라이드 ${i + 1}`,
+          subtitle: '',
+          body: chunk.substring(15, 65) || '',
+          textColor: '#FFFFFF',
+          bgColor: '#333333',
+          bgGradient: '',
+          overlayOpacity: 0.4,
           visual_concept: `A ${style} styled background image for social media, abstract and minimal`,
-          text_overlay: chunk.substring(0, 40) || `슬라이드 ${i + 1}`,
-          text_position: 'center'
+          text_overlay: chunk.substring(0, 40) || `슬라이드 ${i + 1}`
         });
       }
       slidePlan = { slides: fallbackSlides, group_name: 'AI 카드뉴스' };
@@ -7960,11 +7973,19 @@ CRITICAL REQUIREMENTS:
         if (slideIndex < slidePlan.slides.length) {
           const imageData = result.status === 'fulfilled' ? result.value : null;
           if (imageData) {
+            const plan = slidePlan.slides[slideIndex];
             slides.push({
               image: imageData,
-              text_overlay: slidePlan.slides[slideIndex].text_overlay,
-              role: slidePlan.slides[slideIndex].role,
-              text_position: slidePlan.slides[slideIndex].text_position,
+              role: plan.role || 'content',
+              layout: plan.layout || 'center',
+              title: plan.title || plan.text_overlay || '',
+              subtitle: plan.subtitle || '',
+              body: plan.body || '',
+              textColor: plan.textColor || '#FFFFFF',
+              bgColor: plan.bgColor || '#333333',
+              bgGradient: plan.bgGradient || '',
+              overlayOpacity: plan.overlayOpacity || 0.4,
+              text_overlay: plan.title || plan.text_overlay || '',
               order: slideIndex + 1
             });
           }

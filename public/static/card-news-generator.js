@@ -129,7 +129,15 @@ window.CardNewsGenerator = {
         }));
       }
 
-      this._renderResult(data, platform);
+      // platform에서 aspectRatio 계산
+      var aspectRatios = {
+        'instagram_square': '1/1',
+        'instagram_portrait': '4/5',
+        'instagram_story': '9/16',
+        'threads': '1/1'
+      };
+      data.aspectRatio = aspectRatios[platform] || '1/1';
+      this._renderResult(data);
       this._addToSlideCollection(data);
 
     } catch (err) {
@@ -156,36 +164,62 @@ window.CardNewsGenerator = {
     }
   },
 
-  _renderResult(data, platform) {
+  _renderResult(data) {
     var container = document.getElementById('cardNewsResult');
     if (!container) return;
 
-    var aspectRatios = {
-      'instagram_square': '1/1',
-      'instagram_portrait': '4/5',
-      'instagram_story': '9/16',
-      'threads': '1/1'
-    };
-    var aspectRatio = aspectRatios[platform] || '1/1';
-
     var slidesHtml = data.slides.map(function(slide, i) {
       var roleLabel = slide.role === 'cover' ? '📌 표지' : slide.role === 'cta' ? '📢 CTA' : '📄 ' + (i + 1) + '/' + data.slides.length;
-      return '<div class="relative group rounded-lg overflow-hidden border shadow-sm cursor-pointer" ' +
-        'onclick="CardNewsGenerator._editSlide(\'' + data.groupId + '\', ' + i + ')">' +
-        '<div class="w-full bg-gray-100 overflow-hidden flex items-center justify-center" style="aspect-ratio: ' + aspectRatio + '">' +
-        '<img src="data:image/png;base64,' + slide.image + '" class="w-full h-full object-contain">' +
+      var layout = slide.layout || 'center';
+      var textColor = slide.textColor || '#FFFFFF';
+      var bgColor = slide.bgColor || '#333333';
+      var bgGradient = slide.bgGradient || '';
+      var overlayOpacity = slide.overlayOpacity || 0.4;
+      var bgImage = slide.image ? 'data:image/png;base64,' + slide.image : '';
+
+      // 레이아웃별 텍스트 위치 CSS
+      var layoutStyles = {
+        'center': 'display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px;',
+        'left': 'display:flex; flex-direction:column; align-items:flex-start; justify-content:center; text-align:left; padding:20px 30px;',
+        'right': 'display:flex; flex-direction:column; align-items:flex-end; justify-content:center; text-align:right; padding:20px 30px;',
+        'top': 'display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:30px 20px;',
+        'bottom': 'display:flex; flex-direction:column; align-items:center; justify-content:flex-end; text-align:center; padding:20px 20px 30px;'
+      };
+      var textPosition = layoutStyles[layout] || layoutStyles['center'];
+
+      // 타이틀 폰트 크기 (역할별)
+      var titleSize = slide.role === 'cover' ? 'font-size:24px; font-weight:800;' : slide.role === 'cta' ? 'font-size:22px; font-weight:700;' : 'font-size:18px; font-weight:700;';
+      var subtitleSize = 'font-size:14px; font-weight:500; margin-top:8px;';
+      var bodySize = 'font-size:13px; font-weight:400; margin-top:12px; line-height:1.6;';
+
+      var bgStyle = bgImage
+        ? 'background-image:url(' + bgImage + '); background-size:cover; background-position:center;'
+        : (bgGradient ? 'background:' + bgGradient + ';' : 'background-color:' + bgColor + ';');
+
+      return '<div class="relative group rounded-lg overflow-hidden border shadow-sm" data-slide-index="' + i + '" data-group-id="' + data.groupId + '">' +
+        '<div id="slide-canvas-' + i + '" style="width:100%; aspect-ratio:' + (data.aspectRatio || '1/1') + '; position:relative; ' + bgStyle + '">' +
+          // 오버레이
+          (bgImage ? '<div style="position:absolute; inset:0; background:rgba(0,0,0,' + overlayOpacity + ');"></div>' : '') +
+          // 텍스트 레이어
+          '<div style="position:absolute; inset:0; ' + textPosition + ' color:' + textColor + '; z-index:2;">' +
+            (slide.title ? '<div style="' + titleSize + '">' + slide.title + '</div>' : '') +
+            (slide.subtitle ? '<div style="' + subtitleSize + ' opacity:0.9;">' + slide.subtitle + '</div>' : '') +
+            (slide.body ? '<div style="' + bodySize + ' opacity:0.85;">' + slide.body + '</div>' : '') +
+          '</div>' +
         '</div>' +
-        '<div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white p-2">' +
+        // 역할 라벨
+        '<div class="bg-black/60 text-white p-1.5">' +
           '<p class="text-[10px] font-medium">' + roleLabel + '</p>' +
-          '<p class="text-[10px] truncate">' + (slide.text_overlay || '') + '</p>' +
+          '<p class="text-[10px] truncate">' + (slide.title || '') + '</p>' +
         '</div>' +
+        // hover 버튼: 편집, 삭제, 배경교체
         '<div class="absolute top-1 right-1 hidden group-hover:flex">' +
           '<button onclick="event.stopPropagation(); CardNewsGenerator._editSlide(\'' + data.groupId + '\', ' + i + ')" ' +
-            'class="w-6 h-6 bg-white rounded-full text-xs shadow flex items-center justify-center">✏️</button>' +
+            'class="w-7 h-7 bg-white rounded-full text-xs shadow flex items-center justify-center" title="편집">✏️</button>' +
           '<button onclick="event.stopPropagation(); CardNewsGenerator._deleteSlide(\'' + data.groupId + '\', ' + i + ')" ' +
-            'class="w-6 h-6 bg-red-500 text-white rounded-full text-xs shadow flex items-center justify-center ml-1">🗑️</button>' +
-          '<button onclick="event.stopPropagation(); CardNewsGenerator._addToCollection(\'' + data.groupId + '\', ' + i + ')" ' +
-            'class="w-6 h-6 bg-blue-500 text-white rounded-full text-xs shadow flex items-center justify-center ml-1">📥</button>' +
+            'class="w-7 h-7 bg-red-500 text-white rounded-full text-xs shadow flex items-center justify-center ml-1" title="삭제">🗑️</button>' +
+          '<button onclick="event.stopPropagation(); CardNewsGenerator._changeBg(' + i + ')" ' +
+            'class="w-7 h-7 bg-blue-500 text-white rounded-full text-xs shadow flex items-center justify-center ml-1" title="배경 교체">🖼️</button>' +
         '</div>' +
       '</div>';
     }).join('');
@@ -196,11 +230,14 @@ window.CardNewsGenerator = {
           '<h4 class="text-sm font-bold text-gray-700">✅ ' + data.slides.length + '장 생성 완료</h4>' +
           '<button onclick="CardNewsGenerator._downloadAll(\'' + data.groupId + '\')" ' +
             'class="text-xs text-green-600 hover:underline">전체 다운로드</button>' +
-          '<button onclick="CardNewsGenerator._addAllToCollection(\'' + data.groupId + '\')" ' +
-            'class="text-xs text-blue-600 hover:underline ml-3">+ 전체 장표 추가</button>' +
         '</div>' +
         '<div class="grid grid-cols-2 gap-2">' + slidesHtml + '</div>' +
       '</div>';
+
+    // 데이터 저장 (배경 교체용)
+    this._currentSlides = data.slides;
+    this._currentGroupId = data.groupId;
+    this._currentAspectRatio = data.aspectRatio || '1/1';
   },
 
   _addToSlideCollection(data) {
@@ -262,22 +299,28 @@ window.CardNewsGenerator = {
     }
   },
 
-  _downloadAll(groupId) {
-    var slides = SlideCollection.getAll().filter(function(s) { return s.groupId === groupId; });
-    slides.sort(function(a, b) { return (a.groupOrder || 0) - (b.groupOrder || 0); });
-    slides.forEach(function(s, i) {
-      setTimeout(function() {
+  async _downloadAll(groupId) {
+    if (typeof html2canvas === 'undefined') {
+      alert('다운로드 기능을 로드 중입니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+    var canvases = document.querySelectorAll('[id^="slide-canvas-"]');
+    for (var i = 0; i < canvases.length; i++) {
+      try {
+        var canvas = await html2canvas(canvases[i], { useCORS: true, scale: 2 });
         var a = document.createElement('a');
-        a.href = s.image;
-        a.download = 'cardnews-' + (i + 1) + '-' + Date.now() + '.png';
+        a.href = canvas.toDataURL('image/png');
+        a.download = 'cardnews-' + (i + 1) + '.png';
         a.click();
-      }, i * 500);
-    });
+        await new Promise(function(r) { setTimeout(r, 500); });
+      } catch(err) {
+        console.error('다운로드 실패:', err);
+      }
+    }
   },
 
   _deleteSlide(groupId, index) {
     if (!confirm('이 슬라이드를 삭제하시겠습니까?')) return;
-    var self = this;
     if (window.SlideDB) {
       window.SlideDB.getAll().then(function(allSlides) {
         var grouped = allSlides.filter(function(s) { return s.groupId === groupId; });
@@ -296,74 +339,31 @@ window.CardNewsGenerator = {
     }
   },
 
-  _addToCollection(groupId, index) {
-    var resultContainer = document.getElementById('cardNewsResult');
-    if (!resultContainer) { alert('생성된 카드뉴스가 없습니다.'); return; }
-    var imgs = resultContainer.querySelectorAll('.group img');
-    var labels = resultContainer.querySelectorAll('.group .text-\[10px\]');
-    if (!imgs[index]) { alert('해당 슬라이드를 찾을 수 없습니다.'); return; }
-    var imgSrc = imgs[index].src;
-    var label = labels[index * 2 + 1] ? labels[index * 2 + 1].textContent : ('슬라이드 ' + (index + 1));
-    var slideItem = {
-      id: 'cardnews_' + Date.now() + '_' + index,
-      source: 'card-news',
-      label: label,
-      imageData: imgSrc,
-      groupId: groupId,
-      groupName: 'AI 카드뉴스',
-      groupOrder: index + 1,
-      role: 'content'
-    };
-    if (window.SlideDB) {
-      window.SlideDB.add(slideItem).then(function() {
-        SlideCollection.render();
-        alert('장표에 추가되었습니다.');
-      });
-    } else {
-      SlideCollection.add(imgSrc, label, 'card-news');
-      SlideCollection.render();
-      alert('장표에 추가되었습니다.');
-    }
-  },
-
-  _addAllToCollection(groupId) {
-    var resultContainer = document.getElementById('cardNewsResult');
-    if (!resultContainer) { alert('생성된 카드뉴스가 없습니다.'); return; }
-    var imgs = resultContainer.querySelectorAll('.group img');
-    var labels = resultContainer.querySelectorAll('.group .text-\[10px\]');
-    if (imgs.length === 0) { alert('추가할 슬라이드가 없습니다.'); return; }
-    var promises = [];
-    for (var i = 0; i < imgs.length; i++) {
-      var imgSrc = imgs[i].src;
-      var label = labels[i * 2 + 1] ? labels[i * 2 + 1].textContent : ('슬라이드 ' + (i + 1));
-      var slideItem = {
-        id: 'cardnews_' + Date.now() + '_' + i,
-        source: 'card-news',
-        label: label,
-        imageData: imgSrc,
-        groupId: groupId,
-        groupName: 'AI 카드뉴스',
-        groupOrder: i + 1,
-        groupTotal: imgs.length,
-        role: 'content'
+  _changeBg(index) {
+    var self = this;
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = function(e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        var canvas = document.getElementById('slide-canvas-' + index);
+        if (canvas) {
+          canvas.style.backgroundImage = 'url(' + ev.target.result + ')';
+          canvas.style.backgroundSize = 'cover';
+          canvas.style.backgroundPosition = 'center';
+          // 배경색/그라데이션 제거
+          canvas.style.backgroundColor = '';
+          canvas.style.background = canvas.style.backgroundImage;
+        }
+        if (self._currentSlides && self._currentSlides[index]) {
+          self._currentSlides[index].customBg = ev.target.result;
+        }
       };
-      if (window.SlideDB) {
-        promises.push(window.SlideDB.add(slideItem));
-      } else {
-        SlideCollection.add(imgSrc, label, 'card-news');
-      }
-    }
-    if (promises.length > 0) {
-      Promise.all(promises).then(function() {
-        SlideCollection.render();
-        alert('전체 ' + imgs.length + '장이 장표에 추가되었습니다.');
-      }).catch(function(err) {
-        console.error('[CardNews] 전체 장표 추가 실패:', err);
-        alert('장표 추가 중 오류가 발생했습니다.');
-      });
-    } else {
-      SlideCollection.render();
-      alert('전체 ' + imgs.length + '장이 장표에 추가되었습니다.');
-    }
+      reader.readAsDataURL(file);
+    };
+    input.click();
   }
 };
