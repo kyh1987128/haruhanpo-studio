@@ -3223,8 +3223,8 @@ ${recentTitles ? `최근 영상:\n- ${recentTitles}` : ''}
     if (youtubeApiKey && enrichedRecommendations.length > 0) {
       const { searchYouTubeVideos } = await import('../../services/youtube-api')
       
-      // 상위 3개 주제만 검색 (API 쿼터 절약)
-      for (let i = 0; i < Math.min(3, enrichedRecommendations.length); i++) {
+      // 모든 추천 항목에 참고 영상 검색
+      for (let i = 0; i < enrichedRecommendations.length; i++) {
         try {
           const rec = enrichedRecommendations[i]
           const searchQuery = rec.searchKeywords?.[0] || rec.topic || rec.title
