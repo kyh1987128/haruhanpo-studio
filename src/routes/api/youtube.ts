@@ -3016,7 +3016,7 @@ app.post('/api/youtube/transcript', async (c) => {
     const captionXml = await captionRes.text()
     
     // 7. XML 파싱
-    const segmentRegex = /<text start="([^"]*)" dur="([^"]*)">([^<]*)<\/text>/g
+    const segmentRegex = /<p t="([^"]*)" d="([^"]*)">([^<]*)<\/p>/g
     const segments: Array<{ text: string; start: number; dur: number }> = []
     let match
     
@@ -3032,8 +3032,8 @@ app.post('/api/youtube/transcript', async (c) => {
       
       segments.push({
         text: text,
-        start: parseFloat(match[1]),
-        dur: parseFloat(match[2])
+        start: parseFloat(match[1]) / 1000,
+        dur: parseFloat(match[2]) / 1000
       })
     }
     
