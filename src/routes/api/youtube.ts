@@ -2960,86 +2960,97 @@ app.post('/api/youtube/summarize', authMiddleware, async (c) => {
   }
 })
 
-// POST /api/youtube/transcript - 영상 스크립트 생성 (무료)
-app.post('/api/youtube/transcript', authMiddleware, async (c) => {
+// POST /api/youtube/transcript - 대본 추출 (무료, 크레딧 차감 없음)
+app.post('/api/youtube/transcript', async (c) => {
   try {
-    const user = c.get('user')
     const { videoId } = await c.req.json()
     
-    // 입력 검증
     if (!videoId) {
-      return c.json<ApiResponse<null>>({
-        success: false,
-        error: {
-          code: 'INVALID_INPUT',
-          message: 'videoId는 필수입니다.'
-        }
-      }, 400)
+      return c.json({ success: false, error: 'videoId는 필수입니다.' }, 400)
     }
     
-    // 크레딧 확인 (주석 처리 - 무료 제공)
-    // if (user.credit < 1) {
-    //   return c.json<ApiResponse<null>>({
-    //     success: false,
-    //     error: {
-    //       code: 'INSUFFICIENT_CREDIT',
-    //       message: '크레딧이 부족합니다.'
-    //     }
-    //   }, 403)
-    // }
-    
-    // YouTube 영상 정보 가져오기
-    const videoInfo = await fetch(
-      `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${c.env.YOUTUBE_API_KEY}`
-    )
-    const videoData = await videoInfo.json()
-    
-    if (!videoData.items || videoData.items.length === 0) {
-      return c.json<ApiResponse<null>>({
-        success: false,
-        error: {
-          code: 'VIDEO_NOT_FOUND',
-          message: '영상을 찾을 수 없습니다.'
-        }
-      }, 404)
-    }
-    
-    const video = videoData.items[0]
-    const title = video.snippet.title || '제목 없음'
-    const description = video.snippet.description || '설명이 제공되지 않았습니다.'
-    
-    console.log('📹 [영상 정보]', { videoId, title, descriptionLength: description.length })
-    
-    // Gemini로 스크립트 생성
-    const transcript = await callGemini(
-      c.env.GEMINI_API_KEY,
-      '당신은 YouTube 영상 스크립트 작성 전문가입니다. 영상의 제목과 설명을 바탕으로 전체 스크립트를 생성해주세요. 구분선(━━━, ---, ===)을 사용하지 마세요. 섹션 구분은 ## 제목으로만 하세요. 본문 텍스트에 이모지 사용 금지, 강조는 **굵은 글씨**로.',
-      `다음 YouTube 영상의 전체 스크립트를 작성해주세요:\n\n제목: ${title}\n\n설명: ${description}\n\n스크립트 형식:\n## [00:00] 인트로\n- 인사말\n- 영상 주제 소개\n\n## [00:30] 본론 1\n- 핵심 포인트 설명\n\n## [01:00] 본론 2\n- 추가 설명 및 예시\n\n## [02:00] 결론\n- 요약 및 마무리\n\n각 섹션에 대해 구체적인 대사를 작성해주세요.`,
-      { temperature: 0.8, maxTokens: 2000 }
-    )
-    
-    // 크레딧 차감 제거 (무료 제공)
-    // const remainingCredit = user.credit - 1
-    
-    return c.json<ApiResponse<any>>({
-      success: true,
-      data: {
-        transcript,
-        videoId,
-        title
-        // remainingCredit 제거
+    // 1. YouTube 영상 페이지 HTML 가져오기
+    const pageRes = await fetch('https://www.youtube.com/watch?v=' + videoId, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
       }
+    })
+    const pageHtml = await pageRes.text()
+    
+    // 2. INNERTUBE_API_KEY 추출
+    const apiKeyMatch = pageHtml.match(/"INNERTUBE_API_KEY":"([^"]+)"/)
+    if (!apiKeyMatch) {
+      return c.json({ success: false, error: 'YouTube 페이지에서 API 키를 추출할 수 없습니다.' }, 500)
+    }
+    const innertubeKey = apiKeyMatch[1]
+    
+    // 3. Player API 호출
+    const playerRes = await fetch('https://www.youtube.com/youtubei/v1/player?key=' + innertubeKey, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        context: {
+          client: {
+            clientName: 'ANDROID',
+            clientVersion: '20.10.38'
+          }
+        },
+        videoId: videoId
+      })
+    })
+    const playerData: any = await playerRes.json()
+    
+    // 4. 자막 트랙 확인
+    const captionTracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks
+    if (!captionTracks || captionTracks.length === 0) {
+      return c.json({ success: false, error: '이 영상에는 자막이 없어 대본을 추출할 수 없습니다.' })
+    }
+    
+    // 5. 한국어 자막 우선, 없으면 첫 번째 트랙
+    let selectedTrack = captionTracks.find((t: any) => t.languageCode === 'ko') || captionTracks[0]
+    const language = selectedTrack.languageCode || 'unknown'
+    
+    // 6. 자막 XML 가져오기
+    const captionRes = await fetch(selectedTrack.baseUrl)
+    const captionXml = await captionRes.text()
+    
+    // 7. XML 파싱
+    const segmentRegex = /<text start="([^"]*)" dur="([^"]*)">([^<]*)<\/text>/g
+    const segments: Array<{ text: string; start: number; dur: number }> = []
+    let match
+    
+    while ((match = segmentRegex.exec(captionXml)) !== null) {
+      let text = match[3]
+      // HTML 엔티티 디코딩
+      text = text.replace(/&amp;/g, '&')
+        .replace(/&#39;/g, "'")
+        .replace(/&quot;/g, '"')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/\\n/g, ' ')
+      
+      segments.push({
+        text: text,
+        start: parseFloat(match[1]),
+        dur: parseFloat(match[2])
+      })
+    }
+    
+    if (segments.length === 0) {
+      return c.json({ success: false, error: '자막 데이터를 파싱할 수 없습니다.' })
+    }
+    
+    return c.json({
+      success: true,
+      segments: segments,
+      language: language,
+      totalSegments: segments.length
     })
     
   } catch (error: any) {
     console.error('Transcript error:', error)
-    return c.json<ApiResponse<null>>({
-      success: false,
-      error: {
-        code: 'TRANSCRIPT_ERROR',
-        message: error.message || '스크립트 생성 중 오류가 발생했습니다.'
-      }
-    }, 500)
+    return c.json({ success: false, error: error.message || '대본 추출 중 오류가 발생했습니다.' }, 500)
   }
 })
 

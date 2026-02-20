@@ -1570,6 +1570,7 @@ function updateChannelDetailPanel(video) {
         <div class="border-t pt-3 pb-2 space-y-2">
           <button data-video-id="${video.videoId}" data-title="${encodeURIComponent(video.title)}" data-channel="${encodeURIComponent(video.channel || '')}" onclick="extractVideoKeywords(this.dataset.videoId, decodeURIComponent(this.dataset.title), decodeURIComponent(this.dataset.channel))" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-key mr-1"></i> 키워드 추출 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span></button>
           <button onclick="generateVideoSummary('${video.videoId}')" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-file-alt mr-1"></i> 영상 요약 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span></button>
+          <button data-transcript-video-id="${video.videoId}" onclick="extractTranscript('${video.videoId}', decodeURIComponent('${encodeURIComponent(video.title)}'))" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-scroll mr-1"></i> 대본 추출 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">무료</span></button>
           <a href="https://www.youtube.com/watch?v=${video.videoId}" 
              target="_blank"
              class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition text-sm font-medium">
@@ -3140,6 +3141,7 @@ function renderDetailPanel(video) {
       <div class="mb-4 space-y-2">
         <button data-video-id="${videoId}" data-title="${encodeURIComponent(title)}" data-channel="${encodeURIComponent(channelTitle)}" onclick="extractVideoKeywords(this.dataset.videoId, decodeURIComponent(this.dataset.title), decodeURIComponent(this.dataset.channel))" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-key mr-1"></i> 키워드 추출 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span></button>
         <button onclick="generateVideoSummary('${videoId}')" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-file-alt mr-1"></i> 영상 요약 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span></button>
+        <button data-transcript-video-id="${videoId}" onclick="extractTranscript('${videoId}', decodeURIComponent('${encodeURIComponent(title)}'))" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-scroll mr-1"></i> 대본 추출 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">무료</span></button>
       </div>
       
       <!-- 키워드 추출 결과 영역 -->
@@ -7719,6 +7721,7 @@ function renderTrendingDetailPanel(video) {
       <div class="mb-4 space-y-2">
         <button data-video-id="${videoId}" data-title="${encodeURIComponent(title)}" data-channel="${encodeURIComponent(channelTitle)}" onclick="extractVideoKeywords(this.dataset.videoId, decodeURIComponent(this.dataset.title), decodeURIComponent(this.dataset.channel))" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-key mr-1"></i> 키워드 추출 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span></button>
         <button onclick="generateVideoSummary('${videoId}')" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-file-alt mr-1"></i> 영상 요약 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span></button>
+        <button data-transcript-video-id="${videoId}" onclick="extractTranscript('${videoId}', decodeURIComponent('${encodeURIComponent(title)}'))" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-scroll mr-1"></i> 대본 추출 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">무료</span></button>
       </div>
       
       <!-- 게시 정보 -->
@@ -8371,4 +8374,85 @@ async function extractVideoKeywords(videoId, title, channel) {
 }
 
 window.extractVideoKeywords = extractVideoKeywords;
+
+async function extractTranscript(videoId, title) {
+  var btn = document.querySelector('[data-transcript-video-id="' + videoId + '"]');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 추출 중...';
+  }
+  try {
+    var res = await fetch('/api/youtube/transcript', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ videoId: videoId })
+    });
+    var data = await res.json();
+    if (!data.success) {
+      alert(data.error || '대본 추출에 실패했습니다.');
+      return;
+    }
+    var transcriptLines = [];
+    var plainLines = [];
+    for (var i = 0; i < data.segments.length; i++) {
+      var seg = data.segments[i];
+      var m = Math.floor(seg.start / 60);
+      var s = Math.floor(seg.start % 60);
+      var ts = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+      transcriptLines.push('<div style="display:flex;gap:8px;margin-bottom:4px;"><span style="color:#3b82f6;font-weight:600;white-space:nowrap;font-size:13px;">[' + ts + ']</span><span style="font-size:14px;">' + seg.text + '</span></div>');
+      plainLines.push('[' + ts + '] ' + seg.text);
+    }
+    var transcriptHtml = transcriptLines.join('');
+    var existingModal = document.getElementById('transcript-modal');
+    if (existingModal) existingModal.remove();
+    var modal = document.createElement('div');
+    modal.id = 'transcript-modal';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+    var content = document.createElement('div');
+    content.style.cssText = 'background:white;border-radius:16px;padding:24px;max-width:700px;width:90%;max-height:80vh;display:flex;flex-direction:column;position:relative;';
+    var closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.style.cssText = 'position:absolute;top:12px;right:12px;background:none;border:none;font-size:24px;cursor:pointer;';
+    closeBtn.onclick = function() { modal.remove(); };
+    var header = document.createElement('h3');
+    header.style.cssText = 'font-size:18px;font-weight:bold;margin-bottom:4px;';
+    header.textContent = '📝 대본 추출';
+    var sub = document.createElement('p');
+    sub.style.cssText = 'font-size:13px;color:#666;margin-bottom:16px;';
+    sub.textContent = (title || '') + ' (' + data.language + ', ' + data.totalSegments + '개 구간)';
+    var body = document.createElement('div');
+    body.style.cssText = 'background:#f9fafb;border-radius:8px;padding:16px;overflow-y:auto;flex:1;';
+    body.innerHTML = transcriptHtml;
+    var btnWrap = document.createElement('div');
+    btnWrap.style.cssText = 'margin-top:16px;display:flex;gap:8px;';
+    var copyBtn = document.createElement('button');
+    copyBtn.textContent = '복사하기';
+    copyBtn.style.cssText = 'flex:1;background:#3b82f6;color:white;padding:10px;border-radius:8px;border:none;cursor:pointer;font-weight:600;';
+    copyBtn.onclick = function() {
+      navigator.clipboard.writeText(plainLines.join('\n')).then(function() { alert('복사 완료!'); });
+    };
+    var closeBtn2 = document.createElement('button');
+    closeBtn2.textContent = '닫기';
+    closeBtn2.style.cssText = 'flex:1;background:#e5e7eb;color:#374151;padding:10px;border-radius:8px;border:none;cursor:pointer;font-weight:600;';
+    closeBtn2.onclick = function() { modal.remove(); };
+    btnWrap.appendChild(copyBtn);
+    btnWrap.appendChild(closeBtn2);
+    content.appendChild(closeBtn);
+    content.appendChild(header);
+    content.appendChild(sub);
+    content.appendChild(body);
+    content.appendChild(btnWrap);
+    modal.appendChild(content);
+    modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+    document.body.appendChild(modal);
+  } catch (err) {
+    alert(err.message || '대본 추출 중 오류가 발생했습니다.');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-scroll"></i> 대본 추출 <span style="background:rgba(255,255,255,0.2);padding:2px 6px;border-radius:6px;font-size:11px;font-weight:bold;">무료</span>';
+    }
+  }
+}
+window.extractTranscript = extractTranscript;
 
