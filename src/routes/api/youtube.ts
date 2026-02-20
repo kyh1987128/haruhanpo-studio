@@ -2960,65 +2960,41 @@ app.post('/api/youtube/summarize', authMiddleware, async (c) => {
   }
 })
 
-// POST /api/youtube/transcript - 대본 추출 프록시 (무료, 크레딧 차감 없음)
-// 서버가 YouTube에서 자막 XML을 가져와서 원문 그대로 전달. 파싱은 클라이언트에서.
+// POST /api/youtube/transcript - 대본 추출 (무료, 크레딧 차감 없음)
+// 서버가 YouTube 페이지에서 자막 트랙 URL을 추출하여 클라이언트에 전달
+// 클라이언트(브라우저)가 직접 자막 XML을 fetch하여 파싱
 app.post('/api/youtube/transcript', async (c) => {
   try {
     const { videoId } = await c.req.json()
-    
     if (!videoId) {
       return c.json({ success: false, error: 'videoId는 필수입니다.' }, 400)
     }
     
-    // 1. Innertube Player API 호출 (WEB 클라이언트)
-    const playerRes = await fetch('https://www.youtube.com/youtubei/v1/player?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8&prettyPrint=false', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        context: {
-          client: {
-            clientName: 'WEB',
-            clientVersion: '2.20250219.01.00',
-            hl: 'ko',
-            gl: 'KR'
-          }
-        },
-        videoId: videoId
-      })
-    })
-    const playerData: any = await playerRes.json()
+    const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     
-    // 2. 자막 트랙 확인
-    let captionTracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks
-    
-    // 3. Fallback: Player API에서 못 가져오면 YouTube 페이지 HTML에서 직접 추출
-    if (!captionTracks || captionTracks.length === 0) {
-      const pageRes = await fetch('https://www.youtube.com/watch?v=' + videoId, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
-        }
-      })
-      const pageHtml = await pageRes.text()
-      const captionMatch = pageHtml.match(/"captionTracks"\s*:\s*(\[.*?\])/)
-      if (captionMatch) {
-        try {
-          captionTracks = JSON.parse(captionMatch[1])
-        } catch (e) {
-          // 파싱 실패시 무시
-        }
+    // YouTube 페이지 HTML에서 captionTracks 추출
+    const pageRes = await fetch('https://www.youtube.com/watch?v=' + videoId, {
+      headers: {
+        'User-Agent': UA,
+        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
       }
+    })
+    const pageHtml = await pageRes.text()
+    
+    let captionTracks: any = null
+    const captionMatch = pageHtml.match(/"captionTracks"\s*:\s*(\[.*?\])/)
+    if (captionMatch) {
+      try { captionTracks = JSON.parse(captionMatch[1]) } catch (e) {}
     }
     
     if (!captionTracks || captionTracks.length === 0) {
       return c.json({ success: false, error: '이 영상에는 자막이 없어 대본을 추출할 수 없습니다.' })
     }
     
-    // 4. 한국어 트랙 우선, 없으면 첫 번째 트랙
+    // 한국어 트랙 우선, 없으면 첫 번째
     const selectedTrack = captionTracks.find((t: any) => t.languageCode === 'ko') || captionTracks[0]
     
-    // 5. 자막 URL과 트랙 정보를 클라이언트에 전달 (서버 IP 차단 우회)
-    // 클라이언트(브라우저)가 직접 자막 XML을 fetch하여 파싱
+    // 자막 URL을 클라이언트에 전달 (브라우저가 직접 fetch)
     return c.json({
       success: true,
       captionUrl: selectedTrack.baseUrl,
@@ -3027,7 +3003,7 @@ app.post('/api/youtube/transcript', async (c) => {
     })
     
   } catch (error: any) {
-    console.error('Transcript proxy error:', error)
+    console.error('Transcript error:', error)
     return c.json({ success: false, error: error.message || '대본 추출 중 오류가 발생했습니다.' }, 500)
   }
 })

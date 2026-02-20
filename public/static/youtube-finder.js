@@ -8379,6 +8379,7 @@ async function extractTranscript(videoId, title) {
   const btn = document.querySelector(`[data-transcript-video-id="${videoId}"]`);
   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 대본 추출 중...'; }
   try {
+    // 1. 서버에서 자막 URL 가져오기
     const res = await fetch('/api/youtube/transcript', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -8387,42 +8388,37 @@ async function extractTranscript(videoId, title) {
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
     
-    // 서버에서 받은 자막 URL로 브라우저가 직접 XML fetch
-    const xmlRes = await fetch(data.captionUrl);
-    const xmlText = await xmlRes.text();
-    const segments = [];
+    // 2. 브라우저에서 직접 자막 fetch (&fmt=json3 → JSON 포맷)
+    var captionUrl = data.captionUrl + '&fmt=json3';
+    var captionRes = await fetch(captionUrl);
+    var captionJson = await captionRes.json();
     
-    function decodeHTML(text) {
-      const el = document.createElement('textarea');
-      el.innerHTML = text;
-      return el.value.replace(/<[^>]*>/g, '').trim();
-    }
-    function formatTime(sec) {
-      const m = Math.floor(sec / 60);
-      const s = Math.floor(sec % 60);
-      return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
-    }
-    
-    let match;
-    const r1 = /<text start="([^"]*)" dur="([^"]*)"[^>]*>([\s\S]*?)<\/text>/g;
-    while ((match = r1.exec(xmlText)) !== null) {
-      segments.push({ start: parseFloat(match[1]), dur: parseFloat(match[2]), text: decodeHTML(match[3]) });
-    }
-    if (segments.length === 0) {
-      const r2 = /<p t="([^"]*)" d="([^"]*)"[^>]*>([\s\S]*?)<\/p>/g;
-      while ((match = r2.exec(xmlText)) !== null) {
-        segments.push({ start: parseFloat(match[1]) / 1000, dur: parseFloat(match[2]) / 1000, text: decodeHTML(match[3]) });
+    // 3. JSON3 → segments 변환
+    var segments = [];
+    if (captionJson.events) {
+      for (var i = 0; i < captionJson.events.length; i++) {
+        var ev = captionJson.events[i];
+        if (!ev.segs) continue;
+        var text = ev.segs.map(function(s) { return s.utf8 || ''; }).join('').trim();
+        if (!text) continue;
+        segments.push({ start: (ev.tStartMs || 0) / 1000, dur: (ev.dDurationMs || 0) / 1000, text: text });
       }
     }
     if (segments.length === 0) throw new Error('자막 데이터를 파싱할 수 없습니다.');
     
-    const transcriptHTML = segments.map(function(s) {
+    function formatTime(sec) {
+      var m = Math.floor(sec / 60);
+      var s = Math.floor(sec % 60);
+      return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+    
+    var transcriptHTML = segments.map(function(s) {
       return '<div class="flex gap-3 py-1.5 hover:bg-gray-50 rounded px-2">' +
         '<span class="text-xs text-blue-500 font-mono whitespace-nowrap mt-0.5">[' + formatTime(s.start) + ']</span>' +
         '<span class="text-sm text-gray-800">' + s.text + '</span></div>';
     }).join('');
     
-    const plainText = segments.map(function(s) { return '[' + formatTime(s.start) + '] ' + s.text; }).join('\n');
+    var plainText = segments.map(function(s) { return '[' + formatTime(s.start) + '] ' + s.text; }).join('\n');
     
     var modal = document.createElement('div');
     modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4';
