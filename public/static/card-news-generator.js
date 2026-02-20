@@ -212,14 +212,12 @@ window.CardNewsGenerator = {
           '<p class="text-[10px] font-medium">' + roleLabel + '</p>' +
           '<p class="text-[10px] truncate">' + (slide.title || '') + '</p>' +
         '</div>' +
-        // hover 버튼: 편집, 삭제, 배경교체
-        '<div class="absolute top-1 right-1 hidden group-hover:flex">' +
+        // hover 버튼: 편집, 삭제
+        '<div class="absolute top-1 right-1 flex invisible group-hover:visible" style="gap:4px;">' +
           '<button onclick="event.stopPropagation(); CardNewsGenerator._editSlide(\'' + data.groupId + '\', ' + i + ')" ' +
             'class="w-7 h-7 bg-white rounded-full text-xs shadow flex items-center justify-center" title="편집">✏️</button>' +
           '<button onclick="event.stopPropagation(); CardNewsGenerator._deleteSlide(\'' + data.groupId + '\', ' + i + ')" ' +
-            'class="w-7 h-7 bg-red-500 text-white rounded-full text-xs shadow flex items-center justify-center ml-1" title="삭제">🗑️</button>' +
-          '<button onclick="event.stopPropagation(); CardNewsGenerator._changeBg(' + i + ')" ' +
-            'class="w-7 h-7 bg-blue-500 text-white rounded-full text-xs shadow flex items-center justify-center ml-1" title="배경 교체">🖼️</button>' +
+            'class="w-7 h-7 bg-red-500 text-white rounded-full text-xs shadow flex items-center justify-center" title="삭제">🗑️</button>' +
         '</div>' +
       '</div>';
     }).join('');
