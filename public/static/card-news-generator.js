@@ -174,6 +174,8 @@ window.CardNewsGenerator = {
         '<div class="absolute top-1 right-1 hidden group-hover:flex">' +
           '<button onclick="event.stopPropagation(); CardNewsGenerator._editSlide(\'' + data.groupId + '\', ' + i + ')" ' +
             'class="w-6 h-6 bg-white rounded-full text-xs shadow flex items-center justify-center">✏️</button>' +
+          '<button onclick="event.stopPropagation(); CardNewsGenerator._deleteSlide(\'' + data.groupId + '\', ' + i + ')" ' +
+            'class="w-6 h-6 bg-red-500 text-white rounded-full text-xs shadow flex items-center justify-center ml-1">🗑️</button>' +
         '</div>' +
       '</div>';
     }).join('');
@@ -184,6 +186,8 @@ window.CardNewsGenerator = {
           '<h4 class="text-sm font-bold text-gray-700">✅ ' + data.slides.length + '장 생성 완료</h4>' +
           '<button onclick="CardNewsGenerator._downloadAll(\'' + data.groupId + '\')" ' +
             'class="text-xs text-green-600 hover:underline">전체 다운로드</button>' +
+          '<button onclick="CardNewsGenerator._addSlide(\'' + data.groupId + '\')" ' +
+            'class="text-xs text-blue-600 hover:underline ml-3">+ 장표 추가</button>' +
         '</div>' +
         '<div class="grid grid-cols-2 gap-2">' + slidesHtml + '</div>' +
       '</div>';
@@ -221,10 +225,17 @@ window.CardNewsGenerator = {
     });
   },
 
-  _editSlide(groupId, index) {
-    var allSlides = SlideCollection.getAll().filter(function(s) { return s.groupId === groupId; });
+  async _editSlide(groupId, index) {
+    var allSlides;
+    if (window.SlideDB) {
+      allSlides = await window.SlideDB.getAll();
+      allSlides = allSlides.filter(function(s) { return s.groupId === groupId; });
+      allSlides.sort(function(a, b) { return (a.groupOrder || 0) - (b.groupOrder || 0); });
+    } else {
+      allSlides = SlideCollection.getAll().filter(function(s) { return s.groupId === groupId; });
+    }
     if (allSlides[index] && window.ImageEditor) {
-      window.ImageEditor.open(allSlides[index].image, allSlides[index].title, '', 'collection');
+      window.ImageEditor.open(allSlides[index].imageData || allSlides[index].image, allSlides[index].label || allSlides[index].title, '', 'collection');
     }
   },
 
@@ -239,5 +250,56 @@ window.CardNewsGenerator = {
         a.click();
       }, i * 500);
     });
+  },
+
+  _deleteSlide(groupId, index) {
+    if (!confirm('이 슬라이드를 삭제하시겠습니까?')) return;
+    var self = this;
+    if (window.SlideDB) {
+      window.SlideDB.getAll().then(function(allSlides) {
+        var grouped = allSlides.filter(function(s) { return s.groupId === groupId; });
+        grouped.sort(function(a, b) { return (a.groupOrder || 0) - (b.groupOrder || 0); });
+        if (grouped[index]) {
+          var slideId = grouped[index].id;
+          window.SlideDB.delete(slideId).then(function() { SlideCollection.render(); });
+        }
+      });
+    }
+    // 화면에서도 제거
+    var resultContainer = document.getElementById('cardNewsResult');
+    if (resultContainer) {
+      var cards = resultContainer.querySelectorAll('.group');
+      if (cards[index]) cards[index].remove();
+    }
+  },
+
+  _addSlide(groupId) {
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async function(e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = async function(ev) {
+        var imageData = ev.target.result;
+        var slideItem = {
+          id: 'cardnews_' + Date.now() + '_added',
+          source: 'card-news',
+          label: '추가 슬라이드',
+          imageData: imageData,
+          groupId: groupId,
+          groupName: 'AI 카드뉴스',
+          role: 'content'
+        };
+        if (window.SlideDB) {
+          await window.SlideDB.add(slideItem);
+        }
+        SlideCollection.render();
+        alert('슬라이드가 추가되었습니다.');
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
   }
 };

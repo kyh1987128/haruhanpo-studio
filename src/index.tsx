@@ -7621,10 +7621,10 @@ app.post('/api/card-news/analyze', async (c) => {
     const proxyBase = 'https://gemini-proxy.kyh1987128.workers.dev';
     
     const platformSizeMap: Record<string, { width: number; height: number; ratio: string }> = {
-      'instagram_square': { width: 1080, height: 1080, ratio: '1:1' },
-      'instagram_portrait': { width: 1080, height: 1350, ratio: '4:5' },
-      'instagram_story': { width: 1080, height: 1920, ratio: '9:16' },
-      'threads': { width: 1080, height: 1080, ratio: '1:1' }
+      'instagram_square': { width: 1024, height: 1024, ratio: '1:1' },
+      'instagram_portrait': { width: 1024, height: 1280, ratio: '4:5' },
+      'instagram_story': { width: 1024, height: 1792, ratio: '9:16' },
+      'threads': { width: 1024, height: 1024, ratio: '1:1' }
     };
     const platformSize = platformSizeMap[platform] || platformSizeMap['instagram_square'];
     
@@ -7711,10 +7711,10 @@ app.post('/api/images/generate-card-news', async (c) => {
     
     // 플랫폼별 비율 매핑
     const platformSizeMap: Record<string, { width: number; height: number; ratio: string }> = {
-      'instagram_square': { width: 1080, height: 1080, ratio: '1:1' },
-      'instagram_portrait': { width: 1080, height: 1350, ratio: '4:5' },
-      'instagram_story': { width: 1080, height: 1920, ratio: '9:16' },
-      'threads': { width: 1080, height: 1080, ratio: '1:1' }
+      'instagram_square': { width: 1024, height: 1024, ratio: '1:1' },
+      'instagram_portrait': { width: 1024, height: 1280, ratio: '4:5' },
+      'instagram_story': { width: 1024, height: 1792, ratio: '9:16' },
+      'threads': { width: 1024, height: 1024, ratio: '1:1' }
     };
     const platformSize = platformSizeMap[platform] || platformSizeMap['instagram_square'];
     
@@ -7902,12 +7902,30 @@ ${content.substring(0, 3000)}` }] }],
           }
           
           // 2차: AI 이미지 생성 (폴백)
-          const imagePrompt = `Create a background image for a social media carousel slide.
-Style: ${style}
-Aspect ratio: ${platformSize.ratio} (${platformSize.width}x${platformSize.height} pixels)
-Scene: ${slide.visual_concept}
-This is a background image only. Do NOT include any text, letters, numbers, words, characters, watermarks, or logos.
-Leave space at the ${slide.text_position || 'center'} area for text overlay.`;
+          const slideRole = slide.role || 'content';
+          const roleGuide = slideRole === 'cover' 
+            ? 'This is the COVER slide. Use a bold, eye-catching composition with a clear focal point. Leave the top 1/3 area simple for title text overlay.'
+            : slideRole === 'cta'
+            ? 'This is the CALL-TO-ACTION (CTA) slide. Use a clean, minimal background with a strong visual anchor. Leave the center area open for CTA text overlay.'
+            : 'This is a CONTENT slide. Use an informative, visually rich but not cluttered background. Leave the bottom 1/3 area simple for body text overlay.';
+          
+          const imagePrompt = `Create a high-quality background image for a social media carousel slide.
+
+Image specifications:
+- Aspect ratio: ${platformSize.ratio}
+- Resolution: ${platformSize.width}x${platformSize.height} pixels
+- Style: ${style} (maintain this style consistently across all slides in the series)
+
+Slide role: ${slideRole}
+${roleGuide}
+
+Visual scene: ${slide.visual_concept}
+
+CRITICAL REQUIREMENTS:
+1. Do NOT include any text, letters, numbers, words, characters, watermarks, or logos.
+2. Design the background considering text overlay placement at the ${slide.text_position || 'center'} area — keep that zone simple and low-contrast.
+3. Maintain visual consistency: use a cohesive color palette, consistent lighting, and unified tone throughout the series.
+4. The image should feel professional, polished, and suitable for a branded social media post.`;
 
           for (const model of models) {
             try {

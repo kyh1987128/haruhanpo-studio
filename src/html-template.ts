@@ -540,7 +540,6 @@ export const htmlTemplate = `
                     <button id="aiCardNewsBtn" class="img-tool-btn" onclick="window.CardNewsGenerator && window.CardNewsGenerator.show()">
                         <i class="fas fa-th-large text-lg text-emerald-600"></i>
                         <span class="text-xs mt-1 font-semibold text-gray-700">AI 카드뉴스</span>
-                        <span class="text-[9px] text-orange-500 font-bold">5 크레딧</span>
                     </button>
                     <button id="aiDesignFeedbackBtn" class="img-tool-btn" onclick="window.DesignFeedback && window.DesignFeedback.show()">
                         <i class="fas fa-chart-bar text-lg text-blue-600"></i>
