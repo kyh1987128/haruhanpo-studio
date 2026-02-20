@@ -8058,17 +8058,17 @@ app.post('/api/images/design-feedback', async (c) => {
     await supabase.from('users').update({ free_credits: newFree, paid_credits: newPaid }).eq('id', user_id);
     
     const platformFocus: Record<string, string> = {
-      youtube: 'YouTube thumbnail optimization. Focus on: CTR optimization, mobile thumbnail visibility, face/expression usage, text-to-image ratio, color contrast.',
-      instagram: 'Instagram post/carousel optimization. Focus on: thumb-stopping power, save and share motivation, aesthetic cohesion.',
-      threads: 'Threads post optimization. Focus on: text clarity, conversation triggering, mobile-first design.',
-      blog: 'Blog featured image optimization. Focus on: information density, professional credibility, readability.'
+      youtube: '유튜브 썸네일 최적화 관점으로 분석. CTR 최적화, 모바일에서 썸네일 가시성, 얼굴/표정 활용도, 텍스트 대 이미지 비율, 색상 대비를 중점적으로 평가하세요.',
+      instagram: '인스타그램 포스트/캐러셀 최적화 관점으로 분석. 스크롤 멈춤 효과, 저장/공유 동기 부여, 피드 내 미적 일관성을 중점적으로 평가하세요.',
+      threads: '쓰레드 포스트 최적화 관점으로 분석. 텍스트 명확성, 대화 유발력, 모바일 우선 디자인을 중점적으로 평가하세요.',
+      blog: '블로그 대표 이미지 최적화 관점으로 분석. 정보 전달력, 전문적 신뢰감, 가독성을 중점적으로 평가하세요.'
     };
     
     const usageFocus: Record<string, string> = {
-      thumbnail: 'This is a thumbnail/hero image. Primary goal: maximize click-through rate.',
-      card_cover: 'This is a card news cover slide. Primary goal: stop scrolling and trigger swipe.',
-      card_body: 'This is a card news body slide. Primary goal: deliver information clearly.',
-      general: 'This is a general purpose image. Evaluate overall design quality.'
+      thumbnail: '이것은 썸네일/히어로 이미지입니다. 최우선 목표: 클릭률(CTR) 극대화.',
+      card_cover: '이것은 카드뉴스 표지 슬라이드입니다. 최우선 목표: 스크롤을 멈추고 스와이프를 유도.',
+      card_body: '이것은 카드뉴스 본문 슬라이드입니다. 최우선 목표: 정보를 명확하게 전달.',
+      general: '이것은 범용 이미지입니다. 전반적인 디자인 품질을 평가하세요.'
     };
     
     // 이미지 base64 추출
@@ -8090,30 +8090,51 @@ app.post('/api/images/design-feedback', async (c) => {
             contents: [{
               parts: [
                 { inlineData: { mimeType, data: imageBase64 } },
-                { text: `You are a professional digital marketing design consultant.
+                { text: `당신은 10년 경력의 디지털 마케팅 디자인 컨설턴트입니다.
+이미지를 직접 보고 구체적으로 분석하세요. 일반적인 조언이 아니라 이 이미지에만 해당하는 구체적인 피드백을 주세요.
 
 ${platformFocus[platform] || platformFocus.youtube}
 ${usageFocus[usage] || usageFocus.general}
 
-Analyze this image and return JSON only (no markdown, no code fences):
+아래 JSON 형식으로만 응답하세요 (마크다운, 코드펜스 없이 JSON만):
 {
-  "overall_score": (1-5 integer),
+  "overall_score": (1-5 정수),
   "scores": {
-    "visual_impact": { "score": (1-5), "comment": "Korean explanation, 1-2 sentences" },
-    "text_readability": { "score": (1-5), "comment": "Korean explanation" },
-    "color_harmony": { "score": (1-5), "comment": "Korean explanation" },
-    "platform_fit": { "score": (1-5), "comment": "Korean explanation" },
-    "click_inducement": { "score": (1-5), "comment": "Korean explanation" }
+    "visual_impact": {
+      "score": (1-5),
+      "comment": "이 이미지에서 구체적으로 무엇이 시선을 끌고/끌지 못하는지. 예: '중앙의 인물 표정이 놀람을 표현해 호기심을 유발한다' 또는 '배경과 피사체의 명도 차이가 작아 시선이 분산된다'"
+    },
+    "text_readability": {
+      "score": (1-5),
+      "comment": "텍스트가 있으면: 글자 크기, 폰트 선택, 배경 대비, 읽히는 데 걸리는 시간 분석. 텍스트가 없으면: 어떤 텍스트를 어디에 어떤 크기로 넣으면 효과적인지 구체적 제안"
+    },
+    "color_harmony": {
+      "score": (1-5),
+      "comment": "실제 사용된 색상을 언급하며 분석. 예: '주황색 배경 위 흰색 텍스트는 대비가 좋지만, 우측 하단의 파란색 요소가 전체 톤과 충돌한다'"
+    },
+    "platform_fit": {
+      "score": (1-5),
+      "comment": "해당 플랫폼의 피드에서 다른 콘텐츠 사이에 놓였을 때 어떻게 보일지 분석. 모바일 화면 크기에서의 가독성 포함"
+    },
+    "click_inducement": {
+      "score": (1-5),
+      "comment": "호기심 갭, 감정 유발, 정보 약속 등 클릭 심리학 관점에서 분석. 예: '숫자가 포함된 제목이 구체성을 부여하지만, 결과 미리보기가 없어 호기심이 약하다'"
+    }
   },
-  "strengths": ["Korean strength 1", "Korean strength 2"],
-  "improvements": ["Korean improvement 1", "Korean improvement 2", "Korean improvement 3"],
-  "ab_test_suggestion": "Korean A/B test suggestion"
+  "strengths": ["이 이미지의 구체적 강점 1", "구체적 강점 2"],
+  "improvements": [
+    "구체적 개선안 1 (무엇을 → 어떻게 바꿀지 포함)",
+    "구체적 개선안 2 (무엇을 → 어떻게 바꿀지 포함)",
+    "구체적 개선안 3 (무엇을 → 어떻게 바꿀지 포함)"
+  ],
+  "ab_test_suggestion": "현재 이미지의 특정 요소를 변경한 A/B 테스트 제안. 예: '현재 정면 응시 표정 vs 측면 프로필로 교체했을 때 CTR 비교'"
 }
 
-Be honest but constructive. Score strictly: 5=top 1%, 4=above average, 3=average, 2=below average, 1=needs major work.` }
+채점 기준: 5=상위 1% 수준, 4=평균 이상, 3=평균, 2=평균 이하, 1=대폭 수정 필요.
+중요: 모든 코멘트는 반드시 이 이미지에서 실제로 보이는 요소를 언급해야 합니다. "더 밝게", "텍스트 추가" 같은 일반적 조언은 금지합니다.` }
               ]
             }],
-            generationConfig: { maxOutputTokens: 800, temperature: 0.4 }
+            generationConfig: { maxOutputTokens: 2000, temperature: 0.4 }
           })
         });
       
