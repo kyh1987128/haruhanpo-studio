@@ -129,7 +129,7 @@ window.CardNewsGenerator = {
         }));
       }
 
-      this._renderResult(data);
+      this._renderResult(data, platform);
       this._addToSlideCollection(data);
 
     } catch (err) {
@@ -156,15 +156,23 @@ window.CardNewsGenerator = {
     }
   },
 
-  _renderResult(data) {
+  _renderResult(data, platform) {
     var container = document.getElementById('cardNewsResult');
     if (!container) return;
+
+    var aspectRatios = {
+      'instagram_square': '1/1',
+      'instagram_portrait': '4/5',
+      'instagram_story': '9/16',
+      'threads': '1/1'
+    };
+    var aspectRatio = aspectRatios[platform] || '1/1';
 
     var slidesHtml = data.slides.map(function(slide, i) {
       var roleLabel = slide.role === 'cover' ? '📌 표지' : slide.role === 'cta' ? '📢 CTA' : '📄 ' + (i + 1) + '/' + data.slides.length;
       return '<div class="relative group rounded-lg overflow-hidden border shadow-sm cursor-pointer" ' +
         'onclick="CardNewsGenerator._editSlide(\'' + data.groupId + '\', ' + i + ')">' +
-        '<div class="w-full max-h-[200px] bg-gray-100 overflow-hidden flex items-center justify-center">' +
+        '<div class="w-full bg-gray-100 overflow-hidden flex items-center justify-center" style="aspect-ratio: ' + aspectRatio + '">' +
         '<img src="data:image/png;base64,' + slide.image + '" class="w-full h-full object-contain">' +
         '</div>' +
         '<div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white p-2">' +
