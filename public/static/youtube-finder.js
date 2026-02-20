@@ -8376,81 +8376,114 @@ async function extractVideoKeywords(videoId, title, channel) {
 window.extractVideoKeywords = extractVideoKeywords;
 
 async function extractTranscript(videoId, title) {
-  var btn = document.querySelector('[data-transcript-video-id="' + videoId + '"]');
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 추출 중...';
-  }
+  const btn = document.querySelector(`[data-transcript-video-id="${videoId}"]`);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 대본 추출 중...'; }
+  
   try {
-    var res = await fetch('/api/youtube/transcript', {
+    // 브라우저에서 직접 Innertube Player API 호출
+    const playerRes = await fetch('https://www.youtube.com/youtubei/v1/player?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8&prettyPrint=false', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ videoId: videoId })
+      body: JSON.stringify({
+        context: {
+          client: { clientName: 'WEB', clientVersion: '2.20250219.01.00', hl: 'ko', gl: 'KR' }
+        },
+        videoId: videoId
+      })
     });
-    var data = await res.json();
-    if (!data.success) {
-      alert(data.error || '대본 추출에 실패했습니다.');
-      return;
+    const playerData = await playerRes.json();
+    const tracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+    
+    if (!tracks || tracks.length === 0) {
+      throw new Error('이 영상에는 자막이 없어 대본을 추출할 수 없습니다.');
     }
-    var transcriptLines = [];
-    var plainLines = [];
-    for (var i = 0; i < data.segments.length; i++) {
-      var seg = data.segments[i];
-      var m = Math.floor(seg.start / 60);
-      var s = Math.floor(seg.start % 60);
-      var ts = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
-      transcriptLines.push('<div style="display:flex;gap:8px;margin-bottom:4px;"><span style="color:#3b82f6;font-weight:600;white-space:nowrap;font-size:13px;">[' + ts + ']</span><span style="font-size:14px;">' + seg.text + '</span></div>');
-      plainLines.push('[' + ts + '] ' + seg.text);
+    
+    // 한국어 우선, 없으면 첫 번째 트랙
+    const koTrack = tracks.find(t => t.languageCode === 'ko') || tracks[0];
+    const captionUrl = koTrack.baseUrl;
+    
+    // 자막 XML을 브라우저에서 직접 가져옴
+    const xmlRes = await fetch(captionUrl);
+    const xmlText = await xmlRes.text();
+    
+    function decodeHTMLEntities(text) {
+      const el = document.createElement('textarea');
+      el.innerHTML = text;
+      return el.value.replace(/<[^>]*>/g, '').trim();
     }
-    var transcriptHtml = transcriptLines.join('');
-    var existingModal = document.getElementById('transcript-modal');
-    if (existingModal) existingModal.remove();
-    var modal = document.createElement('div');
-    modal.id = 'transcript-modal';
-    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
-    var content = document.createElement('div');
-    content.style.cssText = 'background:white;border-radius:16px;padding:24px;max-width:700px;width:90%;max-height:80vh;display:flex;flex-direction:column;position:relative;';
-    var closeBtn = document.createElement('button');
-    closeBtn.innerHTML = '&times;';
-    closeBtn.style.cssText = 'position:absolute;top:12px;right:12px;background:none;border:none;font-size:24px;cursor:pointer;';
-    closeBtn.onclick = function() { modal.remove(); };
-    var header = document.createElement('h3');
-    header.style.cssText = 'font-size:18px;font-weight:bold;margin-bottom:4px;';
-    header.textContent = '📝 대본 추출';
-    var sub = document.createElement('p');
-    sub.style.cssText = 'font-size:13px;color:#666;margin-bottom:16px;';
-    sub.textContent = (title || '') + ' (' + data.language + ', ' + data.totalSegments + '개 구간)';
-    var body = document.createElement('div');
-    body.style.cssText = 'background:#f9fafb;border-radius:8px;padding:16px;overflow-y:auto;flex:1;';
-    body.innerHTML = transcriptHtml;
-    var btnWrap = document.createElement('div');
-    btnWrap.style.cssText = 'margin-top:16px;display:flex;gap:8px;';
-    var copyBtn = document.createElement('button');
-    copyBtn.textContent = '복사하기';
-    copyBtn.style.cssText = 'flex:1;background:#3b82f6;color:white;padding:10px;border-radius:8px;border:none;cursor:pointer;font-weight:600;';
-    copyBtn.onclick = function() {
-      navigator.clipboard.writeText(plainLines.join('\n')).then(function() { alert('복사 완료!'); });
-    };
-    var closeBtn2 = document.createElement('button');
-    closeBtn2.textContent = '닫기';
-    closeBtn2.style.cssText = 'flex:1;background:#e5e7eb;color:#374151;padding:10px;border-radius:8px;border:none;cursor:pointer;font-weight:600;';
-    closeBtn2.onclick = function() { modal.remove(); };
-    btnWrap.appendChild(copyBtn);
-    btnWrap.appendChild(closeBtn2);
-    content.appendChild(closeBtn);
-    content.appendChild(header);
-    content.appendChild(sub);
-    content.appendChild(body);
-    content.appendChild(btnWrap);
-    modal.appendChild(content);
-    modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+    
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+    
+    // XML 파싱 (두 가지 형식 지원)
+    const segments = [];
+    // 형식1: <text start="..." dur="...">...</text>
+    const textRegex = /<text start="([^"]*)" dur="([^"]*)"\s*>([\s\S]*?)<\/text>/g;
+    let match;
+    while ((match = textRegex.exec(xmlText)) !== null) {
+      segments.push({ start: parseFloat(match[1]), dur: parseFloat(match[2]), text: decodeHTMLEntities(match[3]) });
+    }
+    // 형식2: <p t="..." d="...">...</p>
+    if (segments.length === 0) {
+      const pRegex = /<p t="([^"]*)" d="([^"]*)"[^>]*>([\s\S]*?)<\/p>/g;
+      while ((match = pRegex.exec(xmlText)) !== null) {
+        segments.push({ start: parseFloat(match[1]) / 1000, dur: parseFloat(match[2]) / 1000, text: decodeHTMLEntities(match[3]) });
+      }
+    }
+    
+    if (segments.length === 0) {
+      throw new Error('자막 데이터를 파싱할 수 없습니다.');
+    }
+    
+    // 모달 표시
+    const transcriptHTML = segments.map(s => 
+      `<div class="flex gap-3 py-1.5 hover:bg-gray-50 rounded px-2">
+        <span class="text-xs text-blue-500 font-mono whitespace-nowrap mt-0.5 cursor-pointer" title="클릭하여 복사">[${formatTime(s.start)}]</span>
+        <span class="text-sm text-gray-800">${s.text}</span>
+      </div>`
+    ).join('');
+    
+    const plainText = segments.map(s => `[${formatTime(s.start)}] ${s.text}`).join('\n');
+    
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4';
+    modal.onclick = function(e) { if (e.target === modal) document.body.removeChild(modal); };
+    modal.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col" onclick="event.stopPropagation()">
+        <div class="p-4 border-b flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-bold text-gray-900">📝 대본 추출</h3>
+            <p class="text-xs text-gray-500 mt-1">${title || ''} | ${koTrack.name?.simpleText || koTrack.languageCode} | ${segments.length}개 구간</p>
+          </div>
+          <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4">${transcriptHTML}</div>
+        <div class="p-4 border-t flex gap-2">
+          <button id="transcript-copy-btn"
+            class="flex-1 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold text-sm hover:shadow-lg transition">📋 전체 복사</button>
+          <button onclick="this.closest('.fixed').remove()" 
+            class="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-300 transition">닫기</button>
+        </div>
+      </div>`;
     document.body.appendChild(modal);
+    
+    // 복사 버튼 이벤트 (템플릿 리터럴 이스케이프 문제 방지)
+    document.getElementById('transcript-copy-btn').onclick = function() {
+      navigator.clipboard.writeText(plainText).then(() => {
+        this.innerHTML = '✅ 복사됨!';
+        setTimeout(() => { this.innerHTML = '📋 전체 복사'; }, 2000);
+      });
+    };
+    
   } catch (err) {
-    alert(err.message || '대본 추출 중 오류가 발생했습니다.');
+    alert(err.message || '대본 추출에 실패했습니다.');
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-scroll"></i> 대본 추출 <span style="background:rgba(255,255,255,0.2);padding:2px 6px;border-radius:6px;font-size:11px;font-weight:bold;">무료</span>';
+      btn.innerHTML = '<i class="fas fa-scroll mr-1"></i> 대본 추출 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">무료</span>';
     }
   }
 }
