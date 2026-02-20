@@ -632,19 +632,6 @@ export const htmlTemplate = `
                     border-style: solid;
                 }
             </style>
-            <div id="imageEditorSection" class="bg-white rounded-2xl shadow-lg border p-4 mb-4 mx-0">
-                <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-                    <i class="fas fa-palette text-purple-500"></i>
-                    이미지 편집
-                </h3>
-                <div id="editorSectionContent">
-                    <div class="text-center py-6 text-gray-400">
-                        <i class="fas fa-image text-3xl mb-2 opacity-30"></i>
-                        <p class="text-xs">이미지를 선택하면 여기에 표시됩니다</p>
-                        <p class="text-[9px]">이미지 도구 또는 장표 컬렉션에서 선택하세요</p>
-                    </div>
-                </div>
-            </div>
             <div class="border-t border-gray-200 my-4"></div>
             <div id="slideCollectionPanel" class="mb-6">
                 <div class="flex items-center justify-between mb-3">
@@ -2255,7 +2242,6 @@ export const htmlTemplate = `
     <script src="/static/image-generator.js?v=8.1.1"></script>
     <script src="/static/image-editor.js?v=8.1.1"></script>
     <script src="/static/thumbnail-generator.js?v=8.1.1"></script>
-    <script src="/static/image-editor-section.js?v=8.1.1"></script>
     <script src="/static/slide-collection.js?v=8.1.1"></script>
     <script src="/static/card-news-templates.js?v=8.1.1"></script>
     <script src="/static/card-news-generator.js?v=8.1.1"></script>

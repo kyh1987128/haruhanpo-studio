@@ -1567,7 +1567,26 @@ function updateChannelDetailPanel(video) {
         </div>
         
         <!-- 퀵 액션 -->
-        <div class="border-t pt-3 pb-2">
+        <div class="border-t pt-3 pb-2 space-y-2">
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              data-video-id="${video.videoId}"
+              data-title="${encodeURIComponent(video.title)}"
+              data-channel="${encodeURIComponent(video.channel || '')}"
+              onclick="if(typeof extractVideoKeywords==='function'){extractVideoKeywords(this.dataset.videoId, decodeURIComponent(this.dataset.title), decodeURIComponent(this.dataset.channel))}else{alert('키워드 추출 기능을 불러오는 중입니다.')}"
+              class="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg transition text-xs font-semibold shadow-sm">
+              <i class="fas fa-key"></i>
+              키워드 추출
+              <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span>
+            </button>
+            <button
+              onclick="if(typeof generateVideoSummary==='function'){generateVideoSummary('${video.videoId}')}else{alert('영상 요약 기능을 불러오는 중입니다.')}"
+              class="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg transition text-xs font-semibold shadow-sm">
+              <i class="fas fa-file-alt"></i>
+              영상 요약
+              <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span>
+            </button>
+          </div>
           <a href="https://www.youtube.com/watch?v=${video.videoId}" 
              target="_blank"
              class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition text-sm font-medium">
@@ -4461,6 +4480,31 @@ async function generateCompareAIAnalysis() {
   
   if (selectedCompareVideos.length < 2) {
     alert('최소 2개 이상의 영상을 선택해주세요.');
+    return;
+  }
+  
+  // 크레딧 차감
+  try {
+    const creditRes = await fetch('/api/credits/deduct', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: 1,
+        feature: 'youtube_video_comparison',
+        user_id: window.currentUser?.id
+      })
+    });
+    const creditData = await creditRes.json();
+    if (!creditData.success) {
+      alert('크레딧이 부족합니다. 크레딧을 충전해주세요.');
+      return;
+    }
+    window.dispatchEvent(new CustomEvent('userUpdated', {
+      detail: { ...window.currentUser, free_credits: creditData.remaining?.free, paid_credits: creditData.remaining?.paid }
+    }));
+  } catch (err) {
+    console.error('크레딧 차감 실패:', err);
+    alert('크레딧 차감 중 오류가 발생했습니다.');
     return;
   }
   
@@ -7788,14 +7832,39 @@ document.addEventListener('DOMContentLoaded', () => {
 async function generateVideoSummary(videoId) {
   console.log('🎬 [영상 요약] 시작:', videoId);
   
-  // 로그인 확인 (크레딧 체크 제거 - 무료 서비스)
+  // 로그인 확인
   if (!window.currentUser) {
-    alert('❌ 로그인이 필요합니다.\n\n영상 요약은 로그인한 회원만 무료로 이용 가능합니다.');
+    alert('❌ 로그인이 필요합니다.\n\n영상 요약은 로그인한 회원만 이용 가능합니다.');
     
     // 로그인 모달 열기
     if (typeof openAuthModal === 'function') {
       openAuthModal('login');
     }
+    return;
+  }
+  
+  // 크레딧 차감
+  try {
+    const creditRes = await fetch('/api/credits/deduct', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: 1,
+        feature: 'youtube_video_summary',
+        user_id: window.currentUser?.id
+      })
+    });
+    const creditData = await creditRes.json();
+    if (!creditData.success) {
+      alert('크레딧이 부족합니다. 크레딧을 충전해주세요.');
+      return;
+    }
+    window.dispatchEvent(new CustomEvent('userUpdated', {
+      detail: { ...window.currentUser, free_credits: creditData.remaining?.free, paid_credits: creditData.remaining?.paid }
+    }));
+  } catch (err) {
+    console.error('크레딧 차감 실패:', err);
+    alert('크레딧 차감 중 오류가 발생했습니다.');
     return;
   }
   
@@ -8135,14 +8204,9 @@ window.generateVideoSummary = generateVideoSummary;
 // 🔑 키워드 추출 기능 (1크레딧)
 // ========================================
 async function extractVideoKeywords(videoId, title, channel) {
-  // 버튼: 클릭한 버튼을 찾음 (영상 발굴 or 트렌드)
+  // 버튼: 클릭한 버튼을 찾음 (영상 발굴 or 트렌드 or 채널분석)
   const btn = document.querySelector('[data-video-id="' + videoId + '"][onclick*="extractVideoKeywords"]') 
               || document.getElementById('extractKeywordsBtn');
-  // 결과 영역: 트렌드 패널용 or 영상 발굴용
-  const resultEl = document.getElementById('keyword-result-trend-' + videoId) 
-                   || document.getElementById('keywordExtractResult');
-  
-  if (!resultEl) { console.warn('키워드 결과 영역 없음'); return; }
   
   // 크레딧 차감
   try {
@@ -8160,7 +8224,6 @@ async function extractVideoKeywords(videoId, title, channel) {
       alert('크레딧이 부족합니다. 크레딧을 충전해주세요.');
       return;
     }
-    // 헤더 크레딧 업데이트
     window.dispatchEvent(new CustomEvent('userUpdated', {
       detail: { ...window.currentUser, free_credits: creditData.remaining?.free, paid_credits: creditData.remaining?.paid }
     }));
@@ -8198,58 +8261,70 @@ async function extractVideoKeywords(videoId, title, channel) {
     }
     
     const kw = data.data;
-    resultEl.classList.remove('hidden');
-    resultEl.innerHTML = `
-      <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-        <h4 class="font-bold text-sm text-emerald-800 mb-2">🔑 키워드 추출 결과</h4>
-        
-        ${kw.summary ? `<p class="text-xs text-gray-600 mb-2 bg-white p-2 rounded">${kw.summary}</p>` : ''}
-        
-        <div class="mb-2">
-          <span class="text-[10px] font-bold text-emerald-700">핵심 키워드</span>
-          <div class="flex flex-wrap gap-1 mt-1">
-            ${(kw.main_keywords || []).map(k => `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded text-xs cursor-pointer hover:bg-emerald-200" onclick="navigator.clipboard.writeText('${k}'); this.textContent='✓ 복사'">${k}</span>`).join('')}
-          </div>
+    
+    // 모달로 결과 표시
+    const existingModal = document.getElementById('keyword-modal');
+    if (existingModal) existingModal.remove();
+    
+    const modal = document.createElement('div');
+    modal.id = 'keyword-modal';
+    modal.className = 'fixed inset-0 z-[9999] flex items-center justify-center p-4';
+    modal.innerHTML = `
+      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="document.getElementById('keyword-modal').remove()"></div>
+      <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-hidden">
+        <div class="sticky top-0 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-4 flex items-center justify-between">
+          <h3 class="text-lg font-bold flex items-center gap-2">🔑 키워드 분석 결과</h3>
+          <button onclick="document.getElementById('keyword-modal').remove()" class="text-white/80 hover:text-white text-2xl leading-none">&times;</button>
         </div>
-        
-        <div class="mb-2">
-          <span class="text-[10px] font-bold text-blue-700">SEO 키워드</span>
-          <div class="flex flex-wrap gap-1 mt-1">
-            ${(kw.seo_keywords || []).map(k => `<span class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs cursor-pointer hover:bg-blue-200" onclick="navigator.clipboard.writeText('${k}'); this.textContent='✓ 복사'">${k}</span>`).join('')}
+        <div class="p-6 overflow-y-auto" style="max-height: calc(80vh - 64px);">
+          ${kw.summary ? `<p class="text-sm text-gray-600 mb-4 bg-gray-50 p-3 rounded-lg">${kw.summary}</p>` : ''}
+          
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-emerald-700 mb-2">🎯 핵심 키워드</h4>
+            <div class="flex flex-wrap gap-1.5">
+              ${(kw.main_keywords || []).map(k => `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-sm cursor-pointer hover:bg-emerald-200 transition" onclick="navigator.clipboard.writeText('${k.replace(/'/g, "\\'")}'); this.textContent='✓ 복사됨'">${k}</span>`).join('')}
+            </div>
           </div>
+          
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-blue-700 mb-2">🔍 SEO 키워드</h4>
+            <div class="flex flex-wrap gap-1.5">
+              ${(kw.seo_keywords || []).map(k => `<span class="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm cursor-pointer hover:bg-blue-200 transition" onclick="navigator.clipboard.writeText('${k.replace(/'/g, "\\'")}'); this.textContent='✓ 복사됨'">${k}</span>`).join('')}
+            </div>
+          </div>
+          
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-purple-700 mb-2"># 해시태그</h4>
+            <div class="flex flex-wrap gap-1.5">
+              ${(kw.hashtags || []).map(h => `<span class="px-2.5 py-1 bg-purple-100 text-purple-800 rounded-lg text-sm cursor-pointer hover:bg-purple-200 transition" onclick="navigator.clipboard.writeText('${h.replace(/'/g, "\\'")}'); this.textContent='✓ 복사됨'">${h}</span>`).join('')}
+            </div>
+          </div>
+          
+          ${kw.suggested_titles ? `
+          <div class="mb-4">
+            <h4 class="text-sm font-bold text-orange-700 mb-2">💡 추천 제목</h4>
+            <div class="space-y-1.5">
+              ${kw.suggested_titles.map(t => `<p class="text-sm text-gray-700 bg-orange-50 p-2.5 rounded-lg cursor-pointer hover:bg-orange-100 transition" onclick="navigator.clipboard.writeText('${t.replace(/'/g, "\\'")}'); alert('제목 복사됨!')">${t}</p>`).join('')}
+            </div>
+          </div>` : ''}
+          
+          <button onclick="navigator.clipboard.writeText('${(kw.hashtags || []).join(' ').replace(/'/g, "\\'")}'); alert('전체 해시태그 복사됨!')" 
+            class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg text-sm font-bold hover:from-emerald-600 hover:to-teal-700 transition">
+            📋 전체 해시태그 복사
+          </button>
         </div>
-        
-        <div class="mb-2">
-          <span class="text-[10px] font-bold text-purple-700">해시태그</span>
-          <div class="flex flex-wrap gap-1 mt-1">
-            ${(kw.hashtags || []).map(h => `<span class="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs cursor-pointer hover:bg-purple-200" onclick="navigator.clipboard.writeText('${h}'); this.textContent='✓ 복사'">${h}</span>`).join('')}
-          </div>
-        </div>
-        
-        ${kw.suggested_titles ? `
-        <div>
-          <span class="text-[10px] font-bold text-orange-700">추천 제목</span>
-          <div class="space-y-1 mt-1">
-            ${kw.suggested_titles.map(t => `<p class="text-xs text-gray-700 bg-white p-1.5 rounded cursor-pointer hover:bg-orange-50" onclick="navigator.clipboard.writeText('${t.replace(/'/g, "\\'")}'); alert('제목 복사됨!')">${t}</p>`).join('')}
-          </div>
-        </div>` : ''}
-        
-        <button onclick="navigator.clipboard.writeText('${(kw.hashtags || []).join(' ').replace(/'/g, "\\'")}'); alert('전체 해시태그 복사됨!')" 
-          class="mt-2 w-full py-1.5 bg-emerald-500 text-white rounded text-xs font-bold hover:bg-emerald-600">
-          📋 전체 해시태그 복사
-        </button>
       </div>
     `;
+    document.body.appendChild(modal);
     
   } catch (err) {
     console.error('키워드 추출 오류:', err);
-    resultEl.classList.remove('hidden');
-    resultEl.innerHTML = `<div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-600">${err.message || '키워드 추출 중 오류가 발생했습니다.'}</div>`;
+    alert(err.message || '키워드 추출 중 오류가 발생했습니다.');
   } finally {
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = `
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+        <i class="fas fa-key"></i>
         키워드 추출
         <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span>
       `;
