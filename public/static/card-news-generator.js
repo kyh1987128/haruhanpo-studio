@@ -196,7 +196,7 @@ window.CardNewsGenerator = {
         ? 'background-image:url(' + bgImage + '); background-size:cover; background-position:center;'
         : (bgGradient ? 'background:' + bgGradient + ';' : 'background-color:' + bgColor + ';');
 
-      return '<div class="relative group rounded-lg overflow-hidden border shadow-sm" data-slide-index="' + i + '" data-group-id="' + data.groupId + '">' +
+      return '<div class="relative rounded-lg overflow-hidden border shadow-sm" data-slide-index="' + i + '" data-group-id="' + data.groupId + '" onmouseenter="this.querySelector(\'.slide-hover-btns\').style.display=\'flex\'" onmouseleave="this.querySelector(\'.slide-hover-btns\').style.display=\'none\'">' +
         '<div id="slide-canvas-' + i + '" style="width:100%; aspect-ratio:' + (data.aspectRatio || '1/1') + '; position:relative; ' + bgStyle + '">' +
           // 오버레이
           (bgImage ? '<div style="position:absolute; inset:0; background:rgba(0,0,0,' + overlayOpacity + ');"></div>' : '') +
@@ -213,7 +213,7 @@ window.CardNewsGenerator = {
           '<p class="text-[10px] truncate">' + (slide.title || '') + '</p>' +
         '</div>' +
         // hover 버튼: 편집, 삭제
-        '<div class="absolute top-1 right-1 flex invisible group-hover:visible" style="gap:4px;">' +
+        '<div class="slide-hover-btns" style="display:none; gap:4px; position:absolute; top:4px; right:4px; z-index:50;">' +
           '<button onclick="event.stopPropagation(); CardNewsGenerator._editSlide(\'' + data.groupId + '\', ' + i + ')" ' +
             'class="w-7 h-7 bg-white rounded-full text-xs shadow flex items-center justify-center" title="편집">✏️</button>' +
           '<button onclick="event.stopPropagation(); CardNewsGenerator._deleteSlide(\'' + data.groupId + '\', ' + i + ')" ' +

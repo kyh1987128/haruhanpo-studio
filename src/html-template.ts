@@ -2244,7 +2244,7 @@ export const htmlTemplate = `
     <script src="/static/thumbnail-generator.js?v=8.3.0"></script>
     <script src="/static/slide-collection.js?v=8.3.0"></script>
     <script src="/static/card-news-templates.js?v=8.3.0"></script>
-    <script src="/static/card-news-generator.js?v=8.3.1"></script>
+    <script src="/static/card-news-generator.js?v=8.3.2"></script>
     <script src="/static/design-feedback.js?v=8.3.0"></script>
     
     <script>
