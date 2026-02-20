@@ -184,6 +184,8 @@ window.CardNewsGenerator = {
             'class="w-6 h-6 bg-white rounded-full text-xs shadow flex items-center justify-center">✏️</button>' +
           '<button onclick="event.stopPropagation(); CardNewsGenerator._deleteSlide(\'' + data.groupId + '\', ' + i + ')" ' +
             'class="w-6 h-6 bg-red-500 text-white rounded-full text-xs shadow flex items-center justify-center ml-1">🗑️</button>' +
+          '<button onclick="event.stopPropagation(); CardNewsGenerator._addToCollection(\'' + data.groupId + '\', ' + i + ')" ' +
+            'class="w-6 h-6 bg-blue-500 text-white rounded-full text-xs shadow flex items-center justify-center ml-1">📥</button>' +
         '</div>' +
       '</div>';
     }).join('');
@@ -194,8 +196,8 @@ window.CardNewsGenerator = {
           '<h4 class="text-sm font-bold text-gray-700">✅ ' + data.slides.length + '장 생성 완료</h4>' +
           '<button onclick="CardNewsGenerator._downloadAll(\'' + data.groupId + '\')" ' +
             'class="text-xs text-green-600 hover:underline">전체 다운로드</button>' +
-          '<button onclick="CardNewsGenerator._addSlide(\'' + data.groupId + '\')" ' +
-            'class="text-xs text-blue-600 hover:underline ml-3">+ 장표 추가</button>' +
+          '<button onclick="CardNewsGenerator._addAllToCollection(\'' + data.groupId + '\')" ' +
+            'class="text-xs text-blue-600 hover:underline ml-3">+ 전체 장표 추가</button>' +
         '</div>' +
         '<div class="grid grid-cols-2 gap-2">' + slidesHtml + '</div>' +
       '</div>';
@@ -234,6 +236,19 @@ window.CardNewsGenerator = {
   },
 
   async _editSlide(groupId, index) {
+    // 우선: #cardNewsResult에서 직접 이미지 가져오기 시도
+    var resultContainer = document.getElementById('cardNewsResult');
+    if (resultContainer) {
+      var imgs = resultContainer.querySelectorAll('.group img');
+      if (imgs[index] && window.ImageEditor) {
+        var imgSrc = imgs[index].src;
+        var labels = resultContainer.querySelectorAll('.group .text-\\[10px\\]');
+        var label = labels[index * 2 + 1] ? labels[index * 2 + 1].textContent : ('슬라이드 ' + (index + 1));
+        window.ImageEditor.open(imgSrc, label, '', 'collection');
+        return;
+      }
+    }
+    // 폴백: IndexedDB / SlideCollection
     var allSlides;
     if (window.SlideDB) {
       allSlides = await window.SlideDB.getAll();
@@ -281,33 +296,74 @@ window.CardNewsGenerator = {
     }
   },
 
-  _addSlide(groupId) {
-    var input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = async function(e) {
-      var file = e.target.files[0];
-      if (!file) return;
-      var reader = new FileReader();
-      reader.onload = async function(ev) {
-        var imageData = ev.target.result;
-        var slideItem = {
-          id: 'cardnews_' + Date.now() + '_added',
-          source: 'card-news',
-          label: '추가 슬라이드',
-          imageData: imageData,
-          groupId: groupId,
-          groupName: 'AI 카드뉴스',
-          role: 'content'
-        };
-        if (window.SlideDB) {
-          await window.SlideDB.add(slideItem);
-        }
-        SlideCollection.render();
-        alert('슬라이드가 추가되었습니다.');
-      };
-      reader.readAsDataURL(file);
+  _addToCollection(groupId, index) {
+    var resultContainer = document.getElementById('cardNewsResult');
+    if (!resultContainer) { alert('생성된 카드뉴스가 없습니다.'); return; }
+    var imgs = resultContainer.querySelectorAll('.group img');
+    var labels = resultContainer.querySelectorAll('.group .text-\[10px\]');
+    if (!imgs[index]) { alert('해당 슬라이드를 찾을 수 없습니다.'); return; }
+    var imgSrc = imgs[index].src;
+    var label = labels[index * 2 + 1] ? labels[index * 2 + 1].textContent : ('슬라이드 ' + (index + 1));
+    var slideItem = {
+      id: 'cardnews_' + Date.now() + '_' + index,
+      source: 'card-news',
+      label: label,
+      imageData: imgSrc,
+      groupId: groupId,
+      groupName: 'AI 카드뉴스',
+      groupOrder: index + 1,
+      role: 'content'
     };
-    input.click();
+    if (window.SlideDB) {
+      window.SlideDB.add(slideItem).then(function() {
+        SlideCollection.render();
+        alert('장표에 추가되었습니다.');
+      });
+    } else {
+      SlideCollection.add(imgSrc, label, 'card-news');
+      SlideCollection.render();
+      alert('장표에 추가되었습니다.');
+    }
+  },
+
+  _addAllToCollection(groupId) {
+    var resultContainer = document.getElementById('cardNewsResult');
+    if (!resultContainer) { alert('생성된 카드뉴스가 없습니다.'); return; }
+    var imgs = resultContainer.querySelectorAll('.group img');
+    var labels = resultContainer.querySelectorAll('.group .text-\[10px\]');
+    if (imgs.length === 0) { alert('추가할 슬라이드가 없습니다.'); return; }
+    var promises = [];
+    for (var i = 0; i < imgs.length; i++) {
+      var imgSrc = imgs[i].src;
+      var label = labels[i * 2 + 1] ? labels[i * 2 + 1].textContent : ('슬라이드 ' + (i + 1));
+      var slideItem = {
+        id: 'cardnews_' + Date.now() + '_' + i,
+        source: 'card-news',
+        label: label,
+        imageData: imgSrc,
+        groupId: groupId,
+        groupName: 'AI 카드뉴스',
+        groupOrder: i + 1,
+        groupTotal: imgs.length,
+        role: 'content'
+      };
+      if (window.SlideDB) {
+        promises.push(window.SlideDB.add(slideItem));
+      } else {
+        SlideCollection.add(imgSrc, label, 'card-news');
+      }
+    }
+    if (promises.length > 0) {
+      Promise.all(promises).then(function() {
+        SlideCollection.render();
+        alert('전체 ' + imgs.length + '장이 장표에 추가되었습니다.');
+      }).catch(function(err) {
+        console.error('[CardNews] 전체 장표 추가 실패:', err);
+        alert('장표 추가 중 오류가 발생했습니다.');
+      });
+    } else {
+      SlideCollection.render();
+      alert('전체 ' + imgs.length + '장이 장표에 추가되었습니다.');
+    }
   }
 };
