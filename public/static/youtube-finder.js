@@ -1568,25 +1568,8 @@ function updateChannelDetailPanel(video) {
         
         <!-- 퀵 액션 -->
         <div class="border-t pt-3 pb-2 space-y-2">
-          <div class="grid grid-cols-2 gap-2">
-            <button
-              data-video-id="${video.videoId}"
-              data-title="${encodeURIComponent(video.title)}"
-              data-channel="${encodeURIComponent(video.channel || '')}"
-              onclick="if(typeof extractVideoKeywords==='function'){extractVideoKeywords(this.dataset.videoId, decodeURIComponent(this.dataset.title), decodeURIComponent(this.dataset.channel))}else{alert('키워드 추출 기능을 불러오는 중입니다.')}"
-              class="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg transition text-xs font-semibold shadow-sm">
-              <i class="fas fa-key"></i>
-              키워드 추출
-              <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span>
-            </button>
-            <button
-              onclick="if(typeof generateVideoSummary==='function'){generateVideoSummary('${video.videoId}')}else{alert('영상 요약 기능을 불러오는 중입니다.')}"
-              class="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg transition text-xs font-semibold shadow-sm">
-              <i class="fas fa-file-alt"></i>
-              영상 요약
-              <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span>
-            </button>
-          </div>
+          <button data-video-id="${video.videoId}" data-title="${encodeURIComponent(video.title)}" data-channel="${encodeURIComponent(video.channel || '')}" onclick="extractVideoKeywords(this.dataset.videoId, decodeURIComponent(this.dataset.title), decodeURIComponent(this.dataset.channel))" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-key mr-1"></i> 키워드 추출 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span></button>
+          <button onclick="generateVideoSummary('${video.videoId}')" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-file-alt mr-1"></i> 영상 요약 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span></button>
           <a href="https://www.youtube.com/watch?v=${video.videoId}" 
              target="_blank"
              class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition text-sm font-medium">
@@ -3155,24 +3138,8 @@ function renderDetailPanel(video) {
       
       <!-- AI 분석 버튼 -->
       <div class="mb-4 space-y-2">
-        <button 
-          onclick="generateVideoSummary('${videoId}')"
-          class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium text-sm"
-        >
-          <i class="fas fa-sparkles mr-1"></i>영상 요약
-        </button>
-        <button 
-          id="extractKeywordsBtn"
-          data-video-id="${videoId}"
-          data-title="${encodeURIComponent(title)}"
-          data-channel="${encodeURIComponent(channelTitle)}"
-          onclick="extractVideoKeywords(this.dataset.videoId, decodeURIComponent(this.dataset.title), decodeURIComponent(this.dataset.channel))"
-          class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
-          키워드 추출
-          <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span>
-        </button>
+        <button data-video-id="${videoId}" data-title="${encodeURIComponent(title)}" data-channel="${encodeURIComponent(channelTitle)}" onclick="extractVideoKeywords(this.dataset.videoId, decodeURIComponent(this.dataset.title), decodeURIComponent(this.dataset.channel))" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-key mr-1"></i> 키워드 추출 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span></button>
+        <button onclick="generateVideoSummary('${videoId}')" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-file-alt mr-1"></i> 영상 요약 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span></button>
       </div>
       
       <!-- 키워드 추출 결과 영역 -->
@@ -7749,13 +7716,9 @@ function renderTrendingDetailPanel(video) {
       </div>
       
       <!-- AI 분석 버튼 -->
-      <div class="mb-4">
-        <button 
-          onclick="generateVideoSummary('${videoId}')"
-          class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium text-sm"
-        >
-          <i class="fas fa-sparkles mr-1"></i>영상 요약
-        </button>
+      <div class="mb-4 space-y-2">
+        <button data-video-id="${videoId}" data-title="${encodeURIComponent(title)}" data-channel="${encodeURIComponent(channelTitle)}" onclick="extractVideoKeywords(this.dataset.videoId, decodeURIComponent(this.dataset.title), decodeURIComponent(this.dataset.channel))" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-key mr-1"></i> 키워드 추출 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span></button>
+        <button onclick="generateVideoSummary('${videoId}')" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"><i class="fas fa-file-alt mr-1"></i> 영상 요약 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span></button>
       </div>
       
       <!-- 게시 정보 -->

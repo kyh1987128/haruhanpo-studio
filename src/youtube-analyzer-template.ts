@@ -1160,10 +1160,9 @@ export function youtubeAnalyzerTemplate() {
         <div class="mt-6">
           <button 
             id="generate-compare-ai-btn"
-            class="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold flex items-center justify-center gap-2"
+            class="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm"
           >
-            <i class="fas fa-robot"></i>
-            AI 비교 분석 생성
+            <i class="fas fa-robot mr-1"></i> AI 비교 분석 생성 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span>
           </button>
           
           <!-- AI 분석 결과 -->
@@ -2856,16 +2855,16 @@ export function youtubeAnalyzerTemplate() {
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <!-- 공통 인증 및 크레딧 시스템 (Supabase 초기화 포함) -->
-  <script src="/static/app-v3-final.js?v=8.1.0"></script>
+  <script src="/static/app-v3-final.js?v=8.4.0"></script>
   
   <!-- YouTube 분석기 (app-v3-final.js 의존) -->
-  <script src="/static/youtube-analyzer.js?v=8.1.0"></script>
+  <script src="/static/youtube-analyzer.js?v=8.4.0"></script>
   
   <!-- Phase 2: YouTube Finder 검색 기능 -->
-  <script src="/static/youtube-finder.js?v=8.1.0"></script>
+  <script src="/static/youtube-finder.js?v=8.4.0"></script>
   
   <!-- Phase 2.5: Trends Insights (Supabase 연동) -->
-  <script src="/static/youtube-trends.js?v=8.1.0"></script>
+  <script src="/static/youtube-trends.js?v=8.4.0"></script>
   
   <!-- Phase 5A: 3-Tab 전환 스크립트 -->
   <script>
