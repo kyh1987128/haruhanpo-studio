@@ -3002,39 +3002,52 @@ app.post('/api/youtube/transcript', async (c) => {
     const playerData: any = await playerRes.json()
     
     // 4. 자막 트랙 확인
-    const captionTracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks
+    let captionTracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks
+    
+    // Fallback: Player API에서 못 가져오면 페이지 HTML에서 직접 추출
+    if (!captionTracks || captionTracks.length === 0) {
+      const captionMatch = pageHtml.match(/"captionTracks"\s*:\s*(\[.*?\])/)
+      if (captionMatch) {
+        try {
+          captionTracks = JSON.parse(captionMatch[1])
+        } catch (e) {
+          // 파싱 실패시 무시
+        }
+      }
+    }
+    
     if (!captionTracks || captionTracks.length === 0) {
       return c.json({ success: false, error: '이 영상에는 자막이 없어 대본을 추출할 수 없습니다.' })
     }
     
     // 5. 한국어 자막 우선, 없으면 첫 번째 트랙
-    let selectedTrack = captionTracks.find((t: any) => t.languageCode === 'ko') || captionTracks[0]
+    const selectedTrack = captionTracks.find((t: any) => t.languageCode === 'ko') || captionTracks[0]
     const language = selectedTrack.languageCode || 'unknown'
     
     // 6. 자막 XML 가져오기
     const captionRes = await fetch(selectedTrack.baseUrl)
     const captionXml = await captionRes.text()
     
-    // 7. XML 파싱
-    const segmentRegex = /<p t="([^"]*)" d="([^"]*)">([^<]*)<\/p>/g
+    // 7. XML 파싱 - 두 가지 형식 모두 지원
     const segments: Array<{ text: string; start: number; dur: number }> = []
-    let match
     
-    while ((match = segmentRegex.exec(captionXml)) !== null) {
+    // 형식1: <p t="밀리초" d="밀리초">텍스트</p>
+    const pRegex = /<p t="([^"]*)" d="([^"]*)">([^<]*)<\/p>/g
+    let match
+    while ((match = pRegex.exec(captionXml)) !== null) {
       let text = match[3]
-      // HTML 엔티티 디코딩
-      text = text.replace(/&amp;/g, '&')
-        .replace(/&#39;/g, "'")
-        .replace(/&quot;/g, '"')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/\\n/g, ' ')
-      
-      segments.push({
-        text: text,
-        start: parseFloat(match[1]) / 1000,
-        dur: parseFloat(match[2]) / 1000
-      })
+      text = text.replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\\n/g, ' ')
+      segments.push({ text, start: parseFloat(match[1]) / 1000, dur: parseFloat(match[2]) / 1000 })
+    }
+    
+    // 형식2: <text start="초" dur="초">텍스트</text>
+    if (segments.length === 0) {
+      const textRegex = /<text start="([^"]*)" dur="([^"]*)">([^<]*)<\/text>/g
+      while ((match = textRegex.exec(captionXml)) !== null) {
+        let text = match[3]
+        text = text.replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\\n/g, ' ')
+        segments.push({ text, start: parseFloat(match[1]), dur: parseFloat(match[2]) })
+      }
     }
     
     if (segments.length === 0) {
