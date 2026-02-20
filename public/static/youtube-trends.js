@@ -613,6 +613,7 @@ function updateTrendDetailPanel(video) {
             키워드 추출
             <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs">1크레딧</span>
           </button>
+          <button onclick="generateVideoSummary('${video.videoId}')" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow hover:shadow-lg hover:scale-[1.02] transition-all duration-200 font-semibold text-sm mt-2"><i class="fas fa-file-alt mr-1"></i> 영상 요약 <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs font-bold">1크레딧</span></button>
           <div id="keyword-result-trend-${video.videoId}" class="mt-2"></div>
         </div>
         <div class="border-t pt-3 pb-2">
