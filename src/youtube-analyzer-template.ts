@@ -2864,7 +2864,7 @@ export function youtubeAnalyzerTemplate() {
   <script src="/static/youtube-finder.js?v=8.5.0"></script>
   
   <!-- Phase 2.5: Trends Insights (Supabase 연동) -->
-  <script src="/static/youtube-trends.js?v=8.5.0"></script>
+  <script src="/static/youtube-trends.js?v=8.5.1"></script>
   
   <!-- Phase 5A: 3-Tab 전환 스크립트 -->
   <script>
