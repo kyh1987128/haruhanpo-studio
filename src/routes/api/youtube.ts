@@ -123,6 +123,7 @@ type Bindings = {
   YOUTUBE_API_KEY: string
   OPENAI_API_KEY: string
   GEMINI_API_KEY: string
+  YOUTUBE_CACHE: KVNamespace     // Cloudflare KV - search.list 응답 캐싱용
 }
 
 // 트렌드 캐시: { "KR": { timestamp: number, data: { [categoryId: string]: any[] } } }
@@ -580,13 +581,28 @@ app.post('/api/youtube/search', async (c) => {
       keyword = await translateKeyword(keyword, regionCode, c.env.GEMINI_API_KEY)
     }
 
-    // 4. 검색 실행
-    const { searchYouTubeVideos } = await import('../../services/youtube-api')
-    const result = await searchYouTubeVideos(keyword, youtubeApiKey, maxResults, pageToken)
+    // 4. KV 캐시 조회 → 검색 실행
+    const { buildSearchCacheKey, getCachedSearch, setCachedSearch, SEARCH_CACHE_TTL } = await import('../../utils/youtube-cache')
+    const cacheKey = buildSearchCacheKey({ query: keyword, regionCode, maxResults, pageToken })
+    
+    let result = await getCachedSearch(c.env.YOUTUBE_CACHE, cacheKey) as { videos: any[], nextPageToken?: string, totalResults?: number } | null
+    let fromCache = false
+    
+    if (result) {
+      console.log(`✅ [Search KV] 캐시 히트: ${cacheKey}`)
+      fromCache = true
+    } else {
+      const { searchYouTubeVideos } = await import('../../services/youtube-api')
+      result = await searchYouTubeVideos(keyword, youtubeApiKey, maxResults, pageToken)
+      // KV에 캐시 저장 (6시간)
+      await setCachedSearch(c.env.YOUTUBE_CACHE, cacheKey, result, SEARCH_CACHE_TTL.KEYWORD_SEARCH)
+      console.log(`📝 [Search KV] 캐시 저장: ${cacheKey}`)
+    }
 
     // 5. 결과 반환
     return c.json({
       success: true,
+      cached: fromCache,
       data: {
         keyword,
         originalKeyword: originalKeyword !== keyword ? originalKeyword : undefined,  // 번역된 경우만 원본 포함
@@ -3141,6 +3157,7 @@ SEO키워드: 유튜브 검색에서 상위 노출될 수 있는 키워드
 
 // POST /api/youtube/trending-recommend - 떡상 영상 추천 (1크레딧)
 // 채널 분석 기반 떡상 가능성 높은 영상 주제 추천
+// KV 2-레벨 캐싱: L1=최종결과(3h), L2=개별search(3h)
 app.post('/api/youtube/trending-recommend', async (c) => {
   try {
     const { channelTitle, channelDescription, recentVideos, subscriberCount, avgViews, user_id } = await c.req.json()
@@ -3154,6 +3171,16 @@ app.post('/api/youtube/trending-recommend', async (c) => {
     
     if (!geminiApiKey) {
       return c.json({ success: false, error: { code: 'NO_API_KEY', message: 'API 키가 설정되지 않았습니다.' } }, 500)
+    }
+    
+    // ── 레벨 1: 최종 결과 캐시 조회 ──
+    const { buildRecommendCacheKey, getCachedSearch, setCachedSearch, buildSearchCacheKey, SEARCH_CACHE_TTL } = await import('../../utils/youtube-cache')
+    const recommendCacheKey = buildRecommendCacheKey(channelTitle)
+    const cachedRecommend = await getCachedSearch(c.env.YOUTUBE_CACHE, recommendCacheKey)
+    
+    if (cachedRecommend) {
+      console.log(`✅ [Recommend KV L1] 캐시 히트: ${channelTitle}`)
+      return c.json({ ...cachedRecommend, cached: true })
     }
     
     // 크레딧 차감은 프론트엔드에서 /api/credits/deduct 호출 후 진행
@@ -3217,7 +3244,8 @@ ${recentTitles ? `최근 영상:\n- ${recentTitles}` : ''}
     
     const aiResult = JSON.parse(jsonMatch[0])
     
-    // 2단계: 각 추천 주제별로 YouTube 검색으로 참고 영상 찾기 (옵션)
+    // 2단계: 각 추천 주제별로 YouTube 검색으로 참고 영상 찾기
+    // ── 레벨 2: 개별 search.list KV 캐싱 ──
     let enrichedRecommendations = aiResult.recommendations || []
     
     if (youtubeApiKey && enrichedRecommendations.length > 0) {
@@ -3228,7 +3256,18 @@ ${recentTitles ? `최근 영상:\n- ${recentTitles}` : ''}
         try {
           const rec = enrichedRecommendations[i]
           const searchQuery = rec.searchKeywords?.[0] || rec.topic || rec.title
-          const searchResult = await searchYouTubeVideos(searchQuery, youtubeApiKey, 3)
+          
+          // L2 캐시 조회
+          const searchCacheKey = buildSearchCacheKey({ query: searchQuery, order: 'viewCount', maxResults: 3 })
+          let searchResult = await getCachedSearch(c.env.YOUTUBE_CACHE, searchCacheKey) as { videos: any[] } | null
+          
+          if (searchResult) {
+            console.log(`✅ [Recommend KV L2] 캐시 히트: ${searchQuery}`)
+          } else {
+            searchResult = await searchYouTubeVideos(searchQuery, youtubeApiKey, 3)
+            await setCachedSearch(c.env.YOUTUBE_CACHE, searchCacheKey, searchResult, SEARCH_CACHE_TTL.TRENDING_RECOMMEND)
+            console.log(`📝 [Recommend KV L2] 캐시 저장: ${searchQuery}`)
+          }
           
           enrichedRecommendations[i].referenceVideos = (searchResult.videos || []).slice(0, 3).map((v: any) => ({
             videoId: v.videoId,
@@ -3244,14 +3283,20 @@ ${recentTitles ? `최근 영상:\n- ${recentTitles}` : ''}
       }
     }
     
-    return c.json({
+    const finalResult = {
       success: true,
       data: {
         channelTitle,
         recommendations: enrichedRecommendations,
         generatedAt: new Date().toISOString()
       }
-    })
+    }
+    
+    // ── 레벨 1: 최종 결과 캐시 저장 (3시간) ──
+    await setCachedSearch(c.env.YOUTUBE_CACHE, recommendCacheKey, finalResult, SEARCH_CACHE_TTL.RECOMMEND_RESULT)
+    console.log(`📝 [Recommend KV L1] 캐시 저장: ${channelTitle}`)
+    
+    return c.json(finalResult)
     
   } catch (error: any) {
     console.error('떡상 추천 오류:', error)
