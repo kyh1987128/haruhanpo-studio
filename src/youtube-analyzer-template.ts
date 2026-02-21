@@ -1414,24 +1414,26 @@ export function youtubeAnalyzerTemplate() {
               <button class="ch-rank-cat-btn px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-100 text-gray-600" data-cat="23">😂 코미디</button>
             </div>
 
+            <!-- 초기 상태: 불러오기 버튼 -->
+            <div id="channelRankingEmpty" class="text-center py-12 text-gray-500">
+              <div class="text-4xl mb-3">🏆</div>
+              <p class="mb-4">인기 채널 순위를 불러오려면 아래 버튼을 클릭하세요</p>
+              <button id="chRankLoadBtn" onclick="loadChannelRankingWithCredit()"
+                class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 text-sm font-bold">
+                🏆 인기 채널 순위
+                <span class="px-2 py-0.5 bg-white/20 rounded-md text-xs">1크레딧</span>
+              </button>
+              <p class="text-xs text-gray-400 mt-3">같은 국가 데이터는 세션 중 재사용 가능 (카테고리 전환 무료)</p>
+            </div>
+
             <!-- 로딩 -->
             <div id="channelRankingLoading" class="hidden text-center py-8">
               <i class="fas fa-spinner fa-spin text-3xl text-gray-400 mb-3"></i>
               <p class="text-gray-500">채널 순위를 불러오는 중...</p>
             </div>
 
-            <!-- 채널 순위 리스트 -->
-            <div id="channelRankingList" class="space-y-2">
-              <!-- 초기 상태 -->
-              <div id="channelRankingEmpty" class="text-center py-12 text-gray-500">
-                <div class="text-4xl mb-3">📊</div>
-                <p class="font-semibold">채널 순위 데이터를 수집 중입니다</p>
-                <p class="text-sm mt-1">데이터가 준비되면 자동으로 표시됩니다</p>
-                <button onclick="loadChannelRanking()" class="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">
-                  순위 불러오기
-                </button>
-              </div>
-            </div>
+            <!-- 채널 순위 리스트 (로드 후 표시) -->
+            <div id="channelRankingList" class="space-y-2 hidden"></div>
 
             <!-- 스냅샷 날짜 -->
             <div id="channelRankingMeta" class="hidden text-right text-xs text-gray-400 mt-3"></div>
@@ -2975,10 +2977,10 @@ export function youtubeAnalyzerTemplate() {
   <script src="/static/youtube-analyzer.js?v=8.5.0"></script>
   
   <!-- Phase 2: YouTube Finder 검색 기능 -->
-  <script src="/static/youtube-finder.js?v=8.8.0"></script>
+  <script src="/static/youtube-finder.js?v=8.8.1"></script>
   
   <!-- Phase 2.5: Trends Insights (Supabase 연동) -->
-  <script src="/static/youtube-trends.js?v=8.8.0"></script>
+  <script src="/static/youtube-trends.js?v=8.8.1"></script>
   
   <!-- Phase 5A: 3-Tab 전환 스크립트 -->
   <script>

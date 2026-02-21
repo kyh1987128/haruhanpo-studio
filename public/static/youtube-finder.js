@@ -8693,6 +8693,7 @@ let chRankCurrentCat = '';      // '' = 전체
 let chRankCurrentSort = 'subscribers';
 let chRankCurrentPeriod = 'current';
 let isLoadingChRank = false;
+let _chRankCreditUsedRegions = {}; // 크레딧 이미 사용한 국가 추적
 
 /**
  * 채널 순위 캐시 키 생성
@@ -8708,10 +8709,12 @@ function initChannelRanking() {
   console.log('🏆 [Channel Ranking] 초기화');
   _bindChannelRankingEvents();
   
-  // 캐시가 있으면 바로 렌더링
+  // 캐시가 있으면 바로 렌더링, 없으면 불러오기 버튼 표시
   const key = _chRankCacheKey(chRankCurrentRegion, chRankCurrentCat, chRankCurrentPeriod, chRankCurrentSort);
   if (chRankCache[key]) {
     renderChannelRankingList(chRankCache[key]);
+  } else {
+    _showChRankInitButton();
   }
 }
 
@@ -8724,7 +8727,7 @@ function _bindChannelRankingEvents() {
   if (regionSelect) {
     regionSelect.onchange = function() {
       chRankCurrentRegion = this.value;
-      loadChannelRanking();
+      _chRankShowOrButton();
     };
   }
   
@@ -8733,7 +8736,7 @@ function _bindChannelRankingEvents() {
   if (sortSelect) {
     sortSelect.onchange = function() {
       chRankCurrentSort = this.value;
-      loadChannelRanking();
+      _chRankShowOrButton();
     };
   }
   
@@ -8742,7 +8745,7 @@ function _bindChannelRankingEvents() {
   if (periodSelect) {
     periodSelect.onchange = function() {
       chRankCurrentPeriod = this.value;
-      loadChannelRanking();
+      _chRankShowOrButton();
     };
   }
   
@@ -8759,24 +8762,105 @@ function _bindChannelRankingEvents() {
       this.classList.add('active', 'bg-blue-100', 'text-blue-700');
       this.classList.remove('bg-gray-100', 'text-gray-600');
       
-      loadChannelRanking();
+      _chRankShowOrButton();
     };
   });
 }
 
 /**
- * 채널 순위 데이터 로드 (무료 - 크레딧 차감 없음)
+ * 캐시 확인 → 있으면 렌더링, 없으면 불러오기 버튼 표시
+ */
+function _chRankShowOrButton() {
+  var key = _chRankCacheKey(chRankCurrentRegion, chRankCurrentCat, chRankCurrentPeriod, chRankCurrentSort);
+  if (chRankCache[key]) {
+    renderChannelRankingList(chRankCache[key]);
+  } else {
+    _showChRankInitButton();
+  }
+}
+
+/**
+ * 초기 버튼 표시 (불러오기 전 상태)
+ */
+function _showChRankInitButton() {
+  var listEl = document.getElementById('channelRankingList');
+  var emptyEl = document.getElementById('channelRankingEmpty');
+  var metaEl = document.getElementById('channelRankingMeta');
+  var loadingEl = document.getElementById('channelRankingLoading');
+  if (listEl) { listEl.innerHTML = ''; listEl.classList.add('hidden'); }
+  if (loadingEl) loadingEl.classList.add('hidden');
+  if (emptyEl) emptyEl.classList.remove('hidden');
+  if (metaEl) metaEl.classList.add('hidden');
+}
+
+/**
+ * 크레딧 차감 후 채널 순위 데이터 로드 (버튼 클릭 시 호출)
+ */
+async function loadChannelRankingWithCredit() {
+  var btn = document.getElementById('chRankLoadBtn');
+  
+  // 크레딧 차감
+  try {
+    var creditRes = await fetch('/api/credits/deduct', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: 1, feature: 'youtube_channel_ranking', user_id: window.currentUser?.id })
+    });
+    var creditData = await creditRes.json();
+    if (!creditData.success) {
+      alert(creditData.error || '크레딧이 부족합니다.');
+      return;
+    }
+    _chRankCreditUsedRegions[chRankCurrentRegion] = true;
+    // 헤더 크레딧 업데이트
+    if (creditData.free_credits !== undefined) {
+      window.dispatchEvent(new CustomEvent('userUpdated', { detail: { ...window.currentUser, free_credits: creditData.free_credits, paid_credits: creditData.paid_credits } }));
+    }
+  } catch (e) {
+    console.error('크레딧 차감 오류:', e);
+    alert('크레딧 확인 중 오류가 발생했습니다.');
+    return;
+  }
+  
+  // 버튼 로딩 상태
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 불러오는 중...';
+  }
+  
+  try {
+    await loadChannelRanking();
+  } catch (err) {
+    // 실패 시 환불
+    try {
+      await fetch('/api/credits/refund', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: 1, feature: 'youtube_channel_ranking', user_id: window.currentUser?.id })
+      });
+    } catch (e) {}
+    alert('채널 순위 로드에 실패했습니다. 크레딧이 환불되었습니다.');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '🏆 인기 채널 순위 <span class="px-2 py-0.5 bg-white/20 rounded-md text-xs">1크레딧</span>';
+    }
+  }
+}
+
+/**
+ * 채널 순위 데이터 로드 (API 호출)
  */
 async function loadChannelRanking(region, category, period, sort) {
   if (isLoadingChRank) return;
   
-  const r = region || chRankCurrentRegion;
-  const cat = category !== undefined ? category : chRankCurrentCat;
-  const p = period || chRankCurrentPeriod;
-  const s = sort || chRankCurrentSort;
+  var r = region || chRankCurrentRegion;
+  var cat = category !== undefined ? category : chRankCurrentCat;
+  var p = period || chRankCurrentPeriod;
+  var s = sort || chRankCurrentSort;
   
   // 프론트 캐시 확인
-  const key = _chRankCacheKey(r, cat, p, s);
+  var key = _chRankCacheKey(r, cat, p, s);
   if (chRankCache[key]) {
     renderChannelRankingList(chRankCache[key]);
     return;
@@ -8786,7 +8870,7 @@ async function loadChannelRanking(region, category, period, sort) {
   _showChRankLoading(true);
   
   try {
-    const response = await fetch('/api/youtube/channel-ranking', {
+    var response = await fetch('/api/youtube/channel-ranking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -8798,7 +8882,7 @@ async function loadChannelRanking(region, category, period, sort) {
       })
     });
     
-    const result = await response.json();
+    var result = await response.json();
     
     if (result.success) {
       // 프론트 캐시 저장
@@ -8815,6 +8899,7 @@ async function loadChannelRanking(region, category, period, sort) {
   } catch (err) {
     console.error('🏆 [Channel Ranking] 로드 오류:', err);
     _showChRankError('네트워크 오류가 발생했습니다.');
+    throw err; // 환불 처리를 위해 에러 전파
   } finally {
     isLoadingChRank = false;
     _showChRankLoading(false);
@@ -8825,13 +8910,13 @@ async function loadChannelRanking(region, category, period, sort) {
  * 로딩 UI 토글
  */
 function _showChRankLoading(show) {
-  const loadingEl = document.getElementById('channelRankingLoading');
-  const listEl = document.getElementById('channelRankingList');
-  const emptyEl = document.getElementById('channelRankingEmpty');
+  var loadingEl = document.getElementById('channelRankingLoading');
+  var listEl = document.getElementById('channelRankingList');
+  var emptyEl = document.getElementById('channelRankingEmpty');
   
   if (show) {
     if (loadingEl) loadingEl.classList.remove('hidden');
-    if (listEl) listEl.innerHTML = '';
+    if (listEl) { listEl.innerHTML = ''; listEl.classList.add('hidden'); }
     if (emptyEl) emptyEl.classList.add('hidden');
   } else {
     if (loadingEl) loadingEl.classList.add('hidden');
@@ -8842,8 +8927,11 @@ function _showChRankLoading(show) {
  * 에러 표시
  */
 function _showChRankError(message) {
-  const listEl = document.getElementById('channelRankingList');
+  var listEl = document.getElementById('channelRankingList');
+  var emptyEl = document.getElementById('channelRankingEmpty');
+  if (emptyEl) emptyEl.classList.add('hidden');
   if (listEl) {
+    listEl.classList.remove('hidden');
     listEl.innerHTML = '<div class="text-center py-8 text-red-500"><i class="fas fa-exclamation-circle text-3xl mb-2"></i><p>' + escapeHtml(message) + '</p></div>';
   }
 }
@@ -8852,26 +8940,24 @@ function _showChRankError(message) {
  * 채널 순위 리스트 렌더링
  */
 function renderChannelRankingList(data) {
-  const listEl = document.getElementById('channelRankingList');
-  const emptyEl = document.getElementById('channelRankingEmpty');
-  const metaEl = document.getElementById('channelRankingMeta');
+  var listEl = document.getElementById('channelRankingList');
+  var emptyEl = document.getElementById('channelRankingEmpty');
+  var metaEl = document.getElementById('channelRankingMeta');
   
   if (!listEl) return;
   
-  const channels = data.channels || [];
-  const meta = data.meta || {};
+  var channels = data.channels || [];
+  var meta = data.meta || {};
   
   if (channels.length === 0) {
-    listEl.innerHTML = '';
-    if (emptyEl) {
-      emptyEl.classList.remove('hidden');
-      emptyEl.innerHTML = '<div class="text-4xl mb-3">📊</div><p class="font-semibold">채널 순위 데이터를 수집 중입니다</p><p class="text-sm mt-1">데이터가 준비되면 자동으로 표시됩니다</p><button onclick="loadChannelRanking()" class="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">순위 불러오기</button>';
-    }
-    if (metaEl) metaEl.classList.add('hidden');
+    // 데이터 없음 → 불러오기 버튼 다시 표시
+    _showChRankInitButton();
     return;
   }
   
+  // 데이터 있음 → 버튼 숨기고 리스트 표시
   if (emptyEl) emptyEl.classList.add('hidden');
+  listEl.classList.remove('hidden');
   
   // 채널 데이터를 글로벌에 저장 (디테일 패널용)
   window._chRankChannelsList = channels;
@@ -9155,6 +9241,7 @@ function getCategoryLabel(catId) {
 
 // window에 노출
 window.loadChannelRanking = loadChannelRanking;
+window.loadChannelRankingWithCredit = loadChannelRankingWithCredit;
 window.initChannelRanking = initChannelRanking;
 window.showChannelRankingDetail = showChannelRankingDetail;
 window.analyzeChannelFromRanking = analyzeChannelFromRanking;
