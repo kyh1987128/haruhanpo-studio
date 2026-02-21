@@ -3307,4 +3307,222 @@ ${recentTitles ? `최근 영상:\n- ${recentTitles}` : ''}
   }
 })
 
+// ========================================
+// POST /api/youtube/channel-ranking
+// 인기 채널 순위 조회 (무료, KV 캐시)
+// ========================================
+app.post('/api/youtube/channel-ranking', async (c) => {
+  try {
+    const body = await c.req.json()
+    const regionCode = body.regionCode || ''          // '' = 전세계
+    const categoryId = body.categoryId || ''          // '' = 전체 카테고리
+    const period = body.period || 'current'
+    const sortBy = body.sortBy || 'subscribers'
+    const limit = Math.min(body.limit || 50, 100)
+
+    // 정렬 필드 화이트리스트
+    const validSortFields = ['subscribers', 'total_views', 'video_count']
+    const safeSortBy = validSortFields.includes(sortBy) ? sortBy : 'subscribers'
+
+    // ── KV 캐시 조회 ──
+    const { getCachedSearch, setCachedSearch } = await import('../../utils/youtube-cache')
+    const cacheKey = `youtube:ch-ranking:${regionCode || 'global'}:${categoryId || 'all'}:${period}:${safeSortBy}`
+    const cacheTTL = period === 'current' ? 3 * 3600 : 6 * 3600 // current=3h, period=6h
+
+    const cached = await getCachedSearch(c.env.YOUTUBE_CACHE, cacheKey)
+    if (cached) {
+      console.log(`✅ [Channel Ranking KV] 캐시 히트: ${cacheKey}`)
+      return c.json({ ...cached, cached: true })
+    }
+
+    // ── Supabase 쿼리 ──
+    const { createClient } = await import('@supabase/supabase-js')
+    const supabase = createClient(
+      c.env.SUPABASE_URL,
+      c.env.SUPABASE_SERVICE_KEY
+    )
+
+    // 1. 최신 snapshot_date 조회
+    const { data: latestRow } = await supabase
+      .from('youtube_channel_rankings')
+      .select('snapshot_date')
+      .order('snapshot_date', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (!latestRow) {
+      return c.json({
+        success: true,
+        data: {
+          channels: [],
+          meta: {
+            region_code: regionCode,
+            category_id: categoryId,
+            period,
+            sort_by: safeSortBy,
+            snapshot_date: null,
+            total_count: 0,
+            cached: false,
+            period_available: { current: false, '1week': false, '1month': false, '3month': false, '6month': false, '1year': false }
+          }
+        }
+      })
+    }
+
+    const latestDate = latestRow.snapshot_date
+
+    // 2. 기간별 가용성 확인
+    const { data: earliestRow } = await supabase
+      .from('youtube_channel_rankings')
+      .select('snapshot_date')
+      .order('snapshot_date', { ascending: true })
+      .limit(1)
+      .single()
+
+    const firstDate = earliestRow ? new Date(earliestRow.snapshot_date) : new Date()
+    const now = new Date()
+    const daysSinceStart = Math.floor((now.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24))
+
+    const periodAvailable: Record<string, boolean> = {
+      current: true,
+      '1week': daysSinceStart >= 7,
+      '1month': daysSinceStart >= 30,
+      '3month': daysSinceStart >= 90,
+      '6month': daysSinceStart >= 180,
+      '1year': daysSinceStart >= 365
+    }
+
+    // 3. 데이터 쿼리
+    let channels: any[] = []
+
+    if (period === 'current') {
+      if (regionCode) {
+        // 특정 국가 + 현재 순위
+        let query = supabase
+          .from('youtube_channel_rankings')
+          .select('channel_id, channel_name, channel_thumbnail, subscribers, total_views, video_count, channel_country, category_id, rank_position')
+          .eq('snapshot_date', latestDate)
+          .eq('region_code', regionCode)
+
+        if (categoryId) {
+          query = query.eq('category_id', categoryId)
+        }
+
+        query = query.order(safeSortBy, { ascending: false }).limit(limit)
+        const { data, error } = await query
+        if (error) console.error('채널 순위 쿼리 오류:', error)
+        channels = data || []
+
+      } else {
+        // 전세계 (중복 채널 그룹핑 → RPC 대신 JS 처리)
+        let query = supabase
+          .from('youtube_channel_rankings')
+          .select('channel_id, channel_name, channel_thumbnail, subscribers, total_views, video_count, channel_country, category_id')
+          .eq('snapshot_date', latestDate)
+
+        if (categoryId) {
+          query = query.eq('category_id', categoryId)
+        }
+
+        const { data, error } = await query
+        if (error) console.error('전세계 순위 쿼리 오류:', error)
+
+        // 채널별 그룹핑: 최대 subscribers 기준
+        const channelGroup = new Map<string, any>()
+        for (const row of (data || [])) {
+          const existing = channelGroup.get(row.channel_id)
+          if (!existing || row.subscribers > existing.subscribers) {
+            channelGroup.set(row.channel_id, { ...row })
+          }
+        }
+
+        channels = Array.from(channelGroup.values())
+          .sort((a: any, b: any) => {
+            if (safeSortBy === 'total_views') return b.total_views - a.total_views
+            if (safeSortBy === 'video_count') return b.video_count - a.video_count
+            return b.subscribers - a.subscribers
+          })
+          .slice(0, limit)
+      }
+    } else {
+      // 기간별 (데이터 축적 후)
+      const periodDaysMap: Record<string, number> = {
+        '1week': 7, '1month': 30, '3month': 90, '6month': 180, '1year': 365
+      }
+      const days = periodDaysMap[period] || 30
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - days)
+      const startStr = startDate.toISOString().split('T')[0]
+
+      let query = supabase
+        .from('youtube_channel_rankings')
+        .select('channel_id, channel_name, channel_thumbnail, subscribers, total_views, video_count, channel_country, category_id')
+        .gte('snapshot_date', startStr)
+
+      if (regionCode) query = query.eq('region_code', regionCode)
+      if (categoryId) query = query.eq('category_id', categoryId)
+
+      const { data, error } = await query
+      if (error) console.error('기간별 순위 쿼리 오류:', error)
+
+      // 채널별 그룹핑 + 최신 데이터 기준
+      const channelGroup = new Map<string, any>()
+      for (const row of (data || [])) {
+        const existing = channelGroup.get(row.channel_id)
+        if (!existing || row.subscribers > existing.subscribers) {
+          channelGroup.set(row.channel_id, { ...row })
+        }
+      }
+
+      channels = Array.from(channelGroup.values())
+        .sort((a: any, b: any) => b.subscribers - a.subscribers)
+        .slice(0, limit)
+    }
+
+    // 4. rank 부여
+    const rankedChannels = channels.map((ch: any, i: number) => ({
+      rank: i + 1,
+      channel_id: ch.channel_id,
+      channel_name: ch.channel_name,
+      channel_thumbnail: ch.channel_thumbnail || '',
+      subscribers: ch.subscribers || 0,
+      total_views: ch.total_views || 0,
+      video_count: ch.video_count || 0,
+      channel_country: ch.channel_country || '',
+      category_id: ch.category_id || '',
+      rank_change: null // 데이터 축적 후 구현
+    }))
+
+    const result = {
+      success: true,
+      data: {
+        channels: rankedChannels,
+        meta: {
+          region_code: regionCode,
+          category_id: categoryId,
+          period,
+          sort_by: safeSortBy,
+          snapshot_date: latestDate,
+          total_count: rankedChannels.length,
+          cached: false,
+          period_available: periodAvailable
+        }
+      }
+    }
+
+    // ── KV 캐시 저장 ──
+    await setCachedSearch(c.env.YOUTUBE_CACHE, cacheKey, result, cacheTTL)
+    console.log(`📝 [Channel Ranking KV] 캐시 저장: ${cacheKey}`)
+
+    return c.json(result)
+
+  } catch (error: any) {
+    console.error('채널 순위 조회 오류:', error)
+    return c.json({
+      success: false,
+      error: { code: 'RANKING_ERROR', message: error.message || '채널 순위 조회 중 오류가 발생했습니다.' }
+    }, 500)
+  }
+})
+
 export default app

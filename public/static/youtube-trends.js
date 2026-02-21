@@ -68,6 +68,11 @@ async function initTrendsInsights() {
   } else {
     _showTrendLoadButton();
   }
+  
+  // 🏆 채널 순위 초기화
+  if (typeof window.initChannelRanking === 'function') {
+    window.initChannelRanking();
+  }
 }
 
 function _onRegionChange() {

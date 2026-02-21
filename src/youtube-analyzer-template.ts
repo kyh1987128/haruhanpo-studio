@@ -1350,6 +1350,92 @@ export function youtubeAnalyzerTemplate() {
               <p>인기 영상이 없습니다.</p>
             </div>
           </div>
+
+          <!-- ========================================
+               🏆 인기 채널 순위 섹션
+               ======================================== -->
+          <div class="channel-ranking-section bg-white rounded-xl shadow-sm border p-6 mt-6">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+              <h2 class="text-xl font-bold text-gray-800">
+                <i class="fas fa-trophy mr-2" style="color: #F59E0B;"></i>
+                인기 채널 순위
+              </h2>
+              <div class="flex items-center gap-3 flex-wrap">
+                <select id="channelRankingRegion" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white cursor-pointer min-w-[130px]">
+                  <option value="">🌍 전세계</option>
+                  <option value="KR" selected>🇰🇷 한국</option>
+                  <option value="US">🇺🇸 미국</option>
+                  <option value="JP">🇯🇵 일본</option>
+                  <option value="GB">🇬🇧 영국</option>
+                  <option value="IN">🇮🇳 인도</option>
+                  <option value="BR">🇧🇷 브라질</option>
+                  <option value="DE">🇩🇪 독일</option>
+                  <option value="FR">🇫🇷 프랑스</option>
+                  <option value="ID">🇮🇩 인도네시아</option>
+                  <option value="MX">🇲🇽 멕시코</option>
+                  <option value="TH">🇹🇭 태국</option>
+                  <option value="VN">🇻🇳 베트남</option>
+                  <option value="TW">🇹🇼 대만</option>
+                  <option value="RU">🇷🇺 러시아</option>
+                  <option value="CA">🇨🇦 캐나다</option>
+                </select>
+                <select id="channelRankingSort" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white cursor-pointer">
+                  <option value="subscribers">구독자순</option>
+                  <option value="total_views">조회수순</option>
+                  <option value="video_count">영상수순</option>
+                </select>
+                <select id="channelRankingPeriod" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white cursor-pointer">
+                  <option value="current">현재</option>
+                  <option value="1week" disabled>1주 (준비중)</option>
+                  <option value="1month" disabled>1개월 (준비중)</option>
+                  <option value="3month" disabled>3개월 (준비중)</option>
+                  <option value="6month" disabled>6개월 (준비중)</option>
+                  <option value="1year" disabled>1년 (준비중)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- 카테고리 탭 -->
+            <div class="flex gap-2 mb-4 overflow-x-auto pb-2">
+              <button class="ch-rank-cat-btn active px-3 py-1.5 rounded-lg text-xs font-medium transition bg-blue-100 text-blue-700" data-cat="">전체</button>
+              <button class="ch-rank-cat-btn px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-100 text-gray-600" data-cat="10">🎵 음악</button>
+              <button class="ch-rank-cat-btn px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-100 text-gray-600" data-cat="20">🎮 게임</button>
+              <button class="ch-rank-cat-btn px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-100 text-gray-600" data-cat="24">🎬 엔터</button>
+              <button class="ch-rank-cat-btn px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-100 text-gray-600" data-cat="22">👥 인물</button>
+              <button class="ch-rank-cat-btn px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-100 text-gray-600" data-cat="25">📰 뉴스</button>
+              <button class="ch-rank-cat-btn px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-100 text-gray-600" data-cat="28">🔬 과학</button>
+              <button class="ch-rank-cat-btn px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-100 text-gray-600" data-cat="17">⚽ 스포츠</button>
+              <button class="ch-rank-cat-btn px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-100 text-gray-600" data-cat="26">💡 노하우</button>
+              <button class="ch-rank-cat-btn px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-100 text-gray-600" data-cat="27">📚 교육</button>
+              <button class="ch-rank-cat-btn px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-100 text-gray-600" data-cat="1">🎞 영화</button>
+              <button class="ch-rank-cat-btn px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-100 text-gray-600" data-cat="15">🐾 동물</button>
+              <button class="ch-rank-cat-btn px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-100 text-gray-600" data-cat="19">✈️ 여행</button>
+              <button class="ch-rank-cat-btn px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-100 text-gray-600" data-cat="2">🚗 자동차</button>
+              <button class="ch-rank-cat-btn px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-100 text-gray-600" data-cat="23">😂 코미디</button>
+            </div>
+
+            <!-- 로딩 -->
+            <div id="channelRankingLoading" class="hidden text-center py-8">
+              <i class="fas fa-spinner fa-spin text-3xl text-gray-400 mb-3"></i>
+              <p class="text-gray-500">채널 순위를 불러오는 중...</p>
+            </div>
+
+            <!-- 채널 순위 리스트 -->
+            <div id="channelRankingList" class="space-y-2">
+              <!-- 초기 상태 -->
+              <div id="channelRankingEmpty" class="text-center py-12 text-gray-500">
+                <div class="text-4xl mb-3">📊</div>
+                <p class="font-semibold">채널 순위 데이터를 수집 중입니다</p>
+                <p class="text-sm mt-1">데이터가 준비되면 자동으로 표시됩니다</p>
+                <button onclick="loadChannelRanking()" class="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">
+                  순위 불러오기
+                </button>
+              </div>
+            </div>
+
+            <!-- 스냅샷 날짜 -->
+            <div id="channelRankingMeta" class="hidden text-right text-xs text-gray-400 mt-3"></div>
+          </div>
         </main>
         
         <!-- 우측: 상세 패널 -->
@@ -2889,10 +2975,10 @@ export function youtubeAnalyzerTemplate() {
   <script src="/static/youtube-analyzer.js?v=8.5.0"></script>
   
   <!-- Phase 2: YouTube Finder 검색 기능 -->
-  <script src="/static/youtube-finder.js?v=8.7.2"></script>
+  <script src="/static/youtube-finder.js?v=8.8.0"></script>
   
   <!-- Phase 2.5: Trends Insights (Supabase 연동) -->
-  <script src="/static/youtube-trends.js?v=8.7.2"></script>
+  <script src="/static/youtube-trends.js?v=8.8.0"></script>
   
   <!-- Phase 5A: 3-Tab 전환 스크립트 -->
   <script>

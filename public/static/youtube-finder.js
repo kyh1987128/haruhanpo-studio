@@ -8680,3 +8680,485 @@ async function getTrendingRecommendation() {
 
 window.getTrendingRecommendation = getTrendingRecommendation;
 
+// ========================================
+// 🏆 채널 순위 (Channel Ranking) 프론트엔드
+// ========================================
+
+console.log('🏆 [Channel Ranking] 모듈 로드');
+
+// ── 채널 순위 전역 상태 ──
+let chRankCache = {};           // { "KR:all:current:subscribers": { channels, meta } }
+let chRankCurrentRegion = 'KR';
+let chRankCurrentCat = '';      // '' = 전체
+let chRankCurrentSort = 'subscribers';
+let chRankCurrentPeriod = 'current';
+let isLoadingChRank = false;
+
+/**
+ * 채널 순위 캐시 키 생성
+ */
+function _chRankCacheKey(region, cat, period, sort) {
+  return `${region || 'global'}:${cat || 'all'}:${period}:${sort}`;
+}
+
+/**
+ * 채널 순위 초기화 (탭 진입 시 호출)
+ */
+function initChannelRanking() {
+  console.log('🏆 [Channel Ranking] 초기화');
+  _bindChannelRankingEvents();
+  
+  // 캐시가 있으면 바로 렌더링
+  const key = _chRankCacheKey(chRankCurrentRegion, chRankCurrentCat, chRankCurrentPeriod, chRankCurrentSort);
+  if (chRankCache[key]) {
+    renderChannelRankingList(chRankCache[key]);
+  }
+}
+
+/**
+ * 채널 순위 이벤트 바인딩
+ */
+function _bindChannelRankingEvents() {
+  // 국가 드롭다운
+  const regionSelect = document.getElementById('channelRankingRegion');
+  if (regionSelect) {
+    regionSelect.onchange = function() {
+      chRankCurrentRegion = this.value;
+      loadChannelRanking();
+    };
+  }
+  
+  // 정렬 드롭다운
+  const sortSelect = document.getElementById('channelRankingSort');
+  if (sortSelect) {
+    sortSelect.onchange = function() {
+      chRankCurrentSort = this.value;
+      loadChannelRanking();
+    };
+  }
+  
+  // 기간 드롭다운
+  const periodSelect = document.getElementById('channelRankingPeriod');
+  if (periodSelect) {
+    periodSelect.onchange = function() {
+      chRankCurrentPeriod = this.value;
+      loadChannelRanking();
+    };
+  }
+  
+  // 카테고리 탭 버튼
+  document.querySelectorAll('.ch-rank-cat-btn').forEach(function(btn) {
+    btn.onclick = function() {
+      chRankCurrentCat = this.dataset.cat || '';
+      
+      // 활성 스타일
+      document.querySelectorAll('.ch-rank-cat-btn').forEach(function(b) {
+        b.classList.remove('active', 'bg-blue-100', 'text-blue-700');
+        b.classList.add('bg-gray-100', 'text-gray-600');
+      });
+      this.classList.add('active', 'bg-blue-100', 'text-blue-700');
+      this.classList.remove('bg-gray-100', 'text-gray-600');
+      
+      loadChannelRanking();
+    };
+  });
+}
+
+/**
+ * 채널 순위 데이터 로드 (무료 - 크레딧 차감 없음)
+ */
+async function loadChannelRanking(region, category, period, sort) {
+  if (isLoadingChRank) return;
+  
+  const r = region || chRankCurrentRegion;
+  const cat = category !== undefined ? category : chRankCurrentCat;
+  const p = period || chRankCurrentPeriod;
+  const s = sort || chRankCurrentSort;
+  
+  // 프론트 캐시 확인
+  const key = _chRankCacheKey(r, cat, p, s);
+  if (chRankCache[key]) {
+    renderChannelRankingList(chRankCache[key]);
+    return;
+  }
+  
+  isLoadingChRank = true;
+  _showChRankLoading(true);
+  
+  try {
+    const response = await fetch('/api/youtube/channel-ranking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        regionCode: r,
+        categoryId: cat,
+        period: p,
+        sortBy: s,
+        limit: 50
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      // 프론트 캐시 저장
+      chRankCache[key] = result.data;
+      renderChannelRankingList(result.data);
+      
+      // 기간 가용성 업데이트
+      if (result.data.meta && result.data.meta.period_available) {
+        updatePeriodAvailability(result.data.meta.period_available);
+      }
+    } else {
+      _showChRankError(result.error?.message || '채널 순위를 불러올 수 없습니다.');
+    }
+  } catch (err) {
+    console.error('🏆 [Channel Ranking] 로드 오류:', err);
+    _showChRankError('네트워크 오류가 발생했습니다.');
+  } finally {
+    isLoadingChRank = false;
+    _showChRankLoading(false);
+  }
+}
+
+/**
+ * 로딩 UI 토글
+ */
+function _showChRankLoading(show) {
+  const loadingEl = document.getElementById('channelRankingLoading');
+  const listEl = document.getElementById('channelRankingList');
+  const emptyEl = document.getElementById('channelRankingEmpty');
+  
+  if (show) {
+    if (loadingEl) loadingEl.classList.remove('hidden');
+    if (listEl) listEl.innerHTML = '';
+    if (emptyEl) emptyEl.classList.add('hidden');
+  } else {
+    if (loadingEl) loadingEl.classList.add('hidden');
+  }
+}
+
+/**
+ * 에러 표시
+ */
+function _showChRankError(message) {
+  const listEl = document.getElementById('channelRankingList');
+  if (listEl) {
+    listEl.innerHTML = '<div class="text-center py-8 text-red-500"><i class="fas fa-exclamation-circle text-3xl mb-2"></i><p>' + escapeHtml(message) + '</p></div>';
+  }
+}
+
+/**
+ * 채널 순위 리스트 렌더링
+ */
+function renderChannelRankingList(data) {
+  const listEl = document.getElementById('channelRankingList');
+  const emptyEl = document.getElementById('channelRankingEmpty');
+  const metaEl = document.getElementById('channelRankingMeta');
+  
+  if (!listEl) return;
+  
+  const channels = data.channels || [];
+  const meta = data.meta || {};
+  
+  if (channels.length === 0) {
+    listEl.innerHTML = '';
+    if (emptyEl) {
+      emptyEl.classList.remove('hidden');
+      emptyEl.innerHTML = '<div class="text-4xl mb-3">📊</div><p class="font-semibold">채널 순위 데이터를 수집 중입니다</p><p class="text-sm mt-1">데이터가 준비되면 자동으로 표시됩니다</p><button onclick="loadChannelRanking()" class="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition">순위 불러오기</button>';
+    }
+    if (metaEl) metaEl.classList.add('hidden');
+    return;
+  }
+  
+  if (emptyEl) emptyEl.classList.add('hidden');
+  
+  // 채널 데이터를 글로벌에 저장 (디테일 패널용)
+  window._chRankChannelsList = channels;
+  
+  var html = '';
+  channels.forEach(function(ch, i) {
+    var rankClass = i < 3 ? 'text-yellow-600 font-bold' : 'text-gray-400 font-bold';
+    var rankIcon = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+    var thumb = ch.channel_thumbnail || '';
+    var countryFlag = getCountryFlag(ch.channel_country);
+    
+    html += '<div class="ch-rank-row flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg hover:shadow-md hover:border-blue-300 transition cursor-pointer" data-ch-rank-index="' + i + '" data-channel-id="' + escapeHtml(ch.channel_id) + '">';
+    
+    // 순위
+    html += '<div class="flex-shrink-0 w-10 text-center">';
+    if (rankIcon) {
+      html += '<span class="text-xl">' + rankIcon + '</span>';
+    } else {
+      html += '<span class="text-lg ' + rankClass + '">' + ch.rank + '</span>';
+    }
+    html += '</div>';
+    
+    // 채널 썸네일
+    html += '<div class="flex-shrink-0">';
+    if (thumb) {
+      html += '<img src="' + thumb + '" alt="' + escapeHtml(ch.channel_name) + '" class="w-12 h-12 rounded-full object-cover border-2 border-gray-200" onerror="this.src=\'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22><rect fill=%22%23ddd%22 width=%2240%22 height=%2240%22/><text x=%2220%22 y=%2225%22 text-anchor=%22middle%22 fill=%22%23888%22 font-size=%2216%22>📺</text></svg>\'">';
+    } else {
+      html += '<div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-xl">📺</div>';
+    }
+    html += '</div>';
+    
+    // 채널 정보
+    html += '<div class="flex-1 min-w-0">';
+    html += '<h3 class="font-semibold text-gray-900 text-sm truncate">' + escapeHtml(ch.channel_name) + '</h3>';
+    html += '<div class="flex items-center gap-3 mt-1 text-xs text-gray-500">';
+    html += '<span><i class="fas fa-users mr-1"></i>' + formatCompactNumber(ch.subscribers) + '</span>';
+    html += '<span><i class="fas fa-eye mr-1"></i>' + formatCompactNumber(ch.total_views) + '</span>';
+    html += '<span><i class="fas fa-video mr-1"></i>' + formatNumber(ch.video_count) + '</span>';
+    if (countryFlag) {
+      html += '<span>' + countryFlag + '</span>';
+    }
+    html += '</div>';
+    html += '</div>';
+    
+    // 주요 지표 (정렬 기준)
+    html += '<div class="flex-shrink-0 text-right">';
+    if (chRankCurrentSort === 'total_views') {
+      html += '<div class="text-sm font-bold text-blue-600">' + formatCompactNumber(ch.total_views) + '</div>';
+      html += '<div class="text-xs text-gray-400">총 조회수</div>';
+    } else if (chRankCurrentSort === 'video_count') {
+      html += '<div class="text-sm font-bold text-green-600">' + formatNumber(ch.video_count) + '</div>';
+      html += '<div class="text-xs text-gray-400">영상 수</div>';
+    } else {
+      html += '<div class="text-sm font-bold text-red-600">' + formatCompactNumber(ch.subscribers) + '</div>';
+      html += '<div class="text-xs text-gray-400">구독자</div>';
+    }
+    html += '</div>';
+    
+    html += '</div>';
+  });
+  
+  listEl.innerHTML = html;
+  
+  // 메타 정보
+  if (metaEl && meta.snapshot_date) {
+    metaEl.classList.remove('hidden');
+    metaEl.innerHTML = '📅 스냅샷: ' + meta.snapshot_date + ' · ' + meta.total_count + '개 채널' + (meta.cached ? ' · <span class="text-green-500">캐시</span>' : '');
+  }
+  
+  // 이벤트 위임: 채널 클릭 → 디테일 패널
+  listEl.onclick = function(e) {
+    var row = e.target.closest('.ch-rank-row');
+    if (!row) return;
+    var idx = parseInt(row.getAttribute('data-ch-rank-index'), 10);
+    var ch = window._chRankChannelsList[idx];
+    if (!ch) return;
+    
+    // 하이라이트
+    listEl.querySelectorAll('.ch-rank-row').forEach(function(el) {
+      el.classList.remove('ring-2', 'ring-blue-400', 'bg-blue-50');
+      el.classList.add('bg-white');
+    });
+    row.classList.remove('bg-white');
+    row.classList.add('ring-2', 'ring-blue-400', 'bg-blue-50');
+    
+    showChannelRankingDetail(ch.channel_id, ch);
+  };
+}
+
+/**
+ * 채널 순위 상세 패널 (우측 사이드바)
+ */
+function showChannelRankingDetail(channelId, channelData) {
+  var panelEl = document.getElementById('trend-detail-panel');
+  if (!panelEl) return;
+  
+  var ch = channelData;
+  var countryFlag = getCountryFlag(ch.channel_country);
+  var countryName = getCountryName(ch.channel_country);
+  var catLabel = getCategoryLabel(ch.category_id);
+  var thumb = ch.channel_thumbnail || '';
+  
+  // 구독자 등급 계산
+  var subTier = '', subColor = '';
+  if (ch.subscribers >= 50000000) { subTier = '💎 다이아몬드'; subColor = 'text-blue-600'; }
+  else if (ch.subscribers >= 10000000) { subTier = '🏆 골드 다이아'; subColor = 'text-yellow-500'; }
+  else if (ch.subscribers >= 1000000) { subTier = '🥇 밀리언'; subColor = 'text-yellow-600'; }
+  else if (ch.subscribers >= 100000) { subTier = '🥈 실버'; subColor = 'text-gray-500'; }
+  else { subTier = '🥉 브론즈'; subColor = 'text-orange-600'; }
+  
+  // 영상당 평균 조회수
+  var avgViewsPerVideo = ch.video_count > 0 ? Math.floor(ch.total_views / ch.video_count) : 0;
+  
+  panelEl.classList.remove('detail-sidebar-empty');
+  panelEl.innerHTML = '\
+    <div class="h-full overflow-y-auto" style="max-height: calc(100vh - var(--total-nav-height, 120px));">\
+      <div class="p-4 space-y-4">\
+        <!-- 채널 프로필 -->\
+        <div class="text-center">\
+          ' + (thumb ? '<img src="' + thumb + '" alt="' + escapeHtml(ch.channel_name) + '" class="w-20 h-20 rounded-full mx-auto border-4 border-gray-200 shadow-lg object-cover" onerror="this.style.display=\'none\'">' : '<div class="w-20 h-20 rounded-full mx-auto bg-gray-200 flex items-center justify-center text-3xl shadow-lg">📺</div>') + '\
+          <h3 class="text-lg font-bold text-gray-900 mt-3">' + escapeHtml(ch.channel_name) + '</h3>\
+          <div class="flex items-center justify-center gap-2 mt-1 text-sm text-gray-500">\
+            <span class="' + subColor + ' font-semibold">' + subTier + '</span>\
+            ' + (countryFlag ? '<span>' + countryFlag + ' ' + countryName + '</span>' : '') + '\
+          </div>\
+          ' + (catLabel ? '<span class="inline-block mt-2 px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">' + catLabel + '</span>' : '') + '\
+        </div>\
+        \
+        <!-- 핵심 지표 -->\
+        <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-4 space-y-3">\
+          <div class="text-center mb-2">\
+            <span class="text-3xl font-black text-gray-900">#' + ch.rank + '</span>\
+            <div class="text-xs text-gray-500 mt-1">현재 순위</div>\
+          </div>\
+          <div class="grid grid-cols-3 gap-2 text-center">\
+            <div class="bg-white rounded-lg p-2.5 shadow-sm">\
+              <div class="text-sm font-bold text-red-600">' + formatCompactNumber(ch.subscribers) + '</div>\
+              <div class="text-xs text-gray-400">구독자</div>\
+            </div>\
+            <div class="bg-white rounded-lg p-2.5 shadow-sm">\
+              <div class="text-sm font-bold text-blue-600">' + formatCompactNumber(ch.total_views) + '</div>\
+              <div class="text-xs text-gray-400">총 조회수</div>\
+            </div>\
+            <div class="bg-white rounded-lg p-2.5 shadow-sm">\
+              <div class="text-sm font-bold text-green-600">' + formatNumber(ch.video_count) + '</div>\
+              <div class="text-xs text-gray-400">영상 수</div>\
+            </div>\
+          </div>\
+        </div>\
+        \
+        <!-- 분석 지표 -->\
+        <div class="border-t pt-3">\
+          <h4 class="text-sm font-semibold text-gray-700 mb-3"><i class="fas fa-chart-bar mr-1"></i> 분석 지표</h4>\
+          <div class="space-y-2">\
+            <div class="flex items-center justify-between bg-green-50 rounded-lg p-3">\
+              <span class="text-xs text-green-700">영상당 평균 조회수</span>\
+              <span class="text-sm font-bold text-green-900">' + formatCompactNumber(avgViewsPerVideo) + '</span>\
+            </div>\
+            <div class="flex items-center justify-between bg-blue-50 rounded-lg p-3">\
+              <span class="text-xs text-blue-700">구독자 대비 조회수</span>\
+              <span class="text-sm font-bold text-blue-900">' + (ch.subscribers > 0 ? (ch.total_views / ch.subscribers).toFixed(1) + 'x' : '-') + '</span>\
+            </div>\
+          </div>\
+        </div>\
+        \
+        <!-- 설명 (있는 경우) -->\
+        ' + (ch.channel_description ? '<div class="border-t pt-3"><h4 class="text-sm font-semibold text-gray-700 mb-2"><i class="fas fa-info-circle mr-1"></i> 채널 소개</h4><p class="text-xs text-gray-600 leading-relaxed line-clamp-4">' + escapeHtml(ch.channel_description) + '</p></div>' : '') + '\
+        \
+        <!-- 액션 버튼 -->\
+        <div class="border-t pt-3 space-y-2">\
+          <a href="https://www.youtube.com/channel/' + ch.channel_id + '" target="_blank" class="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl transition text-sm font-semibold">\
+            <i class="fab fa-youtube"></i> YouTube에서 보기\
+          </a>\
+          <button onclick="analyzeChannelFromRanking(\'' + ch.channel_id + '\', \'' + encodeURIComponent(ch.channel_name) + '\')" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl shadow hover:shadow-lg transition text-sm font-semibold">\
+            <i class="fas fa-search-plus"></i> 채널 분석하기\
+            <span class="px-1.5 py-0.5 bg-white/20 rounded-md text-xs">1크레딧</span>\
+          </button>\
+        </div>\
+      </div>\
+    </div>';
+}
+
+/**
+ * 순위에서 채널 분석 실행 (채널 분석 탭으로 이동)
+ */
+function analyzeChannelFromRanking(channelId, encodedName) {
+  var channelName = decodeURIComponent(encodedName);
+  
+  // 채널 분석 탭으로 전환
+  var channelTab = document.querySelector('[data-tab="channel-analysis"]');
+  if (channelTab) {
+    channelTab.click();
+  }
+  
+  // 채널 URL 입력 후 분석 실행
+  setTimeout(function() {
+    var channelInput = document.getElementById('channel-url-input');
+    if (channelInput) {
+      channelInput.value = 'https://www.youtube.com/channel/' + channelId;
+      var analyzeBtn = document.getElementById('analyze-channel-btn');
+      if (analyzeBtn) analyzeBtn.click();
+    }
+  }, 200);
+}
+
+/**
+ * 기간 드롭다운 활성/비활성 업데이트
+ */
+function updatePeriodAvailability(periodMap) {
+  var periodSelect = document.getElementById('channelRankingPeriod');
+  if (!periodSelect) return;
+  
+  var options = periodSelect.querySelectorAll('option');
+  options.forEach(function(opt) {
+    var val = opt.value;
+    if (val === 'current') {
+      opt.disabled = false;
+      opt.textContent = '현재';
+    } else if (periodMap[val]) {
+      opt.disabled = false;
+      opt.textContent = opt.textContent.replace(' (준비중)', '');
+    } else {
+      opt.disabled = true;
+      if (opt.textContent.indexOf('준비중') === -1) {
+        opt.textContent = opt.textContent + ' (준비중)';
+      }
+    }
+  });
+}
+
+/**
+ * 컴팩트 숫자 포맷 (1.2만, 305만, 1.5억 등)
+ */
+function formatCompactNumber(num) {
+  if (!num) return '0';
+  num = parseInt(num);
+  if (num >= 100000000) return (num / 100000000).toFixed(1).replace('.0', '') + '억';
+  if (num >= 10000) return (num / 10000).toFixed(1).replace('.0', '') + '만';
+  if (num >= 1000) return (num / 1000).toFixed(1).replace('.0', '') + '천';
+  return num.toLocaleString('ko-KR');
+}
+
+/**
+ * 국가 플래그 이모지
+ */
+function getCountryFlag(code) {
+  var flags = {
+    'KR': '🇰🇷', 'US': '🇺🇸', 'JP': '🇯🇵', 'GB': '🇬🇧', 'IN': '🇮🇳',
+    'BR': '🇧🇷', 'DE': '🇩🇪', 'FR': '🇫🇷', 'ID': '🇮🇩', 'MX': '🇲🇽',
+    'TH': '🇹🇭', 'VN': '🇻🇳', 'TW': '🇹🇼', 'RU': '🇷🇺', 'CA': '🇨🇦',
+    'AU': '🇦🇺', 'ES': '🇪🇸', 'IT': '🇮🇹', 'TR': '🇹🇷', 'PH': '🇵🇭'
+  };
+  return flags[(code || '').toUpperCase()] || '';
+}
+
+/**
+ * 국가명
+ */
+function getCountryName(code) {
+  var names = {
+    'KR': '한국', 'US': '미국', 'JP': '일본', 'GB': '영국', 'IN': '인도',
+    'BR': '브라질', 'DE': '독일', 'FR': '프랑스', 'ID': '인도네시아', 'MX': '멕시코',
+    'TH': '태국', 'VN': '베트남', 'TW': '대만', 'RU': '러시아', 'CA': '캐나다',
+    'AU': '호주', 'ES': '스페인', 'IT': '이탈리아', 'TR': '터키', 'PH': '필리핀'
+  };
+  return names[(code || '').toUpperCase()] || code || '';
+}
+
+/**
+ * 카테고리 라벨
+ */
+function getCategoryLabel(catId) {
+  var labels = {
+    '1': '🎞 영화', '2': '🚗 자동차', '10': '🎵 음악', '15': '🐾 동물',
+    '17': '⚽ 스포츠', '19': '✈️ 여행', '20': '🎮 게임', '22': '👥 인물',
+    '23': '😂 코미디', '24': '🎬 엔터', '25': '📰 뉴스', '26': '💡 노하우',
+    '27': '📚 교육', '28': '🔬 과학'
+  };
+  return labels[String(catId)] || '';
+}
+
+// window에 노출
+window.loadChannelRanking = loadChannelRanking;
+window.initChannelRanking = initChannelRanking;
+window.showChannelRankingDetail = showChannelRankingDetail;
+window.analyzeChannelFromRanking = analyzeChannelFromRanking;
+window.formatCompactNumber = formatCompactNumber;
+
+console.log('✅ [Channel Ranking] 모듈 로드 완료');
+
