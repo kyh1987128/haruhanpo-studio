@@ -1418,10 +1418,10 @@ export function youtubeAnalyzerTemplate() {
             <div id="channelRankingEmpty" class="text-center py-12 text-gray-500">
               <div class="text-4xl mb-3">🏆</div>
               <p class="mb-4">인기 채널 순위를 불러오려면 아래 버튼을 클릭하세요</p>
-              <button id="chRankLoadBtn" onclick="loadChannelRankingWithCredit()"
+              <button id="chRankLoadBtn" onclick="loadChannelRankingFree()"
                 class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 text-sm font-bold">
-                🏆 인기 채널 순위
-                <span class="px-2 py-0.5 bg-white/20 rounded-md text-xs">1크레딧</span>
+                🏆 인기 채널 순위 불러오기
+                <span class="px-2 py-0.5 bg-white/20 rounded-md text-xs">무료</span>
               </button>
               <p class="text-xs text-gray-400 mt-3">같은 국가 데이터는 세션 중 재사용 가능 (카테고리 전환 무료)</p>
             </div>
@@ -1444,6 +1444,78 @@ export function youtubeAnalyzerTemplate() {
         <aside class="detail-sidebar">
           <div id="trend-detail-panel" class="detail-sidebar-empty">
             영상을 선택하세요
+          </div>
+          <!-- 채널 순위 전용 상세 패널 (trend-detail-panel 위에 오버레이) -->
+          <div id="channelRankingDetail" class="hidden absolute inset-0 bg-white overflow-y-auto" style="z-index:10;">
+            <div class="p-4 space-y-4">
+              <!-- 채널 개요 -->
+              <div class="text-center">
+                <img id="chDetailThumb" class="w-20 h-20 rounded-full mx-auto mb-2 border-4 border-gray-200 shadow-lg object-cover" src="" alt="">
+                <h3 id="chDetailName" class="font-bold text-lg text-gray-900"></h3>
+                <span id="chDetailGradeBadge" class="inline-block px-2 py-0.5 rounded-full text-white text-xs font-bold mt-1"></span>
+                <p id="chDetailCategory" class="text-sm text-gray-500 mt-1"></p>
+              </div>
+              <!-- 현재 순위 + 변동 -->
+              <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-4 text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <span id="chDetailRank" class="text-3xl font-black text-gray-900"></span>
+                  <span id="chDetailRankChange" class="text-sm font-bold"></span>
+                </div>
+                <p class="text-xs text-gray-500">현재 순위</p>
+                <p id="chDetailPercentile" class="text-xs text-blue-600 font-semibold mt-1"></p>
+              </div>
+              <!-- 기본 지표 -->
+              <div class="grid grid-cols-3 gap-2">
+                <div class="text-center p-2 bg-blue-50 rounded-lg">
+                  <p id="chDetailSubs" class="font-bold text-blue-600 text-sm"></p>
+                  <p class="text-xs text-gray-500">구독자</p>
+                </div>
+                <div class="text-center p-2 bg-green-50 rounded-lg">
+                  <p id="chDetailViews" class="font-bold text-green-600 text-sm"></p>
+                  <p class="text-xs text-gray-500">총 조회수</p>
+                </div>
+                <div class="text-center p-2 bg-purple-50 rounded-lg">
+                  <p id="chDetailVideos" class="font-bold text-purple-600 text-sm"></p>
+                  <p class="text-xs text-gray-500">영상 수</p>
+                </div>
+              </div>
+              <!-- 효율 분석 -->
+              <div class="border rounded-xl p-4">
+                <h4 class="font-bold text-sm mb-3"><i class="fas fa-chart-bar mr-1"></i> 효율 분석</h4>
+                <div class="space-y-2">
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">영상당 평균 조회수</span>
+                    <span id="chDetailAvgViews" class="font-bold text-sm"></span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">구독자 대비 조회수</span>
+                    <span id="chDetailViewsRatio" class="font-bold text-sm"></span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">효율 등급</span>
+                    <span id="chDetailGradeText" class="font-bold text-sm"></span>
+                  </div>
+                </div>
+              </div>
+              <!-- 카테고리 내 위치 -->
+              <div class="border rounded-xl p-4">
+                <h4 class="font-bold text-sm mb-3"><i class="fas fa-medal mr-1"></i> 카테고리 내 위치</h4>
+                <div class="w-full bg-gray-200 rounded-full h-3 mb-2">
+                  <div id="chDetailPercentileBar" class="bg-blue-600 h-3 rounded-full transition-all" style="width:0%"></div>
+                </div>
+                <p id="chDetailPositionText" class="text-xs text-gray-600 text-center"></p>
+              </div>
+              <!-- 유사 규모 채널 -->
+              <div id="chDetailSimilarSection" class="border rounded-xl p-4 hidden">
+                <h4 class="font-bold text-sm mb-3"><i class="fas fa-users mr-1"></i> 유사 규모 채널</h4>
+                <div id="chDetailSimilarList" class="space-y-2"></div>
+              </div>
+              <!-- 하단 버튼 -->
+              <a id="chDetailYoutubeLink" href="" target="_blank"
+                 class="block w-full text-center py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition">
+                <i class="fab fa-youtube mr-1"></i> YouTube에서 보기
+              </a>
+            </div>
           </div>
         </aside>
         
@@ -2977,10 +3049,10 @@ export function youtubeAnalyzerTemplate() {
   <script src="/static/youtube-analyzer.js?v=8.5.0"></script>
   
   <!-- Phase 2: YouTube Finder 검색 기능 -->
-  <script src="/static/youtube-finder.js?v=8.8.1"></script>
+  <script src="/static/youtube-finder.js?v=8.8.2"></script>
   
   <!-- Phase 2.5: Trends Insights (Supabase 연동) -->
-  <script src="/static/youtube-trends.js?v=8.8.1"></script>
+  <script src="/static/youtube-trends.js?v=8.8.2"></script>
   
   <!-- Phase 5A: 3-Tab 전환 스크립트 -->
   <script>
