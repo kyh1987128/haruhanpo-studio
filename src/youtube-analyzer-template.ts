@@ -1418,10 +1418,10 @@ export function youtubeAnalyzerTemplate() {
             <div id="channelRankingEmpty" class="text-center py-12 text-gray-500">
               <div class="text-4xl mb-3">🏆</div>
               <p class="mb-4">인기 채널 순위를 불러오려면 아래 버튼을 클릭하세요</p>
-              <button id="chRankLoadBtn" onclick="loadChannelRankingFree()"
+              <button id="chRankLoadBtn" onclick="loadChannelRankingWithCredit()"
                 class="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 text-sm font-bold">
-                🏆 인기 채널 순위 불러오기
-                <span class="px-2 py-0.5 bg-white/20 rounded-md text-xs">무료</span>
+                🏆 순위 불러오기
+                <span class="ml-1 px-1.5 py-0.5 bg-yellow-400 text-yellow-900 text-xs rounded-full font-bold">1크레딧</span>
               </button>
               <p class="text-xs text-gray-400 mt-3">같은 국가 데이터는 세션 중 재사용 가능 (카테고리 전환 무료)</p>
             </div>
@@ -1495,6 +1495,43 @@ export function youtubeAnalyzerTemplate() {
                     <span class="text-sm text-gray-600">효율 등급</span>
                     <span id="chDetailGradeText" class="font-bold text-sm"></span>
                   </div>
+                </div>
+              </div>
+              <!-- 예상 수익 -->
+              <div class="border rounded-xl p-4">
+                <h4 class="font-bold text-sm mb-3">💰 예상 수익</h4>
+                <div class="space-y-3">
+                  <div>
+                    <div class="flex justify-between items-center mb-1">
+                      <span class="text-sm text-gray-600">월간 예상 수익</span>
+                    </div>
+                    <p id="chDetailMonthlyRevenue" class="text-lg font-black text-green-600"></p>
+                  </div>
+                  <div>
+                    <div class="flex justify-between items-center mb-1">
+                      <span class="text-sm text-gray-600">연간 예상 수익</span>
+                    </div>
+                    <p id="chDetailYearlyRevenue" class="text-base font-bold text-green-700"></p>
+                  </div>
+                  <div class="bg-gray-50 rounded-lg p-2 space-y-1">
+                    <div class="flex justify-between text-xs text-gray-500">
+                      <span>추정 월간 조회수</span>
+                      <span id="chDetailMonthlyViews"></span>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500">
+                      <span>추정 월 업로드</span>
+                      <span id="chDetailMonthlyUploads"></span>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500">
+                      <span>적용 CPM</span>
+                      <span id="chDetailCPM"></span>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500">
+                      <span>광고 노출률</span>
+                      <span id="chDetailAdRate"></span>
+                    </div>
+                  </div>
+                  <p class="text-xs text-gray-400 text-center mt-1">※ 추정치이며 실제 수익과 다를 수 있습니다</p>
                 </div>
               </div>
               <!-- 카테고리 내 위치 -->
@@ -3049,10 +3086,10 @@ export function youtubeAnalyzerTemplate() {
   <script src="/static/youtube-analyzer.js?v=8.5.0"></script>
   
   <!-- Phase 2: YouTube Finder 검색 기능 -->
-  <script src="/static/youtube-finder.js?v=8.8.2"></script>
+  <script src="/static/youtube-finder.js?v=8.8.3"></script>
   
   <!-- Phase 2.5: Trends Insights (Supabase 연동) -->
-  <script src="/static/youtube-trends.js?v=8.8.2"></script>
+  <script src="/static/youtube-trends.js?v=8.8.3"></script>
   
   <!-- Phase 5A: 3-Tab 전환 스크립트 -->
   <script>

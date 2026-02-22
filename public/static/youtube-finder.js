@@ -8693,6 +8693,27 @@ let chRankCurrentCat = '';
 let chRankCurrentSort = 'subscribers';
 let chRankCurrentPeriod = 'current';
 let isLoadingChRank = false;
+let _chRankCreditUsedRegions = {}; // 크레딧 사용 추적
+
+// ── 통화 포맷 헬퍼 ──
+function _formatCurrency(amount, symbol) {
+  if (amount >= 100000000) {
+    return symbol + (amount / 100000000).toFixed(1) + '억';
+  } else if (amount >= 10000) {
+    return symbol + (amount / 10000).toFixed(0) + '만';
+  } else if (amount >= 1000) {
+    return symbol + (amount / 1000).toFixed(1) + '천';
+  }
+  return symbol + amount.toLocaleString();
+}
+function _formatNumber(num) {
+  if (!num) return '0';
+  num = parseInt(num);
+  if (num >= 100000000) return (num / 100000000).toFixed(1) + '억';
+  if (num >= 10000) return (num / 10000).toFixed(1) + '만';
+  if (num >= 1000) return (num / 1000).toFixed(1) + '천';
+  return num.toLocaleString('ko-KR');
+}
 
 function _chRankCacheKey(region, cat, period, sort) {
   return (region || 'global') + ':' + (cat || 'all') + ':' + period + ':' + sort;
@@ -8781,28 +8802,71 @@ function _showChRankInitButton() {
   var loadingEl = document.getElementById('channelRankingLoading');
   if (listEl) { listEl.innerHTML = ''; listEl.classList.add('hidden'); }
   if (loadingEl) loadingEl.classList.add('hidden');
-  if (emptyEl) emptyEl.classList.remove('hidden');
+  if (emptyEl) {
+    emptyEl.classList.remove('hidden');
+    // 버튼 크레딧 표시 복원
+    var btn = document.getElementById('chRankLoadBtn');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '🏆 순위 불러오기 <span class="ml-1 px-1.5 py-0.5 bg-yellow-400 text-yellow-900 text-xs rounded-full font-bold">1크레딧</span>';
+    }
+  }
   if (metaEl) metaEl.classList.add('hidden');
   // 상세 패널도 숨기기
   var detailPanel = document.getElementById('channelRankingDetail');
   if (detailPanel) detailPanel.classList.add('hidden');
 }
 
-// ── 무료 로드 (크레딧 불필요) ──
-async function loadChannelRankingFree() {
+// ── 크레딧 차감 후 로드 (trending-all 패턴) ──
+async function loadChannelRankingWithCredit() {
   var btn = document.getElementById('chRankLoadBtn');
+
+  // 1. 크레딧 차감
+  try {
+    var creditRes = await fetch('/api/credits/deduct', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: 1, feature: 'youtube_channel_ranking', user_id: window.currentUser?.id })
+    });
+    var creditData = await creditRes.json();
+    if (!creditData.success) {
+      alert(creditData.error || '크레딧이 부족합니다.');
+      return;
+    }
+    _chRankCreditUsedRegions[chRankCurrentRegion] = true;
+    // 헤더 크레딧 업데이트
+    if (creditData.free_credits !== undefined) {
+      window.dispatchEvent(new CustomEvent('userUpdated', { detail: { ...window.currentUser, free_credits: creditData.free_credits, paid_credits: creditData.paid_credits } }));
+    }
+  } catch (e) {
+    console.error('크레딧 차감 오류:', e);
+    alert('크레딧 확인 중 오류가 발생했습니다.');
+    return;
+  }
+
+  // 2. 버튼 로딩
   if (btn) {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 불러오는 중...';
   }
+
+  // 3. 데이터 로드
   try {
     await loadChannelRanking();
   } catch (err) {
-    console.error('채널 순위 로드 오류:', err);
+    // 실패 시 환불
+    try {
+      await fetch('/api/credits/refund', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: 1, feature: 'youtube_channel_ranking', user_id: window.currentUser?.id })
+      });
+    } catch (e) {}
+    alert('채널 순위 로드에 실패했습니다. 크레딧이 환불되었습니다.');
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = '🏆 인기 채널 순위 불러오기 <span class="px-2 py-0.5 bg-white/20 rounded-md text-xs">무료</span>';
+      btn.innerHTML = '🏆 순위 불러오기 <span class="ml-1 px-1.5 py-0.5 bg-yellow-400 text-yellow-900 text-xs rounded-full font-bold">1크레딧</span>';
     }
   }
 }
@@ -8929,6 +8993,9 @@ function renderChannelRankingList(data) {
     html += '<span><i class="fas fa-video mr-1"></i>' + formatNumber(ch.video_count) + '</span>';
     if (ch.avg_views_per_video) {
       html += '<span style="color:#6b7280;">· 영상당 ' + formatCompactNumber(ch.avg_views_per_video) + '</span>';
+    }
+    if (ch.estimated_revenue) {
+      html += ' · <span style="color:#16a34a;font-size:12px;">💰 월 ' + _formatCurrency(ch.estimated_revenue.monthly_min, ch.estimated_revenue.currency_symbol) + '~' + _formatCurrency(ch.estimated_revenue.monthly_max, ch.estimated_revenue.currency_symbol) + '</span>';
     }
     if (countryFlag) html += '<span>' + countryFlag + '</span>';
     html += '</div>';
@@ -9079,6 +9146,23 @@ function showChannelRankingDetail(channel) {
     if (similarSection) similarSection.classList.add('hidden');
   }
 
+  // 예상 수익
+  var rev = channel.estimated_revenue;
+  if (rev) {
+    var monthlyRevEl = document.getElementById('chDetailMonthlyRevenue');
+    if (monthlyRevEl) monthlyRevEl.textContent = _formatCurrency(rev.monthly_min, rev.currency_symbol) + ' ~ ' + _formatCurrency(rev.monthly_max, rev.currency_symbol);
+    var yearlyRevEl = document.getElementById('chDetailYearlyRevenue');
+    if (yearlyRevEl) yearlyRevEl.textContent = _formatCurrency(rev.yearly_min, rev.currency_symbol) + ' ~ ' + _formatCurrency(rev.yearly_max, rev.currency_symbol);
+    var monthlyViewsEl = document.getElementById('chDetailMonthlyViews');
+    if (monthlyViewsEl) monthlyViewsEl.textContent = _formatNumber(rev.estimated_monthly_views);
+    var monthlyUploadsEl = document.getElementById('chDetailMonthlyUploads');
+    if (monthlyUploadsEl) monthlyUploadsEl.textContent = rev.estimated_monthly_uploads + '개';
+    var cpmEl = document.getElementById('chDetailCPM');
+    if (cpmEl) cpmEl.textContent = '$' + rev.cpm_range.min + ' ~ $' + rev.cpm_range.max;
+    var adRateEl = document.getElementById('chDetailAdRate');
+    if (adRateEl) adRateEl.textContent = rev.ad_rate;
+  }
+
   // YouTube 링크
   var linkEl = document.getElementById('chDetailYoutubeLink');
   if (linkEl) linkEl.href = 'https://www.youtube.com/channel/' + channel.channel_id;
@@ -9144,10 +9228,10 @@ function getCategoryLabel(catId) {
 
 // window 노출
 window.loadChannelRanking = loadChannelRanking;
-window.loadChannelRankingFree = loadChannelRankingFree;
+window.loadChannelRankingWithCredit = loadChannelRankingWithCredit;
 window.initChannelRanking = initChannelRanking;
 window.showChannelRankingDetail = showChannelRankingDetail;
 window.formatCompactNumber = formatCompactNumber;
 
-console.log('✅ [Channel Ranking v8.8.2] 모듈 로드 완료');
+console.log('✅ [Channel Ranking v8.8.3] 모듈 로드 완료');
 

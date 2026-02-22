@@ -3309,8 +3309,8 @@ ${recentTitles ? `최근 영상:\n- ${recentTitles}` : ''}
 
 // ========================================
 // POST /api/youtube/channel-ranking
-// 인기 채널 순위 조회 (무료, KV 캐시)
-// v8.8.2: 효율 등급·순위 변동·백분위·유사 채널 추가
+// 인기 채널 순위 조회 (1크레딧, KV 캐시)
+// v8.8.3: 크레딧 정비, 중복 제거, 예상 수익 추가
 // ========================================
 
 // 효율 등급 계산
@@ -3323,6 +3323,104 @@ function calculateEfficiencyGrade(channel: any): { grade: string; color: string;
   if (ratio >= 2)  return { grade: 'B', color: '#eab308', label: '우수' }
   if (ratio >= 1)  return { grade: 'C', color: '#22c55e', label: '보통' }
   return { grade: 'D', color: '#6b7280', label: '낮음' }
+}
+
+// 국가별 CPM 범위 (USD, 1000회 조회당)
+const CPM_BY_REGION: Record<string, {min: number, max: number}> = {
+  'US': { min: 2.0, max: 7.0 },
+  'GB': { min: 2.0, max: 6.0 },
+  'CA': { min: 2.0, max: 6.5 },
+  'AU': { min: 2.0, max: 6.0 },
+  'DE': { min: 1.5, max: 5.0 },
+  'FR': { min: 1.5, max: 5.0 },
+  'JP': { min: 2.0, max: 5.0 },
+  'KR': { min: 1.0, max: 4.0 },
+  'BR': { min: 0.5, max: 2.0 },
+  'IN': { min: 0.3, max: 1.5 },
+  'VN': { min: 0.3, max: 1.2 },
+  'TW': { min: 1.0, max: 3.5 },
+  'TH': { min: 0.3, max: 1.5 },
+  'PH': { min: 0.3, max: 1.2 },
+  'MX': { min: 0.5, max: 2.0 },
+}
+const DEFAULT_CPM = { min: 0.5, max: 3.0 }
+
+// 카테고리별 CPM 보정 계수
+const CPM_CATEGORY_MULTIPLIER: Record<string, number> = {
+  '25': 1.3,  // 뉴스
+  '22': 0.9,  // 인물/블로그
+  '10': 0.7,  // 음악
+  '20': 0.8,  // 게임
+  '24': 1.0,  // 엔터테인먼트
+  '23': 1.0,  // 코미디
+  '28': 1.2,  // 과학기술
+  '26': 1.1,  // 노하우/스타일
+  '27': 1.2,  // 교육
+  '1':  0.9,  // 영화/애니
+  '15': 0.9,  // 동물
+  '19': 1.0,  // 여행
+  '17': 1.1,  // 스포츠
+  '2':  0.8,  // 자동차
+}
+const DEFAULT_CATEGORY_MULTIPLIER = 1.0
+
+// 수익 계산 함수
+function estimateRevenue(channel: any, regionCode: string) {
+  const cpm = CPM_BY_REGION[regionCode] || DEFAULT_CPM
+  const catMultiplier = CPM_CATEGORY_MULTIPLIER[channel.category_id] || DEFAULT_CATEGORY_MULTIPLIER
+
+  const avgViewsPerVideo = channel.video_count > 0 ? channel.total_views / channel.video_count : 0
+
+  const estimatedMonthlyUploads = Math.min(30, Math.max(1,
+    Math.round(channel.video_count / Math.max(12, channel.video_count / 4))
+  ))
+
+  const monthlyViews = avgViewsPerVideo * estimatedMonthlyUploads
+
+  const adViewsMin = monthlyViews * 0.4
+  const adViewsMax = monthlyViews * 0.6
+
+  const monthlyRevenueMinUSD = (adViewsMin / 1000) * cpm.min * catMultiplier
+  const monthlyRevenueMaxUSD = (adViewsMax / 1000) * cpm.max * catMultiplier
+
+  const yearlyRevenueMinUSD = monthlyRevenueMinUSD * 12
+  const yearlyRevenueMaxUSD = monthlyRevenueMaxUSD * 12
+
+  const exchangeRates: Record<string, {rate: number, symbol: string, code: string}> = {
+    'KR': { rate: 1350, symbol: '₩', code: 'KRW' },
+    'JP': { rate: 150, symbol: '¥', code: 'JPY' },
+    'US': { rate: 1, symbol: '$', code: 'USD' },
+    'GB': { rate: 0.79, symbol: '£', code: 'GBP' },
+    'CA': { rate: 1, symbol: 'C$', code: 'CAD' },
+    'AU': { rate: 1, symbol: 'A$', code: 'AUD' },
+    'DE': { rate: 1, symbol: '€', code: 'EUR' },
+    'FR': { rate: 1, symbol: '€', code: 'EUR' },
+    'TW': { rate: 32, symbol: 'NT$', code: 'TWD' },
+    'IN': { rate: 83, symbol: '₹', code: 'INR' },
+    'VN': { rate: 24500, symbol: '₫', code: 'VND' },
+    'BR': { rate: 5, symbol: 'R$', code: 'BRL' },
+    'TH': { rate: 35, symbol: '฿', code: 'THB' },
+    'PH': { rate: 56, symbol: '₱', code: 'PHP' },
+    'MX': { rate: 17, symbol: 'MX$', code: 'MXN' },
+  }
+  const fx = exchangeRates[regionCode] || { rate: 1, symbol: '$', code: 'USD' }
+
+  return {
+    monthly_min: Math.round(monthlyRevenueMinUSD * fx.rate),
+    monthly_max: Math.round(monthlyRevenueMaxUSD * fx.rate),
+    yearly_min: Math.round(yearlyRevenueMinUSD * fx.rate),
+    yearly_max: Math.round(yearlyRevenueMaxUSD * fx.rate),
+    currency_symbol: fx.symbol,
+    currency_code: fx.code,
+    estimated_monthly_views: Math.round(monthlyViews),
+    estimated_monthly_uploads: estimatedMonthlyUploads,
+    cpm_range: {
+      min: parseFloat((cpm.min * catMultiplier).toFixed(2)),
+      max: parseFloat((cpm.max * catMultiplier).toFixed(2))
+    },
+    ad_rate: '40~60%',
+    disclaimer: '추정치이며 실제 수익과 다를 수 있습니다'
+  }
 }
 
 // 유사 규모 채널 조회
@@ -3359,7 +3457,7 @@ app.post('/api/youtube/channel-ranking', async (c) => {
 
     // ── KV 캐시 조회 ──
     const { getCachedSearch, setCachedSearch } = await import('../../utils/youtube-cache')
-    const cacheKey = `youtube:ch-ranking:v2:${regionCode || 'global'}:${categoryId || 'all'}:${period}:${safeSortBy}`
+    const cacheKey = `youtube:ch-ranking:v3:${regionCode || 'global'}:${categoryId || 'all'}:${period}:${safeSortBy}`
     const cacheTTL = period === 'current' ? 3 * 3600 : 6 * 3600
 
     const cached = await getCachedSearch(c.env.YOUTUBE_CACHE, cacheKey)
@@ -3453,10 +3551,18 @@ app.post('/api/youtube/channel-ranking', async (c) => {
           .eq('region_code', regionCode)
 
         if (categoryId) query = query.eq('category_id', categoryId)
-        query = query.order(safeSortBy, { ascending: false }).limit(limit)
+        query = query.order(safeSortBy, { ascending: false }).limit(limit * 2) // 중복 제거 후 limit 적용 위해 여유
         const { data, error } = await query
         if (error) console.error('채널 순위 쿼리 오류:', error)
-        channels = data || []
+        
+        // 중복 제거 (전체 탭: categoryId가 없을 때 같은 채널이 여러 카테고리에 등장)
+        const seen = new Set<string>()
+        const uniqueData = (data || []).filter((ch: any) => {
+          if (seen.has(ch.channel_id)) return false
+          seen.add(ch.channel_id)
+          return true
+        })
+        channels = uniqueData.slice(0, limit)
       } else {
         let query = supabase
           .from('youtube_channel_rankings')
@@ -3559,6 +3665,9 @@ app.post('/api/youtube/channel-ranking', async (c) => {
         } catch { /* 무시 */ }
       }
 
+      // 예상 수익
+      const estimated_revenue = estimateRevenue(ch, regionCode || ch.channel_country || 'US')
+
       return {
         rank: rankPosition,
         channel_id: ch.channel_id,
@@ -3575,7 +3684,8 @@ app.post('/api/youtube/channel-ranking', async (c) => {
         views_to_subs_ratio: viewsToSubsRatio,
         category_percentile: percentile,
         category_total: totalInCategory,
-        similar_channels: similarChannels
+        similar_channels: similarChannels,
+        estimated_revenue
       }
     }))
 
