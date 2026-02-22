@@ -8995,7 +8995,9 @@ function renderChannelRankingList(data) {
       html += '<span style="color:#6b7280;">· 영상당 ' + formatCompactNumber(ch.avg_views_per_video) + '</span>';
     }
     if (ch.estimated_revenue) {
-      html += ' · <span style="color:#16a34a;font-size:12px;">💰 월 ' + _formatCurrency(ch.estimated_revenue.monthly_min, ch.estimated_revenue.currency_symbol) + '~' + _formatCurrency(ch.estimated_revenue.monthly_max, ch.estimated_revenue.currency_symbol) + '</span>';
+      var _accDot = { high: '🟢', medium: '🟡', low: '🔴' };
+      var _accIcon = _accDot[ch.estimated_revenue.accuracy] || '⚪';
+      html += ' · <span style="color:#16a34a;font-size:12px;">' + _accIcon + ' 월 ' + _formatCurrency(ch.estimated_revenue.monthly_min, ch.estimated_revenue.currency_symbol) + '~' + _formatCurrency(ch.estimated_revenue.monthly_max, ch.estimated_revenue.currency_symbol) + '</span>';
     }
     if (countryFlag) html += '<span>' + countryFlag + '</span>';
     html += '</div>';
@@ -9161,6 +9163,33 @@ function showChannelRankingDetail(channel) {
     if (cpmEl) cpmEl.textContent = '$' + rev.cpm_range.min + ' ~ $' + rev.cpm_range.max;
     var adRateEl = document.getElementById('chDetailAdRate');
     if (adRateEl) adRateEl.textContent = rev.ad_rate;
+
+    // v8.8.4: 정확도 배지
+    var accBadge = document.getElementById('chDetailAccuracyBadge');
+    if (accBadge) {
+      var accColors = { high: '#22c55e', medium: '#eab308', low: '#ef4444' };
+      var accLabels = { high: '높은 정확도', medium: '중간 정확도', low: '낮은 정확도' };
+      var acc = rev.accuracy || 'low';
+      accBadge.textContent = accLabels[acc] || '추정';
+      accBadge.style.backgroundColor = accColors[acc] || '#6b7280';
+    }
+
+    // v8.8.4: 채널 활동 기간
+    var ageEl = document.getElementById('chDetailChannelAge');
+    if (ageEl) {
+      ageEl.textContent = rev.channel_age ? '📅 활동 ' + rev.channel_age : '';
+    }
+
+    // v8.8.4: 산출 방식
+    var calcEl = document.getElementById('chDetailCalcMethod');
+    if (calcEl) {
+      var methodLabels = { daily_delta: '일별 증분', published_date: '개설일 기준', video_count: '영상 수 기준' };
+      calcEl.textContent = methodLabels[rev.calculation_method] || rev.calculation_method || '-';
+    }
+
+    // v8.8.4: 면책조항 (동적)
+    var disclaimerEl = document.getElementById('chDetailRevenueDisclaimer');
+    if (disclaimerEl) disclaimerEl.textContent = '※ ' + (rev.disclaimer || '추정치이며 실제 수익과 다를 수 있습니다');
   }
 
   // YouTube 링크
@@ -9233,5 +9262,5 @@ window.initChannelRanking = initChannelRanking;
 window.showChannelRankingDetail = showChannelRankingDetail;
 window.formatCompactNumber = formatCompactNumber;
 
-console.log('✅ [Channel Ranking v8.8.3] 모듈 로드 완료');
+console.log('✅ [Channel Ranking v8.8.4] 모듈 로드 완료');
 

@@ -3310,7 +3310,7 @@ ${recentTitles ? `최근 영상:\n- ${recentTitles}` : ''}
 // ========================================
 // POST /api/youtube/channel-ranking
 // 인기 채널 순위 조회 (1크레딧, KV 캐시)
-// v8.8.3: 크레딧 정비, 중복 제거, 예상 수익 추가
+// v8.8.4: 수익 추정 3-stage fallback (daily_delta → published_date → video_count)
 // ========================================
 
 // 효율 등급 계산
@@ -3364,18 +3364,106 @@ const CPM_CATEGORY_MULTIPLIER: Record<string, number> = {
 }
 const DEFAULT_CATEGORY_MULTIPLIER = 1.0
 
-// 수익 계산 함수
-function estimateRevenue(channel: any, regionCode: string) {
+// 환율 테이블 (공통)
+const EXCHANGE_RATES: Record<string, {rate: number, symbol: string, code: string}> = {
+  'KR': { rate: 1350, symbol: '₩', code: 'KRW' },
+  'JP': { rate: 150, symbol: '¥', code: 'JPY' },
+  'US': { rate: 1, symbol: '$', code: 'USD' },
+  'GB': { rate: 0.79, symbol: '£', code: 'GBP' },
+  'CA': { rate: 1, symbol: 'C$', code: 'CAD' },
+  'AU': { rate: 1, symbol: 'A$', code: 'AUD' },
+  'DE': { rate: 1, symbol: '€', code: 'EUR' },
+  'FR': { rate: 1, symbol: '€', code: 'EUR' },
+  'TW': { rate: 32, symbol: 'NT$', code: 'TWD' },
+  'IN': { rate: 83, symbol: '₹', code: 'INR' },
+  'VN': { rate: 24500, symbol: '₫', code: 'VND' },
+  'BR': { rate: 5, symbol: 'R$', code: 'BRL' },
+  'TH': { rate: 35, symbol: '฿', code: 'THB' },
+  'PH': { rate: 56, symbol: '₱', code: 'PHP' },
+  'MX': { rate: 17, symbol: 'MX$', code: 'MXN' },
+}
+
+// 수익 계산 함수 (v8.8.4: 3-stage fallback)
+// Stage 1: 일별 조회수 증분 (이전 스냅샷 total_views 활용) → 정확도 높음
+// Stage 2: 채널 개설일 기반 월평균 조회수 → 정확도 중간
+// Stage 3: 영상 수 기반 추정 (기존 방식) → 정확도 낮음
+function estimateRevenue(
+  channel: any,
+  regionCode: string,
+  prevTotalViews?: number | null,
+  prevSnapshotDate?: string | null
+) {
   const cpm = CPM_BY_REGION[regionCode] || DEFAULT_CPM
   const catMultiplier = CPM_CATEGORY_MULTIPLIER[channel.category_id] || DEFAULT_CATEGORY_MULTIPLIER
+  const fx = EXCHANGE_RATES[regionCode] || { rate: 1, symbol: '$', code: 'USD' }
 
-  const avgViewsPerVideo = channel.video_count > 0 ? channel.total_views / channel.video_count : 0
+  let monthlyViews = 0
+  let calculationMethod = ''
+  let accuracy = 'low'
+  let channelAge: string | null = null
+  let estimatedMonthlyUploads = 0
 
-  const estimatedMonthlyUploads = Math.min(30, Math.max(1,
-    Math.round(channel.video_count / Math.max(12, channel.video_count / 4))
-  ))
+  // 채널 나이 계산 (channel_published_at 있을 때)
+  const publishedAt = channel.channel_published_at
+  if (publishedAt) {
+    const createdDate = new Date(publishedAt)
+    const now = new Date()
+    const diffMs = now.getTime() - createdDate.getTime()
+    const totalMonths = diffMs / (1000 * 60 * 60 * 24 * 30.44)
+    const years = Math.floor(totalMonths / 12)
+    const months = Math.round(totalMonths % 12)
+    channelAge = years > 0 ? `${years}년 ${months}개월` : `${months}개월`
 
-  const monthlyViews = avgViewsPerVideo * estimatedMonthlyUploads
+    // 월평균 업로드 수 추정
+    if (totalMonths > 0 && channel.video_count > 0) {
+      estimatedMonthlyUploads = Math.round(channel.video_count / totalMonths)
+      estimatedMonthlyUploads = Math.max(1, Math.min(300, estimatedMonthlyUploads))
+    }
+  }
+
+  // ── Stage 1: 일별 조회수 증분 (가장 정확) ──
+  if (
+    prevTotalViews != null &&
+    prevTotalViews > 0 &&
+    prevSnapshotDate &&
+    channel.total_views > prevTotalViews
+  ) {
+    const daysDiff = Math.max(1, Math.round(
+      (new Date().getTime() - new Date(prevSnapshotDate).getTime()) / (1000 * 60 * 60 * 24)
+    ))
+    const dailyViews = (channel.total_views - prevTotalViews) / daysDiff
+    monthlyViews = dailyViews * 30
+    calculationMethod = 'daily_delta'
+    accuracy = 'high'
+    // 실제 일별 증분에서 업로드 수 역산은 어렵 → 기존 값 유지
+    if (!estimatedMonthlyUploads) {
+      estimatedMonthlyUploads = Math.min(30, Math.max(1,
+        Math.round(channel.video_count / Math.max(12, channel.video_count / 4))
+      ))
+    }
+  }
+  // ── Stage 2: 채널 개설일 기반 월평균 (중간 정확도) ──
+  else if (publishedAt) {
+    const createdDate = new Date(publishedAt)
+    const now = new Date()
+    const totalMonths = Math.max(1, (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24 * 30.44))
+    monthlyViews = channel.total_views / totalMonths
+    calculationMethod = 'published_date'
+    accuracy = 'medium'
+    if (!estimatedMonthlyUploads) {
+      estimatedMonthlyUploads = Math.max(1, Math.round(channel.video_count / totalMonths))
+    }
+  }
+  // ── Stage 3: 영상 수 기반 추정 (낮은 정확도, 기존 방식) ──
+  else {
+    const avgViewsPerVideo = channel.video_count > 0 ? channel.total_views / channel.video_count : 0
+    estimatedMonthlyUploads = Math.min(30, Math.max(1,
+      Math.round(channel.video_count / Math.max(12, channel.video_count / 4))
+    ))
+    monthlyViews = avgViewsPerVideo * estimatedMonthlyUploads
+    calculationMethod = 'video_count'
+    accuracy = 'low'
+  }
 
   const adViewsMin = monthlyViews * 0.4
   const adViewsMax = monthlyViews * 0.6
@@ -3386,25 +3474,6 @@ function estimateRevenue(channel: any, regionCode: string) {
   const yearlyRevenueMinUSD = monthlyRevenueMinUSD * 12
   const yearlyRevenueMaxUSD = monthlyRevenueMaxUSD * 12
 
-  const exchangeRates: Record<string, {rate: number, symbol: string, code: string}> = {
-    'KR': { rate: 1350, symbol: '₩', code: 'KRW' },
-    'JP': { rate: 150, symbol: '¥', code: 'JPY' },
-    'US': { rate: 1, symbol: '$', code: 'USD' },
-    'GB': { rate: 0.79, symbol: '£', code: 'GBP' },
-    'CA': { rate: 1, symbol: 'C$', code: 'CAD' },
-    'AU': { rate: 1, symbol: 'A$', code: 'AUD' },
-    'DE': { rate: 1, symbol: '€', code: 'EUR' },
-    'FR': { rate: 1, symbol: '€', code: 'EUR' },
-    'TW': { rate: 32, symbol: 'NT$', code: 'TWD' },
-    'IN': { rate: 83, symbol: '₹', code: 'INR' },
-    'VN': { rate: 24500, symbol: '₫', code: 'VND' },
-    'BR': { rate: 5, symbol: 'R$', code: 'BRL' },
-    'TH': { rate: 35, symbol: '฿', code: 'THB' },
-    'PH': { rate: 56, symbol: '₱', code: 'PHP' },
-    'MX': { rate: 17, symbol: 'MX$', code: 'MXN' },
-  }
-  const fx = exchangeRates[regionCode] || { rate: 1, symbol: '$', code: 'USD' }
-
   return {
     monthly_min: Math.round(monthlyRevenueMinUSD * fx.rate),
     monthly_max: Math.round(monthlyRevenueMaxUSD * fx.rate),
@@ -3413,13 +3482,20 @@ function estimateRevenue(channel: any, regionCode: string) {
     currency_symbol: fx.symbol,
     currency_code: fx.code,
     estimated_monthly_views: Math.round(monthlyViews),
-    estimated_monthly_uploads: estimatedMonthlyUploads,
+    estimated_monthly_uploads: Math.min(300, estimatedMonthlyUploads),
     cpm_range: {
       min: parseFloat((cpm.min * catMultiplier).toFixed(2)),
       max: parseFloat((cpm.max * catMultiplier).toFixed(2))
     },
     ad_rate: '40~60%',
-    disclaimer: '추정치이며 실제 수익과 다를 수 있습니다'
+    calculation_method: calculationMethod,
+    accuracy,
+    channel_age: channelAge,
+    disclaimer: accuracy === 'high'
+      ? '최근 조회수 증분 기반 추정치입니다'
+      : accuracy === 'medium'
+        ? '채널 활동 기간 기반 추정치입니다'
+        : '영상 수 기반 추정치이며 실제 수익과 다를 수 있습니다'
   }
 }
 
@@ -3457,7 +3533,7 @@ app.post('/api/youtube/channel-ranking', async (c) => {
 
     // ── KV 캐시 조회 ──
     const { getCachedSearch, setCachedSearch } = await import('../../utils/youtube-cache')
-    const cacheKey = `youtube:ch-ranking:v3:${regionCode || 'global'}:${categoryId || 'all'}:${period}:${safeSortBy}`
+    const cacheKey = `youtube:ch-ranking:v4:${regionCode || 'global'}:${categoryId || 'all'}:${period}:${safeSortBy}`
     const cacheTTL = period === 'current' ? 3 * 3600 : 6 * 3600
 
     const cached = await getCachedSearch(c.env.YOUTUBE_CACHE, cacheKey)
@@ -3525,28 +3601,57 @@ app.post('/api/youtube/channel-ranking', async (c) => {
       .single()
 
     let prevRankings: Record<string, number> = {}
+    let prevTotalViewsMap: Record<string, number> = {}
+    let prevSnapshotDateStr: string | null = null
     if (prevDateRow) {
+      prevSnapshotDateStr = prevDateRow.snapshot_date
       let prevQuery = supabase
         .from('youtube_channel_rankings')
-        .select('channel_id, rank_position')
+        .select('channel_id, rank_position, total_views')
         .eq('snapshot_date', prevDateRow.snapshot_date)
       if (regionCode) prevQuery = prevQuery.eq('region_code', regionCode)
       if (categoryId) prevQuery = prevQuery.eq('category_id', categoryId)
 
       const { data: prevData } = await prevQuery
       if (prevData) {
-        prevData.forEach((r: any) => { prevRankings[r.channel_id] = r.rank_position })
+        prevData.forEach((r: any) => {
+          prevRankings[r.channel_id] = r.rank_position
+          if (r.total_views) prevTotalViewsMap[r.channel_id] = r.total_views
+        })
       }
     }
 
     // 4. 데이터 쿼리
+    // channel_published_at 컬럼 존재 여부 감지 (없으면 fallback)
+    const baseFields = 'channel_id, channel_name, channel_thumbnail, subscribers, total_views, video_count, channel_country, category_id'
+    let hasPublishedAtColumn = true
+
+    // 간단한 probe: 1건만 가져와서 컬럼 존재 확인
+    {
+      const { error: probeErr } = await supabase
+        .from('youtube_channel_rankings')
+        .select('channel_published_at')
+        .limit(1)
+      if (probeErr && probeErr.code === '42703') {
+        hasPublishedAtColumn = false
+        console.log('ℹ️ channel_published_at 컬럼 미존재 → fallback (video_count 방식)')
+      }
+    }
+
+    const selectFieldsWithRank = hasPublishedAtColumn
+      ? baseFields + ', rank_position, channel_published_at'
+      : baseFields + ', rank_position'
+    const selectFieldsNoRank = hasPublishedAtColumn
+      ? baseFields + ', channel_published_at'
+      : baseFields
+
     let channels: any[] = []
 
     if (period === 'current') {
       if (regionCode) {
         let query = supabase
           .from('youtube_channel_rankings')
-          .select('channel_id, channel_name, channel_thumbnail, subscribers, total_views, video_count, channel_country, category_id, rank_position')
+          .select(selectFieldsWithRank)
           .eq('snapshot_date', latestDate)
           .eq('region_code', regionCode)
 
@@ -3566,7 +3671,7 @@ app.post('/api/youtube/channel-ranking', async (c) => {
       } else {
         let query = supabase
           .from('youtube_channel_rankings')
-          .select('channel_id, channel_name, channel_thumbnail, subscribers, total_views, video_count, channel_country, category_id')
+          .select(selectFieldsNoRank)
           .eq('snapshot_date', latestDate)
 
         if (categoryId) query = query.eq('category_id', categoryId)
@@ -3600,7 +3705,7 @@ app.post('/api/youtube/channel-ranking', async (c) => {
 
       let query = supabase
         .from('youtube_channel_rankings')
-        .select('channel_id, channel_name, channel_thumbnail, subscribers, total_views, video_count, channel_country, category_id')
+        .select(selectFieldsNoRank)
         .gte('snapshot_date', startStr)
 
       if (regionCode) query = query.eq('region_code', regionCode)
@@ -3665,8 +3770,9 @@ app.post('/api/youtube/channel-ranking', async (c) => {
         } catch { /* 무시 */ }
       }
 
-      // 예상 수익
-      const estimated_revenue = estimateRevenue(ch, regionCode || ch.channel_country || 'US')
+      // 예상 수익 (v8.8.4: 3-stage fallback with prevTotalViews)
+      const prevViews = prevTotalViewsMap[ch.channel_id] || null
+      const estimated_revenue = estimateRevenue(ch, regionCode || ch.channel_country || 'US', prevViews, prevSnapshotDateStr)
 
       return {
         rank: rankPosition,

@@ -1500,6 +1500,11 @@ export function youtubeAnalyzerTemplate() {
               <!-- 예상 수익 -->
               <div class="border rounded-xl p-4">
                 <h4 class="font-bold text-sm mb-3">💰 예상 수익</h4>
+                <!-- 정확도 + 채널 활동기간 -->
+                <div id="chDetailRevenueAccuracy" class="flex items-center gap-2 mb-3 text-xs">
+                  <span id="chDetailAccuracyBadge" class="px-2 py-0.5 rounded-full text-white font-bold"></span>
+                  <span id="chDetailChannelAge" class="text-gray-500"></span>
+                </div>
                 <div class="space-y-3">
                   <div>
                     <div class="flex justify-between items-center mb-1">
@@ -1530,8 +1535,12 @@ export function youtubeAnalyzerTemplate() {
                       <span>광고 노출률</span>
                       <span id="chDetailAdRate"></span>
                     </div>
+                    <div class="flex justify-between text-xs text-gray-500">
+                      <span>산출 방식</span>
+                      <span id="chDetailCalcMethod"></span>
+                    </div>
                   </div>
-                  <p class="text-xs text-gray-400 text-center mt-1">※ 추정치이며 실제 수익과 다를 수 있습니다</p>
+                  <p id="chDetailRevenueDisclaimer" class="text-xs text-gray-400 text-center mt-1"></p>
                 </div>
               </div>
               <!-- 카테고리 내 위치 -->
@@ -3086,10 +3095,10 @@ export function youtubeAnalyzerTemplate() {
   <script src="/static/youtube-analyzer.js?v=8.5.0"></script>
   
   <!-- Phase 2: YouTube Finder 검색 기능 -->
-  <script src="/static/youtube-finder.js?v=8.8.3"></script>
+  <script src="/static/youtube-finder.js?v=8.8.4"></script>
   
   <!-- Phase 2.5: Trends Insights (Supabase 연동) -->
-  <script src="/static/youtube-trends.js?v=8.8.3"></script>
+  <script src="/static/youtube-trends.js?v=8.8.4"></script>
   
   <!-- Phase 5A: 3-Tab 전환 스크립트 -->
   <script>
