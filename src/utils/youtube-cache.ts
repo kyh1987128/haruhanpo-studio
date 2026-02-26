@@ -22,6 +22,8 @@ export function buildSearchCacheKey(params: {
   type?: string
   maxResults?: number
   pageToken?: string
+  publishedAfter?: string
+  videoDuration?: string
 }): string {
   const q = params.query.toLowerCase().trim()
   const region = params.regionCode || 'global'
@@ -29,7 +31,9 @@ export function buildSearchCacheKey(params: {
   const type = params.type || 'video'
   const max = params.maxResults || 20
   const page = params.pageToken || ''
-  return `youtube:search:${q}:${region}:${order}:${type}:${max}:${page}`
+  const pubAfter = params.publishedAfter || ''
+  const duration = params.videoDuration || ''
+  return `youtube:search:${q}:${region}:${order}:${type}:${max}:${page}:${pubAfter}:${duration}`
 }
 
 /**

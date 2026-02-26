@@ -1,17 +1,37 @@
 /**
- * IndexedDB Helper - SlideDB v1.0
+ * IndexedDB Helper - SlideDB v1.1
  * localStorage base64 이미지의 QuotaExceededError 문제를 해결하기 위한
  * IndexedDB 기반 슬라이드 저장소
  *
- * DB: MarketingHubDB, Store: slideCollection, Version: 1
+ * DB: MarketingHubDB_{userId}, Store: slideCollection, Version: 1
+ * v1.1: 사용자별 DB 격리 (계정별 슬라이드 분리)
  */
 (function () {
   'use strict';
 
-  var DB_NAME = 'MarketingHubDB';
+  var BASE_DB_NAME = 'MarketingHubDB';
   var STORE_NAME = 'slideCollection';
   var DB_VERSION = 1;
   var _db = null;
+  var _currentUserId = null;
+
+  /**
+   * 현재 사용자 ID를 가져오기
+   * window.currentUser?.id 또는 'guest'
+   */
+  function getUserId() {
+    return (window.currentUser && window.currentUser.id && !window.currentUser.isGuest)
+      ? String(window.currentUser.id)
+      : 'guest';
+  }
+
+  /**
+   * 사용자별 DB 이름 생성
+   */
+  function getDbName(userId) {
+    if (!userId || userId === 'guest') return BASE_DB_NAME;
+    return BASE_DB_NAME + '_' + userId;
+  }
 
   /**
    * slideData 스키마:
@@ -41,11 +61,21 @@
     delete: deleteItem,
     clear: clear,
     count: count,
-    migrateFromLocalStorage: migrateFromLocalStorage
+    migrateFromLocalStorage: migrateFromLocalStorage,
+    switchUser: switchUser
   };
 
-  /** DB 열기 (싱글턴) */
+  /** DB 열기 (싱글턴 — 사용자 전환 시 재연결) */
   function open() {
+    var userId = getUserId();
+    
+    // 사용자 전환 감지 → 기존 DB 닫고 새 DB 열기
+    if (_db && _currentUserId !== userId) {
+      console.log('[SlideDB] 사용자 전환 감지:', _currentUserId, '→', userId);
+      try { _db.close(); } catch (e) {}
+      _db = null;
+    }
+    
     return new Promise(function (resolve, reject) {
       if (_db) { resolve(_db); return; }
 
@@ -55,7 +85,8 @@
         return;
       }
 
-      var req = indexedDB.open(DB_NAME, DB_VERSION);
+      var dbName = getDbName(userId);
+      var req = indexedDB.open(dbName, DB_VERSION);
 
       req.onupgradeneeded = function (e) {
         var db = e.target.result;
@@ -69,11 +100,12 @@
 
       req.onsuccess = function (e) {
         _db = e.target.result;
+        _currentUserId = userId;
 
         // DB 연결 종료 시 재연결 허용
-        _db.onclose = function () { _db = null; };
+        _db.onclose = function () { _db = null; _currentUserId = null; };
 
-        console.log('[SlideDB] DB 열기 성공');
+        console.log('[SlideDB] DB 열기 성공:', dbName);
         resolve(_db);
       };
 
@@ -195,12 +227,14 @@
    * 첫 로드 시 기존 데이터 이전
    */
   function migrateFromLocalStorage() {
+    var userId = getUserId();
     var LS_KEY = 'slideCollection';
-    var MIGRATED_KEY = 'slideDB_migrated';
+    var MIGRATED_KEY = 'slideDB_migrated_' + userId;
 
     // 이미 마이그레이션 완료
     if (localStorage.getItem(MIGRATED_KEY) === 'true') {
-      return Promise.resolve(false);
+      // 기존 공용 DB → 사용자별 DB 마이그레이션 시도
+      return migrateFromSharedDB();
     }
 
     var raw = localStorage.getItem(LS_KEY);
@@ -222,7 +256,7 @@
       return Promise.resolve(false);
     }
 
-    console.log('[SlideDB] localStorage → IndexedDB 마이그레이션 시작 (' + oldSlides.length + '건)');
+    console.log('[SlideDB] localStorage → IndexedDB 마이그레이션 시작 (' + oldSlides.length + '건, 사용자: ' + userId + ')');
 
     var promises = oldSlides.map(function (s) {
       return add({
@@ -245,11 +279,93 @@
       // 마이그레이션 완료 후 localStorage 정리
       localStorage.removeItem(LS_KEY);
       localStorage.setItem(MIGRATED_KEY, 'true');
-      console.log('[SlideDB] ✅ 마이그레이션 완료 (' + oldSlides.length + '건)');
-      return true;
+      console.log('[SlideDB] ✅ localStorage 마이그레이션 완료 (' + oldSlides.length + '건)');
+      return migrateFromSharedDB();
     }).catch(function (err) {
       console.error('[SlideDB] 마이그레이션 오류:', err);
       return false;
+    });
+  }
+
+  /**
+   * 공용 DB(MarketingHubDB) → 사용자별 DB 마이그레이션
+   * 로그인 사용자인데 공용 DB에 데이터가 있으면 1회 이전
+   */
+  function migrateFromSharedDB() {
+    var userId = getUserId();
+    // guest이거나 이미 공용 DB와 동일하면 스킵
+    if (userId === 'guest') return Promise.resolve(false);
+    
+    var SHARED_MIGRATED_KEY = 'slideDB_shared_migrated_' + userId;
+    if (localStorage.getItem(SHARED_MIGRATED_KEY) === 'true') {
+      return Promise.resolve(false);
+    }
+
+    // 공용 DB 열기
+    return new Promise(function (resolve) {
+      var req = indexedDB.open(BASE_DB_NAME, DB_VERSION);
+      req.onupgradeneeded = function (e) {
+        // 공용 DB가 없었으면 스킵
+        var db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+        }
+      };
+      req.onsuccess = function (e) {
+        var sharedDb = e.target.result;
+        if (!sharedDb.objectStoreNames.contains(STORE_NAME)) {
+          sharedDb.close();
+          localStorage.setItem(SHARED_MIGRATED_KEY, 'true');
+          resolve(false);
+          return;
+        }
+        var tx = sharedDb.transaction(STORE_NAME, 'readonly');
+        var store = tx.objectStore(STORE_NAME);
+        var getAllReq = store.getAll();
+        getAllReq.onsuccess = function () {
+          var items = getAllReq.result || [];
+          sharedDb.close();
+          if (items.length === 0) {
+            localStorage.setItem(SHARED_MIGRATED_KEY, 'true');
+            resolve(false);
+            return;
+          }
+          console.log('[SlideDB] 공용 DB → 사용자별 DB 마이그레이션:', items.length, '건');
+          // 현재 사용자 DB에 복사
+          var copyPromises = items.map(function (item) { return add(item); });
+          Promise.all(copyPromises).then(function () {
+            localStorage.setItem(SHARED_MIGRATED_KEY, 'true');
+            console.log('[SlideDB] ✅ 공용 DB 마이그레이션 완료');
+            resolve(true);
+          }).catch(function () {
+            localStorage.setItem(SHARED_MIGRATED_KEY, 'true');
+            resolve(false);
+          });
+        };
+        getAllReq.onerror = function () {
+          sharedDb.close();
+          localStorage.setItem(SHARED_MIGRATED_KEY, 'true');
+          resolve(false);
+        };
+      };
+      req.onerror = function () {
+        localStorage.setItem(SHARED_MIGRATED_KEY, 'true');
+        resolve(false);
+      };
+    });
+  }
+
+  /**
+   * 사용자 전환 시 호출 — DB 재연결
+   */
+  function switchUser() {
+    if (_db) {
+      try { _db.close(); } catch (e) {}
+      _db = null;
+      _currentUserId = null;
+    }
+    return open().then(function () {
+      return migrateFromLocalStorage();
     });
   }
 

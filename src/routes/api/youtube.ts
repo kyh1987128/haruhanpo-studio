@@ -539,7 +539,7 @@ app.get('/api/youtube/cache/stats', adminMiddleware, async (c) => {
 app.post('/api/youtube/search', async (c) => {
   try {
     const body = await c.req.json()
-    let { keyword, maxResults = 20, pageToken, regionCode } = body
+    let { keyword, maxResults = 20, pageToken, regionCode, order, publishedAfter, videoDuration } = body
 
     // 1. 입력 검증
     if (!keyword || typeof keyword !== 'string') {
@@ -583,7 +583,7 @@ app.post('/api/youtube/search', async (c) => {
 
     // 4. KV 캐시 조회 → 검색 실행
     const { buildSearchCacheKey, getCachedSearch, setCachedSearch, SEARCH_CACHE_TTL } = await import('../../utils/youtube-cache')
-    const cacheKey = buildSearchCacheKey({ query: keyword, regionCode, maxResults, pageToken })
+    const cacheKey = buildSearchCacheKey({ query: keyword, regionCode, maxResults, pageToken, order, publishedAfter, videoDuration })
     
     let result = await getCachedSearch(c.env.YOUTUBE_CACHE, cacheKey) as { videos: any[], nextPageToken?: string, totalResults?: number } | null
     let fromCache = false
@@ -593,7 +593,12 @@ app.post('/api/youtube/search', async (c) => {
       fromCache = true
     } else {
       const { searchYouTubeVideos } = await import('../../services/youtube-api')
-      result = await searchYouTubeVideos(keyword, youtubeApiKey, maxResults, pageToken)
+      result = await searchYouTubeVideos(keyword, youtubeApiKey, maxResults, pageToken, {
+        order: order || 'relevance',
+        publishedAfter: publishedAfter || undefined,
+        videoDuration: videoDuration || undefined,
+        regionCode: regionCode || undefined
+      })
       // KV에 캐시 저장 (6시간)
       await setCachedSearch(c.env.YOUTUBE_CACHE, cacheKey, result, SEARCH_CACHE_TTL.KEYWORD_SEARCH)
       console.log(`📝 [Search KV] 캐시 저장: ${cacheKey}`)

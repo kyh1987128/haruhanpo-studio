@@ -2540,12 +2540,33 @@ async function searchMarket200(keyword = null) {
   
   console.log('🔍 [마켓 탐색] 50개 검색 시작:', keyword);
   
-  // 필터 값 가져오기
-  const filterOrder = document.getElementById('filter-order')?.value || 'relevance';
+  // 필터 값 가져오기 (사이드바 검색 필터 + 좌측 드롭다운)
+  const sortSelect = document.getElementById('sort-select');
+  const dateSelect = document.getElementById('date-select');
+  const durationSelect = document.getElementById('duration-select');
+  
+  const filterOrder = sortSelect?.value || document.getElementById('filter-order')?.value || 'relevance';
   const filterCategory = document.getElementById('filter-category')?.value || '';
   const filterRegion = document.getElementById('filter-region')?.value || '';
   
-  console.log('🔍 [검색 필터]', { order: filterOrder, category: filterCategory, region: filterRegion });
+  // 업로드 날짜 → ISO 8601 publishedAfter 변환
+  const dateValue = dateSelect?.value || '';
+  let publishedAfter = '';
+  if (dateValue) {
+    const now = new Date();
+    switch (dateValue) {
+      case 'today': now.setHours(now.getHours() - 24); break;
+      case 'week': now.setDate(now.getDate() - 7); break;
+      case 'month': now.setMonth(now.getMonth() - 1); break;
+      case 'year': now.setFullYear(now.getFullYear() - 1); break;
+    }
+    if (dateValue) publishedAfter = now.toISOString();
+  }
+  
+  // 영상 길이 필터
+  const videoDuration = durationSelect?.value || '';
+  
+  console.log('🔍 [검색 필터]', { order: filterOrder, category: filterCategory, region: filterRegion, publishedAfter, videoDuration });
   
   // 초기화 (필터는 유지)
   marketVideos = [];
@@ -2598,6 +2619,16 @@ async function searchMarket200(keyword = null) {
         pageToken: pageToken,
         order: filterOrder
       };
+      
+      // 업로드 날짜 필터 추가
+      if (publishedAfter) {
+        searchBody.publishedAfter = publishedAfter;
+      }
+      
+      // 영상 길이 필터 추가
+      if (videoDuration) {
+        searchBody.videoDuration = videoDuration;
+      }
       
       // 카테고리 필터 추가
       if (filterCategory) {
@@ -3465,11 +3496,27 @@ document.addEventListener('DOMContentLoaded', () => {
         if (durationSelect) durationSelect.value = 'long';
       }
       
+      // 프리셋 활성 상태 표시
+      document.querySelectorAll('.preset-btn').forEach(b => {
+        b.classList.remove('ring-2', 'ring-offset-1', 'ring-blue-400');
+      });
+      e.currentTarget.classList.add('ring-2', 'ring-offset-1', 'ring-blue-400');
+      
       // 시각적 피드백
       e.currentTarget.style.transform = 'scale(0.95)';
       setTimeout(() => {
         e.currentTarget.style.transform = 'scale(1)';
       }, 100);
+      
+      // 키워드가 있으면 자동 검색 실행
+      const searchInput = document.getElementById('market-search-input');
+      if (searchInput && searchInput.value.trim()) {
+        console.log('🎯 [프리셋] 자동 검색 실행:', preset);
+        handleUnifiedSearch();
+      } else if (searchInput) {
+        searchInput.focus();
+        searchInput.placeholder = '프리셋이 적용되었습니다. 키워드를 입력하세요';
+      }
     });
   });
   
@@ -3611,36 +3658,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const isChecked = e.target.checked;
     const checkboxes = document.querySelectorAll('.video-compare-checkbox');
     
-    console.log('🔍 [전체 선택] 체크:', isChecked, '| 체크박스 개수:', checkboxes.length);
+    // 공통 videoId 추출 헬퍼
+    const extractVideoId = (v) => String((typeof v.id === 'string' ? v.id : v.id?.videoId) || v.videoId || v.id);
     
-    // 먼저 selectedCompareVideos 초기화
-    if (!isChecked) {
-      selectedCompareVideos = [];
-    }
+    // 항상 먼저 초기화 (ON/OFF 모두)
+    selectedCompareVideos = [];
     
     checkboxes.forEach((checkbox, index) => {
       const videoId = checkbox.dataset.videoId;
       
-      if (isChecked) {
+      if (isChecked && index < 3) {
         // 최대 3개까지만 선택
-        if (index < 3) {
-          checkbox.checked = true;
-          // 중복 체크
-          const exists = selectedCompareVideos.some(v => {
-            const vId = (typeof v.id === 'string' ? v.id : v.id?.videoId) || v.videoId || String(v.id);
-            return String(vId) === String(videoId);
-          });
-          if (!exists) {
-            const video = filteredMarketVideos.find(v => {
-              const vId = (typeof v.id === 'string' ? v.id : v.id?.videoId) || v.videoId || String(v.id);
-              return String(vId) === String(videoId);
-            });
-            if (video && selectedCompareVideos.length < 3) {
-              selectedCompareVideos.push(video);
-            }
-          }
-        } else {
-          checkbox.checked = false;
+        checkbox.checked = true;
+        const video = filteredMarketVideos.find(v => extractVideoId(v) === String(videoId));
+        if (video && selectedCompareVideos.length < 3) {
+          selectedCompareVideos.push(video);
         }
       } else {
         checkbox.checked = false;
@@ -3946,56 +3978,42 @@ function downloadFile(param1, param2) {
  * 비교 영상 토글
  */
 function toggleCompareVideo(videoId) {
-  console.log('🔍 [비교 디버깅] toggleCompareVideo 호출:', videoId);
-  console.log('🔍 [비교 디버깅] filteredMarketVideos 개수:', filteredMarketVideos?.length || 0);
-  
   // videoId 정규화 (문자열로 변환)
   const normalizedVideoId = String(videoId);
   
-  const video = filteredMarketVideos.find(v => {
-    // 다양한 videoId 추출 방식 시도
-    const vId = (typeof v.id === 'string' ? v.id : v.id?.videoId) || v.videoId || String(v.id);
-    const normalizedVId = String(vId);
-    console.log('🔍 [비교 디버깅] 비디오 ID 비교:', normalizedVId, '===', normalizedVideoId, '?', normalizedVId === normalizedVideoId);
-    return normalizedVId === normalizedVideoId;
-  });
+  // 공통 videoId 추출 헬퍼
+  const extractVideoId = (v) => String((typeof v.id === 'string' ? v.id : v.id?.videoId) || v.videoId || v.id);
+  
+  const video = filteredMarketVideos.find(v => extractVideoId(v) === normalizedVideoId);
   
   if (!video) {
     console.error('❌ [비교] 영상을 찾을 수 없음:', videoId);
-    console.error('❌ [비교] filteredMarketVideos:', filteredMarketVideos?.map(v => ({
-      id: v.id,
-      videoId: v.videoId,
-      title: v.title || v.snippet?.title
-    })));
     return;
   }
   
-  const index = selectedCompareVideos.findIndex(v => {
-    const vId = (typeof v.id === 'string' ? v.id : v.id?.videoId) || v.videoId || String(v.id);
-    const normalizedVId = String(vId);
-    return normalizedVId === normalizedVideoId;
-  });
+  // 체크박스 DOM 참조
+  const checkbox = document.querySelector(`input[data-video-id="${videoId}"]`);
+  
+  const index = selectedCompareVideos.findIndex(v => extractVideoId(v) === normalizedVideoId);
   
   if (index >= 0) {
-    // 선택 해제
+    // 이미 선택됨 → 해제
     selectedCompareVideos.splice(index, 1);
+    if (checkbox) checkbox.checked = false;
     console.log('✅ [비교] 선택 해제:', videoId, '| 현재 선택:', selectedCompareVideos.length, '개');
   } else {
-    // 선택 추가 (최대 3개)
+    // 새로 선택
     if (selectedCompareVideos.length >= 3) {
       alert('최대 3개까지만 선택할 수 있습니다.');
-      // 체크박스 해제
-      const checkbox = document.querySelector(`input[data-video-id="${videoId}"]`);
       if (checkbox) checkbox.checked = false;
       return;
     }
     selectedCompareVideos.push(video);
+    if (checkbox) checkbox.checked = true;
     console.log('✅ [비교] 선택 추가:', videoId, '| 현재 선택:', selectedCompareVideos.length, '개');
   }
   
-  console.log('🔍 [비교 디버깅] updateCompareButton 호출 전');
   updateCompareButton();
-  console.log('🔍 [비교 디버깅] updateCompareButton 호출 후');
 }
 
 /**

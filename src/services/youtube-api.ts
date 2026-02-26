@@ -272,14 +272,31 @@ export async function searchYouTubeVideos(
   keyword: string,
   apiKey: string,
   maxResults: number = 10,
-  pageToken?: string
+  pageToken?: string,
+  options?: { order?: string; publishedAfter?: string; videoDuration?: string; regionCode?: string }
 ): Promise<{ videos: YouTubeSearchResult[], nextPageToken?: string, totalResults?: number }> {
   // 1. 검색 API 호출
-  let searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(keyword)}&key=${apiKey}&maxResults=${Math.min(maxResults, 50)}&order=viewCount`
+  const order = options?.order || 'viewCount'
+  let searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(keyword)}&key=${apiKey}&maxResults=${Math.min(maxResults, 50)}&order=${order}`
   
   // pageToken이 있으면 추가
   if (pageToken) {
     searchUrl += `&pageToken=${pageToken}`
+  }
+  
+  // publishedAfter 필터 (업로드 날짜)
+  if (options?.publishedAfter) {
+    searchUrl += `&publishedAfter=${options.publishedAfter}`
+  }
+  
+  // videoDuration 필터 (영상 길이: short, medium, long)
+  if (options?.videoDuration) {
+    searchUrl += `&videoDuration=${options.videoDuration}`
+  }
+  
+  // regionCode 필터 (국가)
+  if (options?.regionCode) {
+    searchUrl += `&regionCode=${options.regionCode}`
   }
   
   const searchResponse = await fetch(searchUrl)

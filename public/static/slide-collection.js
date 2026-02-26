@@ -25,9 +25,12 @@
   /** IndexedDB에서 로드 */
   function _load() {
     if (!window.SlideDB) {
-      // 폴백: localStorage
+      // 폴백: localStorage (사용자별 키)
+      var userId = (window.currentUser && window.currentUser.id && !window.currentUser.isGuest)
+        ? String(window.currentUser.id) : 'guest';
+      var lsKey = userId === 'guest' ? 'slideCollection' : 'slideCollection_' + userId;
       try {
-        var raw = localStorage.getItem('slideCollection');
+        var raw = localStorage.getItem(lsKey);
         _slides = raw ? JSON.parse(raw) : [];
       } catch (e) { _slides = []; }
       _loaded = true;
