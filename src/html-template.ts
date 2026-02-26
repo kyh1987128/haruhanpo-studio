@@ -649,6 +649,7 @@ export const htmlTemplate = `
                     </div>
                 </div>
                 <div id="slideCollectionGrid" class="grid grid-cols-2 gap-2"></div>
+                <p class="text-[10px] text-gray-400 mt-2 leading-relaxed">💡 장표는 현재 브라우저에만 저장됩니다. 다른 기기에서는 보이지 않습니다.</p>
                 <div class="text-center mt-2">
                     <button id="slideCollectionMore" class="hidden w-full py-1.5 border border-dashed border-gray-300 rounded-lg text-[10px] text-gray-500 hover:border-indigo-400 hover:text-indigo-500"
                             onclick="window.SlideCollection && window.SlideCollection.showAll()">
