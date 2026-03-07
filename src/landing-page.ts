@@ -11,6 +11,20 @@ export const landingPageTemplate = `
     <meta name="naver-site-verification" content="a0d894323b50af92ad799b57c3316d8b74eca14b" />
     <title>마케팅허브 AI 스튜디오 - AI로 콘텐츠 제작을 10배 빠르게</title>
     <meta name="description" content="30초 만에 9개 플랫폼 콘텐츠 자동 생성, 유튜브 AI 분석, 영상 스토리보드 제작까지. 1개 계정으로 3개 서비스 모두 이용하세요.">
+    <link rel="canonical" href="https://haruhanpo-studio-new.pages.dev/">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="마케팅허브 AI 스튜디오 - AI로 콘텐츠 제작을 10배 빠르게">
+    <meta property="og:description" content="30초 만에 9개 플랫폼 콘텐츠 자동 생성, 유튜브 AI 분석, 영상 스토리보드 제작까지.">
+    <meta property="og:url" content="https://haruhanpo-studio-new.pages.dev/">
+    <meta property="og:image" content="https://haruhanpo-studio-new.pages.dev/static/og-image.png">
+    <meta property="og:site_name" content="마케팅허브 AI 스튜디오">
+    <meta property="og:locale" content="ko_KR">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="마케팅허브 AI 스튜디오 - AI로 콘텐츠 제작을 10배 빠르게">
+    <meta name="twitter:description" content="30초 만에 9개 플랫폼 콘텐츠 자동 생성, 유튜브 AI 분석까지.">
+    <meta name="twitter:image" content="https://haruhanpo-studio-new.pages.dev/static/og-image.png">
     <link href="/static/styles.css?v=8.0.0" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
@@ -86,7 +100,7 @@ export const landingPageTemplate = `
                 <!-- 좌측: 텍스트 -->
                 <div>
                     <div class="inline-block bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-semibold mb-6">
-                        🔥 이번 주 1,234명이 가입했어요
+                        🔥 AI로 콘텐츠를 10배 빠르게 만들어보세요
                     </div>
                     
                     <h1 class="text-4xl md:text-6xl font-extrabold mb-6 leading-tight">

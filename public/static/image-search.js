@@ -178,6 +178,7 @@
              'bg-yellow-100 text-yellow-600') + '">' + img.source + '</span>' +
         '</div>' +
         '<button onclick="event.stopPropagation();window.SlideCollection && window.SlideCollection.add(\'' + img.url.replace(/'/g, "\\'") + '\',\'' + (img.alt || '').replace(/'/g, "\\'").substring(0, 30) + '\',\'search\')" class="absolute top-1 right-1 px-1 py-0.5 text-[8px] bg-indigo-500/80 text-white rounded font-bold opacity-0 group-hover:opacity-100 transition-opacity hover:bg-indigo-600">+ 장표</button>' +
+        '<button onclick="event.stopPropagation();window.addImageToContentForm && window.addImageToContentForm(\'' + img.url.replace(/'/g, "\\'") + '\')" class="absolute top-1 left-1 px-1 py-0.5 text-[8px] bg-green-500/80 text-white rounded font-bold opacity-0 group-hover:opacity-100 transition-opacity hover:bg-green-600">📎 콘텐츠</button>' +
       '</div>';
     }).join('');
     var moreBtn = document.getElementById('imgSearchMore');

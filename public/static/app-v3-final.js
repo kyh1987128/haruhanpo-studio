@@ -2051,21 +2051,21 @@ function generateContentBlocks() {
               <i class="fas fa-at text-gray-800"></i>
               <span class="text-sm font-medium">스레드</span>
             </label>
-            <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
+            ${FEATURE_FLAGS.ENABLE_TWITTER ? `<label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
               <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="twitter" onchange="updateContentPlatforms(${i})">
               <span style="font-size: 1.25rem; font-weight: 600;">𝕏</span>
               <span class="text-sm font-medium">트위터(X)</span>
-            </label>
-            <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
+            </label>` : ''}
+            ${FEATURE_FLAGS.ENABLE_LINKEDIN ? `<label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
               <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="linkedin" onchange="updateContentPlatforms(${i})">
               <i class="fab fa-linkedin text-blue-700"></i>
               <span class="text-sm font-medium">LinkedIn</span>
-            </label>
-            <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
+            </label>` : ''}
+            ${FEATURE_FLAGS.ENABLE_KAKAOTALK ? `<label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
               <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="kakaotalk" onchange="updateContentPlatforms(${i})">
               <i class="fas fa-comment-dots text-yellow-500"></i>
               <span class="text-sm font-medium">카카오톡</span>
-            </label>
+            </label>` : ''}
             <label class="flex items-center gap-2 p-3 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition">
               <input type="checkbox" class="content-platform-checkbox" data-content="${i}" value="brunch" onchange="updateContentPlatforms(${i})">
               <i class="fas fa-book-open text-orange-600"></i>
@@ -5576,6 +5576,7 @@ async function initSupabase() {
         console.log('✅ Supabase 클라이언트 초기화 완료');
         console.log('✅ window.supabaseClient 전역 노출 완료');
         checkSupabaseSession();
+        setupAuthStateListener(); // 🔒 세션 만료 감지
       };
       script.onerror = (error) => {
         console.error('❌ [Supabase] SDK 로드 실패:', error);
@@ -5588,6 +5589,7 @@ async function initSupabase() {
       console.log('✅ Supabase 클라이언트 초기화 완료');
       console.log('✅ window.supabaseClient 전역 노출 완료');
       checkSupabaseSession();
+      setupAuthStateListener(); // 🔒 세션 만료 감지
     }
   } catch (error) {
     console.error('❌ Supabase 초기화 실패:', error);
@@ -5674,9 +5676,13 @@ async function checkSupabaseSession() {
           return; // 리디렉션 중이므로 아래 코드 실행 방지
         }
         
-        // ⚠️ 중요: 로그인 상태면 항상 대시보드로 리디렉션 (랜딩 페이지 직접 방문 방지)
-        console.log('🔄 로그인 상태 감지 - 대시보드로 리디렉션');
-        window.location.href = '/dashboard';
+        // ⚠️ 중요: 로그인 상태면 대시보드로 리디렉션 (redirect 파라미터가 있으면 해당 페이지로)
+        const urlParams2 = new URLSearchParams(window.location.search);
+        const redirectTo = urlParams2.get('redirect');
+        const allowedRedirects = ['/postflow', '/dashboard', '/youtube-analyzer'];
+        const targetPage = (redirectTo && allowedRedirects.includes(redirectTo)) ? redirectTo : '/dashboard';
+        console.log('🔄 로그인 상태 감지 - 리디렉션:', targetPage);
+        window.location.href = targetPage;
         return; // 리디렉션 중이므로 아래 코드 실행 방지
       }
       
@@ -6705,6 +6711,24 @@ function updateAuthUI() {
 }
 
 // 인증 에러 처리 (하이브리드 플랜)
+// 🔒 Supabase onAuthStateChange 리스너 — 세션 만료/로그아웃 자동 감지
+function setupAuthStateListener() {
+  if (!supabaseClient) return;
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    console.log('🔄 [Auth State Change]', event);
+    if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' && !session) {
+      // 세션 만료 또는 로그아웃
+      console.log('🔒 세션 만료/로그아웃 감지 → 상태 초기화');
+      handleAuthError();
+    } else if (event === 'TOKEN_REFRESHED' && session) {
+      // 토큰 자동 갱신 성공
+      console.log('✅ 토큰 자동 갱신 완료');
+      localStorage.setItem('postflow_token', session.access_token);
+    }
+  });
+  console.log('✅ [Auth] onAuthStateChange 리스너 등록 완료');
+}
+
 function handleAuthError() {
   localStorage.removeItem('postflow_token');
   localStorage.removeItem('postflow_user');
@@ -6719,6 +6743,16 @@ function handleAuthError() {
     free_credits: 0,
     paid_credits: 0
   };
+
+  // 🔒 클라이언트 라우트 가드: 비로그인 시 보호 페이지 접근 차단
+  const protectedPaths = ['/postflow', '/dashboard'];
+  const currentPath = window.location.pathname;
+  if (protectedPaths.includes(currentPath)) {
+    console.log('🔒 [라우트 가드] 비로그인 상태 - 홈으로 리다이렉트:', currentPath);
+    window.location.href = '/?redirect=' + encodeURIComponent(currentPath);
+    return;
+  }
+
   updateAuthUI();
 }
 
@@ -12811,3 +12845,62 @@ function addHelpGuideButton() {
   console.log('✅ 도움말 버튼이 성공적으로 추가되었습니다');
 }
 */
+
+// ========================================
+// 🖼 이미지 도구 → 콘텐츠 폼 연결 유틸 함수
+// 이미지 검색/AI 생성 결과를 현재 활성 콘텐츠 블록의 이미지 영역에 삽입
+// ========================================
+window.addImageToContentForm = async function(imageUrl) {
+  try {
+    // 현재 활성 콘텐츠 블록 인덱스 찾기 (첫 번째 블록 기본)
+    const contentBlocks = document.querySelectorAll('[id^="imagePreview_"]');
+    const targetIndex = 0; // 첫 번째 콘텐츠 블록에 삽입
+
+    // URL에서 이미지를 fetch하여 File 객체로 변환
+    const response = await fetch(imageUrl);
+    const blob = await response.blob();
+    const fileName = 'tool-image-' + Date.now() + '.png';
+    const file = new File([blob], fileName, { type: blob.type || 'image/png' });
+
+    // 기존 handleContentImageUpload와 동일한 방식으로 이미지 추가
+    if (!window.contentBlocks) window.contentBlocks = [{ images: [], platforms: [] }];
+    if (!window.contentBlocks[targetIndex]) window.contentBlocks[targetIndex] = { images: [], platforms: [] };
+
+    const images = window.contentBlocks[targetIndex].images || [];
+    if (images.length >= 10) {
+      alert('이미지는 최대 10장까지 업로드할 수 있습니다.');
+      return false;
+    }
+
+    // FileReader로 base64 변환
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      images.push(e.target.result);
+      window.contentBlocks[targetIndex].images = images;
+
+      // 미리보기 업데이트
+      const previewArea = document.getElementById('imagePreview_' + targetIndex);
+      if (previewArea) {
+        const img = document.createElement('div');
+        img.className = 'relative';
+        img.innerHTML = '<img src="' + e.target.result + '" class="w-full h-16 object-cover rounded-lg border" alt="이미지 ' + images.length + '"><button onclick="removeContentImage(' + targetIndex + ',' + (images.length - 1) + ')" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600">×</button>';
+        previewArea.appendChild(img);
+      }
+
+      console.log('✅ [이미지 도구→폼] 이미지 추가 완료 (콘텐츠 블록 ' + targetIndex + ', 총 ' + images.length + '장)');
+
+      // 토스트 알림
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 text-sm font-semibold';
+      toast.textContent = '✅ 콘텐츠 폼에 이미지가 추가되었습니다 (' + images.length + '/10)';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    };
+    reader.readAsDataURL(file);
+    return true;
+  } catch (error) {
+    console.error('❌ [이미지 도구→폼] 이미지 추가 실패:', error);
+    alert('이미지를 콘텐츠 폼에 추가하는 데 실패했습니다.');
+    return false;
+  }
+};

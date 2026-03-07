@@ -6520,7 +6520,15 @@ app.get('/community', (c) => {
 app.get('/robots.txt', (c) => {
   return c.text(`User-agent: *
 Allow: /
-Sitemap: https://marketinghub-ai.com/sitemap.xml
+Disallow: /postflow
+Disallow: /dashboard
+Disallow: /youtube-analyzer
+Disallow: /payment
+Disallow: /api/
+Disallow: /auth/
+Disallow: /static/
+
+Sitemap: https://haruhanpo-studio-new.pages.dev/sitemap.xml
 `, 200, { 'Content-Type': 'text/plain; charset=utf-8' });
 });
 
@@ -6528,16 +6536,22 @@ app.get('/sitemap.xml', (c) => {
   return c.text(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://marketinghub-ai.com/</loc>
+    <loc>https://haruhanpo-studio-new.pages.dev/</loc>
+    <lastmod>2026-03-07</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://marketinghub-ai.com/privacy</loc>
-    <priority>0.5</priority>
+    <loc>https://haruhanpo-studio-new.pages.dev/privacy</loc>
+    <lastmod>2026-03-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://marketinghub-ai.com/terms</loc>
-    <priority>0.5</priority>
+    <loc>https://haruhanpo-studio-new.pages.dev/terms</loc>
+    <lastmod>2026-03-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
   </url>
 </urlset>`, 200, { 'Content-Type': 'application/xml; charset=utf-8' });
 });
@@ -6548,10 +6562,29 @@ app.get('/favicon.ico', serveStatic({ path: './public/favicon.ico' }));
 // 🔥 Catch-all 라우트 (404 처리)
 // ========================================
 app.get('*', (c) => {
-  const path = c.req.path;
-  
-  // 그 외 모든 경로는 랜딩 페이지 반환
-  return c.html(landingPageTemplate);
+  // 존재하지 않는 경로 → 404 상태코드 + 랜딩 페이지로 리다이렉트 안내
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="ko">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="robots" content="noindex, nofollow">
+      <title>페이지를 찾을 수 없습니다 - 마케팅허브 AI 스튜디오</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="bg-gray-50 flex items-center justify-center min-h-screen">
+      <div class="text-center px-6">
+        <h1 class="text-8xl font-bold text-gray-300 mb-4">404</h1>
+        <h2 class="text-2xl font-bold text-gray-700 mb-4">페이지를 찾을 수 없습니다</h2>
+        <p class="text-gray-500 mb-8">요청하신 페이지가 존재하지 않거나 이동되었습니다.</p>
+        <a href="/" class="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all font-semibold">
+          홈으로 돌아가기
+        </a>
+      </div>
+    </body>
+    </html>
+  `, 404);
 });
 
 // ========================================

@@ -8,7 +8,8 @@ export function youtubeAnalyzerTemplate() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>유튜브 파인더 (TrendFinder) - 하루한포스트</title>
+  <meta name="robots" content="noindex, nofollow">
+  <title>유튜브 파인더 (TrendFinder) - 마케팅허브 AI 스튜디오</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>

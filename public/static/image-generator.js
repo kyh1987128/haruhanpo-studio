@@ -221,6 +221,7 @@
             '<button onclick="window.ImageGenerator._openEditor(' + i + ')" class="px-1.5 py-0.5 text-[9px] bg-teal-500 text-white rounded font-bold"><i class="fas fa-crop-alt mr-0.5"></i>편집</button>' +
             '<button onclick="window.ImageGenerator._download(' + i + ')" class="px-1.5 py-0.5 text-[9px] bg-gray-200 text-gray-600 rounded font-bold"><i class="fas fa-download mr-0.5"></i>저장</button>' +
             '<button onclick="window.ImageGenerator._addToSlides(' + i + ')" class="px-1.5 py-0.5 text-[9px] bg-indigo-500 text-white rounded font-bold">+ 장표</button>' +
+            '<button onclick="window.ImageGenerator._addToContent(' + i + ')" class="px-1.5 py-0.5 text-[9px] bg-green-500 text-white rounded font-bold">📎 콘텐츠</button>' +
           '</div></div></div></div>';
     }).join('');
   }
@@ -262,6 +263,14 @@
   window.ImageGenerator._addToSlides = function (index) {
     var item = _history[index];
     if (item && window.SlideCollection) window.SlideCollection.add(item.image, item.keyword, 'aigen');
+  };
+
+  // 🖼 AI 생성 이미지를 콘텐츠 폼에 직접 추가
+  window.ImageGenerator._addToContent = function (index) {
+    var item = _history[index];
+    if (item && window.addImageToContentForm) {
+      window.addImageToContentForm(item.image);
+    }
   };
 
   window.ImageGenerator._generate = _generate;

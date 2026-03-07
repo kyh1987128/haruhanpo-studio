@@ -7,16 +7,8 @@ export const htmlTemplate = `
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="naver-site-verification" content="a0d894323b50af92ad799b57c3316d8b74eca14b" />
-    <title>마케팅허브 AI 스튜디오</title>
-    
-    <!-- Google Analytics (GA4) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-XXXXXXXXXX');
-    </script>
+    <meta name="robots" content="noindex, nofollow">
+    <title>마케팅허브 AI 스튜디오 - 하루한포스트</title>
     
     <!-- Tailwind CSS - Built by Vite -->
     <link href="/static/styles.css?v=8.3.0" rel="stylesheet">
@@ -243,15 +235,42 @@ export const htmlTemplate = `
         }
       }
       
-      /* 태블릿/모바일: 좌측 패널 숨김 */
+      /* 태블릿/모바일: 좌측 패널 숨김 + 바텀시트로 대체 */
       @media (max-width: 1279px) {
         .left-panel {
-          display: none; /* 모바일에서는 숨김 */
+          display: none; /* 기본 숨김, 바텀시트로 대체 */
         }
-        
+        .left-panel.mobile-open {
+          display: block !important;
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          width: 100% !important;
+          z-index: 9999;
+          background: white;
+          overflow-y: auto;
+          padding: 1rem;
+          border-radius: 0;
+          animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
         .main-content {
-          width: 100%; /* 모바일에서는 전체 너비 */
+          width: 100%;
         }
+        /* 모바일 플로팅 도구 버튼 */
+        #mobileToolFab {
+          display: flex !important;
+        }
+        /* 바텀시트 닫기 버튼 */
+        #mobileToolClose {
+          display: flex !important;
+        }
+      }
+      @media (min-width: 1280px) {
+        #mobileToolFab { display: none !important; }
+        #mobileToolClose { display: none !important; }
       }
       
 
@@ -269,7 +288,12 @@ export const htmlTemplate = `
         <!-- ========================================
              좌측 패널 (회원 기능 + 키워드 분석 + 입력 필드)
              ======================================== -->
-        <aside class="left-panel">
+        <aside class="left-panel" id="leftPanel">
+            <!-- 모바일 바텀시트 닫기 버튼 -->
+            <button id="mobileToolClose" style="display:none;" onclick="document.getElementById('leftPanel').classList.remove('mobile-open')"
+              class="w-full mb-3 py-2 bg-gray-100 rounded-lg text-gray-600 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-gray-200 transition">
+              <i class="fas fa-times"></i> 닫기
+            </button>
             <!-- 하이브리드 AI 전략 선택 -->
             <div class="mb-6">
                 <h3 class="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -2295,6 +2319,13 @@ export const htmlTemplate = `
       datePickerStyle.textContent = '.flatpickr-calendar { z-index: 9999 !important; } .flatpickr-wrapper { z-index: 9999 !important; } input[type="date"]::-webkit-calendar-picker-indicator { z-index: 9999 !important; } input[type="datetime-local"]::-webkit-calendar-picker-indicator { z-index: 9999 !important; }';
       document.head.appendChild(datePickerStyle);
     </script>
+
+    <!-- 모바일 플로팅 도구 버튼 (1280px 이하에서만 표시) -->
+    <button id="mobileToolFab" style="display:none;"
+      onclick="document.getElementById('leftPanel').classList.add('mobile-open')"
+      class="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full shadow-2xl z-50 flex items-center justify-center hover:scale-110 transition-transform">
+      <i class="fas fa-tools text-lg"></i>
+    </button>
 </body>
 </html>
 `;

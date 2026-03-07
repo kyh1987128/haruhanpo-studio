@@ -30,6 +30,7 @@
     "@hono/vite-build": "^1.2.0",
     "@hono/vite-cloudflare-pages": "^0.4.3",
     "@hono/vite-dev-server": "^0.18.2",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4.0.8",
     "@types/node": "^20.11.5",
     "@types/pdf-parse": "^1.1.4",
