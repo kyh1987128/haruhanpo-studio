@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "vite",
     "dev:sandbox": "wrangler pages dev dist --ip 0.0.0.0 --port 3000",
-    "build": "npm run build:css && vite build",
+    "build": "rimraf dist && npm run build:css && vite build",
     "build:css": "tailwindcss -i ./src/styles.css -o ./public/static/styles.css --minify",
     "preview": "wrangler pages dev",
     "deploy": "npm run build && wrangler pages deploy dist --project-name haruhanpo-studio-new",
@@ -35,6 +35,7 @@
     "@types/node": "^20.11.5",
     "@types/pdf-parse": "^1.1.4",
     "autoprefixer": "^10.4.23",
+    "rimraf": "^6.1.3",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.3.3",
     "vite": "^6.3.5",
