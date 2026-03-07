@@ -6470,12 +6470,16 @@ import { dashboardTemplate } from './dashboard-template';
 // ========================================
 // 🔥 인증 가드 스크립트 (localStorage 기반 즉시 리다이렉트)
 // ========================================
+// 인증 가드: <head> 첫 번째 자식으로 삽입되어 CSS/JS 로딩 전에 실행
 const authGuardScript = `<script>
 (function(){
+  document.documentElement.style.visibility='hidden';
   var t = localStorage.getItem('postflow_token');
   if (!t) {
     window.location.replace('/?redirect=' + encodeURIComponent(window.location.pathname));
+    return;
   }
+  document.documentElement.style.visibility='';
 })();
 </script>`;
 
@@ -6483,8 +6487,8 @@ const authGuardScript = `<script>
 // 🔥 /dashboard 라우트 (통합 대시보드)
 // ========================================
 app.get('/dashboard', (c) => {
-  // 인증 가드: <head> 직후에 즉시 리다이렉트 스크립트 삽입
-  const guarded = dashboardTemplate.replace('</head>', authGuardScript + '</head>');
+  // 인증 가드: <head> 바로 다음에 삽입하여 다른 리소스보다 먼저 실행
+  const guarded = dashboardTemplate.replace('<head>', '<head>' + authGuardScript);
   return c.html(guarded);
 });
 
@@ -6497,8 +6501,8 @@ app.get('/youtube-analyzer', (c) => {
 // 🔥 /postflow 라우트 (PostFlow 작업 공간)
 // ========================================
 app.get('/postflow', (c) => {
-  // 인증 가드: <head> 직후에 즉시 리다이렉트 스크립트 삽입
-  const guarded = htmlTemplate.replace('</head>', authGuardScript + '</head>');
+  // 인증 가드: <head> 바로 다음에 삽입하여 다른 리소스보다 먼저 실행
+  const guarded = htmlTemplate.replace('<head>', '<head>' + authGuardScript);
   return c.html(guarded);
 });
 

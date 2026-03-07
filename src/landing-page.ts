@@ -15,7 +15,7 @@ export const landingPageTemplate = `
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="마케팅허브 AI 스튜디오 - AI로 콘텐츠 제작을 10배 빠르게">
-    <meta property="og:description" content="30초 만에 9개 플랫폼 콘텐츠 자동 생성, 유튜브 AI 분석, 영상 스토리보드 제작까지.">
+    <meta property="og:description" content="30초 만에 9개 플랫폼 콘텐츠 자동 생성, 유튜브 AI 분석, 영상 스토리보드 제작까지. 1개 계정으로 3개 서비스 모두 이용하세요.">
     <meta property="og:url" content="https://marketinghub-ai.com/">
     <meta property="og:image" content="https://marketinghub-ai.com/static/og-image.png">
     <meta property="og:site_name" content="마케팅허브 AI 스튜디오">
@@ -23,7 +23,7 @@ export const landingPageTemplate = `
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="마케팅허브 AI 스튜디오 - AI로 콘텐츠 제작을 10배 빠르게">
-    <meta name="twitter:description" content="30초 만에 9개 플랫폼 콘텐츠 자동 생성, 유튜브 AI 분석까지.">
+    <meta name="twitter:description" content="30초 만에 9개 플랫폼 콘텐츠 자동 생성, 유튜브 AI 분석, 영상 스토리보드 제작까지. 1개 계정으로 3개 서비스 모두 이용하세요.">
     <meta name="twitter:image" content="https://marketinghub-ai.com/static/og-image.png">
     <link href="/static/styles.css?v=8.0.0" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
