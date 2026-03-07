@@ -6468,10 +6468,24 @@ app.get('/api/stats', async (c) => {
 import { dashboardTemplate } from './dashboard-template';
 
 // ========================================
+// 🔥 인증 가드 스크립트 (localStorage 기반 즉시 리다이렉트)
+// ========================================
+const authGuardScript = `<script>
+(function(){
+  var t = localStorage.getItem('postflow_token');
+  if (!t) {
+    window.location.replace('/?redirect=' + encodeURIComponent(window.location.pathname));
+  }
+})();
+</script>`;
+
+// ========================================
 // 🔥 /dashboard 라우트 (통합 대시보드)
 // ========================================
 app.get('/dashboard', (c) => {
-  return c.html(dashboardTemplate);
+  // 인증 가드: <head> 직후에 즉시 리다이렉트 스크립트 삽입
+  const guarded = dashboardTemplate.replace('</head>', authGuardScript + '</head>');
+  return c.html(guarded);
 });
 
 // YouTube 분석기 페이지
@@ -6483,7 +6497,9 @@ app.get('/youtube-analyzer', (c) => {
 // 🔥 /postflow 라우트 (PostFlow 작업 공간)
 // ========================================
 app.get('/postflow', (c) => {
-  return c.html(htmlTemplate);
+  // 인증 가드: <head> 직후에 즉시 리다이렉트 스크립트 삽입
+  const guarded = htmlTemplate.replace('</head>', authGuardScript + '</head>');
+  return c.html(guarded);
 });
 
 // ========================================
@@ -6528,7 +6544,7 @@ Disallow: /api/
 Disallow: /auth/
 Disallow: /static/
 
-Sitemap: https://haruhanpo-studio-new.pages.dev/sitemap.xml
+Sitemap: https://marketinghub-ai.com/sitemap.xml
 `, 200, { 'Content-Type': 'text/plain; charset=utf-8' });
 });
 
@@ -6536,19 +6552,19 @@ app.get('/sitemap.xml', (c) => {
   return c.text(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://haruhanpo-studio-new.pages.dev/</loc>
+    <loc>https://marketinghub-ai.com/</loc>
     <lastmod>2026-03-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://haruhanpo-studio-new.pages.dev/privacy</loc>
+    <loc>https://marketinghub-ai.com/privacy</loc>
     <lastmod>2026-03-07</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://haruhanpo-studio-new.pages.dev/terms</loc>
+    <loc>https://marketinghub-ai.com/terms</loc>
     <lastmod>2026-03-07</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>

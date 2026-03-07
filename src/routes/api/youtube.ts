@@ -162,7 +162,7 @@ const app = new Hono<{ Bindings: Bindings }>()
 
 // CORS 설정
 app.use('/api/youtube/*', cors({
-  origin: ['http://localhost:3000', 'https://haruhanpo-studio-new.pages.dev'],
+  origin: ['http://localhost:3000', 'https://marketinghub-ai.com'],
   credentials: true
 }))
 
