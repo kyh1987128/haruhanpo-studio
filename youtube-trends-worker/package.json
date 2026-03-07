@@ -1,0 +1,24 @@
+{
+  "name": "youtube-trends-worker",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "tail": "wrangler tail",
+    "types": "wrangler types",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260130.0",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.61.1"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.93.3"
+  }
+}
