@@ -248,7 +248,7 @@ export const dashboardTemplate = `
                     // 온보딩 카드 숨김 (콘텐츠가 있으면)
                     const emptyCard = document.getElementById('emptyStateCard');
                     if (emptyCard) emptyCard.remove();
-                    
+
                     // 플랫폼 아이콘 매핑 (히스토리와 동일)
                     const platformNames = {
                         blog: '<i class="fas fa-blog text-blue-600 mr-1"></i>네이버 블로그',
@@ -267,25 +267,25 @@ export const dashboardTemplate = `
                         metadata_generation: '<i class="fas fa-tags text-blue-600 mr-1"></i>메타데이터 생성',
                         shortform_multi: '<i class="fas fa-film text-purple-600 mr-1"></i>쇼폼 통합'
                     };
-                    
+
                     recentContent.innerHTML = data.recent_content.map(content => {
                         // 플랫폼 배열 처리
-                        const platforms = typeof content.platforms === 'string' 
+                        const platforms = typeof content.platforms === 'string'
                             ? content.platforms.split(',').map(p => p.trim())
                             : (Array.isArray(content.platforms) ? content.platforms : []);
-                        
+
                         // 키워드 처리
-                        const keywords = Array.isArray(content.keywords) 
-                            ? content.keywords 
+                        const keywords = Array.isArray(content.keywords)
+                            ? content.keywords
                             : (typeof content.keywords === 'string' ? content.keywords.split(',').map(k => k.trim()) : []);
-                        
-                        const keywordsDisplay = keywords.length > 3 
-                            ? keywords.slice(0, 3).join(', ') + '...' 
+
+                        const keywordsDisplay = keywords.length > 3
+                            ? keywords.slice(0, 3).join(', ') + '...'
                             : keywords.join(', ');
-                        
+
                         // 제목 처리
                         const titleDisplay = content.title || content.brand || '제목 없음';
-                        
+
                         return \`
                             <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition cursor-pointer">
                                 <div class="flex justify-between items-start mb-2">
