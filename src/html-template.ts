@@ -2244,6 +2244,15 @@ export const htmlTemplate = `
     
     <!-- 온보딩 시스템 로드 -->
     <script src="/static/onboarding-integration.js?v=8.3.0"></script>
+    <!-- PostFlow 온보딩 투어 자동 시작 -->
+    <script>
+      // 로그인 완료 후 PostFlow 투어 시작
+      window.addEventListener('userUpdated', function() {
+        if (window.initPostflowTour) {
+          setTimeout(function() { window.initPostflowTour(); }, 1000);
+        }
+      });
+    </script>
     
     <!-- 스마트 추천 시스템 로드 -->
     <script src="/static/smart-recommendations.js?v=8.3.0"></script>

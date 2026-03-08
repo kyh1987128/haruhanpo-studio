@@ -39,9 +39,37 @@ export const headerStyles = `
     gap: 0.5rem;
     color: white;
     text-decoration: none;
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     font-weight: 700;
     transition: opacity 0.2s;
+  }
+
+  /* 크레딧 배지 */
+  .credit-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: white;
+    white-space: nowrap;
+  }
+
+  .credit-badge i {
+    color: #fbbf24;
+  }
+
+  /* 로그인 시에만 표시되는 nav 링크 */
+  .nav-link-auth {
+    display: none;
+  }
+
+  .nav-link-auth.visible {
+    display: flex;
   }
 
   .nav-menu {
@@ -209,12 +237,16 @@ export const headerHTML = `
     <div class="logo-section">
       <span class="logo-link" style="cursor: default;">
         <i class="fas fa-rocket"></i>
-        <span>마케팅허브 AI</span>
+        <span>마케팅허브 AI 스튜디오</span>
       </span>
     </div>
 
     <!-- 네비게이션 메뉴 -->
     <nav class="nav-menu" id="navMenu">
+      <a href="/dashboard" class="nav-link nav-link-auth" data-page="dashboard" id="navDashboardLink">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>대시보드</span>
+      </a>
       <a href="/postflow" class="nav-link" data-page="postflow">
         <i class="fas fa-magic"></i>
         <span>하루한포스트</span>
@@ -243,18 +275,16 @@ export const headerHTML = `
         <span>로그인</span>
       </button>
 
+      <!-- 로그인 후: 크레딧 배지 -->
+      <div class="credit-badge" id="creditBadge" style="display: none;">
+        <i class="fas fa-coins"></i>
+        <span id="creditBadgeText">0</span>
+      </div>
+
       <!-- 로그인 후: 사용자 정보 표시 -->
       <div class="user-info-text" id="userInfoText" style="display: none;">
         <span class="user-name" id="userNameDisplay">-</span>
-        <span class="divider">|</span>
-        <span class="user-credits" id="userCreditsDisplay">무료 0 · 유료 0</span>
       </div>
-      
-      <!-- 로그인 후: 대시보드 버튼 (로그인한 사용자만) -->
-      <a href="/dashboard" class="header-btn" id="dashboardButton" style="display: none;">
-        <i class="fas fa-chart-line"></i>
-        <span>대시보드</span>
-      </a>
 
       <!-- 로그인 후: 설정 버튼 -->
       <button class="header-btn" id="settingsButton" onclick="if(window.showSettingsModal) window.showSettingsModal(); else alert('설정 페이지를 로드하는 중입니다.');" style="display: none;">
@@ -290,34 +320,42 @@ export const headerScript = `
             console.log('⚠️ [헤더] 비로그인 상태');
             document.getElementById('loginButton').style.display = 'flex';
             document.getElementById('userInfoText').style.display = 'none';
-            document.getElementById('dashboardButton').style.display = 'none';
+            document.getElementById('creditBadge').style.display = 'none';
             document.getElementById('settingsButton').style.display = 'none';
             document.getElementById('logoutButton').style.display = 'none';
+            // 대시보드 nav 링크 숨김
+            var navDashboard = document.getElementById('navDashboardLink');
+            if (navDashboard) navDashboard.classList.remove('visible');
             return;
         }
 
         console.log('✅ [헤더] 로그인 상태 - UI 업데이트');
-        
+
         // 로그인한 상태
         document.getElementById('loginButton').style.display = 'none';
         document.getElementById('userInfoText').style.display = 'flex';
-        document.getElementById('dashboardButton').style.display = 'flex';
+        document.getElementById('creditBadge').style.display = 'inline-flex';
         document.getElementById('settingsButton').style.display = 'flex';
         document.getElementById('logoutButton').style.display = 'flex';
+        // 대시보드 nav 링크 표시
+        var navDashboard = document.getElementById('navDashboardLink');
+        if (navDashboard) navDashboard.classList.add('visible');
 
         // 사용자 정보 업데이트
         const userName = user.name || user.email?.split('@')[0] || '회원';
         const tier = user.tier === 'paid' ? '유료' : '무료';
         const freeCredits = user.free_credits || 0;
         const paidCredits = user.paid_credits || 0;
+        const totalCredits = freeCredits + paidCredits;
 
         // 천단위 콤마 포맷 헬퍼
         const fmt = (n) => Number(n).toLocaleString('ko-KR');
 
         document.getElementById('userNameDisplay').textContent = userName;
-        document.getElementById('userCreditsDisplay').textContent = \`무료 \${fmt(freeCredits)} · 유료 \${fmt(paidCredits)}\`;
-        
-        console.log('✅ [헤더] 사용자 정보 업데이트 완료:', {userName, tier, freeCredits, paidCredits});
+        // 크레딧 배지 업데이트
+        document.getElementById('creditBadgeText').textContent = fmt(totalCredits);
+
+        console.log('✅ [헤더] 사용자 정보 업데이트 완료:', {userName, tier, freeCredits, paidCredits, totalCredits});
     };
 
     window.updateHeaderCredits = function(credits) {
@@ -386,13 +424,16 @@ export const headerScript = `
         
         // 크레딧 정보가 있으면 즉시 헤더 업데이트
         if (e.detail && (e.detail.free_credits !== undefined || e.detail.paid_credits !== undefined)) {
-            const creditEl = document.getElementById('userCreditsDisplay');
-            if (creditEl) {
-                const freeCredits = e.detail.free_credits || 0;
-                const paidCredits = e.detail.paid_credits || 0;
-                const fmt = (n) => Number(n).toLocaleString('ko-KR');
-                creditEl.textContent = \`무료 \${fmt(freeCredits)} · 유료 \${fmt(paidCredits)}\`;
-                console.log('✅ [헤더] 크레딧 실시간 업데이트:', creditEl.textContent);
+            const freeCredits = e.detail.free_credits || 0;
+            const paidCredits = e.detail.paid_credits || 0;
+            const totalCredits = freeCredits + paidCredits;
+            const fmt = (n) => Number(n).toLocaleString('ko-KR');
+
+            // 크레딧 배지 업데이트
+            const badgeEl = document.getElementById('creditBadgeText');
+            if (badgeEl) {
+                badgeEl.textContent = fmt(totalCredits);
+                console.log('✅ [헤더] 크레딧 배지 실시간 업데이트:', totalCredits);
             }
         }
         

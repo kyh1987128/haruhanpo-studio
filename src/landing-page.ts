@@ -36,19 +36,20 @@ export const landingPageTemplate = `
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 </head>
 <body class="bg-gray-50">
-    <!-- 헤더 -->
-    <header class="bg-white shadow-md sticky top-0 z-50">
+    <!-- 헤더 (스크롤 이펙트 적용) -->
+    <header id="landing-header" class="bg-white/95 backdrop-blur-sm shadow-sm sticky top-0 z-50 transition-all duration-300">
         <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <!-- 로고 -->
                 <div class="flex items-center gap-2">
                     <a href="javascript:void(0)" onclick="handleLogoClick()" class="flex items-center gap-2 text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition cursor-pointer">
                         <img src="/static/logo-192.png" alt="마케팅허브" style="width: 32px; height: 32px; border-radius: 8px;">
-                        마케팅허브 AI 스튜디오
+                        <span class="hidden sm:inline">마케팅허브 AI 스튜디오</span>
+                        <span class="sm:hidden">마케팅허브</span>
                     </a>
                 </div>
-                
-                <!-- 네비게이션 -->
+
+                <!-- 네비게이션 (데스크톱) -->
                 <div class="hidden md:flex items-center gap-6">
                     <div class="relative group">
                         <button class="text-gray-700 hover:text-purple-600 font-medium flex items-center gap-1">
@@ -74,16 +75,63 @@ export const landingPageTemplate = `
                     <a href="/community" class="text-gray-700 hover:text-purple-600 font-medium">커뮤니티</a>
                     <a href="#pricing" class="text-gray-700 hover:text-purple-600 font-medium">가격</a>
                 </div>
-                
-                <!-- CTA 버튼 -->
+
+                <!-- CTA 버튼 + 햄버거 -->
                 <div class="flex items-center gap-3">
-                    <button onclick="openAuthModal('login')" class="text-gray-700 hover:text-purple-600 font-medium px-4 py-2">로그인</button>
-                    <button onclick="openAuthModal('signup')" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:shadow-lg transition-all">
+                    <button onclick="openAuthModal('login')" class="hidden sm:block text-gray-700 hover:text-purple-600 font-medium px-4 py-2">로그인</button>
+                    <button onclick="openAuthModal('signup')" class="hidden sm:block bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:shadow-lg transition-all">
                         회원가입
+                    </button>
+                    <!-- 햄버거 메뉴 버튼 (모바일) -->
+                    <button id="hamburger-btn" onclick="toggleMobileMenu()" class="md:hidden flex flex-col justify-center items-center w-10 h-10 rounded-lg hover:bg-gray-100 transition-colors" aria-label="메뉴 열기">
+                        <span id="hamburger-line-1" class="block w-5 h-0.5 bg-gray-700 transition-all duration-300"></span>
+                        <span id="hamburger-line-2" class="block w-5 h-0.5 bg-gray-700 mt-1.5 transition-all duration-300"></span>
+                        <span id="hamburger-line-3" class="block w-5 h-0.5 bg-gray-700 mt-1.5 transition-all duration-300"></span>
                     </button>
                 </div>
             </div>
         </nav>
+
+        <!-- 모바일 메뉴 패널 -->
+        <div id="mobile-menu" class="md:hidden hidden bg-white/95 backdrop-blur-xl border-t border-gray-100 shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 py-4 space-y-2">
+                <a href="#postflow" onclick="closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-purple-50 transition">
+                    <span class="text-xl">📝</span>
+                    <div>
+                        <div class="font-semibold text-gray-900">하루 한포스트</div>
+                        <div class="text-xs text-gray-500">멀티 플랫폼 콘텐츠 생성</div>
+                    </div>
+                </a>
+                <a href="#trendfinder" onclick="closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-blue-50 transition">
+                    <span class="text-xl">📊</span>
+                    <div>
+                        <div class="font-semibold text-gray-900">유튜브 파인더</div>
+                        <div class="text-xs text-gray-500">유튜브 AI 분석기</div>
+                    </div>
+                </a>
+                <a href="#storymaker" onclick="closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-green-50 transition">
+                    <span class="text-xl">🎬</span>
+                    <div>
+                        <div class="font-semibold text-gray-900">스토리 메이커</div>
+                        <div class="text-xs text-gray-500">AI 영상 스토리보드</div>
+                    </div>
+                </a>
+                <div class="border-t border-gray-100 my-2"></div>
+                <a href="/community" onclick="closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 transition">
+                    <span class="text-xl">💬</span>
+                    <div class="font-semibold text-gray-900">커뮤니티</div>
+                </a>
+                <a href="#pricing" onclick="closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 transition">
+                    <span class="text-xl">💰</span>
+                    <div class="font-semibold text-gray-900">가격</div>
+                </a>
+                <div class="border-t border-gray-100 my-2"></div>
+                <div class="flex gap-3 px-4 py-2">
+                    <button onclick="closeMobileMenu(); openAuthModal('login')" class="flex-1 text-gray-700 hover:text-purple-600 font-medium py-2.5 rounded-xl border border-gray-200 hover:border-purple-300 transition">로그인</button>
+                    <button onclick="closeMobileMenu(); openAuthModal('signup')" class="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white py-2.5 rounded-xl font-semibold hover:shadow-lg transition-all">회원가입</button>
+                </div>
+            </div>
+        </div>
     </header>
 
     <!-- 히어로 섹션 (개편) -->
@@ -133,18 +181,23 @@ export const landingPageTemplate = `
                         </a>
                     </div>
                     
-                    <div class="flex items-center gap-6 text-sm opacity-75">
-                        <span class="flex items-center gap-2">
+                    <!-- 신뢰 배지 라인 -->
+                    <div class="flex flex-wrap items-center gap-4 sm:gap-6 text-sm" data-aos="fade-up" data-aos-delay="200">
+                        <span class="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full">
                             <i class="fas fa-check-circle text-green-300"></i>
-                            신용카드 불필요
+                            무료 체험 가능
                         </span>
-                        <span class="flex items-center gap-2">
+                        <span class="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                            <i class="fas fa-check-circle text-green-300"></i>
+                            카드 등록 불필요
+                        </span>
+                        <span class="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                            <i class="fas fa-check-circle text-green-300"></i>
+                            14개 플랫폼 지원
+                        </span>
+                        <span class="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full">
                             <i class="fas fa-check-circle text-green-300"></i>
                             3초 만에 시작
-                        </span>
-                        <span class="flex items-center gap-2">
-                            <i class="fas fa-check-circle text-green-300"></i>
-                            언제든 취소
                         </span>
                     </div>
                 </div>
@@ -582,11 +635,20 @@ export const landingPageTemplate = `
                         </ul>
                     </div>
                     <div class="bg-gradient-to-br from-green-100 to-teal-100 rounded-2xl p-8 h-96 flex items-center justify-center relative overflow-hidden">
+                        <!-- Coming Soon 오버레이 -->
+                        <div class="absolute inset-0 z-20 bg-gray-900/60 backdrop-blur-sm flex flex-col items-center justify-center rounded-2xl">
+                            <div class="bg-gradient-to-r from-green-500 to-teal-500 text-white px-6 py-2 rounded-full text-sm font-bold mb-4 shadow-lg">
+                                준비 중
+                            </div>
+                            <h4 class="text-white text-2xl font-bold mb-2">Coming Soon</h4>
+                            <p class="text-white/80 text-sm text-center px-4">AI 영상 스토리보드 제작 기능을<br>곧 만나보실 수 있습니다</p>
+                        </div>
+
                         <!-- 진행률 바 -->
                         <div class="absolute top-0 left-0 right-0 h-1 bg-green-200 overflow-hidden">
                             <div id="storymaker-progress" class="h-full bg-green-600 transition-all duration-300" style="width: 0%"></div>
                         </div>
-                        
+
                         <!-- 스토리보드 슬라이드 애니메이션 -->
                         <div id="storymaker-animation" class="w-full h-full">
                             <!-- 스토리보드 장면 카드들 -->
@@ -716,6 +778,44 @@ export const landingPageTemplate = `
                 </div>
             </div>
 
+            <!-- Social Proof 통계 섹션 -->
+            <div class="mb-20 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 rounded-3xl p-12 text-white overflow-hidden relative" data-aos="fade-up">
+                <div class="absolute inset-0 opacity-10">
+                    <div class="absolute top-0 left-1/4 w-64 h-64 bg-white rounded-full filter blur-3xl"></div>
+                    <div class="absolute bottom-0 right-1/4 w-64 h-64 bg-white rounded-full filter blur-3xl"></div>
+                </div>
+                <div class="relative z-10">
+                    <h3 class="text-3xl font-bold text-center mb-2">신뢰할 수 있는 AI 콘텐츠 플랫폼</h3>
+                    <p class="text-center text-white/80 mb-12 text-lg">마케팅허브 AI 스튜디오가 만들어가는 성과</p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                        <div class="text-center" data-aos="fade-up" data-aos-delay="100">
+                            <div class="text-4xl md:text-5xl font-extrabold mb-2">
+                                <span class="social-proof-counter" data-target="50000">0</span>+
+                            </div>
+                            <p class="text-white/80 text-sm">누적 콘텐츠 생성</p>
+                        </div>
+                        <div class="text-center" data-aos="fade-up" data-aos-delay="200">
+                            <div class="text-4xl md:text-5xl font-extrabold mb-2">
+                                <span class="social-proof-counter" data-target="14">0</span>개
+                            </div>
+                            <p class="text-white/80 text-sm">지원 플랫폼</p>
+                        </div>
+                        <div class="text-center" data-aos="fade-up" data-aos-delay="300">
+                            <div class="text-4xl md:text-5xl font-extrabold mb-2">
+                                <span class="social-proof-counter" data-target="10">0</span>배
+                            </div>
+                            <p class="text-white/80 text-sm">작업 시간 단축</p>
+                        </div>
+                        <div class="text-center" data-aos="fade-up" data-aos-delay="400">
+                            <div class="text-4xl md:text-5xl font-extrabold mb-2">
+                                <span class="social-proof-counter" data-target="30">0</span>초
+                            </div>
+                            <p class="text-white/80 text-sm">평균 생성 시간</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Before/After 비교 섹션 -->
             <div class="mb-20 bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-12 text-white overflow-hidden relative" data-aos="fade-up">
                 <!-- 배경 패턴 -->
@@ -724,7 +824,7 @@ export const landingPageTemplate = `
                 </div>
                 
                 <div class="relative z-10">
-                    <h3 class="text-4xl font-bold text-center mb-4">기존 방식 vs 마케팅허브 AI</h3>
+                    <h3 class="text-4xl font-bold text-center mb-4">기존 방식 vs 마케팅허브 AI 스튜디오</h3>
                     <p class="text-xl text-center text-gray-300 mb-12">시간을 10배 절약하세요</p>
                     
                     <div class="grid md:grid-cols-2 gap-8">
@@ -775,7 +875,7 @@ export const landingPageTemplate = `
                         <div class="bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl p-8 shadow-2xl transform hover:scale-105 transition-all duration-300">
                             <div class="text-center mb-6">
                                 <div class="inline-block bg-yellow-400 text-gray-900 px-4 py-2 rounded-full font-bold mb-4">
-                                    ✅ 마케팅허브 AI
+                                    ✅ 마케팅허브 AI 스튜디오
                                 </div>
                             </div>
                             <ul class="space-y-4">
@@ -996,6 +1096,28 @@ export const landingPageTemplate = `
                         <p>네! 기업용 플랜은 별도 문의를 통해 맞춤 상담이 가능합니다. 대량 크레딧 할인, 전담 매니저, API 연동 등을 제공합니다. (marketinghubai2026@gmail.com)</p>
                     </div>
                 </div>
+
+                <!-- Q6 -->
+                <div class="bg-gray-50 rounded-2xl overflow-hidden" data-aos="fade-up" data-aos-delay="600">
+                    <button class="w-full px-8 py-6 text-left flex items-center justify-between hover:bg-gray-100 transition" onclick="toggleFaq('faq6')">
+                        <span class="font-bold text-lg text-gray-900">📱 어떤 SNS 플랫폼을 지원하나요?</span>
+                        <i class="fas fa-chevron-down transition-transform" id="faq6-icon"></i>
+                    </button>
+                    <div id="faq6" class="hidden px-8 pb-6 text-gray-700 leading-relaxed">
+                        <p>현재 네이버 블로그, 인스타그램, 스레드, 트위터(X), 링크드인, 브런치, 틱톡, 유튜브, 카카오톡 등 총 14개 플랫폼을 지원합니다. 각 플랫폼의 특성에 맞게 톤앤매너, 해시태그, 글자 수 제한 등을 자동으로 최적화합니다.</p>
+                    </div>
+                </div>
+
+                <!-- Q7 -->
+                <div class="bg-gray-50 rounded-2xl overflow-hidden" data-aos="fade-up" data-aos-delay="700">
+                    <button class="w-full px-8 py-6 text-left flex items-center justify-between hover:bg-gray-100 transition" onclick="toggleFaq('faq7')">
+                        <span class="font-bold text-lg text-gray-900">©️ 생성된 콘텐츠의 저작권은 어떻게 되나요?</span>
+                        <i class="fas fa-chevron-down transition-transform" id="faq7-icon"></i>
+                    </button>
+                    <div id="faq7" class="hidden px-8 pb-6 text-gray-700 leading-relaxed">
+                        <p>마케팅허브 AI 스튜디오에서 생성된 모든 콘텐츠는 사용자에게 저작권이 있으며, 상업적 용도를 포함해 자유롭게 사용하실 수 있습니다. 블로그, SNS 포스팅, 마케팅 자료 등 어디에든 제한 없이 활용 가능합니다.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -1181,12 +1303,67 @@ export const landingPageTemplate = `
         });
     </script>
 
+    <!-- 햄버거 메뉴 + 스크롤 이펙트 -->
+    <script>
+        // 모바일 메뉴 토글
+        let mobileMenuOpen = false;
+        function toggleMobileMenu() {
+            mobileMenuOpen = !mobileMenuOpen;
+            const menu = document.getElementById('mobile-menu');
+            const line1 = document.getElementById('hamburger-line-1');
+            const line2 = document.getElementById('hamburger-line-2');
+            const line3 = document.getElementById('hamburger-line-3');
+
+            if (mobileMenuOpen) {
+                menu.classList.remove('hidden');
+                // X 모양으로 변환
+                line1.style.transform = 'rotate(45deg) translate(4px, 4px)';
+                line2.style.opacity = '0';
+                line3.style.transform = 'rotate(-45deg) translate(4px, -4px)';
+            } else {
+                menu.classList.add('hidden');
+                // 원래 모양으로 복원
+                line1.style.transform = '';
+                line2.style.opacity = '1';
+                line3.style.transform = '';
+            }
+        }
+
+        function closeMobileMenu() {
+            if (mobileMenuOpen) toggleMobileMenu();
+        }
+
+        // 헤더 스크롤 이펙트
+        (function() {
+            const header = document.getElementById('landing-header');
+            let lastScrollY = 0;
+
+            window.addEventListener('scroll', function() {
+                const scrollY = window.scrollY;
+
+                if (scrollY > 50) {
+                    header.classList.add('shadow-lg');
+                    header.classList.remove('shadow-sm');
+                    header.style.backgroundColor = 'rgba(255, 255, 255, 0.98)';
+                    header.style.backdropFilter = 'blur(20px)';
+                } else {
+                    header.classList.remove('shadow-lg');
+                    header.classList.add('shadow-sm');
+                    header.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+                    header.style.backdropFilter = 'blur(4px)';
+                }
+
+                lastScrollY = scrollY;
+            }, { passive: true });
+        })();
+    </script>
+
     <!-- FAQ 토글 스크립트 -->
     <script>
         function toggleFaq(id) {
             const content = document.getElementById(id);
             const icon = document.getElementById(id + '-icon');
-            
+
             if (content.classList.contains('hidden')) {
                 content.classList.remove('hidden');
                 icon.style.transform = 'rotate(180deg)';
@@ -1195,6 +1372,55 @@ export const landingPageTemplate = `
                 icon.style.transform = 'rotate(0deg)';
             }
         }
+    </script>
+
+    <!-- Social Proof 카운트업 애니메이션 -->
+    <script>
+        (function() {
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        const counters = entry.target.querySelectorAll('.social-proof-counter');
+                        counters.forEach(function(counter) {
+                            const target = parseInt(counter.getAttribute('data-target'));
+                            const duration = 2000;
+                            const startTime = performance.now();
+
+                            function update(currentTime) {
+                                const elapsed = currentTime - startTime;
+                                const progress = Math.min(elapsed / duration, 1);
+                                // easeOutExpo 이징
+                                const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+                                const current = Math.floor(eased * target);
+
+                                if (target >= 10000) {
+                                    counter.textContent = current.toLocaleString();
+                                } else {
+                                    counter.textContent = current;
+                                }
+
+                                if (progress < 1) {
+                                    requestAnimationFrame(update);
+                                } else {
+                                    counter.textContent = target >= 10000 ? target.toLocaleString() : target;
+                                }
+                            }
+
+                            requestAnimationFrame(update);
+                        });
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.3 });
+
+            // DOM 로드 후 관찰 시작
+            document.addEventListener('DOMContentLoaded', function() {
+                const section = document.querySelector('.social-proof-counter');
+                if (section) {
+                    observer.observe(section.closest('[data-aos]').parentElement.parentElement);
+                }
+            });
+        })();
     </script>
 
     <!-- 서비스 애니메이션 스크립트 -->

@@ -55,10 +55,10 @@ export const dashboardTemplate = `
                 <p class="text-3xl font-bold text-green-600" id="totalGenerations">0</p>
             </div>
 
-            <!-- 이번 달 생성 -->
+            <!-- 이번 달 생성 (동적 월 표시) -->
             <div class="bg-white rounded-xl shadow-md p-6">
                 <h3 class="text-lg font-semibold text-gray-700 mb-4">
-                    <i class="fas fa-calendar-alt text-blue-500 mr-2"></i>2026년 1월
+                    <i class="fas fa-calendar-alt text-blue-500 mr-2"></i><span id="currentMonthLabel">이번 달</span>
                 </h3>
                 <p class="text-3xl font-bold text-blue-600" id="monthlyGenerations">0</p>
             </div>
@@ -106,13 +106,69 @@ export const dashboardTemplate = `
                 <i class="fas fa-clock text-indigo-500 mr-2"></i>최근 생성 콘텐츠
             </h3>
             <div id="recentContent" class="space-y-4">
-                <p class="text-gray-500 text-center py-8">생성된 콘텐츠가 없습니다.</p>
+                <!-- 빈 상태 온보딩 카드 (콘텐츠 로드 후 교체됨) -->
+                <div id="emptyStateCard" class="bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 rounded-2xl p-8 border border-purple-100">
+                    <div class="text-center mb-6">
+                        <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl mb-4">
+                            <i class="fas fa-magic text-white text-2xl"></i>
+                        </div>
+                        <h4 class="text-xl font-bold text-gray-900 mb-2">첫 번째 AI 콘텐츠를 만들어보세요!</h4>
+                        <p class="text-gray-600 text-sm">3단계로 간단하게 멀티 플랫폼 콘텐츠를 생성할 수 있습니다</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="flex items-center gap-3 bg-white rounded-xl p-4 shadow-sm">
+                            <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <span class="text-purple-600 font-bold">1</span>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-800 text-sm">주제 입력</p>
+                                <p class="text-xs text-gray-500">키워드나 이미지를 입력하세요</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 bg-white rounded-xl p-4 shadow-sm">
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <span class="text-blue-600 font-bold">2</span>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-800 text-sm">플랫폼 선택</p>
+                                <p class="text-xs text-gray-500">원하는 SNS 플랫폼을 고르세요</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 bg-white rounded-xl p-4 shadow-sm">
+                            <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <span class="text-indigo-600 font-bold">3</span>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-800 text-sm">AI 생성</p>
+                                <p class="text-xs text-gray-500">30초 만에 콘텐츠 완성!</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <a href="/postflow" class="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-3 rounded-xl font-semibold hover:shadow-lg transition-all hover:scale-105">
+                            <i class="fas fa-pen-fancy"></i>
+                            첫 콘텐츠 만들기
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
 
     <script>
         console.log('🎯 [대시보드] 페이지 로드 시작');
+
+        // 동적 월 표시 (KST 기준)
+        (function() {
+            var now = new Date();
+            // Cloudflare Workers는 UTC이므로 KST (+9) 오프셋 적용
+            var kstOffset = 9 * 60 * 60 * 1000;
+            var kstDate = new Date(now.getTime() + kstOffset);
+            var year = kstDate.getUTCFullYear();
+            var month = kstDate.getUTCMonth() + 1;
+            var label = document.getElementById('currentMonthLabel');
+            if (label) label.textContent = year + '년 ' + month + '월';
+        })();
 
         // 대시보드 데이터 로드
         async function loadDashboard() {
@@ -189,6 +245,9 @@ export const dashboardTemplate = `
                 // 최근 콘텐츠 렌더링 (히스토리 UI 재사용)
                 if (data.recent_content && data.recent_content.length > 0) {
                     const recentContent = document.getElementById('recentContent');
+                    // 온보딩 카드 숨김 (콘텐츠가 있으면)
+                    const emptyCard = document.getElementById('emptyStateCard');
+                    if (emptyCard) emptyCard.remove();
                     
                     // 플랫폼 아이콘 매핑 (히스토리와 동일)
                     const platformNames = {
@@ -245,7 +304,8 @@ export const dashboardTemplate = `
                         \`;
                     }).join('');
                 } else {
-                    document.getElementById('recentContent').innerHTML = '<p class="text-gray-500 text-center py-8">생성된 콘텐츠가 없습니다.</p>';
+                    // 콘텐츠가 없으면 온보딩 카드 유지 (이미 HTML에 있음)
+                    console.log('📭 [대시보드] 생성된 콘텐츠 없음 → 온보딩 카드 표시');
                 }
 
             } catch (error) {

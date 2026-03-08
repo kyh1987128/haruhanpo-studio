@@ -939,12 +939,39 @@ export function youtubeAnalyzerTemplate() {
         <span class="subnav-text">채널 분석</span>
       </div>
       
+      <!-- 고급 분석 도구 토글 -->
+      <div id="advanced-toggle-btn" onclick="toggleAdvancedTabs()" class="subnav-item" style="margin-left:0.5rem; background:rgba(139,92,246,0.1); border:1px dashed rgba(139,92,246,0.3);" title="고급 분석 도구 펼치기/접기">
+        <span class="subnav-icon">⚡</span>
+        <span class="subnav-text">고급 도구</span>
+        <i id="advanced-toggle-icon" class="fas fa-chevron-down text-xs ml-1 transition-transform"></i>
+      </div>
+
       <!-- 장바구니 아이콘 (탭이 아닌 액션 버튼) -->
       <div style="margin-left:auto; display:flex; align-items:center;">
         <button onclick="openCartModal()" class="relative p-2 text-gray-500 hover:text-blue-600 transition" title="장바구니">
           <i class="fas fa-shopping-cart text-lg"></i>
           <span id="cart-badge" style="display:none" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">0</span>
         </button>
+      </div>
+    </div>
+
+    <!-- 고급 탭 영역 (접힌 상태로 시작) -->
+    <div id="advanced-tabs-panel" class="subnav-container" style="display:none; border-top:1px solid rgba(0,0,0,0.05); padding-top:0.25rem;">
+      <div class="subnav-item" data-tab="content-strategy">
+        <span class="subnav-icon">📋</span>
+        <span class="subnav-text">콘텐츠 전략</span>
+      </div>
+      <div class="subnav-item" data-tab="performance-tracking">
+        <span class="subnav-icon">📈</span>
+        <span class="subnav-text">퍼포먼스</span>
+      </div>
+      <div class="subnav-item" data-tab="advanced-analytics">
+        <span class="subnav-icon">🔬</span>
+        <span class="subnav-text">고급 분석</span>
+      </div>
+      <div class="subnav-item" data-tab="my-channel">
+        <span class="subnav-icon">👤</span>
+        <span class="subnav-text">내 채널</span>
       </div>
     </div>
   </nav>
@@ -3101,31 +3128,70 @@ export function youtubeAnalyzerTemplate() {
   <!-- Phase 2.5: Trends Insights (Supabase 연동) -->
   <script src="/static/youtube-trends.js?v=8.8.4"></script>
   
-  <!-- Phase 5A: 3-Tab 전환 스크립트 -->
+  <!-- Phase 5A: 3-Tab 전환 스크립트 + 고급 도구 토글 -->
   <script>
-    // 서브 네비게이션 탭 전환
-    document.querySelectorAll('.subnav-item').forEach(item => {
+    // 고급 탭 토글 (프로그레시브 디스클로저)
+    var advancedTabsOpen = localStorage.getItem('yt_advanced_tabs_open') === 'true';
+
+    function toggleAdvancedTabs() {
+      advancedTabsOpen = !advancedTabsOpen;
+      var panel = document.getElementById('advanced-tabs-panel');
+      var icon = document.getElementById('advanced-toggle-icon');
+
+      if (advancedTabsOpen) {
+        panel.style.display = 'flex';
+        icon.style.transform = 'rotate(180deg)';
+      } else {
+        panel.style.display = 'none';
+        icon.style.transform = 'rotate(0deg)';
+      }
+
+      localStorage.setItem('yt_advanced_tabs_open', advancedTabsOpen);
+    }
+
+    // 초기 상태 복원
+    (function() {
+      if (advancedTabsOpen) {
+        var panel = document.getElementById('advanced-tabs-panel');
+        var icon = document.getElementById('advanced-toggle-icon');
+        if (panel) panel.style.display = 'flex';
+        if (icon) icon.style.transform = 'rotate(180deg)';
+      }
+    })();
+
+    // 서브 네비게이션 탭 전환 (메인 + 고급 탭 통합)
+    document.querySelectorAll('.subnav-item[data-tab]').forEach(item => {
       item.addEventListener('click', function() {
         const tab = this.dataset.tab;
-        
+        if (!tab) return;
+
         // 활성 탭 스타일 변경
-        document.querySelectorAll('.subnav-item').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.subnav-item[data-tab]').forEach(el => el.classList.remove('active'));
         this.classList.add('active');
-        
+
         // 탭 콘텐츠 표시/숨김
         document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
-        
-        // 3개 탭 구조에 맞게 매핑
-        if (tab === 'video-finder') {
-          document.getElementById('tab-video-finder')?.classList.remove('hidden');
-        } else if (tab === 'trends-insights') {
-          document.getElementById('tab-trends-insights')?.classList.remove('hidden');
-          // 트렌드 데이터 자동 로드
-          if (typeof initTrendsInsights === 'function') {
-            initTrendsInsights();
-          }
-        } else if (tab === 'channel-analysis') {
-          document.getElementById('tab-channel-analysis')?.classList.remove('hidden');
+
+        // 탭 매핑
+        var tabMap = {
+          'video-finder': 'tab-video-finder',
+          'trends-insights': 'tab-trends-insights',
+          'channel-analysis': 'tab-channel-analysis',
+          'content-strategy': 'tab-content-strategy',
+          'performance-tracking': 'tab-performance-tracking',
+          'advanced-analytics': 'tab-advanced-analytics',
+          'my-channel': 'tab-my-channel'
+        };
+
+        var targetId = tabMap[tab];
+        if (targetId) {
+          var targetEl = document.getElementById(targetId);
+          if (targetEl) targetEl.classList.remove('hidden');
+        }
+
+        // 트렌드 데이터 자동 로드
+        if (tab === 'trends-insights' && typeof initTrendsInsights === 'function') {
+          initTrendsInsights();
         }
 
         // 탭 전환 시 스크롤 위치를 상단으로 리셋 (헤더 아래 가림 방지)
