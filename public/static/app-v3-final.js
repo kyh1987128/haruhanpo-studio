@@ -21,6 +21,7 @@ let selectedImages = []; // 더 이상 사용 안 함 (개별 콘텐츠로 변�
 let contentBlocks = {}; // { 0: { images: [], keywords: '', topic: '', description: '' }, 1: {...}, ... }
 let contentPlatforms = {}; // 콘텐츠별 플랫폼 선택 상태 (Option B)
 let resultData = {};
+let _previewFrameEnabled = true; // 프리뷰 프레임 토글 상태 (기본: ON)
 let savedProfiles = [];
 let contentHistory = [];
 let customTemplates = [];
@@ -3755,7 +3756,18 @@ function displayResults(data, platforms, options = {}) {
       <div class="bg-gray-50 rounded-lg p-6">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-xl font-bold text-gray-800">${platformNames[platform]}</h3>
-          <div class="flex gap-2">
+          <div class="flex gap-2 flex-wrap">
+            ${isInstagramPlatform(platform) ? `
+            <button
+              type="button"
+              onclick="togglePreviewFrame('${platform}')"
+              class="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition font-semibold flex items-center gap-2"
+              title="인스타그램 미리보기"
+            >
+              <i id="preview-toggle-icon-${platform}" class="fas ${_previewFrameEnabled ? 'fa-eye' : 'fa-eye-slash'}"></i>
+              <span id="preview-toggle-text-${platform}">미리보기</span>
+            </button>
+            ` : ''}
             ${!hideCalendarButton ? `
             <button
               type="button"
@@ -3820,10 +3832,20 @@ function displayResults(data, platforms, options = {}) {
             ✓ 저장
           </button>
         </div>
+        <div id="preview-frame-${platform}" class="${isInstagramPlatform(platform) && _previewFrameEnabled ? '' : 'hidden'}"></div>
       </div>
     </div>
   `).join('');
-  
+
+  // 인스타그램 프리뷰 프레임 초기 렌더링
+  if (_previewFrameEnabled) {
+    platforms.forEach(p => {
+      if (isInstagramPlatform(p)) {
+        renderInstagramFrame(p);
+      }
+    });
+  }
+
   resultArea.classList.remove('hidden');
   resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -3851,6 +3873,220 @@ function formatContent(content) {
     .replace(/📱/g, '<i class="fas fa-mobile-alt"></i>')    // 유튜브 숏폼
     .replace(/📖/g, '<i class="fas fa-book-open"></i>')     // 브런치
     .replace(/🎵/g, '<i class="fab fa-tiktok"></i>');       // 틱톡
+}
+
+// =============================================
+// 📱 인스타그램 프리뷰 프레임
+// =============================================
+
+// 프리뷰용 이미지 가져오기 (우선순위: selectedImages → contentBlocks)
+function getPreviewImage() {
+  // 1순위: selectedImages (URL 문자열)
+  if (selectedImages && selectedImages.length > 0 && selectedImages[0]) {
+    const img = selectedImages[0];
+    if (typeof img === 'string') return img;
+    if (img.url) return img.url;
+    if (img.base64) return img.base64.startsWith('data:') ? img.base64 : `data:image/png;base64,${img.base64}`;
+  }
+  // 2순위: contentBlocks 첫번째 블록의 이미지
+  if (contentBlocks) {
+    const keys = Object.keys(contentBlocks);
+    for (const key of keys) {
+      const block = contentBlocks[key];
+      if (block?.images && block.images.length > 0 && block.images[0]) {
+        const img = block.images[0];
+        if (typeof img === 'string') return img;
+        if (img.url) return img.url;
+        if (img.base64) return img.base64.startsWith('data:') ? img.base64 : `data:image/png;base64,${img.base64}`;
+      }
+    }
+  }
+  return null;
+}
+
+// 프리뷰용 브랜드명 가져오기
+function getPreviewBrand() {
+  const brandEl = document.getElementById('brand');
+  const val = brandEl?.value?.trim();
+  return val || '브랜드';
+}
+
+// 인스타그램 콘텐츠 파싱 (캡션 + 해시태그 분리)
+function parseInstagramContent(text) {
+  if (!text) return { caption: '', hashtags: [], fullText: '' };
+
+  // 해시태그 추출
+  const hashtagRegex = /#[^\s#]+/g;
+  const hashtags = text.match(hashtagRegex) || [];
+
+  // 캡션: 해시태그 블록 제거 (마지막 해시태그 연속 영역)
+  let caption = text;
+  // 텍스트 끝부분의 해시태그 연속 블록을 제거
+  const lines = text.split('\n');
+  const captionLines = [];
+  let hashtagBlockStarted = false;
+
+  // 뒤에서부터 순회하여 해시태그 전용 라인 찾기
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const trimmed = lines[i].trim();
+    if (trimmed && /^[#\s]+$/.test(trimmed.replace(/#[^\s#]+/g, '').trim()) && /#/.test(trimmed)) {
+      hashtagBlockStarted = true;
+    } else if (hashtagBlockStarted && !trimmed) {
+      // 빈 줄은 해시태그 블록 위의 공백
+      continue;
+    } else {
+      // 해시태그 블록이 아닌 줄을 만나면 여기까지가 캡션
+      captionLines.unshift(...lines.slice(0, i + 1));
+      break;
+    }
+  }
+
+  caption = captionLines.length > 0 ? captionLines.join('\n').trim() : text.replace(hashtagRegex, '').trim();
+
+  // 이모지 마커 제거 (📸, 📝 등)
+  caption = caption.replace(/^[📸📝🎬🧵🐦💼💬🎥📱📖🎵]\s*/g, '').trim();
+
+  return { caption, hashtags, fullText: text };
+}
+
+// 인스타그램 프레임 렌더링
+function renderInstagramFrame(platform) {
+  const frameEl = document.getElementById(`preview-frame-${platform}`);
+  if (!frameEl) return;
+
+  // 인스타그램 플랫폼이 아니면 빈 상태 유지
+  if (platform !== 'instagram' && platform !== 'instagram_feed') {
+    frameEl.innerHTML = '';
+    return;
+  }
+
+  const text = resultData[platform] || '';
+  const { caption, hashtags } = parseInstagramContent(text);
+  const imageUrl = getPreviewImage();
+  const brandName = getPreviewBrand();
+  const brandInitial = brandName.charAt(0).toUpperCase();
+
+  // 캡션 미리보기 (2줄, 약 100자 제한)
+  const maxCaptionLen = 100;
+  const shortCaption = caption.length > maxCaptionLen
+    ? caption.substring(0, maxCaptionLen) + '...'
+    : caption;
+  const hasMore = caption.length > maxCaptionLen;
+
+  // HTML 이스케이프
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  frameEl.innerHTML = `
+    <div class="mt-6 mb-2">
+      <div class="text-sm font-semibold text-gray-500 mb-3 flex items-center gap-2">
+        <i class="fab fa-instagram text-pink-500"></i>
+        인스타그램 미리보기
+      </div>
+      <div style="max-width: 420px; margin: 0 auto; background: #fff; border: 1px solid #dbdbdb; border-radius: 8px; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+
+        <!-- 프로필 헤더 -->
+        <div style="display: flex; align-items: center; padding: 12px 14px; gap: 10px;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 14px;">${esc(brandInitial)}</div>
+          <div style="flex: 1;">
+            <span style="font-weight: 600; font-size: 14px; color: #262626;">${esc(brandName)}</span>
+          </div>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="cursor: pointer;">
+            <circle cx="12" cy="6" r="1.5" fill="#262626"/>
+            <circle cx="12" cy="12" r="1.5" fill="#262626"/>
+            <circle cx="12" cy="18" r="1.5" fill="#262626"/>
+          </svg>
+        </div>
+
+        <!-- 이미지 영역 -->
+        <div style="width: 100%; aspect-ratio: 1/1; background: ${imageUrl ? '#000' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+          ${imageUrl
+            ? `<img src="${esc(imageUrl)}" alt="preview" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.innerHTML='<div style=\\'display:flex;align-items:center;justify-content:center;height:100%;color:rgba(255,255,255,0.7);font-size:14px;\\'>이미지를 불러올 수 없습니다</div>'"/>`
+            : `<div style="color: rgba(255,255,255,0.7); text-align: center; padding: 20px;">
+                <i class="fas fa-image" style="font-size: 48px; margin-bottom: 12px; display: block;"></i>
+                <span style="font-size: 14px;">이미지가 추가되면 여기에 표시됩니다</span>
+              </div>`
+          }
+        </div>
+
+        <!-- 액션 아이콘 -->
+        <div style="padding: 12px 14px 8px; display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; gap: 16px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2" style="cursor: pointer;">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2" style="cursor: pointer;">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2" style="cursor: pointer;">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </div>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2" style="cursor: pointer;">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+          </svg>
+        </div>
+
+        <!-- 좋아요 -->
+        <div style="padding: 0 14px 8px; font-weight: 600; font-size: 14px; color: #262626;">
+          좋아요 0개
+        </div>
+
+        <!-- 캡션 -->
+        <div style="padding: 0 14px 8px; font-size: 14px; color: #262626; line-height: 1.5;">
+          <span style="font-weight: 600;">${esc(brandName)}</span>
+          <span> ${esc(shortCaption).replace(/\n/g, ' ')}</span>
+          ${hasMore ? `<span style="color: #8e8e8e; cursor: pointer;"> ...더 보기</span>` : ''}
+        </div>
+
+        <!-- 해시태그 -->
+        ${hashtags.length > 0 ? `
+        <div style="padding: 0 14px 10px; font-size: 14px; line-height: 1.6;">
+          ${hashtags.map(tag => `<span style="color: #00376b; cursor: pointer;">${esc(tag)}</span>`).join(' ')}
+        </div>
+        ` : ''}
+
+        <!-- 댓글 입력 -->
+        <div style="padding: 10px 14px; border-top: 1px solid #efefef; display: flex; align-items: center; gap: 12px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+            <line x1="9" y1="9" x2="9.01" y2="9"/>
+            <line x1="15" y1="9" x2="15.01" y2="9"/>
+          </svg>
+          <span style="color: #8e8e8e; font-size: 14px; flex: 1;">댓글 달기...</span>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+// 프리뷰 프레임 토글
+function togglePreviewFrame(platform) {
+  _previewFrameEnabled = !_previewFrameEnabled;
+
+  const frameEl = document.getElementById(`preview-frame-${platform}`);
+  const btnIcon = document.getElementById(`preview-toggle-icon-${platform}`);
+  const btnText = document.getElementById(`preview-toggle-text-${platform}`);
+
+  if (_previewFrameEnabled) {
+    // ON: 프레임 표시 + 최신 데이터로 렌더링
+    if (frameEl) frameEl.classList.remove('hidden');
+    if (btnIcon) btnIcon.className = 'fas fa-eye';
+    if (btnText) btnText.textContent = '미리보기';
+    renderInstagramFrame(platform);
+  } else {
+    // OFF: 프레임 숨김
+    if (frameEl) frameEl.classList.add('hidden');
+    if (btnIcon) btnIcon.className = 'fas fa-eye-slash';
+    if (btnText) btnText.textContent = '미리보기';
+  }
+}
+
+// 인스타그램 플랫폼 여부 확인
+function isInstagramPlatform(platform) {
+  return platform === 'instagram' || platform === 'instagram_feed';
 }
 
 function switchTab(platform, eventOrElement) {
@@ -4070,11 +4306,16 @@ function saveEdit(platform) {
   
   // 디스플레이 업데이트
   display.innerHTML = formatContent(newContent);
-  
+
+  // ✅ 인스타그램 프리뷰 프레임 갱신
+  if (isInstagramPlatform(platform) && _previewFrameEnabled) {
+    renderInstagramFrame(platform);
+  }
+
   display.classList.remove('hidden');
   editor.classList.add('hidden');
   actions.classList.add('hidden');
-  
+
   // ✅ 캘린더 새로고침 플래그 설정 (항상 실행)
   window.needsCalendarRefresh = true;
   
