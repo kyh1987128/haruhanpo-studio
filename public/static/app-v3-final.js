@@ -3757,12 +3757,12 @@ function displayResults(data, platforms, options = {}) {
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-xl font-bold text-gray-800">${platformNames[platform]}</h3>
           <div class="flex gap-2 flex-wrap">
-            ${isInstagramPlatform(platform) ? `
+            ${getFrameRenderer(platform) ? `
             <button
               type="button"
               onclick="togglePreviewFrame('${platform}')"
               class="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition font-semibold flex items-center gap-2"
-              title="인스타그램 미리보기"
+              title="SNS 미리보기"
             >
               <i id="preview-toggle-icon-${platform}" class="fas ${_previewFrameEnabled ? 'fa-eye' : 'fa-eye-slash'}"></i>
               <span id="preview-toggle-text-${platform}">미리보기</span>
@@ -3832,17 +3832,16 @@ function displayResults(data, platforms, options = {}) {
             ✓ 저장
           </button>
         </div>
-        <div id="preview-frame-${platform}" class="${isInstagramPlatform(platform) && _previewFrameEnabled ? '' : 'hidden'}"></div>
+        <div id="preview-frame-${platform}" class="${getFrameRenderer(platform) && _previewFrameEnabled ? '' : 'hidden'}" style="margin-top:16px;"></div>
       </div>
     </div>
   `).join('');
 
-  // 인스타그램 프리뷰 프레임 초기 렌더링
+  // 프리뷰 프레임 초기 렌더링 (모든 플랫폼)
   if (_previewFrameEnabled) {
     platforms.forEach(p => {
-      if (isInstagramPlatform(p)) {
-        renderInstagramFrame(p);
-      }
+      const renderer = getFrameRenderer(p);
+      if (renderer) renderer(p);
     });
   }
 
@@ -3876,215 +3875,490 @@ function formatContent(content) {
 }
 
 // =============================================
-// 📱 인스타그램 프리뷰 프레임
+// 📱 SNS 플랫폼 미리보기 프레임 시스템
 // =============================================
 
-// 프리뷰용 이미지 가져오기 (우선순위: selectedImages → contentBlocks)
+// 공통 HTML 이스케이프
+const _esc = (s) => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+// 프리뷰용 이미지 1장 가져오기
 function getPreviewImage() {
-  // 1순위: selectedImages (URL 문자열)
-  if (selectedImages && selectedImages.length > 0 && selectedImages[0]) {
-    const img = selectedImages[0];
-    if (typeof img === 'string') return img;
-    if (img.url) return img.url;
-    if (img.base64) return img.base64.startsWith('data:') ? img.base64 : `data:image/png;base64,${img.base64}`;
+  const imgs = getPreviewImages();
+  return imgs.length > 0 ? imgs[0] : null;
+}
+
+// 프리뷰용 이미지 복수 가져오기 (카드뉴스/캐러셀 대응)
+function getPreviewImages() {
+  if (selectedImages && selectedImages.length > 0) {
+    return selectedImages.map(img => {
+      if (typeof img === 'string') return img;
+      if (img && img.url) return img.url;
+      if (img && img.base64) return img.base64.startsWith('data:') ? img.base64 : `data:image/png;base64,${img.base64}`;
+      return null;
+    }).filter(Boolean);
   }
-  // 2순위: contentBlocks 첫번째 블록의 이미지
   if (contentBlocks) {
-    const keys = Object.keys(contentBlocks);
-    for (const key of keys) {
-      const block = contentBlocks[key];
-      if (block?.images && block.images.length > 0 && block.images[0]) {
-        const img = block.images[0];
-        if (typeof img === 'string') return img;
-        if (img.url) return img.url;
-        if (img.base64) return img.base64.startsWith('data:') ? img.base64 : `data:image/png;base64,${img.base64}`;
+    const imgs = [];
+    Object.values(contentBlocks).forEach(block => {
+      if (block && block.images) {
+        block.images.forEach(img => {
+          if (typeof img === 'string') imgs.push(img);
+          else if (img && img.base64) imgs.push(img.base64.startsWith('data:') ? img.base64 : `data:image/png;base64,${img.base64}`);
+          else if (img && img.url) imgs.push(img.url);
+        });
       }
-    }
+    });
+    if (imgs.length > 0) return imgs;
   }
-  return null;
+  return [];
 }
 
 // 프리뷰용 브랜드명 가져오기
 function getPreviewBrand() {
   const brandEl = document.getElementById('brand');
-  const val = brandEl?.value?.trim();
-  return val || '브랜드';
+  return brandEl?.value?.trim() || '브랜드';
 }
 
-// 인스타그램 콘텐츠 파싱 (캡션 + 해시태그 분리)
-function parseInstagramContent(text) {
-  if (!text) return { caption: '', hashtags: [], fullText: '' };
+// 캐러셀 상태 관리
+const _carouselState = {};
+function carouselNav(platform, direction) {
+  const images = getPreviewImages();
+  if (images.length <= 1) return;
+  if (!_carouselState[platform]) _carouselState[platform] = { idx: 0 };
+  const s = _carouselState[platform];
+  s.idx = Math.max(0, Math.min(s.idx + direction, images.length - 1));
+  updateCarouselUI(platform, images);
+}
+function updateCarouselUI(platform, images) {
+  const s = _carouselState[platform] || { idx: 0 };
+  const imgEl = document.getElementById(`preview-img-${platform}`);
+  const countEl = document.getElementById(`preview-count-${platform}`);
+  const dotsEl = document.getElementById(`preview-dots-${platform}`);
+  if (imgEl) imgEl.src = images[s.idx];
+  if (countEl) countEl.textContent = `${s.idx + 1}/${images.length}`;
+  if (dotsEl) {
+    dotsEl.innerHTML = images.map((_, i) =>
+      `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;margin:0 2px;background:${i===s.idx?'#fff':'rgba(255,255,255,0.5)'}"></span>`
+    ).join('');
+  }
+}
 
-  // 해시태그 추출
+// 콘텐츠 파싱: 캡션 + 해시태그 분리
+function parseContentParts(text) {
+  if (!text) return { title: '', caption: '', hashtags: [], fullText: '' };
   const hashtagRegex = /#[^\s#]+/g;
   const hashtags = text.match(hashtagRegex) || [];
-
-  // 캡션: 해시태그 블록 제거 (마지막 해시태그 연속 영역)
-  let caption = text;
-  // 텍스트 끝부분의 해시태그 연속 블록을 제거
   const lines = text.split('\n');
   const captionLines = [];
   let hashtagBlockStarted = false;
-
-  // 뒤에서부터 순회하여 해시태그 전용 라인 찾기
   for (let i = lines.length - 1; i >= 0; i--) {
     const trimmed = lines[i].trim();
     if (trimmed && /^[#\s]+$/.test(trimmed.replace(/#[^\s#]+/g, '').trim()) && /#/.test(trimmed)) {
       hashtagBlockStarted = true;
     } else if (hashtagBlockStarted && !trimmed) {
-      // 빈 줄은 해시태그 블록 위의 공백
       continue;
     } else {
-      // 해시태그 블록이 아닌 줄을 만나면 여기까지가 캡션
       captionLines.unshift(...lines.slice(0, i + 1));
       break;
     }
   }
-
-  caption = captionLines.length > 0 ? captionLines.join('\n').trim() : text.replace(hashtagRegex, '').trim();
-
-  // 이모지 마커 제거 (📸, 📝 등)
+  let caption = captionLines.length > 0 ? captionLines.join('\n').trim() : text.replace(hashtagRegex, '').trim();
   caption = caption.replace(/^[📸📝🎬🧵🐦💼💬🎥📱📖🎵]\s*/g, '').trim();
+  const title = caption.split('\n')[0]?.substring(0, 80) || '';
+  return { title, caption, hashtags, fullText: text };
+}
+// 하위 호환
+function parseInstagramContent(text) { return parseContentParts(text); }
 
-  return { caption, hashtags, fullText: text };
+// 이미지 영역 공통 렌더 (캐러셀 지원)
+function _renderImageArea(platform, ratio, rounded) {
+  const images = getPreviewImages();
+  const rd = rounded || '0';
+  if (images.length === 0) {
+    return `<div style="width:100%;aspect-ratio:${ratio};background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);display:flex;align-items:center;justify-content:center;border-radius:${rd};overflow:hidden;">
+      <div style="color:rgba(255,255,255,0.7);text-align:center;padding:20px;"><i class="fas fa-image" style="font-size:40px;display:block;margin-bottom:8px;"></i><span style="font-size:13px;">이미지 미포함</span></div></div>`;
+  }
+  _carouselState[platform] = _carouselState[platform] || { idx: 0 };
+  const idx = _carouselState[platform].idx || 0;
+  const multi = images.length > 1;
+  return `<div style="position:relative;width:100%;aspect-ratio:${ratio};background:#000;overflow:hidden;border-radius:${rd};">
+    <img id="preview-img-${platform}" src="${_esc(images[idx])}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'"/>
+    ${multi ? `
+      <button onclick="carouselNav('${platform}',-1)" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.8);border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">‹</button>
+      <button onclick="carouselNav('${platform}',1)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.8);border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">›</button>
+      <div id="preview-count-${platform}" style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.6);color:#fff;font-size:12px;padding:2px 8px;border-radius:10px;">${idx+1}/${images.length}</div>
+      <div id="preview-dots-${platform}" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;">
+        ${images.map((_,i)=>`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;margin:0 2px;background:${i===idx?'#fff':'rgba(255,255,255,0.5)'}"></span>`).join('')}
+      </div>` : ''}
+  </div>`;
 }
 
-// 인스타그램 프레임 렌더링
+// 프레임 래퍼 (공통 외곽)
+function _frameWrap(platform, label, icon, maxW, inner) {
+  return `<div class="mt-6 mb-2">
+    <div class="text-sm font-semibold text-gray-500 mb-3 flex items-center gap-2"><i class="${icon}"></i>${_esc(label)} 미리보기</div>
+    <div style="max-width:${maxW};margin:0 auto;background:#fff;border:1px solid #dbdbdb;border-radius:12px;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+      ${inner}
+    </div>
+  </div>`;
+}
+
+// ======== 인스타그램 피드 ========
 function renderInstagramFrame(platform) {
   const frameEl = document.getElementById(`preview-frame-${platform}`);
   if (!frameEl) return;
-
-  // 인스타그램 플랫폼이 아니면 빈 상태 유지
-  if (platform !== 'instagram' && platform !== 'instagram_feed') {
-    frameEl.innerHTML = '';
-    return;
-  }
-
   const text = resultData[platform] || '';
-  const { caption, hashtags } = parseInstagramContent(text);
-  const imageUrl = getPreviewImage();
+  const { caption, hashtags } = parseContentParts(text);
   const brandName = getPreviewBrand();
   const brandInitial = brandName.charAt(0).toUpperCase();
+  const maxLen = 100;
+  const short = caption.length > maxLen ? caption.substring(0, maxLen) + '...' : caption;
+  const hasMore = caption.length > maxLen;
 
-  // 캡션 미리보기 (2줄, 약 100자 제한)
-  const maxCaptionLen = 100;
-  const shortCaption = caption.length > maxCaptionLen
-    ? caption.substring(0, maxCaptionLen) + '...'
-    : caption;
-  const hasMore = caption.length > maxCaptionLen;
+  const inner = `
+    <div style="display:flex;align-items:center;padding:12px 14px;gap:10px;">
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;">${_esc(brandInitial)}</div>
+      <span style="font-weight:600;font-size:14px;color:#262626;flex:1;">${_esc(brandName)}</span>
+      <svg width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="6" r="1.5" fill="#262626"/><circle cx="12" cy="12" r="1.5" fill="#262626"/><circle cx="12" cy="18" r="1.5" fill="#262626"/></svg>
+    </div>
+    ${_renderImageArea(platform, '1/1', '0')}
+    <div style="padding:12px 14px 8px;display:flex;justify-content:space-between;">
+      <div style="display:flex;gap:16px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </div>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <div style="padding:0 14px 8px;font-weight:600;font-size:14px;color:#262626;">좋아요 0개</div>
+    <div style="padding:0 14px 8px;font-size:14px;color:#262626;line-height:1.5;">
+      <span style="font-weight:600;">${_esc(brandName)}</span> ${_esc(short).replace(/\n/g,' ')}${hasMore?'<span style="color:#8e8e8e;cursor:pointer;"> ...더 보기</span>':''}
+    </div>
+    ${hashtags.length>0?`<div style="padding:0 14px 10px;font-size:14px;line-height:1.6;">${hashtags.map(t=>`<span style="color:#00376b;">${_esc(t)}</span>`).join(' ')}</div>`:''}
+    <div style="padding:10px 14px;border-top:1px solid #efefef;display:flex;align-items:center;gap:12px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      <span style="color:#8e8e8e;font-size:14px;flex:1;">댓글 달기...</span>
+    </div>`;
+  frameEl.innerHTML = _frameWrap(platform, '인스타그램', 'fab fa-instagram text-pink-500', '420px', inner);
+}
 
-  // HTML 이스케이프
-  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+// ======== 네이버 블로그 ========
+function renderNaverBlogFrame(platform) {
+  const frameEl = document.getElementById(`preview-frame-${platform}`);
+  if (!frameEl) return;
+  const text = resultData[platform] || '';
+  const { title, caption } = parseContentParts(text);
+  const brandName = getPreviewBrand();
+  const short = caption.length > 200 ? caption.substring(0, 200) + '...' : caption;
+
+  const inner = `
+    <div style="background:#03C75A;padding:10px 14px;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:18px;">📗</span>
+      <span style="color:#fff;font-weight:600;font-size:14px;">${_esc(brandName)}의 블로그</span>
+    </div>
+    <div style="padding:16px;">
+      <h4 style="font-size:18px;font-weight:700;color:#333;margin:0 0 12px;line-height:1.4;">${_esc(title)}</h4>
+      ${_renderImageArea(platform, '16/10', '8px')}
+      <p style="margin:12px 0 0;font-size:14px;color:#333;line-height:1.8;white-space:pre-wrap;">${_esc(short).replace(/\n/g,'<br>')}</p>
+    </div>
+    <div style="padding:10px 16px;border-top:1px solid #eee;display:flex;gap:16px;font-size:13px;color:#888;">
+      <span>♡ 공감 0</span><span>💬 댓글 0</span><span>🔗 공유</span>
+    </div>`;
+  frameEl.innerHTML = _frameWrap(platform, '네이버 블로그', 'fas fa-blog text-green-600', '420px', inner);
+}
+
+// ======== 스레드 ========
+function renderThreadsFrame(platform) {
+  const frameEl = document.getElementById(`preview-frame-${platform}`);
+  if (!frameEl) return;
+  const text = resultData[platform] || '';
+  const { caption, hashtags } = parseContentParts(text);
+  const brandName = getPreviewBrand();
+  const brandInitial = brandName.charAt(0).toUpperCase();
+  const images = getPreviewImages();
+
+  const inner = `
+    <div style="display:flex;align-items:flex-start;padding:14px;gap:12px;">
+      <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#333,#000);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0;">${_esc(brandInitial)}</div>
+      <div style="flex:1;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+          <span style="font-weight:600;font-size:14px;color:#000;">${_esc(brandName)}</span>
+          <span style="color:#999;font-size:13px;">방금</span>
+        </div>
+        <p style="font-size:14px;color:#000;line-height:1.5;margin:0 0 10px;white-space:pre-wrap;">${_esc(caption.substring(0,300)).replace(/\n/g,'<br>')}</p>
+        ${images.length>0?_renderImageArea(platform,'1/1','12px'):''}
+        ${hashtags.length>0?`<div style="margin-top:8px;font-size:14px;">${hashtags.map(t=>`<span style="color:#0095f6;">${_esc(t)}</span>`).join(' ')}</div>`:''}
+        <div style="display:flex;gap:20px;margin-top:12px;color:#999;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </div>
+      </div>
+    </div>`;
+  frameEl.innerHTML = _frameWrap(platform, '스레드', 'fas fa-at text-gray-800', '420px', inner);
+}
+
+// ======== 트위터/X ========
+function renderTwitterFrame(platform) {
+  const frameEl = document.getElementById(`preview-frame-${platform}`);
+  if (!frameEl) return;
+  const text = resultData[platform] || '';
+  const { caption, hashtags } = parseContentParts(text);
+  const brandName = getPreviewBrand();
+  const brandInitial = brandName.charAt(0).toUpperCase();
+  const charCount = text.length;
+  const images = getPreviewImages();
+
+  const inner = `
+    <div style="padding:14px;">
+      <div style="display:flex;gap:10px;">
+        <div style="width:40px;height:40px;border-radius:50%;background:#1DA1F2;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;flex-shrink:0;">${_esc(brandInitial)}</div>
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:4px;">
+            <span style="font-weight:700;font-size:15px;color:#0f1419;">${_esc(brandName)}</span>
+            <span style="color:#536471;font-size:15px;">@${_esc(brandName.toLowerCase().replace(/\s/g,''))} · 방금</span>
+          </div>
+          <p style="font-size:15px;color:#0f1419;line-height:1.4;margin:8px 0;white-space:pre-wrap;">${_esc(caption.substring(0,280)).replace(/\n/g,'<br>')}</p>
+          ${hashtags.length>0?`<div style="margin-bottom:8px;">${hashtags.map(t=>`<span style="color:#1d9bf0;font-size:15px;">${_esc(t)}</span>`).join(' ')}</div>`:''}
+          ${images.length>0?`<div style="margin-bottom:10px;">${_renderImageArea(platform,'16/9','16px')}</div>`:''}
+          <div style="color:#536471;font-size:12px;margin-bottom:8px;">${charCount > 280 ? `<span style="color:#f4212e;">${charCount}/280</span>` : `${charCount}/280`}</div>
+          <div style="display:flex;justify-content:space-between;max-width:300px;color:#536471;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  frameEl.innerHTML = _frameWrap(platform, '트위터(X)', 'fab fa-x-twitter text-gray-900', '420px', inner);
+}
+
+// ======== LinkedIn ========
+function renderLinkedinFrame(platform) {
+  const frameEl = document.getElementById(`preview-frame-${platform}`);
+  if (!frameEl) return;
+  const text = resultData[platform] || '';
+  const { caption, hashtags } = parseContentParts(text);
+  const brandName = getPreviewBrand();
+  const brandInitial = brandName.charAt(0).toUpperCase();
+  const short = caption.length > 150 ? caption.substring(0, 150) + '...' : caption;
+  const hasMore = caption.length > 150;
+
+  const inner = `
+    <div style="padding:14px;">
+      <div style="display:flex;gap:10px;margin-bottom:10px;">
+        <div style="width:48px;height:48px;border-radius:8px;background:#0a66c2;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0;">${_esc(brandInitial)}</div>
+        <div>
+          <span style="font-weight:600;font-size:14px;color:#000;display:block;">${_esc(brandName)}</span>
+          <span style="color:#666;font-size:12px;">마케팅 담당자 · 방금 · 🌐</span>
+        </div>
+      </div>
+      <p style="font-size:14px;color:#000;line-height:1.5;margin:0 0 10px;white-space:pre-wrap;">${_esc(short).replace(/\n/g,'<br>')}${hasMore?'<span style="color:#0a66c2;cursor:pointer;font-weight:600;"> ...더 보기</span>':''}</p>
+      ${hashtags.length>0?`<div style="margin-bottom:10px;">${hashtags.map(t=>`<span style="color:#0a66c2;font-size:14px;">${_esc(t)}</span>`).join(' ')}</div>`:''}
+    </div>
+    ${_renderImageArea(platform,'16/10','0')}
+    <div style="padding:8px 14px;display:flex;justify-content:space-around;border-top:1px solid #e0e0e0;color:#666;font-size:13px;">
+      <span>👍 좋아요</span><span>💬 댓글</span><span>🔁 공유</span><span>➤ 보내기</span>
+    </div>`;
+  frameEl.innerHTML = _frameWrap(platform, 'LinkedIn', 'fab fa-linkedin text-blue-700', '420px', inner);
+}
+
+// ======== 브런치 ========
+function renderBrunchFrame(platform) {
+  const frameEl = document.getElementById(`preview-frame-${platform}`);
+  if (!frameEl) return;
+  const text = resultData[platform] || '';
+  const { title, caption } = parseContentParts(text);
+  const brandName = getPreviewBrand();
+  const short = caption.length > 150 ? caption.substring(0, 150) + '...' : caption;
+
+  const inner = `
+    ${_renderImageArea(platform,'4/3','0')}
+    <div style="padding:20px;">
+      <h4 style="font-size:22px;font-weight:700;color:#333;margin:0 0 8px;line-height:1.3;">${_esc(title)}</h4>
+      <p style="font-size:13px;color:#999;margin:0 0 12px;">by ${_esc(brandName)}</p>
+      <p style="font-size:15px;color:#555;line-height:1.7;">${_esc(short).replace(/\n/g,'<br>')}</p>
+    </div>
+    <div style="padding:10px 20px;border-top:1px solid #eee;display:flex;gap:16px;color:#aaa;font-size:13px;">
+      <span>♡ 좋아요</span><span>💬 댓글</span>
+    </div>`;
+  frameEl.innerHTML = _frameWrap(platform, '브런치', 'fas fa-book-open text-orange-600', '420px', inner);
+}
+
+// ======== 틱톡 ========
+function renderTiktokFrame(platform) {
+  const frameEl = document.getElementById(`preview-frame-${platform}`);
+  if (!frameEl) return;
+  const text = resultData[platform] || '';
+  const { caption, hashtags } = parseContentParts(text);
+  const brandName = getPreviewBrand();
+  const brandInitial = brandName.charAt(0).toUpperCase();
+  const images = getPreviewImages();
+  const bgImg = images.length > 0 ? images[0] : '';
+  const short = caption.length > 60 ? caption.substring(0, 60) + '...' : caption;
 
   frameEl.innerHTML = `
     <div class="mt-6 mb-2">
-      <div class="text-sm font-semibold text-gray-500 mb-3 flex items-center gap-2">
-        <i class="fab fa-instagram text-pink-500"></i>
-        인스타그램 미리보기
+      <div class="text-sm font-semibold text-gray-500 mb-3 flex items-center gap-2"><i class="fab fa-tiktok"></i>틱톡 미리보기</div>
+      <div style="max-width:280px;margin:0 auto;aspect-ratio:9/16;border-radius:16px;overflow:hidden;position:relative;background:${bgImg?'#000':'linear-gradient(135deg,#667eea,#764ba2)'};font-family:-apple-system,sans-serif;box-shadow:0 4px 20px rgba(0,0,0,0.15);">
+        ${bgImg?`<img src="${_esc(bgImg)}" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;"/>`:''}
+        <div style="position:absolute;inset:0;background:linear-gradient(transparent 50%,rgba(0,0,0,0.7) 100%);"></div>
+        <div style="position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:20px;align-items:center;">
+          <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#fe2c55,#25f4ee);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;">${_esc(brandInitial)}</div>
+          <div style="text-align:center;color:#fff;"><svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><div style="font-size:11px;margin-top:2px;">0</div></div>
+          <div style="text-align:center;color:#fff;"><svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><div style="font-size:11px;margin-top:2px;">0</div></div>
+          <div style="text-align:center;color:#fff;"><svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><line x1="22" y1="2" x2="11" y2="13" stroke="#fff" stroke-width="2"/><polygon points="22 2 15 22 11 13 2 9 22 2" fill="#fff"/></svg><div style="font-size:11px;margin-top:2px;">공유</div></div>
+        </div>
+        <div style="position:absolute;bottom:16px;left:12px;right:60px;color:#fff;">
+          <p style="font-weight:700;font-size:14px;margin:0 0 6px;">@${_esc(brandName)}</p>
+          <p style="font-size:13px;margin:0 0 6px;line-height:1.3;">${_esc(short)}</p>
+          ${hashtags.length>0?`<p style="font-size:12px;margin:0 0 6px;">${hashtags.slice(0,5).map(t=>`<span style="font-weight:600;">${_esc(t)}</span>`).join(' ')}</p>`:''}
+          <p style="font-size:11px;margin:0;opacity:0.8;">🎵 원본 사운드 - ${_esc(brandName)}</p>
+        </div>
       </div>
-      <div style="max-width: 420px; margin: 0 auto; background: #fff; border: 1px solid #dbdbdb; border-radius: 8px; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+    </div>`;
+}
 
-        <!-- 프로필 헤더 -->
-        <div style="display: flex; align-items: center; padding: 12px 14px; gap: 10px;">
-          <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 14px;">${esc(brandInitial)}</div>
-          <div style="flex: 1;">
-            <span style="font-weight: 600; font-size: 14px; color: #262626;">${esc(brandName)}</span>
-          </div>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="cursor: pointer;">
-            <circle cx="12" cy="6" r="1.5" fill="#262626"/>
-            <circle cx="12" cy="12" r="1.5" fill="#262626"/>
-            <circle cx="12" cy="18" r="1.5" fill="#262626"/>
-          </svg>
+// ======== 유튜브 쇼츠 ========
+function renderYoutubeShortsFrame(platform) {
+  const frameEl = document.getElementById(`preview-frame-${platform}`);
+  if (!frameEl) return;
+  const text = resultData[platform] || '';
+  const { title, caption } = parseContentParts(text);
+  const brandName = getPreviewBrand();
+  const images = getPreviewImages();
+  const bgImg = images.length > 0 ? images[0] : '';
+  const short = caption.length > 60 ? caption.substring(0, 60) + '...' : caption;
+
+  frameEl.innerHTML = `
+    <div class="mt-6 mb-2">
+      <div class="text-sm font-semibold text-gray-500 mb-3 flex items-center gap-2"><i class="fab fa-youtube text-red-600"></i>유튜브 Shorts 미리보기</div>
+      <div style="max-width:280px;margin:0 auto;aspect-ratio:9/16;border-radius:16px;overflow:hidden;position:relative;background:${bgImg?'#000':'linear-gradient(135deg,#ff0000,#cc0000)'};font-family:-apple-system,sans-serif;box-shadow:0 4px 20px rgba(0,0,0,0.15);">
+        ${bgImg?`<img src="${_esc(bgImg)}" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;"/>`:''}
+        <div style="position:absolute;inset:0;background:linear-gradient(transparent 50%,rgba(0,0,0,0.7) 100%);"></div>
+        <div style="position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:20px;align-items:center;">
+          <div style="text-align:center;color:#fff;"><svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg><div style="font-size:11px;margin-top:2px;">0</div></div>
+          <div style="text-align:center;color:#fff;"><svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M10 15V9a3 3 0 0 1 3-3l4 9v11H5.72a2 2 0 0 1-2-1.7l-1.38-9a2 2 0 0 1 2-2.3zM17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3" transform="rotate(180 12 12)"/></svg><div style="font-size:11px;margin-top:2px;">0</div></div>
+          <div style="text-align:center;color:#fff;"><svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><div style="font-size:11px;margin-top:2px;">0</div></div>
         </div>
-
-        <!-- 이미지 영역 -->
-        <div style="width: 100%; aspect-ratio: 1/1; background: ${imageUrl ? '#000' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-          ${imageUrl
-            ? `<img src="${esc(imageUrl)}" alt="preview" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.innerHTML='<div style=\\'display:flex;align-items:center;justify-content:center;height:100%;color:rgba(255,255,255,0.7);font-size:14px;\\'>이미지를 불러올 수 없습니다</div>'"/>`
-            : `<div style="color: rgba(255,255,255,0.7); text-align: center; padding: 20px;">
-                <i class="fas fa-image" style="font-size: 48px; margin-bottom: 12px; display: block;"></i>
-                <span style="font-size: 14px;">이미지가 추가되면 여기에 표시됩니다</span>
-              </div>`
-          }
+        <div style="position:absolute;bottom:16px;left:12px;right:60px;color:#fff;">
+          <p style="font-weight:600;font-size:14px;margin:0 0 6px;">${_esc(brandName)}</p>
+          <p style="font-size:13px;margin:0;line-height:1.3;">${_esc(short)}</p>
         </div>
+      </div>
+    </div>`;
+}
 
-        <!-- 액션 아이콘 -->
-        <div style="padding: 12px 14px 8px; display: flex; justify-content: space-between; align-items: center;">
-          <div style="display: flex; gap: 16px;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2" style="cursor: pointer;">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2" style="cursor: pointer;">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2" style="cursor: pointer;">
-              <line x1="22" y1="2" x2="11" y2="13"/>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
-          </div>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2" style="cursor: pointer;">
-            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-          </svg>
+// ======== 유튜브 롱폼 ========
+function renderYoutubeLongFrame(platform) {
+  const frameEl = document.getElementById(`preview-frame-${platform}`);
+  if (!frameEl) return;
+  const text = resultData[platform] || '';
+  const { title } = parseContentParts(text);
+  const brandName = getPreviewBrand();
+  const brandInitial = brandName.charAt(0).toUpperCase();
+
+  const inner = `
+    <div style="position:relative;">
+      ${_renderImageArea(platform,'16/9','0')}
+      <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.8);color:#fff;font-size:12px;padding:2px 6px;border-radius:4px;">12:34</div>
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
+        <div style="width:60px;height:60px;border-radius:50%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         </div>
-
-        <!-- 좋아요 -->
-        <div style="padding: 0 14px 8px; font-weight: 600; font-size: 14px; color: #262626;">
-          좋아요 0개
-        </div>
-
-        <!-- 캡션 -->
-        <div style="padding: 0 14px 8px; font-size: 14px; color: #262626; line-height: 1.5;">
-          <span style="font-weight: 600;">${esc(brandName)}</span>
-          <span> ${esc(shortCaption).replace(/\n/g, ' ')}</span>
-          ${hasMore ? `<span style="color: #8e8e8e; cursor: pointer;"> ...더 보기</span>` : ''}
-        </div>
-
-        <!-- 해시태그 -->
-        ${hashtags.length > 0 ? `
-        <div style="padding: 0 14px 10px; font-size: 14px; line-height: 1.6;">
-          ${hashtags.map(tag => `<span style="color: #00376b; cursor: pointer;">${esc(tag)}</span>`).join(' ')}
-        </div>
-        ` : ''}
-
-        <!-- 댓글 입력 -->
-        <div style="padding: 10px 14px; border-top: 1px solid #efefef; display: flex; align-items: center; gap: 12px;">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-            <line x1="9" y1="9" x2="9.01" y2="9"/>
-            <line x1="15" y1="9" x2="15.01" y2="9"/>
-          </svg>
-          <span style="color: #8e8e8e; font-size: 14px; flex: 1;">댓글 달기...</span>
-        </div>
-
       </div>
     </div>
-  `;
+    <div style="padding:12px 14px;display:flex;gap:10px;">
+      <div style="width:36px;height:36px;border-radius:50%;background:#ff0000;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0;">${_esc(brandInitial)}</div>
+      <div style="flex:1;">
+        <p style="font-size:14px;font-weight:600;color:#0f0f0f;margin:0 0 4px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${_esc(title)}</p>
+        <p style="font-size:12px;color:#606060;margin:0;">${_esc(brandName)} · 조회수 0회 · 방금</p>
+      </div>
+    </div>`;
+  frameEl.innerHTML = _frameWrap(platform, '유튜브', 'fab fa-youtube text-red-600', '420px', inner);
+}
+
+// ======== 카카오톡 ========
+function renderKakaotalkFrame(platform) {
+  const frameEl = document.getElementById(`preview-frame-${platform}`);
+  if (!frameEl) return;
+  const text = resultData[platform] || '';
+  const { title, caption } = parseContentParts(text);
+  const short = caption.length > 100 ? caption.substring(0, 100) + '...' : caption;
+
+  const inner = `
+    <div style="background:#FEE500;padding:10px 14px;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:18px;">💬</span>
+      <span style="font-weight:600;font-size:14px;color:#3C1E1E;">카카오톡 채널</span>
+    </div>
+    ${_renderImageArea(platform,'16/10','0')}
+    <div style="padding:14px;">
+      <h4 style="font-size:16px;font-weight:700;color:#333;margin:0 0 8px;">${_esc(title)}</h4>
+      <p style="font-size:14px;color:#555;line-height:1.5;">${_esc(short).replace(/\n/g,'<br>')}</p>
+    </div>
+    <div style="padding:0 14px 14px;">
+      <div style="background:#FEE500;color:#3C1E1E;text-align:center;padding:10px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">자세히 보기</div>
+    </div>`;
+  frameEl.innerHTML = _frameWrap(platform, '카카오톡', 'fas fa-comment text-yellow-500', '420px', inner);
+}
+
+// ======== 플랫폼 프레임 라우터 ========
+function getFrameRenderer(platform) {
+  const k = (platform || '').toLowerCase();
+  if (['instagram','instagram_feed'].includes(k)) return renderInstagramFrame;
+  if (['blog','naver_blog'].includes(k)) return renderNaverBlogFrame;
+  if (k === 'threads') return renderThreadsFrame;
+  if (['twitter','x'].includes(k)) return renderTwitterFrame;
+  if (k === 'linkedin') return renderLinkedinFrame;
+  if (k === 'brunch') return renderBrunchFrame;
+  if (k === 'tiktok') return renderTiktokFrame;
+  if (['youtube_shorts','instagram_reels'].includes(k)) return renderYoutubeShortsFrame;
+  if (['youtube','youtube_longform','youtube_long'].includes(k)) return renderYoutubeLongFrame;
+  if (['kakaotalk','kakao'].includes(k)) return renderKakaotalkFrame;
+  return null;
 }
 
 // 프리뷰 프레임 토글
 function togglePreviewFrame(platform) {
   _previewFrameEnabled = !_previewFrameEnabled;
-
   const frameEl = document.getElementById(`preview-frame-${platform}`);
   const btnIcon = document.getElementById(`preview-toggle-icon-${platform}`);
-  const btnText = document.getElementById(`preview-toggle-text-${platform}`);
 
   if (_previewFrameEnabled) {
-    // ON: 프레임 표시 + 최신 데이터로 렌더링
     if (frameEl) frameEl.classList.remove('hidden');
     if (btnIcon) btnIcon.className = 'fas fa-eye';
-    if (btnText) btnText.textContent = '미리보기';
-    renderInstagramFrame(platform);
+    const renderer = getFrameRenderer(platform);
+    if (renderer) renderer(platform);
   } else {
-    // OFF: 프레임 숨김
     if (frameEl) frameEl.classList.add('hidden');
     if (btnIcon) btnIcon.className = 'fas fa-eye-slash';
-    if (btnText) btnText.textContent = '미리보기';
   }
 }
 
-// 인스타그램 플랫폼 여부 확인
+// displaySingleContentResult용 프리뷰 토글
+function toggleSinglePreviewFrame(contentIndex, platform) {
+  _previewFrameEnabled = !_previewFrameEnabled;
+  const frameEl = document.getElementById(`single-preview-frame-${contentIndex}-${platform}`);
+  const btnIcon = document.getElementById(`single-preview-icon-${contentIndex}-${platform}`);
+
+  if (_previewFrameEnabled) {
+    if (frameEl) frameEl.classList.remove('hidden');
+    if (btnIcon) btnIcon.className = 'fas fa-eye mr-1';
+    const renderer = getFrameRenderer(platform);
+    if (renderer && frameEl) {
+      frameEl.id = `preview-frame-${platform}`;
+      renderer(platform);
+      frameEl.id = `single-preview-frame-${contentIndex}-${platform}`;
+    }
+  } else {
+    if (frameEl) frameEl.classList.add('hidden');
+    if (btnIcon) btnIcon.className = 'fas fa-eye-slash mr-1';
+  }
+}
+
+// 하위 호환
 function isInstagramPlatform(platform) {
   return platform === 'instagram' || platform === 'instagram_feed';
 }
@@ -4307,9 +4581,10 @@ function saveEdit(platform) {
   // 디스플레이 업데이트
   display.innerHTML = formatContent(newContent);
 
-  // ✅ 인스타그램 프리뷰 프레임 갱신
-  if (isInstagramPlatform(platform) && _previewFrameEnabled) {
-    renderInstagramFrame(platform);
+  // ✅ 프리뷰 프레임 갱신 (모든 플랫폼)
+  if (_previewFrameEnabled) {
+    const renderer = getFrameRenderer(platform);
+    if (renderer) renderer(platform);
   }
 
   display.classList.remove('hidden');
@@ -5748,6 +6023,9 @@ window.compressImage = compressImage;
 window.saveEditedImage = saveEditedImage;
 window.closeImageEditor = closeImageEditor;
 window.switchTab = switchTab;
+window.togglePreviewFrame = togglePreviewFrame;
+window.toggleSinglePreviewFrame = toggleSinglePreviewFrame;
+window.carouselNav = carouselNav;
 window.copyToClipboard = copyToClipboard;
 window.closeModal = closeModal;
 window.saveTemplate = saveTemplate;
@@ -9333,6 +9611,16 @@ function displaySingleContentResult(contentIndex, result, platforms) {
         
         <!-- 액션 버튼 -->
         <div class="flex flex-wrap gap-2">
+          ${getFrameRenderer(platform) ? `
+          <button
+            type="button"
+            onclick="toggleSinglePreviewFrame(${contentIndex}, '${platform}')"
+            class="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition text-sm"
+            title="SNS 미리보기"
+          >
+            <i id="single-preview-icon-${contentIndex}-${platform}" class="fas ${_previewFrameEnabled ? 'fa-eye' : 'fa-eye-slash'} mr-1"></i>미리보기
+          </button>
+          ` : ''}
           <button
             type="button"
             onclick="editContentText(${contentIndex}, '${platform}')"
@@ -9362,7 +9650,7 @@ function displaySingleContentResult(contentIndex, result, platforms) {
             <i class="fas fa-calendar-alt mr-1"></i>캘린더 등록
           </button>
         </div>
-        
+
         <!-- 수정 영역 (숨김) -->
         <div id="editor_${contentIndex}_${platform}" class="hidden mt-4">
           <textarea
@@ -9387,6 +9675,9 @@ function displaySingleContentResult(contentIndex, result, platforms) {
             </button>
           </div>
         </div>
+
+        <!-- 프리뷰 프레임 -->
+        <div id="single-preview-frame-${contentIndex}-${platform}" class="${getFrameRenderer(platform) && _previewFrameEnabled ? '' : 'hidden'}" style="margin-top:16px;"></div>
       </div>
     `;
   });
@@ -9398,6 +9689,27 @@ function displaySingleContentResult(contentIndex, result, platforms) {
   
   resultArea.innerHTML = html;
   resultArea.classList.remove('hidden');
+
+  // ✅ 프리뷰 프레임 초기 렌더링 (displaySingleContentResult)
+  if (_previewFrameEnabled) {
+    platforms.forEach(p => {
+      const renderer = getFrameRenderer(p);
+      if (renderer) {
+        // displaySingleContentResult용: resultData에 임시 저장 후 렌더
+        const prevData = resultData[p];
+        resultData[p] = result.data[p] || '';
+        const frameEl = document.getElementById(`single-preview-frame-${contentIndex}-${p}`);
+        if (frameEl) {
+          // 임시로 preview-frame-{platform} 요소를 연결
+          frameEl.id = `preview-frame-${p}`;
+          renderer(p);
+          frameEl.id = `single-preview-frame-${contentIndex}-${p}`;
+        }
+        if (prevData !== undefined) resultData[p] = prevData;
+      }
+    });
+  }
+
   resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
@@ -9450,17 +9762,34 @@ function cancelContentEdit(contentIndex, platform) {
 function saveContentEdit(contentIndex, platform) {
   const editor = document.getElementById(`content_editor_${contentIndex}_${platform}`);
   const contentDiv = document.getElementById(`content_${contentIndex}_${platform}`);
-  
+
   if (editor && contentDiv) {
     const newContent = editor.value;
     contentDiv.innerHTML = formatContent(newContent);
     contentDiv.classList.remove('hidden');
-    
+
     const editorDiv = document.getElementById(`editor_${contentIndex}_${platform}`);
     if (editorDiv) {
       editorDiv.classList.add('hidden');
     }
-    
+
+    // ✅ 프리뷰 프레임 갱신 (모든 플랫폼)
+    if (_previewFrameEnabled) {
+      const renderer = getFrameRenderer(platform);
+      if (renderer) {
+        const frameEl = document.getElementById(`single-preview-frame-${contentIndex}-${platform}`);
+        if (frameEl) {
+          // resultData 임시 업데이트 후 렌더
+          const prevData = resultData[platform];
+          resultData[platform] = newContent;
+          frameEl.id = `preview-frame-${platform}`;
+          renderer(platform);
+          frameEl.id = `single-preview-frame-${contentIndex}-${platform}`;
+          if (prevData !== undefined) resultData[platform] = prevData;
+        }
+      }
+    }
+
     showToast('✅ 수정 내용이 저장되었습니다', 'success');
   }
 }
@@ -9472,6 +9801,7 @@ window.switchContentTab = switchContentTab;
 window.editContentText = editContentText;
 window.cancelContentEdit = cancelContentEdit;
 window.saveContentEdit = saveContentEdit;
+window.toggleSinglePreviewFrame = toggleSinglePreviewFrame;
 
 
 // ========================================
