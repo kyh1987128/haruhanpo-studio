@@ -42,16 +42,22 @@ public/static/
 
 ## 빌드 & 배포 규칙
 
+### 배포 방식: GitHub Actions 자동 배포
+- **수동 배포 금지**: `wrangler pages deploy` 직접 실행 금지
+- **배포 트리거**: GitHub `main` 브랜치에 push → 자동 빌드 + 배포
+- **배포 전 필수**: `npm run build` 로컬 테스트 후 push
+- **GitHub Secrets 필수**: `CF_API_TOKEN`, `CF_ACCOUNT_ID` 등록
+- **워크플로우 파일**: `.github/workflows/deploy.yml`
+
 ### 코드 수정 후 반드시 아래 순서로 실행:
 1. `npm run build` (rimraf dist → CSS 빌드 → vite build)
 2. 빌드 성공 확인
-3. `npx wrangler pages deploy dist --project-name=haruhanpo-studio-new`
-4. 배포 성공 확인 후 git add, commit, push
+3. `git add`, `git commit`, `git push` (push하면 자동 배포)
+4. GitHub Actions에서 배포 상태 확인
 
 ### 빌드 명령어
 ```bash
 npm run build        # 클린 빌드 (rimraf dist && build:css && vite build)
-npm run deploy       # 빌드 + 배포 한번에
 ```
 
 ### 주의사항

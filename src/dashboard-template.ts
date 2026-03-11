@@ -155,6 +155,31 @@ export const dashboardTemplate = `
         </div>
     </main>
 
+    <!-- 대시보드 콘텐츠 상세보기 모달 -->
+    <div id="dashContentModal" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center" style="display: none; z-index: 9000;">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-3xl w-full mx-4 max-h-[85vh] overflow-hidden flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">
+                    <i class="fas fa-file-alt text-purple-500 mr-2"></i>콘텐츠 상세보기
+                </h3>
+                <button onclick="closeDashContentModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="dashContentBody" class="overflow-y-auto flex-1">
+                <p class="text-gray-500 text-center py-8">로딩 중...</p>
+            </div>
+            <div class="mt-4 pt-4 border-t flex justify-between items-center">
+                <a id="dashContentPostflowLink" href="/postflow" class="text-sm text-purple-600 hover:text-purple-800 font-medium">
+                    <i class="fas fa-external-link-alt mr-1"></i>하루한포스트에서 편집하기
+                </a>
+                <button onclick="closeDashContentModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
+                    닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         console.log('🎯 [대시보드] 페이지 로드 시작');
 
@@ -268,6 +293,7 @@ export const dashboardTemplate = `
                         shortform_multi: '<i class="fas fa-film text-purple-600 mr-1"></i>쇼폼 통합'
                     };
 
+                    window._dashRecentContent = []; // 초기화
                     recentContent.innerHTML = data.recent_content.map(content => {
                         // 플랫폼 배열 처리
                         const platforms = typeof content.platforms === 'string'
@@ -286,8 +312,13 @@ export const dashboardTemplate = `
                         // 제목 처리
                         const titleDisplay = content.title || content.brand || '제목 없음';
 
+                        // 대시보드 전역에 콘텐츠 데이터 저장 (모달에서 사용)
+                        if (!window._dashRecentContent) window._dashRecentContent = [];
+                        window._dashRecentContent.push(content);
+
                         return \`
-                            <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition cursor-pointer">
+                            <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition cursor-pointer"
+                                 onclick="openDashContentDetail('\${content.id}')">
                                 <div class="flex justify-between items-start mb-2">
                                     <div class="flex-1">
                                         <h4 class="font-bold text-gray-800 text-base">\${titleDisplay}</h4>
@@ -313,6 +344,117 @@ export const dashboardTemplate = `
                 alert('대시보드 데이터를 불러오는데 실패했습니다.');
             }
         }
+
+        // 대시보드 콘텐츠 상세보기 모달 함수
+        function openDashContentDetail(contentId) {
+            console.log('🔵 [대시보드] 콘텐츠 상세보기:', contentId);
+            const content = (window._dashRecentContent || []).find(c => c.id === contentId);
+            if (!content) {
+                alert('콘텐츠를 찾을 수 없습니다.');
+                return;
+            }
+
+            const modal = document.getElementById('dashContentModal');
+            const body = document.getElementById('dashContentBody');
+
+            // 플랫폼 아이콘 매핑
+            const platformIcons = {
+                blog: '<i class="fas fa-blog text-blue-600 mr-1"></i>네이버 블로그',
+                instagram: '<i class="fab fa-instagram text-pink-600 mr-1"></i>인스타그램',
+                instagram_feed: '<i class="fab fa-instagram text-pink-600 mr-1"></i>인스타그램 피드',
+                instagram_reels: '<i class="fab fa-instagram text-purple-600 mr-1"></i>인스타 릴스',
+                threads: '<i class="fas fa-at text-gray-800 mr-1"></i>스레드',
+                twitter: '<span style="font-weight:600;color:#000;margin-right:4px;">𝕏</span>트위터(X)',
+                linkedin: '<i class="fab fa-linkedin text-blue-700 mr-1"></i>LinkedIn',
+                kakaotalk: '<i class="fas fa-comment-dots text-yellow-500 mr-1"></i>카카오톡',
+                brunch: '<i class="fas fa-book-open text-orange-600 mr-1"></i>브런치',
+                tiktok: '<i class="fab fa-tiktok text-black mr-1"></i>틱톡',
+                youtube: '<i class="fab fa-youtube text-red-600 mr-1"></i>유튜브',
+                youtube_shorts: '<i class="fab fa-youtube text-red-500 mr-1"></i>유튜브 쇼츠',
+                youtube_longform: '<i class="fab fa-youtube text-red-600 mr-1"></i>유튜브 롱폼',
+                metadata_generation: '<i class="fas fa-tags text-blue-600 mr-1"></i>메타데이터',
+                shortform_multi: '<i class="fas fa-film text-purple-600 mr-1"></i>숏폼 통합'
+            };
+
+            // 플랫폼 배열 처리
+            const platforms = typeof content.platforms === 'string'
+                ? content.platforms.split(',').map(p => p.trim())
+                : (Array.isArray(content.platforms) ? content.platforms : []);
+
+            // 키워드 처리
+            const keywords = Array.isArray(content.keywords)
+                ? content.keywords
+                : (typeof content.keywords === 'string' ? content.keywords.split(',').map(k => k.trim()) : []);
+
+            const titleDisplay = content.title || content.brand || '제목 없음';
+            const dateDisplay = new Date(content.created_at).toLocaleString('ko-KR', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
+
+            // results 렌더링 (각 플랫폼별 생성 콘텐츠)
+            let resultsHtml = '';
+            if (content.results && typeof content.results === 'object') {
+                const entries = Object.entries(content.results);
+                if (entries.length > 0) {
+                    resultsHtml = entries.map(([platform, text]) => {
+                        const label = platformIcons[platform] || platform;
+                        const textStr = typeof text === 'string' ? text : JSON.stringify(text, null, 2);
+                        // HTML 태그 제거 후 미리보기 텍스트 (최대 500자)
+                        const plainText = textStr.replace(/<[^>]*>/g, '');
+                        const preview = plainText.length > 500 ? plainText.substring(0, 500) + '...' : plainText;
+                        return '<div class="mb-4 p-4 bg-gray-50 rounded-lg">' +
+                            '<div class="flex items-center justify-between mb-2">' +
+                                '<span class="font-semibold text-sm">' + label + '</span>' +
+                                '<button onclick="copyDashContent(this)" data-content="' + textStr.replace(/"/g, '&quot;').replace(/'/g, '&#39;') + '" class="text-xs text-purple-600 hover:text-purple-800"><i class="fas fa-copy mr-1"></i>복사</button>' +
+                            '</div>' +
+                            '<pre class="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">' + preview + '</pre>' +
+                        '</div>';
+                    }).join('');
+                } else {
+                    resultsHtml = '<p class="text-gray-500 text-center py-4">생성된 콘텐츠가 없습니다.</p>';
+                }
+            } else {
+                resultsHtml = '<p class="text-gray-500 text-center py-4">콘텐츠 데이터를 불러올 수 없습니다.</p>';
+            }
+
+            body.innerHTML =
+                '<div class="mb-4">' +
+                    '<h4 class="text-lg font-bold text-gray-900 mb-1">' + titleDisplay + '</h4>' +
+                    '<p class="text-sm text-gray-500"><i class="fas fa-clock mr-1"></i>' + dateDisplay + '</p>' +
+                    '<div class="flex flex-wrap gap-1 mt-2">' +
+                        platforms.map(p => '<span class="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded inline-flex items-center">' + (platformIcons[p] || p) + '</span>').join('') +
+                    '</div>' +
+                    (keywords.length > 0 ? '<p class="text-sm text-gray-600 mt-2"><i class="fas fa-tags mr-1"></i>' + keywords.join(', ') + '</p>' : '') +
+                '</div>' +
+                '<div class="border-t pt-4">' +
+                    '<h5 class="font-semibold text-gray-800 mb-3"><i class="fas fa-file-alt text-purple-500 mr-1"></i>플랫폼별 생성 결과</h5>' +
+                    resultsHtml +
+                '</div>';
+
+            // 모달 표시
+            modal.style.display = 'flex';
+        }
+        window.openDashContentDetail = openDashContentDetail;
+
+        function closeDashContentModal() {
+            var modal = document.getElementById('dashContentModal');
+            if (modal) modal.style.display = 'none';
+        }
+        window.closeDashContentModal = closeDashContentModal;
+
+        function copyDashContent(btn) {
+            var text = btn.getAttribute('data-content');
+            if (text) {
+                navigator.clipboard.writeText(text).then(function() {
+                    btn.innerHTML = '<i class="fas fa-check mr-1"></i>복사됨';
+                    setTimeout(function() { btn.innerHTML = '<i class="fas fa-copy mr-1"></i>복사'; }, 2000);
+                });
+            }
+        }
+        window.copyDashContent = copyDashContent;
+
+        // 모달 외부 클릭 시 닫기
+        document.getElementById('dashContentModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDashContentModal();
+        });
 
         // 페이지 로드 후 대시보드 데이터 로드
         console.log('⏳ [대시보드] 초기화 시작...');
