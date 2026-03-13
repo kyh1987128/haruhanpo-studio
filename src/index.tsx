@@ -6631,6 +6631,141 @@ app.delete('/api/storymaker/projects/:id', async (c) => {
   }
 });
 
+// 6️⃣ POST /api/storymaker/files/upload — 파일 업로드 (Supabase Storage)
+app.post('/api/storymaker/files/upload', async (c) => {
+  try {
+    const auth = await smAuthUser(c);
+    if (!auth) return c.json({ success: false, error: 'Unauthorized' }, 401);
+
+    const formData = await c.req.formData();
+    const file = formData.get('file') as File | null;
+    const projectId = formData.get('project_id') as string | null;
+
+    if (!file || !projectId) {
+      return c.json({ success: false, error: 'file과 project_id가 필요합니다.' }, 400);
+    }
+
+    // 프로젝트 소유권 확인
+    const { data: project } = await auth.supabase
+      .from('storymaker_projects')
+      .select('id')
+      .eq('id', projectId)
+      .eq('user_id', auth.user.id)
+      .single();
+
+    if (!project) {
+      return c.json({ success: false, error: '프로젝트를 찾을 수 없습니다.' }, 404);
+    }
+
+    // 파일 크기 제한 (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      return c.json({ success: false, error: '파일 크기는 최대 10MB입니다.' }, 400);
+    }
+
+    // 허용 확장자 체크
+    const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.ppt', '.pptx', '.doc', '.docx'];
+    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!allowedExts.includes(ext)) {
+      return c.json({ success: false, error: '지원하지 않는 파일 형식입니다.' }, 400);
+    }
+
+    // Supabase Storage에 업로드
+    const fileBuffer = await file.arrayBuffer();
+    const timestamp = Date.now();
+    const safeName = file.name.replace(/[^a-zA-Z0-9가-힣._-]/g, '_');
+    const storagePath = `storymaker/${auth.user.id}/${projectId}/${timestamp}_${safeName}`;
+
+    const { data: uploadData, error: uploadError } = await auth.supabase.storage
+      .from('uploads')
+      .upload(storagePath, fileBuffer, {
+        contentType: file.type || 'application/octet-stream',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error('❌ 파일 업로드 실패:', uploadError);
+      return c.json({ success: false, error: '파일 업로드에 실패했습니다: ' + uploadError.message }, 500);
+    }
+
+    // 공개 URL 생성
+    const { data: publicUrlData } = auth.supabase.storage
+      .from('uploads')
+      .getPublicUrl(storagePath);
+
+    const publicUrl = publicUrlData?.publicUrl || '';
+
+    console.log(`📎 파일 업로드 완료: ${file.name} (${(file.size / 1024).toFixed(1)}KB) → ${storagePath}`);
+
+    return c.json({
+      success: true,
+      file: {
+        id: `file_${timestamp}`,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        url: publicUrl,
+        storage_path: storagePath,
+      },
+    });
+  } catch (err: any) {
+    console.error('❌ 파일 업로드 예외:', err);
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 7️⃣ DELETE /api/storymaker/files/delete — 파일 삭제 (Supabase Storage)
+app.delete('/api/storymaker/files/delete', async (c) => {
+  try {
+    const auth = await smAuthUser(c);
+    if (!auth) return c.json({ success: false, error: 'Unauthorized' }, 401);
+
+    const body = await c.req.json();
+    const { project_id, file_url, file_name } = body;
+
+    if (!project_id) {
+      return c.json({ success: false, error: 'project_id가 필요합니다.' }, 400);
+    }
+
+    // 프로젝트 소유권 확인
+    const { data: project } = await auth.supabase
+      .from('storymaker_projects')
+      .select('id')
+      .eq('id', project_id)
+      .eq('user_id', auth.user.id)
+      .single();
+
+    if (!project) {
+      return c.json({ success: false, error: '프로젝트를 찾을 수 없습니다.' }, 404);
+    }
+
+    // URL에서 storage path 추출 시도
+    if (file_url) {
+      // URL에서 /storage/v1/object/public/uploads/ 이후의 경로 추출
+      const match = file_url.match(/\/uploads\/(.+)$/);
+      if (match) {
+        const storagePath = decodeURIComponent(match[1]);
+        // 경로가 해당 유저/프로젝트 경로인지 확인 (보안)
+        if (storagePath.startsWith(`storymaker/${auth.user.id}/${project_id}/`)) {
+          const { error: deleteError } = await auth.supabase.storage
+            .from('uploads')
+            .remove([storagePath]);
+
+          if (deleteError) {
+            console.warn('⚠️ Storage 파일 삭제 실패:', deleteError);
+          } else {
+            console.log(`🗑️ 파일 삭제 완료: ${storagePath}`);
+          }
+        }
+      }
+    }
+
+    return c.json({ success: true });
+  } catch (err: any) {
+    console.error('❌ 파일 삭제 예외:', err);
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
 // ========================================
 // 🔥 인증 가드 스크립트 (localStorage 기반 즉시 리다이렉트)
 // ========================================

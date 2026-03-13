@@ -456,6 +456,169 @@ export function storymakerTemplate() {
       display: block;
     }
 
+    /* 파일 업로드 드롭존 */
+    .sm-file-dropzone {
+      border: 2px dashed #d1d5db;
+      border-radius: 12px;
+      padding: 28px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: #fafbfc;
+      position: relative;
+    }
+
+    .sm-file-dropzone:hover,
+    .sm-file-dropzone.dragover {
+      border-color: #7c3aed;
+      background: #faf5ff;
+    }
+
+    .sm-file-dropzone-icon {
+      font-size: 28px;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+
+    .sm-file-dropzone.dragover .sm-file-dropzone-icon {
+      color: #7c3aed;
+    }
+
+    .sm-file-dropzone-text {
+      font-size: 13px;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    .sm-file-dropzone-text strong {
+      color: #7c3aed;
+    }
+
+    .sm-file-dropzone-formats {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+
+    .sm-file-dropzone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    /* 파일 그리드 */
+    .sm-file-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .sm-file-card {
+      position: relative;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: box-shadow 0.15s;
+    }
+
+    .sm-file-card:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .sm-file-card-thumb {
+      width: 100%;
+      height: 80px;
+      object-fit: cover;
+      display: block;
+      background: #e5e7eb;
+    }
+
+    .sm-file-card-icon {
+      width: 100%;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ede9fe;
+      font-size: 28px;
+      color: #7c3aed;
+    }
+
+    .sm-file-card-info {
+      padding: 6px 8px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .sm-file-card-name {
+      font-size: 11px;
+      font-weight: 500;
+      color: #374151;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+    }
+
+    .sm-file-card-size {
+      font-size: 10px;
+      color: #9ca3af;
+      margin-top: 2px;
+    }
+
+    .sm-file-card-remove {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.5);
+      color: white;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .sm-file-card:hover .sm-file-card-remove {
+      opacity: 1;
+    }
+
+    .sm-file-card-remove:hover {
+      background: #ef4444;
+    }
+
+    /* 파일 카운터 */
+    .sm-file-counter {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    /* 업로드 진행 오버레이 */
+    .sm-file-card-uploading {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+
     /* ========================================
        메인 영역 스타일
        ======================================== */
@@ -1011,6 +1174,21 @@ export function storymakerTemplate() {
           </div>
 
           <div class="sm-form-group">
+            <label class="sm-form-label">참고 파일 <span class="hint" id="sm-file-counter">(0/10, 0MB/50MB)</span></label>
+            <div class="sm-file-dropzone" id="sm-file-dropzone">
+              <input type="file" id="sm-file-input" multiple accept=".jpg,.jpeg,.png,.gif,.pdf,.ppt,.pptx,.doc,.docx" onchange="smOnFilesSelected(event)">
+              <div class="sm-file-dropzone-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+              <div class="sm-file-dropzone-text">
+                <strong>드래그하거나 클릭</strong>하여 업로드
+              </div>
+              <div class="sm-file-dropzone-formats">PDF, 이미지(JPG/PNG/GIF), PPT, Word · 최대 10개, 총 50MB</div>
+            </div>
+            <div class="sm-file-grid" id="sm-file-grid">
+              <!-- JS로 렌더링 -->
+            </div>
+          </div>
+
+          <div class="sm-form-group">
             <label class="sm-form-label">추가 메모</label>
             <textarea class="sm-form-textarea" id="sm-additional-notes" placeholder="특별히 참고할 사항이나 요구사항을 적어주세요." rows="3"></textarea>
           </div>
@@ -1255,7 +1433,7 @@ export function storymakerTemplate() {
   <!-- 메인 앱 (인증, Supabase 초기화 등) -->
   <script src="/static/app-v3-final.js?v=8.5.0"></script>
   <!-- 스토리 메이커 전용 -->
-  <script src="/static/storymaker.js?v=1.1.0"></script>
+  <script src="/static/storymaker.js?v=1.2.0"></script>
 
 </body>
 </html>

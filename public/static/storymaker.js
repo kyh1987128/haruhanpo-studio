@@ -1,7 +1,8 @@
 /**
- * 스토리 메이커 프론트엔드 JS v1.1.0
+ * 스토리 메이커 프론트엔드 JS v1.2.0
  * - 프로젝트 CRUD, Step 네비, 자동저장
  * - 참고 URL 칩 UI (최대 5개)
+ * - 참고 파일 업로드 (최대 10개, 총 50MB)
  * - 장면 수 슬라이더 (SCENE_LIMITS)
  * - 타겟 오디언스 AI 자동 추천
  * - app-v3-final.js의 window.supabaseClient / window.currentUser 대기 후 초기화
@@ -20,6 +21,8 @@ const SM = {
   initialized: false,
   // 참고 URL 목록 (배열)
   referenceUrls: [],
+  // 참고 파일 목록 (배열, 메타데이터)
+  referenceFiles: [],
 };
 
 // 영상 길이별 장면 수 범위
@@ -84,6 +87,9 @@ async function smInit() {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', smCheckRecommendBtnState);
   });
+
+  // 파일 드롭존 드래그 앤 드롭 설정
+  smSetupFileDropzone();
 
   console.log('[StoryMaker] 초기화 완료');
 }
@@ -166,8 +172,9 @@ async function smSelectProject(id) {
       SM.currentStep = data.project.current_step || 1;
       SM.isDirty = false;
 
-      // 참고 URL 목록 동기화
+      // 참고 URL/파일 목록 동기화
       smSyncUrlsFromData();
+      smSyncFilesFromData();
 
       // UI 업데이트
       smRenderProjectList();
@@ -200,6 +207,7 @@ async function smDeleteProject(id, e) {
         SM.currentStep = 1;
         SM.isDirty = false;
         SM.referenceUrls = [];
+        SM.referenceFiles = [];
 
         const stepNav = document.getElementById('sm-step-nav');
         if (stepNav) stepNav.style.display = 'none';
@@ -308,6 +316,7 @@ function smCollectStepData(n) {
       core_message: document.getElementById('sm-core-message')?.value || '',
       mood_keywords: document.getElementById('sm-mood-keywords')?.value || '',
       reference_urls: SM.referenceUrls.slice(), // 배열로 저장
+      reference_files: SM.referenceFiles.slice(), // 파일 메타데이터 배열
       additional_notes: document.getElementById('sm-additional-notes')?.value || '',
     };
   } else if (n === 2) {
@@ -337,6 +346,9 @@ function smFillStepForm(n) {
 
     // 참고 URL 칩 렌더
     smRenderUrlList();
+
+    // 참고 파일 그리드 렌더
+    smRenderFileGrid();
 
     // 장르에 따른 타겟 오디언스 가시성
     smOnGenreChange();
@@ -837,6 +849,12 @@ function smRenderPreview() {
   if (urls.length > 0) {
     html += smPreviewRow('참고 URL', `${urls.length}개`);
   }
+  // 참고 파일 개수 표시
+  const files = Array.isArray(s1.reference_files) ? s1.reference_files : [];
+  if (files.length > 0) {
+    const totalSize = files.reduce((sum, f) => sum + (f.size || 0), 0);
+    html += smPreviewRow('참고 파일', `${files.length}개 (${smFormatFileSize(totalSize)})`);
+  }
   html += '</div>';
 
   // Step 2 요약
@@ -974,6 +992,277 @@ function smFormatDate(dateStr) {
 }
 
 // ========================================
+// 참고 파일 업로드 (최대 10개, 총 50MB)
+// ========================================
+const SM_MAX_FILES = 10;
+const SM_MAX_TOTAL_SIZE = 50 * 1024 * 1024; // 50MB
+const SM_MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const SM_ALLOWED_TYPES = [
+  'image/jpeg', 'image/png', 'image/gif',
+  'application/pdf',
+  'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+const SM_ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.ppt', '.pptx', '.doc', '.docx'];
+
+// project_data에서 파일 목록 동기화
+function smSyncFilesFromData() {
+  const s1 = SM.projectData.step1;
+  SM.referenceFiles = (s1 && Array.isArray(s1.reference_files)) ? s1.reference_files.slice() : [];
+}
+
+// 드롭존 드래그 앤 드롭 설정
+function smSetupFileDropzone() {
+  const dropzone = document.getElementById('sm-file-dropzone');
+  if (!dropzone) return;
+
+  ['dragenter', 'dragover'].forEach(evt => {
+    dropzone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.add('dragover');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach(evt => {
+    dropzone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.remove('dragover');
+    });
+  });
+
+  dropzone.addEventListener('drop', (e) => {
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      smProcessFiles(files);
+    }
+  });
+}
+
+// 파일 선택 핸들러 (input onchange)
+function smOnFilesSelected(event) {
+  const files = event.target?.files;
+  if (files && files.length > 0) {
+    smProcessFiles(files);
+  }
+  // 같은 파일 재선택 가능하도록 리셋
+  event.target.value = '';
+}
+
+// 파일 처리 (검증 + 업로드)
+async function smProcessFiles(fileList) {
+  if (!SM.currentProjectId) {
+    alert('프로젝트를 먼저 선택해주세요.');
+    return;
+  }
+
+  const files = Array.from(fileList);
+  const currentCount = SM.referenceFiles.length;
+  const currentTotalSize = SM.referenceFiles.reduce((sum, f) => sum + (f.size || 0), 0);
+
+  let added = 0;
+  for (const file of files) {
+    // 개수 제한
+    if (currentCount + added >= SM_MAX_FILES) {
+      alert(`최대 ${SM_MAX_FILES}개 파일까지 업로드할 수 있습니다.`);
+      break;
+    }
+
+    // 단일 파일 크기 제한
+    if (file.size > SM_MAX_FILE_SIZE) {
+      alert(`"${file.name}" 파일이 너무 큽니다. (최대 10MB)`);
+      continue;
+    }
+
+    // 총 용량 제한
+    if (currentTotalSize + file.size > SM_MAX_TOTAL_SIZE) {
+      alert('총 파일 용량이 50MB를 초과합니다.');
+      break;
+    }
+
+    // 파일 형식 검증
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    if (!SM_ALLOWED_EXTENSIONS.includes(ext)) {
+      alert(`"${file.name}" 지원하지 않는 형식입니다.\n(JPG, PNG, GIF, PDF, PPT, PPTX, DOC, DOCX)`);
+      continue;
+    }
+
+    // 중복 체크 (파일명 + 크기)
+    if (SM.referenceFiles.some(f => f.name === file.name && f.size === file.size)) {
+      alert(`"${file.name}" 이미 추가된 파일입니다.`);
+      continue;
+    }
+
+    // 업로드 시작
+    await smUploadFile(file);
+    added++;
+  }
+}
+
+// 개별 파일 업로드
+async function smUploadFile(file) {
+  // 임시 로딩 카드 추가
+  const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  SM.referenceFiles.push({
+    id: tempId,
+    name: file.name,
+    type: file.type,
+    size: file.size,
+    url: '',
+    uploading: true,
+  });
+  smRenderFileGrid();
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('project_id', SM.currentProjectId);
+
+    const res = await fetch('/api/storymaker/files/upload', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${smGetToken()}`,
+      },
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (data.success && data.file) {
+      // 임시 항목을 실제 데이터로 교체
+      const idx = SM.referenceFiles.findIndex(f => f.id === tempId);
+      if (idx >= 0) {
+        SM.referenceFiles[idx] = {
+          id: data.file.id || data.file.name,
+          name: data.file.name,
+          type: data.file.type || file.type,
+          size: data.file.size || file.size,
+          url: data.file.url,
+          uploading: false,
+        };
+      }
+    } else {
+      // 업로드 실패 — 임시 항목 제거
+      SM.referenceFiles = SM.referenceFiles.filter(f => f.id !== tempId);
+      console.error('[StoryMaker] 파일 업로드 실패:', data.error);
+      alert(`"${file.name}" 업로드 실패: ${data.error || '서버 오류'}`);
+    }
+  } catch (e) {
+    // 네트워크 오류 — 임시 항목 제거
+    SM.referenceFiles = SM.referenceFiles.filter(f => f.id !== tempId);
+    console.error('[StoryMaker] 파일 업로드 예외:', e);
+    alert(`"${file.name}" 업로드 중 오류가 발생했습니다.`);
+  }
+
+  smRenderFileGrid();
+  smMarkDirty();
+}
+
+// 파일 삭제
+async function smRemoveFile(idx) {
+  const file = SM.referenceFiles[idx];
+  if (!file) return;
+
+  // 서버에서 삭제 시도 (URL이 있는 경우)
+  if (file.url && SM.currentProjectId) {
+    try {
+      await smApiCall('DELETE', '/api/storymaker/files/delete', {
+        project_id: SM.currentProjectId,
+        file_url: file.url,
+        file_name: file.name,
+      });
+    } catch (e) {
+      console.warn('[StoryMaker] 파일 서버 삭제 실패 (로컬만 제거):', e);
+    }
+  }
+
+  SM.referenceFiles.splice(idx, 1);
+  smRenderFileGrid();
+  smMarkDirty();
+}
+
+// 파일 그리드 렌더링
+function smRenderFileGrid() {
+  const gridEl = document.getElementById('sm-file-grid');
+  const counterEl = document.getElementById('sm-file-counter');
+  const dropzone = document.getElementById('sm-file-dropzone');
+  if (!gridEl) return;
+
+  const totalSize = SM.referenceFiles.reduce((sum, f) => sum + (f.size || 0), 0);
+
+  // 카운터 업데이트
+  if (counterEl) {
+    counterEl.textContent = `(${SM.referenceFiles.length}/${SM_MAX_FILES}, ${smFormatFileSize(totalSize)}/50MB)`;
+  }
+
+  // 드롭존 숨김 (10개 도달 시)
+  if (dropzone) {
+    dropzone.style.display = SM.referenceFiles.length >= SM_MAX_FILES ? 'none' : '';
+  }
+
+  if (SM.referenceFiles.length === 0) {
+    gridEl.innerHTML = '';
+    return;
+  }
+
+  gridEl.innerHTML = SM.referenceFiles.map((f, idx) => {
+    const isImage = f.type && f.type.startsWith('image/');
+    const isUploading = f.uploading;
+
+    let thumbHtml;
+    if (isImage && f.url) {
+      thumbHtml = `<img class="sm-file-card-thumb" src="${smEscape(f.url)}" alt="${smEscape(f.name)}" loading="lazy">`;
+    } else {
+      const icon = smGetFileIcon(f.type, f.name);
+      thumbHtml = `<div class="sm-file-card-icon"><i class="${icon}"></i></div>`;
+    }
+
+    const uploadingOverlay = isUploading
+      ? `<div class="sm-file-card-uploading"><i class="fas fa-spinner fa-spin" style="color:#7c3aed;font-size:18px;"></i></div>`
+      : '';
+
+    return `
+      <div class="sm-file-card" title="${smEscape(f.name)} (${smFormatFileSize(f.size)})">
+        ${thumbHtml}
+        ${uploadingOverlay}
+        <div class="sm-file-card-info">
+          <span class="sm-file-card-name">${smEscape(f.name)}</span>
+          <div class="sm-file-card-size">${smFormatFileSize(f.size)}</div>
+        </div>
+        ${!isUploading ? `<button class="sm-file-card-remove" onclick="smRemoveFile(${idx})" title="삭제"><i class="fas fa-times"></i></button>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+// 파일 아이콘 매핑
+function smGetFileIcon(type, name) {
+  if (!type && name) {
+    const ext = name.split('.').pop().toLowerCase();
+    if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return 'fas fa-image';
+    if (ext === 'pdf') return 'fas fa-file-pdf';
+    if (['ppt', 'pptx'].includes(ext)) return 'fas fa-file-powerpoint';
+    if (['doc', 'docx'].includes(ext)) return 'fas fa-file-word';
+  }
+  if (type) {
+    if (type.startsWith('image/')) return 'fas fa-image';
+    if (type === 'application/pdf') return 'fas fa-file-pdf';
+    if (type.includes('presentation') || type.includes('powerpoint')) return 'fas fa-file-powerpoint';
+    if (type.includes('word') || type.includes('document')) return 'fas fa-file-word';
+  }
+  return 'fas fa-file';
+}
+
+// 파일 크기 포맷
+function smFormatFileSize(bytes) {
+  if (!bytes || bytes === 0) return '0B';
+  if (bytes < 1024) return bytes + 'B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + 'KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + 'MB';
+}
+
+// ========================================
 // 전역 함수 등록 (onclick 에서 호출)
 // ========================================
 window.smCreateProject = smCreateProject;
@@ -986,3 +1275,5 @@ window.smAddUrl = smAddUrl;
 window.smRemoveUrl = smRemoveUrl;
 window.smOnSceneSliderChange = smOnSceneSliderChange;
 window.smRecommendAudience = smRecommendAudience;
+window.smOnFilesSelected = smOnFilesSelected;
+window.smRemoveFile = smRemoveFile;
