@@ -160,6 +160,9 @@ async function smSelectProject(id) {
       // welcome 숨기기
       const welcome = document.getElementById('sm-welcome');
       if (welcome) welcome.style.display = 'none';
+
+      // 프리뷰 패널 즉시 갱신
+      smRenderPreview();
     }
   } catch (e) {
     console.error('[StoryMaker] 프로젝트 로드 예외:', e);
@@ -224,6 +227,15 @@ async function smSaveProject() {
 
       // 프리뷰 갱신
       smRenderPreview();
+
+      // 프로젝트 이름이 변경되었으면 좌측 목록도 갱신
+      if (data.project?.name) {
+        const proj = SM.projects.find(p => p.id === SM.currentProjectId);
+        if (proj && proj.name !== data.project.name) {
+          proj.name = data.project.name;
+          smRenderProjectList();
+        }
+      }
     } else {
       smSetAutosaveStatus('error');
       console.error('[StoryMaker] 저장 실패:', data.error);
