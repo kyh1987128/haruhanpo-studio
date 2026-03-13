@@ -254,21 +254,206 @@ export function storymakerTemplate() {
       color: white;
     }
 
-    /* 하단 크레딧 */
-    .sm-credits-info {
-      padding: 12px 16px;
-      border-top: 1px solid #e5e7eb;
-      background: #f9fafb;
-      font-size: 12px;
-      color: #6b7280;
+    /* 참고 URL 칩 UI */
+    .sm-url-list {
       display: flex;
-      align-items: center;
+      flex-direction: column;
       gap: 6px;
+      margin-bottom: 8px;
     }
 
-    .sm-credits-count {
+    .sm-url-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #f3f4f6;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #374151;
+      transition: background 0.15s;
+    }
+
+    .sm-url-chip:hover {
+      background: #e5e7eb;
+    }
+
+    .sm-url-chip-text {
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sm-url-chip-remove {
+      background: none;
+      border: none;
+      color: #9ca3af;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-size: 11px;
+      flex-shrink: 0;
+      transition: color 0.15s;
+    }
+
+    .sm-url-chip-remove:hover {
+      color: #ef4444;
+    }
+
+    .sm-url-add-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .sm-url-add-input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #1f2937;
+    }
+
+    .sm-url-add-input:focus {
+      outline: none;
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+    }
+
+    .sm-url-add-btn {
+      padding: 8px 14px;
+      background: #7c3aed;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.15s;
+    }
+
+    .sm-url-add-btn:hover {
+      opacity: 0.9;
+    }
+
+    .sm-url-add-btn:disabled {
+      background: #d1d5db;
+      cursor: not-allowed;
+    }
+
+    /* 장면 수 슬라이더 */
+    .sm-slider-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .sm-slider-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .sm-slider-value {
+      font-size: 20px;
       font-weight: 700;
       color: #7c3aed;
+    }
+
+    .sm-slider-range {
+      width: 100%;
+      height: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: #e5e7eb;
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .sm-slider-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: #7c3aed;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(124, 58, 237, 0.3);
+      transition: transform 0.15s;
+    }
+
+    .sm-slider-range::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
+    .sm-slider-range::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      background: #7c3aed;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .sm-slider-empty {
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #9ca3af;
+      text-align: center;
+    }
+
+    /* 타겟 오디언스 AI 추천 */
+    .sm-ai-recommend-wrap {
+      position: relative;
+    }
+
+    .sm-ai-recommend-btn {
+      margin-top: 6px;
+      padding: 6px 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: opacity 0.15s;
+    }
+
+    .sm-ai-recommend-btn:hover {
+      opacity: 0.9;
+    }
+
+    .sm-ai-recommend-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .sm-ai-recommend-result {
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #166534;
+      line-height: 1.5;
+      display: none;
+    }
+
+    .sm-ai-recommend-result.visible {
+      display: block;
     }
 
     /* ========================================
@@ -738,12 +923,6 @@ export function storymakerTemplate() {
         </div>
       </div>
 
-      <!-- 하단 크레딧 잔여 -->
-      <div class="sm-credits-info">
-        <i class="fas fa-coins"></i>
-        크레딧: <span class="sm-credits-count" id="sm-credits-count">-</span>
-      </div>
-
     </div>
 
     <!-- ========== 메인 영역 ========== -->
@@ -792,9 +971,15 @@ export function storymakerTemplate() {
                 <option value="other">기타</option>
               </select>
             </div>
-            <div class="sm-form-group">
-              <label class="sm-form-label">타겟 오디언스</label>
-              <input type="text" class="sm-form-input" id="sm-target-audience" placeholder="예: 20~30대 직장인 여성">
+            <div class="sm-form-group" id="sm-target-audience-group">
+              <label class="sm-form-label">타겟 오디언스 <span class="hint">(AI 자동 추천)</span></label>
+              <div class="sm-ai-recommend-wrap">
+                <input type="text" class="sm-form-input" id="sm-target-audience" placeholder="AI가 추천합니다" readonly style="background:#f9fafb; cursor:default;">
+                <button class="sm-ai-recommend-btn" id="sm-recommend-audience-btn" onclick="smRecommendAudience()" disabled>
+                  <i class="fas fa-magic"></i> AI 추천 받기
+                </button>
+                <div class="sm-ai-recommend-result" id="sm-audience-result"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -813,8 +998,16 @@ export function storymakerTemplate() {
           </div>
 
           <div class="sm-form-group">
-            <label class="sm-form-label">참고 URL <span class="hint">(줄바꿈으로 구분)</span></label>
-            <textarea class="sm-form-textarea" id="sm-reference-urls" placeholder="참고할 영상이나 이미지 URL을 입력하세요.&#10;https://youtube.com/watch?v=..." rows="3"></textarea>
+            <label class="sm-form-label">참고 URL <span class="hint" id="sm-url-counter">(0/5)</span></label>
+            <div class="sm-url-list" id="sm-url-list">
+              <!-- JS로 렌더링 -->
+            </div>
+            <div class="sm-url-add-row" id="sm-url-add-row">
+              <input type="text" class="sm-url-add-input" id="sm-url-input" placeholder="https://..." onkeydown="if(event.key==='Enter'){event.preventDefault();smAddUrl();}">
+              <button class="sm-url-add-btn" id="sm-url-add-btn" onclick="smAddUrl()">
+                <i class="fas fa-plus"></i> 추가
+              </button>
+            </div>
           </div>
 
           <div class="sm-form-group">
@@ -861,7 +1054,18 @@ export function storymakerTemplate() {
             </div>
             <div class="sm-form-group">
               <label class="sm-form-label">장면 수</label>
-              <input type="number" class="sm-form-input" id="sm-scene-count" placeholder="자동" min="1" max="50">
+              <div id="sm-scene-count-wrap">
+                <div class="sm-slider-empty" id="sm-scene-slider-empty">
+                  영상 길이를 먼저 선택하세요
+                </div>
+                <div class="sm-slider-wrap" id="sm-scene-slider-wrap" style="display:none;">
+                  <div class="sm-slider-info">
+                    <span id="sm-scene-range-label">2~4컷</span>
+                    <span class="sm-slider-value" id="sm-scene-value">3</span>
+                  </div>
+                  <input type="range" class="sm-slider-range" id="sm-scene-count" min="2" max="4" value="3" oninput="smOnSceneSliderChange(this.value)">
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1051,7 +1255,7 @@ export function storymakerTemplate() {
   <!-- 메인 앱 (인증, Supabase 초기화 등) -->
   <script src="/static/app-v3-final.js?v=8.5.0"></script>
   <!-- 스토리 메이커 전용 -->
-  <script src="/static/storymaker.js?v=1.0.1"></script>
+  <script src="/static/storymaker.js?v=1.1.0"></script>
 
 </body>
 </html>
