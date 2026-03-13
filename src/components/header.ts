@@ -255,11 +255,10 @@ export const headerHTML = `
         <i class="fas fa-chart-line"></i>
         <span>유튜브 파인더</span>
       </a>
-      <div class="nav-link disabled" data-page="storymaker" title="스토리 메이커는 준비 중입니다" onclick="alert('🚧 스토리 메이커는 현재 열심히 개발 중입니다!\n곧 만나실 수 있습니다 😊')">
+      <a href="/storymaker" class="nav-link" data-page="storymaker">
         <i class="fas fa-film"></i>
         <span>스토리 메이커</span>
-        <span class="badge-preparing">준비중</span>
-      </div>
+      </a>
       <div class="nav-link disabled" data-page="community" title="커뮤니티는 준비 중입니다" onclick="alert('🚧 커뮤니티는 현재 열심히 개발 중입니다!\n곧 만나실 수 있습니다 😊')">
         <i class="fas fa-users"></i>
         <span>커뮤니티</span>

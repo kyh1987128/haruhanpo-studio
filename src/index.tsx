@@ -7,6 +7,7 @@ import { htmlTemplate } from './html-template';
 import { landingPageTemplate } from './landing-page';
 import { dashboardTemplate } from './dashboard-template';
 import { youtubeAnalyzerTemplate } from './youtube-analyzer-template';
+import { storymakerTemplate } from './storymaker-template';
 import { analyzeImageWithGemini, generateContentWithGemini, calculateGeminiCost, estimateTokens } from './gemini';
 import { createSupabaseAdmin, createSupabaseClient, grantMilestoneCredit, updateConsecutiveLogin, checkAndUseMonthlyQuota } from './lib/supabase';
 import { parseMultipleDocuments, combineDocumentTexts, truncateText } from './document-parser';
@@ -6468,6 +6469,169 @@ app.get('/api/stats', async (c) => {
 import { dashboardTemplate } from './dashboard-template';
 
 // ========================================
+// 🔥 스토리 메이커 API (CRUD)
+// ========================================
+
+// 인증 헬퍼: Authorization 헤더에서 user_id 추출
+async function smAuthUser(c: any) {
+  const authHeader = c.req.header('Authorization');
+  if (!authHeader) return null;
+  const token = authHeader.replace('Bearer ', '');
+  const supabase = createSupabaseAdmin(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_KEY);
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  if (error || !user) return null;
+  return { user, supabase };
+}
+
+// 1️⃣ GET /api/storymaker/projects — 프로젝트 목록
+app.get('/api/storymaker/projects', async (c) => {
+  try {
+    const auth = await smAuthUser(c);
+    if (!auth) return c.json({ success: false, error: 'Unauthorized' }, 401);
+
+    const { data: projects, error } = await auth.supabase
+      .from('storymaker_projects')
+      .select('id, name, status, current_step, created_at, updated_at')
+      .eq('user_id', auth.user.id)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ 스토리메이커 프로젝트 목록 조회 실패:', error);
+      return c.json({ success: false, error: error.message }, 500);
+    }
+
+    return c.json({ success: true, projects: projects || [] });
+  } catch (err: any) {
+    console.error('❌ 스토리메이커 프로젝트 목록 예외:', err);
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 2️⃣ POST /api/storymaker/projects — 프로젝트 생성
+app.post('/api/storymaker/projects', async (c) => {
+  try {
+    const auth = await smAuthUser(c);
+    if (!auth) return c.json({ success: false, error: 'Unauthorized' }, 401);
+
+    const body = await c.req.json();
+    const name = body.name?.trim() || '새 프로젝트';
+
+    const { data: project, error } = await auth.supabase
+      .from('storymaker_projects')
+      .insert({
+        user_id: auth.user.id,
+        name,
+        project_data: {},
+        status: 'draft',
+        current_step: 1,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ 스토리메이커 프로젝트 생성 실패:', error);
+      return c.json({ success: false, error: error.message }, 500);
+    }
+
+    console.log(`✅ 스토리메이커 프로젝트 생성: ${project.id} (${name})`);
+    return c.json({ success: true, project });
+  } catch (err: any) {
+    console.error('❌ 스토리메이커 프로젝트 생성 예외:', err);
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 3️⃣ GET /api/storymaker/projects/:id — 프로젝트 상세
+app.get('/api/storymaker/projects/:id', async (c) => {
+  try {
+    const auth = await smAuthUser(c);
+    if (!auth) return c.json({ success: false, error: 'Unauthorized' }, 401);
+
+    const id = c.req.param('id');
+
+    const { data: project, error } = await auth.supabase
+      .from('storymaker_projects')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', auth.user.id)
+      .single();
+
+    if (error) {
+      console.error('❌ 스토리메이커 프로젝트 조회 실패:', error);
+      return c.json({ success: false, error: error.message }, 404);
+    }
+
+    return c.json({ success: true, project });
+  } catch (err: any) {
+    console.error('❌ 스토리메이커 프로젝트 조회 예외:', err);
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 4️⃣ PUT /api/storymaker/projects/:id — 프로젝트 업데이트
+app.put('/api/storymaker/projects/:id', async (c) => {
+  try {
+    const auth = await smAuthUser(c);
+    if (!auth) return c.json({ success: false, error: 'Unauthorized' }, 401);
+
+    const id = c.req.param('id');
+    const body = await c.req.json();
+
+    // 업데이트 가능한 필드만 추출
+    const updateData: any = { updated_at: new Date().toISOString() };
+    if (body.name !== undefined) updateData.name = body.name;
+    if (body.project_data !== undefined) updateData.project_data = body.project_data;
+    if (body.current_step !== undefined) updateData.current_step = body.current_step;
+    if (body.status !== undefined) updateData.status = body.status;
+
+    const { data: project, error } = await auth.supabase
+      .from('storymaker_projects')
+      .update(updateData)
+      .eq('id', id)
+      .eq('user_id', auth.user.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ 스토리메이커 프로젝트 업데이트 실패:', error);
+      return c.json({ success: false, error: error.message }, 500);
+    }
+
+    return c.json({ success: true, project });
+  } catch (err: any) {
+    console.error('❌ 스토리메이커 프로젝트 업데이트 예외:', err);
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// 5️⃣ DELETE /api/storymaker/projects/:id — 프로젝트 삭제
+app.delete('/api/storymaker/projects/:id', async (c) => {
+  try {
+    const auth = await smAuthUser(c);
+    if (!auth) return c.json({ success: false, error: 'Unauthorized' }, 401);
+
+    const id = c.req.param('id');
+
+    const { error } = await auth.supabase
+      .from('storymaker_projects')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', auth.user.id);
+
+    if (error) {
+      console.error('❌ 스토리메이커 프로젝트 삭제 실패:', error);
+      return c.json({ success: false, error: error.message }, 500);
+    }
+
+    console.log(`🗑️ 스토리메이커 프로젝트 삭제: ${id}`);
+    return c.json({ success: true });
+  } catch (err: any) {
+    console.error('❌ 스토리메이커 프로젝트 삭제 예외:', err);
+    return c.json({ success: false, error: err.message }, 500);
+  }
+});
+
+// ========================================
 // 🔥 인증 가드 스크립트 (localStorage 기반 즉시 리다이렉트)
 // ========================================
 // 인증 가드: <head> 첫 번째 자식으로 삽입되어 CSS/JS 로딩 전에 실행
@@ -6495,6 +6659,14 @@ app.get('/dashboard', (c) => {
 // YouTube 분석기 페이지
 app.get('/youtube-analyzer', (c) => {
   return c.html(youtubeAnalyzerTemplate());
+});
+
+// ========================================
+// 🔥 /storymaker 라우트 (스토리 메이커)
+// ========================================
+app.get('/storymaker', (c) => {
+  const guarded = storymakerTemplate().replace('<head>', '<head>' + authGuardScript);
+  return c.html(guarded);
 });
 
 // ========================================
@@ -6543,6 +6715,7 @@ Allow: /
 Disallow: /postflow
 Disallow: /dashboard
 Disallow: /youtube-analyzer
+Disallow: /storymaker
 Disallow: /payment
 Disallow: /api/
 Disallow: /auth/
