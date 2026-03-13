@@ -467,7 +467,9 @@ function smFillStepForm(n) {
     }
   } else if (n === 2) {
     const d = SM.projectData.step2 || {};
-    smSetValue('sm-video-length', d.video_length || '');
+    // 구 키 호환: mid_3 → mid_3m 등
+    const migratedLength = SCENE_KEY_MIGRATION[d.video_length] || d.video_length || '';
+    smSetValue('sm-video-length', migratedLength);
     smSetValue('sm-style', d.style || '');
     smSetValue('sm-color-tone', d.color_tone || '');
     smSetSelectedRadio('sm-aspect-ratio', d.aspect_ratio || '');
@@ -576,16 +578,28 @@ function smRemoveUrl(idx) {
   smMarkDirty();
 }
 
+// 구 키 → 신 키 호환 매핑 (mid_3→mid_3m 등)
+const SCENE_KEY_MIGRATION = {
+  mid_3: 'mid_3m', mid_5: 'mid_5m', long_10: 'long_10m', long_15: 'long_15m',
+};
+
 // ========================================
 // 장면 수 슬라이더
 // ========================================
 function smOnVideoLengthChange() {
-  const videoLength = document.getElementById('sm-video-length')?.value;
+  let videoLength = document.getElementById('sm-video-length')?.value;
   const emptyEl = document.getElementById('sm-scene-slider-empty');
   const sliderWrap = document.getElementById('sm-scene-slider-wrap');
   const slider = document.getElementById('sm-scene-count');
 
   if (!emptyEl || !sliderWrap || !slider) return;
+
+  // 구 키 호환: mid_3 → mid_3m 등 (기존 저장 데이터 대응)
+  if (videoLength && SCENE_KEY_MIGRATION[videoLength]) {
+    videoLength = SCENE_KEY_MIGRATION[videoLength];
+    const sel = document.getElementById('sm-video-length');
+    if (sel) sel.value = videoLength; // select도 신 키로 업데이트
+  }
 
   const limits = SCENE_LIMITS[videoLength];
   if (!limits) {
@@ -915,6 +929,8 @@ function smRenderPreview() {
   const lengthMap = {
     short_15: '15초', short_30: '30초', short_60: '60초',
     mid_3m: '3분', mid_5m: '5분', long_10m: '10분', long_15m: '15분+',
+    // 구 키 호환
+    mid_3: '3분', mid_5: '5분', long_10: '10분', long_15: '15분+',
   };
 
   const styleMap = {
