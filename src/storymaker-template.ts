@@ -1007,6 +1007,69 @@ export function storymakerTemplate() {
       }
     }
 
+    /* 토스트 알림 */
+    .sm-toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 9999;
+      opacity: 0;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      pointer-events: none;
+    }
+
+    .sm-toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .sm-toast-error {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+    }
+
+    .sm-toast-success {
+      background: #f0fdf4;
+      color: #16a34a;
+      border: 1px solid #bbf7d0;
+    }
+
+    .sm-toast-info {
+      background: #eff6ff;
+      color: #2563eb;
+      border: 1px solid #bfdbfe;
+    }
+
+    /* 필드 에러 하이라이트 */
+    .sm-field-error {
+      border-color: #ef4444 !important;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+      animation: smShake 0.4s ease;
+    }
+
+    .sm-option-group.sm-field-error {
+      padding: 4px;
+      border-radius: 10px;
+      border: 2px solid #ef4444 !important;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+    }
+
+    @keyframes smShake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+
     /* 카드 스타일 (Step 내 섹션 구분) */
     .sm-card {
       background: white;
@@ -1224,10 +1287,10 @@ export function storymakerTemplate() {
                 <option value="short_15">숏폼 (15초)</option>
                 <option value="short_30">숏폼 (30초)</option>
                 <option value="short_60">숏폼 (60초)</option>
-                <option value="mid_3">미드폼 (3분)</option>
-                <option value="mid_5">미드폼 (5분)</option>
-                <option value="long_10">롱폼 (10분)</option>
-                <option value="long_15">롱폼 (15분+)</option>
+                <option value="mid_3m">미드폼 (3분)</option>
+                <option value="mid_5m">미드폼 (5분)</option>
+                <option value="long_10m">롱폼 (10분)</option>
+                <option value="long_15m">롱폼 (15분+)</option>
               </select>
             </div>
             <div class="sm-form-group">
@@ -1433,7 +1496,7 @@ export function storymakerTemplate() {
   <!-- 메인 앱 (인증, Supabase 초기화 등) -->
   <script src="/static/app-v3-final.js?v=8.5.0"></script>
   <!-- 스토리 메이커 전용 -->
-  <script src="/static/storymaker.js?v=1.2.0"></script>
+  <script src="/static/storymaker.js?v=1.3.0"></script>
 
 </body>
 </html>

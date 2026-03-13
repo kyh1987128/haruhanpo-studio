@@ -6507,7 +6507,7 @@ app.get('/api/storymaker/projects', async (c) => {
   }
 });
 
-// 2️⃣ POST /api/storymaker/projects — 프로젝트 생성
+// 2️⃣ POST /api/storymaker/projects — 프로젝트 생성 (수 제한 포함)
 app.post('/api/storymaker/projects', async (c) => {
   try {
     const auth = await smAuthUser(c);
@@ -6515,6 +6515,29 @@ app.post('/api/storymaker/projects', async (c) => {
 
     const body = await c.req.json();
     const name = body.name?.trim() || '새 프로젝트';
+
+    // 프로젝트 수 제한: 무료 5개, 유료 50개
+    const { count: projectCount } = await auth.supabase
+      .from('storymaker_projects')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', auth.user.id);
+
+    // 유료 사용자 판별 (paid_credits > 0 이면 유료)
+    const { data: profile } = await auth.supabase
+      .from('profiles')
+      .select('paid_credits')
+      .eq('id', auth.user.id)
+      .single();
+
+    const isPaid = (profile?.paid_credits || 0) > 0;
+    const maxProjects = isPaid ? 50 : 5;
+
+    if ((projectCount || 0) >= maxProjects) {
+      return c.json({
+        success: false,
+        error: `프로젝트는 최대 ${maxProjects}개까지 생성 가능합니다. ${!isPaid ? '유료 플랜으로 업그레이드하면 50개까지 가능합니다.' : '기존 프로젝트를 삭제 후 다시 시도해주세요.'}`,
+      }, 400);
+    }
 
     const { data: project, error } = await auth.supabase
       .from('storymaker_projects')
@@ -6604,7 +6627,7 @@ app.put('/api/storymaker/projects/:id', async (c) => {
   }
 });
 
-// 5️⃣ DELETE /api/storymaker/projects/:id — 프로젝트 삭제
+// 5️⃣ DELETE /api/storymaker/projects/:id — 프로젝트 삭제 (Storage 파일 정리 포함)
 app.delete('/api/storymaker/projects/:id', async (c) => {
   try {
     const auth = await smAuthUser(c);
@@ -6612,6 +6635,46 @@ app.delete('/api/storymaker/projects/:id', async (c) => {
 
     const id = c.req.param('id');
 
+    // 프로젝트 소유권 확인 + project_data에서 파일 목록 조회
+    const { data: project } = await auth.supabase
+      .from('storymaker_projects')
+      .select('id, project_data')
+      .eq('id', id)
+      .eq('user_id', auth.user.id)
+      .single();
+
+    if (!project) {
+      return c.json({ success: false, error: '프로젝트를 찾을 수 없습니다.' }, 404);
+    }
+
+    // Storage 파일 삭제 (project_data.step1.reference_files에서 URL 추출)
+    const refFiles = project.project_data?.step1?.reference_files;
+    if (Array.isArray(refFiles) && refFiles.length > 0) {
+      const storagePaths: string[] = [];
+      for (const f of refFiles) {
+        if (f.url) {
+          const match = f.url.match(/\/uploads\/(.+)$/);
+          if (match) {
+            const storagePath = decodeURIComponent(match[1]);
+            if (storagePath.startsWith(`storymaker/${auth.user.id}/${id}/`)) {
+              storagePaths.push(storagePath);
+            }
+          }
+        }
+      }
+      if (storagePaths.length > 0) {
+        const { error: storageErr } = await auth.supabase.storage
+          .from('uploads')
+          .remove(storagePaths);
+        if (storageErr) {
+          console.warn(`⚠️ 프로젝트 ${id} Storage 파일 삭제 실패:`, storageErr);
+        } else {
+          console.log(`🗑️ Storage 파일 ${storagePaths.length}개 삭제 완료`);
+        }
+      }
+    }
+
+    // DB 프로젝트 삭제 (CASCADE로 assets도 삭제)
     const { error } = await auth.supabase
       .from('storymaker_projects')
       .delete()
@@ -6713,8 +6776,9 @@ app.post('/api/storymaker/files/upload', async (c) => {
   }
 });
 
-// 7️⃣ DELETE /api/storymaker/files/delete — 파일 삭제 (Supabase Storage)
-app.delete('/api/storymaker/files/delete', async (c) => {
+// 7️⃣ POST /api/storymaker/files/delete — 파일 삭제 (Supabase Storage)
+// DELETE body 문제 방지를 위해 POST 사용
+app.post('/api/storymaker/files/delete', async (c) => {
   try {
     const auth = await smAuthUser(c);
     if (!auth) return c.json({ success: false, error: 'Unauthorized' }, 401);

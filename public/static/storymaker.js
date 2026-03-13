@@ -1,11 +1,12 @@
 /**
- * 스토리 메이커 프론트엔드 JS v1.2.0
+ * 스토리 메이커 프론트엔드 JS v1.3.0
  * - 프로젝트 CRUD, Step 네비, 자동저장
  * - 참고 URL 칩 UI (최대 5개)
  * - 참고 파일 업로드 (최대 10개, 총 50MB)
  * - 장면 수 슬라이더 (SCENE_LIMITS)
  * - 타겟 오디언스 AI 자동 추천
  * - app-v3-final.js의 window.supabaseClient / window.currentUser 대기 후 초기화
+ * - 필수값 검증, Step 잠금, 예상 크레딧 표시
  */
 
 // ========================================
@@ -25,16 +26,20 @@ const SM = {
   referenceFiles: [],
 };
 
-// 영상 길이별 장면 수 범위
+// 영상 길이별 장면 수 범위 (비용 고려하여 상한 조정)
 const SCENE_LIMITS = {
-  short_15: { min: 2, max: 4, default: 3 },
-  short_30: { min: 3, max: 6, default: 4 },
-  short_60: { min: 4, max: 8, default: 6 },
-  mid_3:    { min: 6, max: 15, default: 10 },
-  mid_5:    { min: 10, max: 20, default: 15 },
-  long_10:  { min: 15, max: 30, default: 20 },
-  long_15:  { min: 20, max: 40, default: 25 },
+  short_15:  { min: 2,  max: 4,  default: 3 },
+  short_30:  { min: 3,  max: 6,  default: 4 },
+  short_60:  { min: 4,  max: 8,  default: 6 },
+  mid_3m:    { min: 6,  max: 12, default: 8 },
+  mid_5m:    { min: 8,  max: 15, default: 12 },
+  long_10m:  { min: 10, max: 20, default: 15 },
+  long_15m:  { min: 15, max: 25, default: 20 },
 };
+
+// 크레딧 비용 상수
+const SM_CREDIT_SCENARIO = 3;   // 시나리오 생성 비용
+const SM_CREDIT_PER_SCENE = 3;  // 장면당 이미지 생성 비용
 
 // ========================================
 // 초기화: supabaseClient / currentUser 대기
@@ -267,9 +272,103 @@ async function smSaveProject() {
 }
 
 // ========================================
+// 토스트 알림
+// ========================================
+function smShowToast(message, type = 'error') {
+  // 기존 토스트 제거
+  document.querySelectorAll('.sm-toast').forEach(t => t.remove());
+
+  const toast = document.createElement('div');
+  toast.className = `sm-toast sm-toast-${type}`;
+  toast.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-circle' : type === 'success' ? 'fa-check-circle' : 'fa-info-circle'}"></i> ${message}`;
+  document.body.appendChild(toast);
+
+  // 등장 애니메이션
+  requestAnimationFrame(() => toast.classList.add('visible'));
+
+  // 3초 후 제거
+  setTimeout(() => {
+    toast.classList.remove('visible');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// ========================================
+// 필수값 검증
+// ========================================
+function smValidateStep(n) {
+  const missing = [];
+
+  if (n === 1) {
+    const name = document.getElementById('sm-project-name')?.value?.trim();
+    const genre = document.getElementById('sm-genre')?.value;
+    const msg = document.getElementById('sm-core-message')?.value?.trim();
+
+    if (!name) missing.push('sm-project-name');
+    if (!genre) missing.push('sm-genre');
+    if (!msg) missing.push('sm-core-message');
+  } else if (n === 2) {
+    const length = document.getElementById('sm-video-length')?.value;
+    const ratio = smGetSelectedRadio('sm-aspect-ratio');
+    const platforms = smGetSelectedCheckboxes('sm-platforms');
+
+    if (!length) missing.push('sm-video-length');
+    if (!ratio) missing.push('sm-aspect-ratio');
+    if (!platforms || platforms.length === 0) missing.push('sm-platforms');
+  }
+
+  if (missing.length > 0) {
+    // 필드 하이라이트
+    missing.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.add('sm-field-error');
+        // 3초 후 하이라이트 제거
+        setTimeout(() => el.classList.remove('sm-field-error'), 3000);
+      }
+    });
+    smShowToast('필수 항목을 입력해주세요');
+    // 첫 번째 미입력 필드로 스크롤
+    const firstEl = document.getElementById(missing[0]);
+    if (firstEl) firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return false;
+  }
+  return true;
+}
+
+// Step 완료 판정 (locked 해제용)
+function smIsStepCompleted(n) {
+  const d = SM.projectData[`step${n}`];
+  if (!d) return false;
+
+  if (n === 1) {
+    return !!(d.project_name?.trim() && d.genre && d.core_message?.trim());
+  } else if (n === 2) {
+    return !!(d.video_length && d.aspect_ratio && d.platforms?.length > 0);
+  }
+  return false;
+}
+
+// ========================================
 // Step 전환
 // ========================================
 function smSwitchStep(n, skipSave) {
+  // locked step 차단 (Step 3 이상은 이전 단계 완료 필요)
+  if (n > 2 && !skipSave) {
+    // Step 1, 2 모두 완료되어야 Step 3+ 접근
+    if (!smIsStepCompleted(1) || !smIsStepCompleted(2)) {
+      smShowToast('이전 단계를 먼저 완료해주세요');
+      return;
+    }
+  }
+
+  // 다음 단계로 갈 때 현재 Step 필수값 검증
+  if (!skipSave && n > SM.currentStep) {
+    if (!smValidateStep(SM.currentStep)) {
+      return; // 검증 실패 시 이동 차단
+    }
+  }
+
   // 현재 데이터 수집 & 저장
   if (!skipSave && SM.currentProjectId && SM.currentStep) {
     smCollectStepData(SM.currentStep);
@@ -320,9 +419,10 @@ function smCollectStepData(n) {
       additional_notes: document.getElementById('sm-additional-notes')?.value || '',
     };
   } else if (n === 2) {
+    const rawSceneCount = document.getElementById('sm-scene-count')?.value;
     SM.projectData.step2 = {
       video_length: document.getElementById('sm-video-length')?.value || '',
-      scene_count: document.getElementById('sm-scene-count')?.value || '',
+      scene_count: rawSceneCount ? parseInt(rawSceneCount, 10) : 0,
       aspect_ratio: smGetSelectedRadio('sm-aspect-ratio'),
       platforms: smGetSelectedCheckboxes('sm-platforms'),
       style: document.getElementById('sm-style')?.value || '',
@@ -769,7 +869,7 @@ function smRenderProjectList() {
   }).join('');
 }
 
-// Step 네비 렌더링
+// Step 네비 렌더링 (명확한 완료 판정)
 function smRenderStepNav() {
   const stepItems = document.querySelectorAll('.sm-step-item');
   stepItems.forEach(item => {
@@ -778,13 +878,13 @@ function smRenderStepNav() {
 
     if (step === SM.currentStep) {
       item.classList.add('active');
-    } else if (step < SM.currentStep) {
-      const stepData = SM.projectData[`step${step}`];
-      if (stepData && Object.values(stepData).some(v => v && (typeof v === 'string' ? v.trim() : true))) {
-        item.classList.add('completed');
-      }
+    } else if (smIsStepCompleted(step)) {
+      item.classList.add('completed');
     } else if (step > 2) {
-      item.classList.add('locked');
+      // Step 3+ 잠금: Step 1, 2 모두 완료되지 않으면 locked
+      if (!smIsStepCompleted(1) || !smIsStepCompleted(2)) {
+        item.classList.add('locked');
+      }
     }
   });
 }
@@ -814,7 +914,7 @@ function smRenderPreview() {
 
   const lengthMap = {
     short_15: '15초', short_30: '30초', short_60: '60초',
-    mid_3: '3분', mid_5: '5분', long_10: '10분', long_15: '15분+',
+    mid_3m: '3분', mid_5m: '5분', long_10m: '10분', long_15m: '15분+',
   };
 
   const styleMap = {
@@ -878,6 +978,31 @@ function smRenderPreview() {
     }
 
     html += '</div>';
+  }
+
+  // 예상 크레딧 표시 (장면 수가 설정된 경우)
+  const sceneCount = parseInt(s2.scene_count) || 0;
+  if (sceneCount > 0) {
+    const estimatedCredits = SM_CREDIT_SCENARIO + (sceneCount * SM_CREDIT_PER_SCENE);
+    html += `<div class="sm-preview-section">
+      <div class="sm-preview-section-title">💰 예상 크레딧</div>
+      <div class="sm-preview-item">
+        <span class="sm-preview-item-label">시나리오 생성</span>
+        <span class="sm-preview-item-value">${SM_CREDIT_SCENARIO}cr</span>
+      </div>
+      <div class="sm-preview-item">
+        <span class="sm-preview-item-label">이미지 생성 (${sceneCount}컷)</span>
+        <span class="sm-preview-item-value">${sceneCount * SM_CREDIT_PER_SCENE}cr</span>
+      </div>
+      <div class="sm-preview-item" style="border-top: 2px solid #e5e7eb; padding-top: 8px; margin-top: 4px;">
+        <span class="sm-preview-item-label" style="font-weight: 700; color: #1f2937;">총 예상 비용</span>
+        <span class="sm-preview-item-value" style="font-weight: 700; color: #7c3aed; font-size: 15px;">${estimatedCredits}cr</span>
+      </div>
+      <div style="font-size: 11px; color: #9ca3af; margin-top: 6px; line-height: 1.4;">
+        * 장면 텍스트 재생성: 1cr/회<br>
+        * 장면 이미지 재생성: 3cr/회
+      </div>
+    </div>`;
   }
 
   bodyEl.innerHTML = html;
@@ -1167,7 +1292,7 @@ async function smRemoveFile(idx) {
   // 서버에서 삭제 시도 (URL이 있는 경우)
   if (file.url && SM.currentProjectId) {
     try {
-      await smApiCall('DELETE', '/api/storymaker/files/delete', {
+      await smApiCall('POST', '/api/storymaker/files/delete', {
         project_id: SM.currentProjectId,
         file_url: file.url,
         file_name: file.name,
@@ -1277,3 +1402,4 @@ window.smOnSceneSliderChange = smOnSceneSliderChange;
 window.smRecommendAudience = smRecommendAudience;
 window.smOnFilesSelected = smOnFilesSelected;
 window.smRemoveFile = smRemoveFile;
+window.smShowToast = smShowToast;
