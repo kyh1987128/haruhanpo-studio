@@ -7988,7 +7988,7 @@ THUMBNAIL DESIGN PRINCIPLES:
             thumbLastError = '잘못된 요청입니다. 콘텐츠를 수정 후 다시 시도해주세요.';
             // Try next model
           } else if (status === 404) {
-            thumbLastError = `${model}: 모델을 사용할 수 없습니다.`;
+            thumbLastError = 'AI 이미지 모델이 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해주세요.';
             // Try next model
           } else if (status === 429) {
             thumbLastError = 'API 사용량 한도를 초과했습니다. 잠시 후 다시 시도해주세요.';
