@@ -7567,10 +7567,10 @@ Return ONLY valid JSON (no markdown, no code fences):
     let lastError = '';
     
     const models = [
-      'gemini-2.0-flash-exp-image-generation',
-      'gemini-2.0-flash-exp'
+      'gemini-2.0-flash-preview-image-generation',
+      'gemini-2.0-flash-exp-image-generation'
     ];
-    
+
     for (const model of models) {
       try {
         console.log(`🎨 Gemini 이미지 생성 시도: ${model}`);
@@ -7940,10 +7940,10 @@ THUMBNAIL DESIGN PRINCIPLES:
     let thumbLastError = '';
     
     const thumbModels = [
-      'gemini-2.0-flash-exp-image-generation',
-      'gemini-2.0-flash-exp'
+      'gemini-2.0-flash-preview-image-generation',
+      'gemini-2.0-flash-exp-image-generation'
     ];
-    
+
     for (const model of thumbModels) {
       try {
         console.log(`🖼️ 썸네일 생성 시도: ${model}`);
