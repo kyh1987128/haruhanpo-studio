@@ -3757,17 +3757,6 @@ function displayResults(data, platforms, options = {}) {
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-xl font-bold text-gray-800">${platformNames[platform]}</h3>
           <div class="flex gap-2 flex-wrap">
-            ${getFrameRenderer(platform) ? `
-            <button
-              type="button"
-              onclick="togglePreviewFrame('${platform}')"
-              class="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition font-semibold flex items-center gap-2"
-              title="SNS 미리보기"
-            >
-              <i id="preview-toggle-icon-${platform}" class="fas ${_previewFrameEnabled ? 'fa-eye' : 'fa-eye-slash'}"></i>
-              <span id="preview-toggle-text-${platform}">미리보기</span>
-            </button>
-            ` : ''}
             ${!hideCalendarButton ? `
             <button
               type="button"
@@ -3832,17 +3821,20 @@ function displayResults(data, platforms, options = {}) {
             ✓ 저장
           </button>
         </div>
-        <div id="preview-frame-${platform}" class="${getFrameRenderer(platform) && _previewFrameEnabled ? '' : 'hidden'}" style="margin-top:16px;"></div>
+        <div id="preview-frame-${platform}" class="hidden" style="margin-top:16px;"></div>
       </div>
     </div>
   `).join('');
 
-  // 프리뷰 프레임 초기 렌더링 (모든 플랫폼)
-  if (_previewFrameEnabled) {
-    platforms.forEach(p => {
-      const renderer = getFrameRenderer(p);
-      if (renderer) renderer(p);
-    });
+  // 좌측 패널 미리보기 표시 + 첫 번째 플랫폼 렌더링
+  const leftPreview = document.getElementById('leftPanelPreview');
+  const leftPreviewContent = document.getElementById('leftPanelPreviewContent');
+  if (leftPreview && leftPreviewContent) {
+    leftPreview.classList.remove('hidden');
+    const firstPlatform = platforms[0];
+    if (firstPlatform) {
+      renderPreviewToLeftPanel(firstPlatform);
+    }
   }
 
   resultArea.classList.remove('hidden');
@@ -4396,6 +4388,32 @@ function switchTab(platform, eventOrElement) {
   } else {
     console.error(`Tab content not found: tab-${platform}`);
   }
+
+  // 좌측 패널 미리보기 연동
+  renderPreviewToLeftPanel(platform);
+}
+
+// 좌측 패널에 미리보기 렌더링
+function renderPreviewToLeftPanel(platform) {
+  const container = document.getElementById('leftPanelPreviewContent');
+  if (!container) return;
+  const renderer = getFrameRenderer(platform);
+  if (!renderer) {
+    container.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">이 플랫폼은 미리보기를 지원하지 않습니다.</p>';
+    return;
+  }
+  // 임시 div에 렌더링 후 좌측 패널로 이동
+  const tempId = `preview-frame-${platform}`;
+  let tempEl = document.getElementById(tempId);
+  if (!tempEl) {
+    tempEl = document.createElement('div');
+    tempEl.id = tempId;
+    tempEl.style.display = 'none';
+    document.body.appendChild(tempEl);
+  }
+  renderer(platform);
+  // 렌더링된 내용을 좌측 패널로 복사
+  container.innerHTML = tempEl.innerHTML;
 }
 
 // displayResults용 헬퍼 함수 (resultData에서 참조)
@@ -6023,6 +6041,7 @@ window.compressImage = compressImage;
 window.saveEditedImage = saveEditedImage;
 window.closeImageEditor = closeImageEditor;
 window.switchTab = switchTab;
+window.renderPreviewToLeftPanel = renderPreviewToLeftPanel;
 window.togglePreviewFrame = togglePreviewFrame;
 window.toggleSinglePreviewFrame = toggleSinglePreviewFrame;
 window.carouselNav = carouselNav;

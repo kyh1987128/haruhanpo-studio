@@ -546,7 +546,7 @@ export const htmlTemplate = `
                     <i class="fas fa-images text-teal-500"></i>
                     이미지 도구
                 </h3>
-                <div class="grid grid-cols-5 gap-2">
+                <div class="grid grid-cols-2 gap-2">
                     <button id="freeImageSearchBtn" class="img-tool-btn" onclick="window.ImageSearch && window.ImageSearch.open()">
                         <i class="fas fa-search text-lg text-teal-600"></i>
                         <span class="text-xs mt-1 font-semibold text-gray-700">무료 이미지 찾기</span>
@@ -556,20 +556,6 @@ export const htmlTemplate = `
                         <i class="fas fa-magic text-lg text-purple-600"></i>
                         <span class="text-xs mt-1 font-semibold text-gray-700">AI 이미지 생성</span>
                         <span class="text-[9px] text-orange-500 font-bold">3 크레딧</span>
-                    </button>
-                    <button id="aiThumbnailGenBtn" class="img-tool-btn" onclick="window.ThumbnailGenerator && window.ThumbnailGenerator.open()">
-                        <i class="fas fa-image text-lg text-pink-600"></i>
-                        <span class="text-xs mt-1 font-semibold text-gray-700">AI 썸네일 생성</span>
-                        <span class="text-[9px] text-orange-500 font-bold">3 크레딧</span>
-                    </button>
-                    <button id="aiCardNewsBtn" class="img-tool-btn" onclick="window.CardNewsGenerator && window.CardNewsGenerator.show()">
-                        <i class="fas fa-th-large text-lg text-emerald-600"></i>
-                        <span class="text-xs mt-1 font-semibold text-gray-700">AI 카드뉴스</span>
-                    </button>
-                    <button id="aiDesignFeedbackBtn" class="img-tool-btn" onclick="window.DesignFeedback && window.DesignFeedback.show()">
-                        <i class="fas fa-chart-bar text-lg text-blue-600"></i>
-                        <span class="text-xs mt-1 font-semibold text-gray-700">디자인 피드백</span>
-                        <span class="text-[9px] text-orange-500 font-bold">1 크레딧</span>
                     </button>
                 </div>
 
@@ -581,15 +567,6 @@ export const htmlTemplate = `
                     </div>
                     <div id="tabContentAigen" class="hidden overflow-y-auto">
                         <!-- image-generator.js가 여기에 렌더링 -->
-                    </div>
-                    <div id="tabContentThumbnail" class="hidden overflow-y-auto">
-                        <!-- thumbnail-generator.js가 여기에 렌더링 -->
-                    </div>
-                    <div id="tabContentCardNews" class="hidden overflow-y-auto">
-                        <!-- card-news-generator.js가 여기에 렌더링 -->
-                    </div>
-                    <div id="tabContentFeedback" class="hidden overflow-y-auto">
-                        <!-- design-feedback.js가 여기에 렌더링 -->
                     </div>
                     <!-- 에디터 뷰 (이미지 클릭 시) -->
                     <div id="tabContentEditor" class="hidden">
@@ -681,8 +658,18 @@ export const htmlTemplate = `
                     </button>
                 </div>
             </div>
+
+            <!-- 📱 SNS 미리보기 패널 (콘텐츠 생성 후 표시) -->
+            <div id="leftPanelPreview" class="hidden mb-6">
+                <div class="border-t border-gray-200 my-4"></div>
+                <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <i class="fas fa-mobile-alt text-pink-500"></i>
+                    SNS 미리보기
+                </h3>
+                <div id="leftPanelPreviewContent" style="max-height: 60vh; overflow-y: auto;"></div>
+            </div>
         </aside>
-        
+
         <!-- 메인 콘텐츠 영역 -->
         <main class="main-content">
         <!-- 📅 콘텐츠 관리 캘린더 (Phase 3 - 완전 개편) -->
@@ -1106,7 +1093,7 @@ export const htmlTemplate = `
                 <h2 class="text-2xl font-bold text-gray-800">
                     생성 결과
                     <span style="color: #667eea; font-size: 14px; font-weight: normal; margin-left: 8px;">
-                        💡 이어서 다음 작업을 진행해보세요 (예: 이미지 도구, SNS 바로가기, AI 워크플로우로 다른 AI 작업 이어서 하기 등)
+                        💡 이어서 다음 작업을 진행해보세요 (예: SNS 바로가기, AI 워크플로우로 다른 AI 작업 이어서 하기 등)
                     </span>
                 </h2>
                 <button
@@ -2275,11 +2262,7 @@ export const htmlTemplate = `
     <script src="/static/image-search.js?v=8.3.0"></script>
     <script src="/static/image-generator.js?v=8.3.0"></script>
     <script src="/static/image-editor.js?v=8.3.0"></script>
-    <script src="/static/thumbnail-generator.js?v=8.3.0"></script>
     <script src="/static/slide-collection.js?v=8.3.0"></script>
-    <script src="/static/card-news-templates.js?v=8.3.0"></script>
-    <script src="/static/card-news-generator.js?v=8.3.2"></script>
-    <script src="/static/design-feedback.js?v=8.3.0"></script>
     
     <script>
       // ========================================
