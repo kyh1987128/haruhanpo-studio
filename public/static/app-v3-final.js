@@ -4315,38 +4315,26 @@ function getFrameRenderer(platform) {
 // 프리뷰 프레임 토글
 function togglePreviewFrame(platform) {
   _previewFrameEnabled = !_previewFrameEnabled;
-  const frameEl = document.getElementById(`preview-frame-${platform}`);
-  const btnIcon = document.getElementById(`preview-toggle-icon-${platform}`);
+  const leftPreview = document.getElementById('leftPanelPreview');
 
   if (_previewFrameEnabled) {
-    if (frameEl) frameEl.classList.remove('hidden');
-    if (btnIcon) btnIcon.className = 'fas fa-eye';
-    const renderer = getFrameRenderer(platform);
-    if (renderer) renderer(platform);
+    if (leftPreview) leftPreview.classList.remove('hidden');
+    renderPreviewToLeftPanel(platform);
   } else {
-    if (frameEl) frameEl.classList.add('hidden');
-    if (btnIcon) btnIcon.className = 'fas fa-eye-slash';
+    if (leftPreview) leftPreview.classList.add('hidden');
   }
 }
 
-// displaySingleContentResult용 프리뷰 토글
+// displaySingleContentResult용 프리뷰 토글 (좌측 패널)
 function toggleSinglePreviewFrame(contentIndex, platform) {
   _previewFrameEnabled = !_previewFrameEnabled;
-  const frameEl = document.getElementById(`single-preview-frame-${contentIndex}-${platform}`);
-  const btnIcon = document.getElementById(`single-preview-icon-${contentIndex}-${platform}`);
+  const leftPreview = document.getElementById('leftPanelPreview');
 
   if (_previewFrameEnabled) {
-    if (frameEl) frameEl.classList.remove('hidden');
-    if (btnIcon) btnIcon.className = 'fas fa-eye mr-1';
-    const renderer = getFrameRenderer(platform);
-    if (renderer && frameEl) {
-      frameEl.id = `preview-frame-${platform}`;
-      renderer(platform);
-      frameEl.id = `single-preview-frame-${contentIndex}-${platform}`;
-    }
+    if (leftPreview) leftPreview.classList.remove('hidden');
+    renderPreviewToLeftPanel(platform);
   } else {
-    if (frameEl) frameEl.classList.add('hidden');
-    if (btnIcon) btnIcon.className = 'fas fa-eye-slash mr-1';
+    if (leftPreview) leftPreview.classList.add('hidden');
   }
 }
 
@@ -9630,16 +9618,6 @@ function displaySingleContentResult(contentIndex, result, platforms) {
         
         <!-- 액션 버튼 -->
         <div class="flex flex-wrap gap-2">
-          ${getFrameRenderer(platform) ? `
-          <button
-            type="button"
-            onclick="toggleSinglePreviewFrame(${contentIndex}, '${platform}')"
-            class="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition text-sm"
-            title="SNS 미리보기"
-          >
-            <i id="single-preview-icon-${contentIndex}-${platform}" class="fas ${_previewFrameEnabled ? 'fa-eye' : 'fa-eye-slash'} mr-1"></i>미리보기
-          </button>
-          ` : ''}
           <button
             type="button"
             onclick="editContentText(${contentIndex}, '${platform}')"
@@ -9695,8 +9673,8 @@ function displaySingleContentResult(contentIndex, result, platforms) {
           </div>
         </div>
 
-        <!-- 프리뷰 프레임 -->
-        <div id="single-preview-frame-${contentIndex}-${platform}" class="${getFrameRenderer(platform) && _previewFrameEnabled ? '' : 'hidden'}" style="margin-top:16px;"></div>
+        <!-- 프리뷰 프레임 (좌측 패널로 이동됨) -->
+        <div id="single-preview-frame-${contentIndex}-${platform}" class="hidden" style="margin-top:16px;"></div>
       </div>
     `;
   });
@@ -9709,24 +9687,15 @@ function displaySingleContentResult(contentIndex, result, platforms) {
   resultArea.innerHTML = html;
   resultArea.classList.remove('hidden');
 
-  // ✅ 프리뷰 프레임 초기 렌더링 (displaySingleContentResult)
-  if (_previewFrameEnabled) {
-    platforms.forEach(p => {
-      const renderer = getFrameRenderer(p);
-      if (renderer) {
-        // displaySingleContentResult용: resultData에 임시 저장 후 렌더
-        const prevData = resultData[p];
-        resultData[p] = result.data[p] || '';
-        const frameEl = document.getElementById(`single-preview-frame-${contentIndex}-${p}`);
-        if (frameEl) {
-          // 임시로 preview-frame-{platform} 요소를 연결
-          frameEl.id = `preview-frame-${p}`;
-          renderer(p);
-          frameEl.id = `single-preview-frame-${contentIndex}-${p}`;
-        }
-        if (prevData !== undefined) resultData[p] = prevData;
-      }
-    });
+  // 좌측 패널 미리보기 표시 (displaySingleContentResult)
+  const leftPreview = document.getElementById('leftPanelPreview');
+  if (leftPreview && _previewFrameEnabled && platforms.length > 0) {
+    leftPreview.classList.remove('hidden');
+    const firstPlatform = platforms[0];
+    const prevData = resultData[firstPlatform];
+    resultData[firstPlatform] = result.data[firstPlatform] || '';
+    renderPreviewToLeftPanel(firstPlatform);
+    if (prevData !== undefined) resultData[firstPlatform] = prevData;
   }
 
   resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

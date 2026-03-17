@@ -2225,7 +2225,7 @@ export const htmlTemplate = `
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ko.js"></script>
     
-    <script src="/static/app-v3-final.js?v=8.3.0"></script>
+    <script src="/static/app-v3-final.js?v=8.4.0"></script>
     <script src="/static/keyword-analysis.js?v=8.3.0"></script>
     <script src="/static/keyword-extended.js?v=8.3.0"></script>
     
