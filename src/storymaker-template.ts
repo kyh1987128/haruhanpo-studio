@@ -1496,7 +1496,7 @@ export function storymakerTemplate() {
   <!-- 메인 앱 (인증, Supabase 초기화 등) -->
   <script src="/static/app-v3-final.js?v=8.5.0"></script>
   <!-- 스토리 메이커 전용 -->
-  <script src="/static/storymaker-v1.3.js"></script>
+  <script src="/static/storymaker.js?v=1.4.0"></script>
 
 </body>
 </html>
