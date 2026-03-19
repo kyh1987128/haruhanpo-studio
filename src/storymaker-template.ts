@@ -1422,7 +1422,14 @@ export function storymakerTemplate() {
           </div>
         </div>
 
-        <!-- 2) 장르톤 (사진 카드) -->
+        <!-- 2) 추천 포맷 (콘텐츠 유형 바로 아래) -->
+        <div class="sm-card" id="sm-preset-card" style="display:none;">
+          <div class="sm-card-title"><i class="fas fa-magic" style="color: #7c3aed;"></i> 추천 포맷</div>
+          <div class="sm-source-grid" id="sm-preset-grid"></div>
+          <div style="font-size:12px; color:#9ca3af; text-align:center; margin-top:8px;">포맷은 나중에 변경할 수 있습니다.</div>
+        </div>
+
+        <!-- 3) 장르톤 (사진 카드) -->
         <div class="sm-card" id="sm-genre-tone-card" style="display:none;">
           <div class="sm-card-title"><i class="fas fa-theater-masks" style="color: #7c3aed;"></i> 장르 · 톤 <span class="hint">(최대 3개 선택)</span></div>
           <div class="sm-photo-grid" id="sm-genre-tone-grid">
@@ -1430,7 +1437,7 @@ export function storymakerTemplate() {
           </div>
         </div>
 
-        <!-- 3) 기본 정보 -->
+        <!-- 4) 기본 정보 -->
         <div class="sm-card" id="sm-basic-info-card" style="display:none;">
           <div class="sm-card-title"><i class="fas fa-edit" style="color: #7c3aed;"></i> 기본 정보</div>
           <div class="sm-form-group">
@@ -1441,13 +1448,6 @@ export function storymakerTemplate() {
             <label class="sm-form-label">시놉시스 <span class="required">*</span></label>
             <textarea class="sm-form-textarea" id="sm-synopsis" placeholder="줄거리를 간략히 적어주세요" rows="4"></textarea>
           </div>
-        </div>
-
-        <!-- 4) 포맷 프리셋 -->
-        <div class="sm-card" id="sm-preset-card" style="display:none;">
-          <div class="sm-card-title"><i class="fas fa-magic" style="color: #7c3aed;"></i> 추천 포맷</div>
-          <div class="sm-source-grid" id="sm-preset-grid"></div>
-          <div style="font-size:12px; color:#9ca3af; text-align:center; margin-top:8px;">선택하면 Step 2 포맷이 자동 세팅됩니다.</div>
         </div>
 
         <!-- 5) 소재 유형 -->
@@ -1583,116 +1583,7 @@ export function storymakerTemplate() {
           </div>
         </div>
 
-        <!-- 4) 포맷 설정 -->
-        <div class="sm-card">
-          <div class="sm-card-title"><i class="fas fa-sliders-h" style="color: #7c3aed;"></i> 포맷 설정</div>
-
-          <!-- 경고 배너 -->
-          <div id="sm-format-warning" style="display:none; background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; padding:12px; margin-bottom:16px;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <i class="fas fa-exclamation-triangle" style="color:#f59e0b; font-size:16px;"></i>
-              <div>
-                <div style="font-weight:600; color:#92400e; font-size:13px;" id="sm-format-warning-text"></div>
-                <button onclick="smResetToPreset()" style="margin-top:6px; padding:4px 12px; border:1px solid #f59e0b; border-radius:6px; background:#fff; color:#92400e; font-size:12px; cursor:pointer;">
-                  <i class="fas fa-undo"></i> 추천으로 되돌리기
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- 영상 트랙 -->
-          <div id="sm-step2-video-track">
-            <div class="sm-form-row">
-              <div class="sm-form-group">
-                <label class="sm-form-label">영상 길이</label>
-                <select class="sm-form-select" id="sm-video-length">
-                  <option value="">선택하세요</option>
-                  <option value="short_15">숏폼 (15초)</option>
-                  <option value="short_30">숏폼 (30초)</option>
-                  <option value="short_60">숏폼 (60초)</option>
-                  <option value="mid_3m">미드폼 (3분)</option>
-                  <option value="mid_5m">미드폼 (5분)</option>
-                  <option value="long_10m">롱폼 (10분)</option>
-                  <option value="long_15m">롱폼 (15분+)</option>
-                </select>
-              </div>
-              <div class="sm-form-group">
-                <label class="sm-form-label">장면 수</label>
-                <div id="sm-scene-count-wrap">
-                  <div class="sm-slider-empty" id="sm-scene-slider-empty">영상 길이를 먼저 선택하세요</div>
-                  <div class="sm-slider-wrap" id="sm-scene-slider-wrap" style="display:none;">
-                    <div class="sm-slider-info">
-                      <span id="sm-scene-range-label">2~4컷</span>
-                      <span class="sm-slider-value" id="sm-scene-value">3</span>
-                    </div>
-                    <input type="range" class="sm-slider-range" id="sm-scene-count" min="2" max="4" value="3" oninput="smOnSceneSliderChange(this.value)">
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="sm-form-group">
-              <label class="sm-form-label">화면 비율</label>
-              <div class="sm-option-group" id="sm-aspect-ratio">
-                <label class="sm-option-item" onclick="smSelectOption(this, 'sm-aspect-ratio')"><input type="radio" name="aspect_ratio" value="16:9"><i class="fas fa-tv"></i> 16:9 (가로)</label>
-                <label class="sm-option-item" onclick="smSelectOption(this, 'sm-aspect-ratio')"><input type="radio" name="aspect_ratio" value="9:16"><i class="fas fa-mobile-alt"></i> 9:16 (세로)</label>
-                <label class="sm-option-item" onclick="smSelectOption(this, 'sm-aspect-ratio')"><input type="radio" name="aspect_ratio" value="1:1"><i class="fas fa-square"></i> 1:1 (정방형)</label>
-                <label class="sm-option-item" onclick="smSelectOption(this, 'sm-aspect-ratio')"><input type="radio" name="aspect_ratio" value="4:5"><i class="fas fa-portrait"></i> 4:5</label>
-              </div>
-            </div>
-            <div class="sm-form-group">
-              <label class="sm-form-label">게시 플랫폼 <span class="hint">(복수 선택 가능)</span></label>
-              <div class="sm-option-group" id="sm-platforms">
-                <label class="sm-option-item" onclick="smToggleOption(this)"><input type="checkbox" name="platforms" value="youtube"> YouTube</label>
-                <label class="sm-option-item" onclick="smToggleOption(this)"><input type="checkbox" name="platforms" value="instagram_reels"> 인스타 릴스</label>
-                <label class="sm-option-item" onclick="smToggleOption(this)"><input type="checkbox" name="platforms" value="tiktok"> TikTok</label>
-                <label class="sm-option-item" onclick="smToggleOption(this)"><input type="checkbox" name="platforms" value="shorts"> YouTube Shorts</label>
-                <label class="sm-option-item" onclick="smToggleOption(this)"><input type="checkbox" name="platforms" value="blog"> 블로그 / 웹</label>
-              </div>
-            </div>
-            <div class="sm-form-group">
-              <div class="sm-toggle-wrap">
-                <span class="sm-toggle-label"><i class="fas fa-microphone" style="margin-right:6px;color:#7c3aed;"></i> 나레이션 포함</span>
-                <label class="sm-toggle"><input type="checkbox" id="sm-has-narration" checked><span class="sm-toggle-slider"></span></label>
-              </div>
-              <div class="sm-toggle-wrap">
-                <span class="sm-toggle-label"><i class="fas fa-music" style="margin-right:6px;color:#7c3aed;"></i> 배경 음악 포함</span>
-                <label class="sm-toggle"><input type="checkbox" id="sm-has-bgm" checked><span class="sm-toggle-slider"></span></label>
-              </div>
-            </div>
-          </div>
-
-          <!-- 비주얼 트랙 (웹툰용) -->
-          <div id="sm-step2-visual-track" style="display:none;">
-            <div class="sm-form-group">
-              <label class="sm-form-label">컷 수</label>
-              <div class="sm-slider-wrap">
-                <div class="sm-slider-info">
-                  <span id="sm-visual-cut-range-label">4~20컷</span>
-                  <span class="sm-slider-value" id="sm-visual-cut-value">8</span>
-                </div>
-                <input type="range" class="sm-slider-range" id="sm-visual-cut-count" min="4" max="20" value="8" oninput="smOnVisualCutChange(this.value)">
-              </div>
-            </div>
-            <div class="sm-form-group">
-              <label class="sm-form-label">사이즈</label>
-              <div class="sm-option-group" id="sm-visual-size">
-                <label class="sm-option-item" onclick="smSelectOption(this, 'sm-visual-size')"><input type="radio" name="visual_size" value="vertical"><i class="fas fa-mobile-alt"></i> 세로 스크롤</label>
-                <label class="sm-option-item" onclick="smSelectOption(this, 'sm-visual-size')"><input type="radio" name="visual_size" value="square"><i class="fas fa-square"></i> 정방형 (1:1)</label>
-                <label class="sm-option-item" onclick="smSelectOption(this, 'sm-visual-size')"><input type="radio" name="visual_size" value="horizontal"><i class="fas fa-tv"></i> 가로 (16:9)</label>
-              </div>
-            </div>
-            <div class="sm-form-group">
-              <label class="sm-form-label">게시 플랫폼</label>
-              <div class="sm-option-group" id="sm-visual-platforms">
-                <label class="sm-option-item" onclick="smToggleOption(this)"><input type="checkbox" name="visual_platforms" value="instagram"> 인스타그램</label>
-                <label class="sm-option-item" onclick="smToggleOption(this)"><input type="checkbox" name="visual_platforms" value="naver_webtoon"> 네이버 웹툰</label>
-                <label class="sm-option-item" onclick="smToggleOption(this)"><input type="checkbox" name="visual_platforms" value="kakao"> 카카오</label>
-                <label class="sm-option-item" onclick="smToggleOption(this)"><input type="checkbox" name="visual_platforms" value="twitter"> X (트위터)</label>
-                <label class="sm-option-item" onclick="smToggleOption(this)"><input type="checkbox" name="visual_platforms" value="blog"> 블로그</label>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- 포맷 설정은 Step 1 프리셋에서 처리됨 (중복 제거) -->
 
         <!-- Step 이동 -->
         <div class="sm-step-actions">
