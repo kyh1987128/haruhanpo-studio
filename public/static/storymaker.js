@@ -359,8 +359,8 @@ function smGetSelectedCards(containerId) {
 // ========================================
 function smRenderGenreToneCards() {
   smRenderPhotoCards('sm-genre-tone-grid', (typeof SM_CARDS !== 'undefined' && SM_CARDS.genreTone) || [], {
-    multiSelect: true,
-    maxSelect: 3,
+    multiSelect: false,
+    maxSelect: 1,
     selectedIds: SM.selectedGenreTones,
     onSelect: 'smSelectCard',
   });
@@ -822,13 +822,14 @@ function smValidateStep(n) {
   const missing = [];
 
   if (n === 1) {
-    // 새 필드 우선, 하위호환 폴백
-    const name = document.getElementById('sm-title')?.value?.trim() || document.getElementById('sm-project-name')?.value?.trim();
+    // 콘텐츠 유형 필수, 제목은 선택
     const contentType = SM.selectedContentType || document.getElementById('sm-genre')?.value;
     const isTopic = SM.selectedSources.includes('topic');
 
-    if (!name) missing.push('sm-title');
-    if (!contentType) missing.push('sm-genre');
+    if (!contentType) {
+      missing.push('sm-genre');
+      smShowToast('콘텐츠 유형을 선택해주세요');
+    }
 
     if (isTopic) {
       // 주제 기획: 시놉시스 필수
@@ -886,16 +887,16 @@ function smIsStepCompleted(n) {
   if (!d) return false;
 
   if (n === 1) {
-    const isTopic = !d.source_types || d.source_types.includes('topic');
-    const title = d.title || d.project_name;
     const contentType = d.content_type || d.genre;
+    if (!contentType) return false;
+    const isTopic = !d.source_types || d.source_types.includes('topic');
     if (isTopic) {
       const synopsis = d.synopsis || d.core_message;
-      return !!(contentType && title?.trim() && synopsis?.trim());
+      return !!(synopsis?.trim());
     } else {
       const hasUrl = Array.isArray(d.reference_urls) && d.reference_urls.length > 0;
       const hasFile = Array.isArray(d.reference_files) && d.reference_files.length > 0;
-      return !!(contentType && title?.trim() && (hasUrl || hasFile));
+      return !!(hasUrl || hasFile);
     }
   } else if (n === 2) {
     return !!(d.characters?.length > 0 && d.locations?.length > 0);

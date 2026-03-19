@@ -1431,19 +1431,13 @@ export function storymakerTemplate() {
 
         <!-- 3) 장르톤 (사진 카드) -->
         <div class="sm-card" id="sm-genre-tone-card" style="display:none;">
-          <div class="sm-card-title"><i class="fas fa-theater-masks" style="color: #7c3aed;"></i> 장르 · 톤 <span class="hint">(최대 3개 선택)</span></div>
+          <div class="sm-card-title"><i class="fas fa-theater-masks" style="color: #7c3aed;"></i> 장르 · 톤</div>
           <div class="sm-photo-grid" id="sm-genre-tone-grid">
             <!-- JS: smRenderGenreToneCards()가 채움 -->
           </div>
         </div>
 
-        <!-- 4) 제목 -->
-        <div class="sm-card" id="sm-basic-info-card" style="display:none;">
-          <div class="sm-card-title"><i class="fas fa-edit" style="color: #7c3aed;"></i> 제목 <span class="required">*</span></div>
-          <input class="sm-form-input" id="sm-title" placeholder="작품 제목을 입력하세요">
-        </div>
-
-        <!-- 5) 소재 유형 -->
+        <!-- 4) 소재 유형 -->
         <div class="sm-card">
           <div class="sm-card-title"><i class="fas fa-pen-fancy" style="color: #7c3aed;"></i> 콘텐츠 소재를 어떻게 준비할까요?</div>
           <div class="sm-source-grid" id="sm-source-grid">
@@ -1509,6 +1503,12 @@ export function storymakerTemplate() {
               <textarea class="sm-form-textarea" id="sm-file-direction" placeholder="예: 이 자료를 기반으로 스토리보드를 만들어줘" rows="2"></textarea>
             </div>
           </div>
+        </div>
+
+        <!-- 제목 (선택, 나중에 입력 가능) -->
+        <div class="sm-card" id="sm-basic-info-card" style="display:none;">
+          <div class="sm-card-title"><i class="fas fa-heading" style="color: #7c3aed;"></i> 작품 제목 <span class="hint">(선택 — 나중에 정해도 OK)</span></div>
+          <input class="sm-form-input" id="sm-title" placeholder="제목이 정해졌다면 입력하세요">
         </div>
 
         <!-- Step 이동 -->
