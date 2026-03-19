@@ -1350,7 +1350,7 @@ export function storymakerTemplate() {
 
         <!-- 1) 장르 카드 선택 -->
         <div class="sm-card">
-          <div class="sm-card-title"><i class="fas fa-film" style="color: #7c3aed;"></i> 어떤 영상을 만드시나요? <span class="required">*</span></div>
+          <div class="sm-card-title"><i class="fas fa-film" style="color: #7c3aed;"></i> 어떤 콘텐츠를 만드시나요? <span class="required">*</span></div>
           <!-- 숨겨진 select (데이터 호환용) -->
           <select class="sm-form-select" id="sm-genre" style="display:none;">
             <option value="">선택하세요</option>
@@ -1358,12 +1358,15 @@ export function storymakerTemplate() {
             <option value="education">교육 · 튜토리얼</option>
             <option value="vlog">브이로그 · 일상</option>
             <option value="review">리뷰 · 언박싱</option>
-            <option value="story">스토리텔링 · 드라마</option>
-            <option value="news">뉴스 · 시사</option>
+            <option value="story">드라마 · 숏필름</option>
+            <option value="news">뉴스 · 정보</option>
             <option value="music">뮤직비디오</option>
             <option value="animation">애니메이션 · 모션</option>
-            <option value="other">기타</option>
+            <option value="webtoon">웹툰 · 숏툰</option>
+            <option value="cartoon">4컷 · 카툰</option>
+            <option value="interview">인터뷰 · 토크</option>
           </select>
+          <div style="margin-bottom:8px;font-size:13px;color:#6b7280;">🎬 영상</div>
           <div class="sm-genre-grid" id="sm-genre-grid">
             <div class="sm-genre-card" data-genre="promotion" onclick="smSelectGenre(this)">
               <div class="sm-genre-icon">📢</div>
@@ -1378,7 +1381,7 @@ export function storymakerTemplate() {
             <div class="sm-genre-card" data-genre="vlog" onclick="smSelectGenre(this)">
               <div class="sm-genre-icon">📹</div>
               <div class="sm-genre-name">브이로그 · 일상</div>
-              <div class="sm-genre-desc">일상 기록, 루틴 공유</div>
+              <div class="sm-genre-desc">일상 기록, 여행, 루틴</div>
             </div>
             <div class="sm-genre-card" data-genre="review" onclick="smSelectGenre(this)">
               <div class="sm-genre-icon">🛍️</div>
@@ -1387,8 +1390,8 @@ export function storymakerTemplate() {
             </div>
             <div class="sm-genre-card" data-genre="story" onclick="smSelectGenre(this)">
               <div class="sm-genre-icon">🎬</div>
-              <div class="sm-genre-name">웹드라마 · 스토리</div>
-              <div class="sm-genre-desc">감성 스토리텔링, 드라마</div>
+              <div class="sm-genre-name">드라마 · 숏필름</div>
+              <div class="sm-genre-desc">웹드라마, 단편영화, 시네마</div>
             </div>
             <div class="sm-genre-card" data-genre="news" onclick="smSelectGenre(this)">
               <div class="sm-genre-icon">📰</div>
@@ -1405,10 +1408,23 @@ export function storymakerTemplate() {
               <div class="sm-genre-name">애니메이션 · 모션</div>
               <div class="sm-genre-desc">모션그래픽, 인포그래픽</div>
             </div>
-            <div class="sm-genre-card" data-genre="other" onclick="smSelectGenre(this)">
-              <div class="sm-genre-icon">🎯</div>
-              <div class="sm-genre-name">기타</div>
-              <div class="sm-genre-desc">직접 설정</div>
+            <div class="sm-genre-card" data-genre="interview" onclick="smSelectGenre(this)">
+              <div class="sm-genre-icon">🎤</div>
+              <div class="sm-genre-name">인터뷰 · 토크</div>
+              <div class="sm-genre-desc">대담, 팟캐스트, Q&A</div>
+            </div>
+          </div>
+          <div style="margin-top:16px;margin-bottom:8px;font-size:13px;color:#6b7280;">🖼️ 비주얼</div>
+          <div class="sm-genre-grid">
+            <div class="sm-genre-card" data-genre="webtoon" onclick="smSelectGenre(this)">
+              <div class="sm-genre-icon">📖</div>
+              <div class="sm-genre-name">웹툰 · 숏툰</div>
+              <div class="sm-genre-desc">세로 스크롤, 릴스 슬라이드</div>
+            </div>
+            <div class="sm-genre-card" data-genre="cartoon" onclick="smSelectGenre(this)">
+              <div class="sm-genre-icon">🎴</div>
+              <div class="sm-genre-name">4컷 · 카툰</div>
+              <div class="sm-genre-desc">SNS 밈, 4컷만화, 카툰</div>
             </div>
           </div>
         </div>

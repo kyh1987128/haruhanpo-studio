@@ -52,18 +52,18 @@ const GENRE_FORMS = {
   promotion: {
     title: '📢 홍보 · 광고 기획',
     fields: [
-      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 봄맞이 카페 프로모션 영상' },
+      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 신규 피트니스 센터 오픈 프로모션' },
       { id: 'sm-core-message', type: 'textarea', label: '홍보 대상 · 핵심 메시지', required: true, placeholder: '어떤 브랜드/제품/서비스를 홍보하나요? 핵심 메시지는?' },
-      { id: 'sm-target-audience', type: 'text', label: '타겟 고객', placeholder: '예: 20~30대 카페 좋아하는 여성' },
-      { id: 'sm-genre-mood', type: 'tags', label: '분위기', tags: ['따뜻한','감성적인','트렌디','고급스러운','유쾌한','프로페셔널','다이나믹','미니멀'] },
+      { id: 'sm-target-audience', type: 'text', label: '타겟 고객', placeholder: '예: 20~30대 직장인, 운동에 관심 있는 남녀' },
+      { id: 'sm-genre-mood', type: 'tags', label: '분위기', tags: ['트렌디','고급스러운','다이나믹','유쾌한','감성적인','프로페셔널','미니멀','따뜻한'] },
     ],
   },
   education: {
     title: '🎓 교육 · 튜토리얼 기획',
     fields: [
-      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 엑셀 피벗테이블 완벽 가이드' },
-      { id: 'sm-core-message', type: 'textarea', label: '학습 주제', required: true, placeholder: '어떤 내용을 가르치나요?' },
-      { id: 'sm-genre-extra-1', type: 'text', label: '학습 목표 (시청자가 얻는 것)', placeholder: '예: 피벗테이블로 데이터 분석할 수 있다' },
+      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 초보자를 위한 영상 편집 기초 강좌' },
+      { id: 'sm-core-message', type: 'textarea', label: '학습 주제', required: true, placeholder: '어떤 내용을 가르치나요? 시청자가 배울 핵심은?' },
+      { id: 'sm-genre-extra-1', type: 'text', label: '학습 목표 (시청자가 얻는 것)', placeholder: '예: 컷 편집과 자막 삽입을 혼자 할 수 있다' },
       { id: 'sm-genre-extra-2', type: 'choice', label: '난이도', choices: ['초급','중급','고급'] },
       { id: 'sm-genre-extra-3', type: 'choice', label: '설명 방식', choices: ['실습형','강의형','비교형','Q&A형'] },
     ],
@@ -71,36 +71,37 @@ const GENRE_FORMS = {
   vlog: {
     title: '📹 브이로그 · 일상 기획',
     fields: [
-      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 제주도 3일 힐링 여행 브이로그' },
+      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 도쿄 3박 4일 맛집 투어 브이로그' },
       { id: 'sm-core-message', type: 'textarea', label: '어떤 일상/이야기를 담나요?', required: true, placeholder: '장소, 상황, 하고 싶은 이야기를 자유롭게' },
-      { id: 'sm-genre-mood', type: 'tags', label: '분위기', tags: ['자연스러운','따뜻한','유쾌한','차분한','감성적인','트렌디'] },
+      { id: 'sm-genre-mood', type: 'tags', label: '분위기', tags: ['자연스러운','유쾌한','차분한','감성적인','트렌디','따뜻한'] },
     ],
   },
   review: {
     title: '🛍️ 리뷰 · 언박싱 기획',
     fields: [
-      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 갤럭시 S26 2주 사용 솔직 리뷰' },
-      { id: 'sm-core-message', type: 'text', label: '제품/서비스명', required: true, placeholder: '예: 삼성 갤럭시 S26 울트라' },
+      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 맥북 프로 M5 한 달 실사용 솔직 리뷰' },
+      { id: 'sm-core-message', type: 'text', label: '제품/서비스명', required: true, placeholder: '예: Apple MacBook Pro M5 16인치' },
       { id: 'sm-genre-extra-1', type: 'tags', label: '리뷰 포인트', tags: ['디자인','성능','카메라','배터리','가성비','사용감','내구성'] },
-      { id: 'sm-genre-extra-2', type: 'text', label: '비교 대상 (선택)', placeholder: '예: 아이폰 17 Pro' },
+      { id: 'sm-genre-extra-2', type: 'text', label: '비교 대상 (선택)', placeholder: '예: 삼성 갤럭시북5 프로' },
       { id: 'sm-genre-extra-3', type: 'choice', label: '리뷰 톤', choices: ['솔직한','긍정적','분석적','유머러스'] },
     ],
   },
   story: {
-    title: '🎬 웹드라마 · 스토리 기획',
+    title: '🎬 드라마 · 숏필름 기획',
     fields: [
-      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 카페에서 시작된 우연' },
-      { id: 'sm-core-message', type: 'textarea', label: '테마 · 주제', required: true, placeholder: '어떤 이야기를 들려주고 싶나요?' },
-      { id: 'sm-genre-extra-1', type: 'textarea', label: '등장인물 설정', placeholder: '주인공, 상대역 등 인물 설정' },
-      { id: 'sm-genre-extra-2', type: 'textarea', label: '갈등 · 전개 방향', placeholder: '어떤 갈등? 어떻게 전개?' },
-      { id: 'sm-genre-mood', type: 'tags', label: '분위기', tags: ['감성적인','드라마틱','따뜻한','긴장감','유쾌한','레트로','시네마틱'] },
+      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 마지막 열차 - 우연히 만난 두 사람' },
+      { id: 'sm-core-message', type: 'textarea', label: '테마 · 줄거리', required: true, placeholder: '어떤 이야기인가요? 중심 테마와 간단한 줄거리' },
+      { id: 'sm-genre-extra-1', type: 'textarea', label: '등장인물 설정', placeholder: '예: 주인공(30대 회사원), 상대역(같은 열차 승객)' },
+      { id: 'sm-genre-extra-2', type: 'textarea', label: '갈등 · 전개 방향', placeholder: '예: 서로의 비밀을 알게 되면서 벌어지는 이야기' },
+      { id: 'sm-genre-extra-3', type: 'choice', label: '장르 톤', choices: ['로맨스','스릴러','코미디','감동·휴먼','호러','판타지','일상극'] },
+      { id: 'sm-genre-mood', type: 'tags', label: '영상 분위기', tags: ['시네마틱','드라마틱','감성적인','긴장감','레트로','몽환적','따뜻한','유쾌한'] },
     ],
   },
   news: {
     title: '📰 뉴스 · 정보 기획',
     fields: [
-      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 2026 부동산 시장 전망 분석' },
-      { id: 'sm-core-message', type: 'textarea', label: '다룰 주제 · 이슈', required: true, placeholder: '어떤 뉴스/정보를 전달하나요?' },
+      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 2026 AI 트렌드 총정리 — 달라지는 것들' },
+      { id: 'sm-core-message', type: 'textarea', label: '다룰 주제 · 이슈', required: true, placeholder: '어떤 뉴스/정보를 전달하나요? 핵심 논점은?' },
       { id: 'sm-genre-extra-1', type: 'choice', label: '전달 관점', choices: ['객관적 보도','분석·해설','의견·논평'] },
       { id: 'sm-genre-extra-2', type: 'choice', label: '톤', choices: ['공식적','캐주얼','유머러스'] },
     ],
@@ -108,28 +109,51 @@ const GENRE_FORMS = {
   music: {
     title: '🎵 뮤직비디오 기획',
     fields: [
-      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 봄날의 산책 MV' },
-      { id: 'sm-core-message', type: 'textarea', label: '곡 정보 · 가사 요약', required: true, placeholder: '곡 제목, 장르, 주요 가사 내용' },
-      { id: 'sm-genre-extra-1', type: 'textarea', label: '시각적 컨셉', placeholder: '어떤 영상 분위기? 장소? 연출?' },
-      { id: 'sm-genre-mood', type: 'tags', label: '분위기', tags: ['감성적인','다이나믹','레트로','시네마틱','몽환적','미니멀'] },
+      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: "Midnight Run" 인디밴드 데뷔 MV' },
+      { id: 'sm-core-message', type: 'textarea', label: '곡 정보 · 가사 요약', required: true, placeholder: '곡 제목, 장르, 주요 가사 내용이나 분위기' },
+      { id: 'sm-genre-extra-1', type: 'textarea', label: '시각적 컨셉', placeholder: '예: 밤거리 네온사인 배경, 달리는 장면 위주' },
+      { id: 'sm-genre-mood', type: 'tags', label: '분위기', tags: ['시네마틱','다이나믹','레트로','감성적인','몽환적','미니멀','펑키'] },
     ],
   },
   animation: {
     title: '✨ 애니메이션 · 모션 기획',
     fields: [
-      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 서비스 소개 인포그래픽 영상' },
-      { id: 'sm-core-message', type: 'textarea', label: '전달할 핵심 내용', required: true, placeholder: '어떤 정보를 시각화하나요?' },
-      { id: 'sm-genre-extra-1', type: 'choice', label: '스타일', choices: ['모션그래픽','인포그래픽','캐릭터 애니','화이트보드'] },
-      { id: 'sm-genre-mood', type: 'tags', label: '분위기', tags: ['트렌디','미니멀','유쾌한','프로페셔널','귀여운','다이나믹'] },
+      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: SaaS 온보딩 프로세스 모션그래픽' },
+      { id: 'sm-core-message', type: 'textarea', label: '전달할 핵심 내용', required: true, placeholder: '어떤 정보를 시각화하나요? 목적은?' },
+      { id: 'sm-genre-extra-1', type: 'choice', label: '스타일', choices: ['모션그래픽','인포그래픽','캐릭터 애니','화이트보드','3D'] },
+      { id: 'sm-genre-mood', type: 'tags', label: '분위기', tags: ['트렌디','미니멀','유쾌한','프로페셔널','귀여운','다이나믹','고급스러운'] },
     ],
   },
-  other: {
-    title: '🎯 기타 기획',
+  webtoon: {
+    title: '📖 웹툰 · 숏툰 기획',
     fields: [
-      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 나만의 영상 프로젝트' },
-      { id: 'sm-core-message', type: 'textarea', label: '핵심 메시지', required: true, placeholder: '이 영상을 통해 전달하고 싶은 내용' },
-      { id: 'sm-target-audience', type: 'text', label: '타겟 오디언스', placeholder: '누구를 위한 영상인가요?' },
-      { id: 'sm-genre-mood', type: 'tags', label: '분위기', tags: ['따뜻한','감성적인','유쾌한','진지한','트렌디','고급스러운','미니멀','프로페셔널'] },
+      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 직장인 공감 일상툰 시리즈' },
+      { id: 'sm-core-message', type: 'textarea', label: '스토리 · 주제', required: true, placeholder: '어떤 이야기/주제? 1화 분량 or 단편?' },
+      { id: 'sm-genre-extra-1', type: 'choice', label: '형식', choices: ['세로 스크롤 웹툰','릴스/숏츠 슬라이드','인스타 캐러셀','카드형 만화'] },
+      { id: 'sm-genre-extra-2', type: 'textarea', label: '캐릭터 설정', placeholder: '예: 만년 대리 김과장, 무표정 인턴 등' },
+      { id: 'sm-genre-extra-3', type: 'choice', label: '그림체', choices: ['귀여운·SD','깔끔한·웹툰풍','리얼·극화체','심플·미니멀'] },
+      { id: 'sm-genre-mood', type: 'tags', label: '분위기', tags: ['유쾌한','감성적인','귀여운','개그','일상','로맨스','공포','판타지'] },
+    ],
+  },
+  cartoon: {
+    title: '🎴 4컷 · 카툰 기획',
+    fields: [
+      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 월요일 출근길 공감 4컷' },
+      { id: 'sm-core-message', type: 'textarea', label: '에피소드 주제', required: true, placeholder: '이번 화의 상황/개그 포인트는?' },
+      { id: 'sm-genre-extra-1', type: 'choice', label: '형식', choices: ['4컷 만화','6컷 만화','한 장 카툰','밈 카툰'] },
+      { id: 'sm-genre-extra-2', type: 'textarea', label: '캐릭터 설정', placeholder: '예: 고양이 사장님, 강아지 신입사원' },
+      { id: 'sm-genre-extra-3', type: 'choice', label: '그림체', choices: ['귀여운·SD','심플 라인','픽셀아트','손그림풍'] },
+      { id: 'sm-genre-mood', type: 'tags', label: '분위기', tags: ['개그','귀여운','블랙유머','일상','풍자','따뜻한','시사'] },
+    ],
+  },
+  interview: {
+    title: '🎤 인터뷰 · 토크 기획',
+    fields: [
+      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 스타트업 대표에게 듣는 창업 이야기' },
+      { id: 'sm-core-message', type: 'textarea', label: '인터뷰 주제 · 핵심 질문', required: true, placeholder: '누구와 어떤 이야기를? 핵심 질문 3~5개' },
+      { id: 'sm-genre-extra-1', type: 'text', label: '출연자 정보', placeholder: '예: 김OO 대표 (AI 스타트업 창업 3년차)' },
+      { id: 'sm-genre-extra-2', type: 'choice', label: '형식', choices: ['1:1 인터뷰','패널 토론','팟캐스트형','길거리 인터뷰','대담'] },
+      { id: 'sm-genre-extra-3', type: 'choice', label: '톤', choices: ['진지한','캐주얼','유머러스','전문적'] },
     ],
   },
 };
@@ -174,9 +198,20 @@ const GENRE_PRESETS = {
     { name: '숏폼', icon: '📱', desc: '30초 · 9:16', length: 'short_30', ratio: '9:16', platforms: ['instagram_reels','tiktok'], style: 'dynamic', tone: 'vivid' },
     { name: '정방형', icon: '⬜', desc: '30초 · 1:1', length: 'short_30', ratio: '1:1', platforms: ['instagram_reels'], style: 'dynamic', tone: 'vivid' },
   ],
-  other: [
-    { name: '유튜브', icon: '🖥️', desc: '5분 · 16:9', length: 'mid_5m', ratio: '16:9', platforms: ['youtube'], style: 'cinematic', tone: 'warm', recommended: true },
-    { name: '숏폼', icon: '📱', desc: '30초 · 9:16', length: 'short_30', ratio: '9:16', platforms: ['instagram_reels','tiktok'], style: 'dynamic', tone: 'vivid' },
+  webtoon: [
+    { name: '세로 웹툰', icon: '📱', desc: '10컷 · 9:16', length: 'short_60', ratio: '9:16', platforms: ['instagram_reels','tiktok'], style: 'dynamic', tone: 'vivid', recommended: true },
+    { name: '인스타 캐러셀', icon: '📸', desc: '8컷 · 1:1', length: 'short_30', ratio: '1:1', platforms: ['instagram_reels'], style: 'casual', tone: 'warm' },
+    { name: '블로그 웹툰', icon: '📝', desc: '15컷 · 16:9', length: 'mid_3m', ratio: '16:9', platforms: ['blog'], style: 'casual', tone: 'natural' },
+  ],
+  cartoon: [
+    { name: '인스타 4컷', icon: '📸', desc: '4컷 · 1:1', length: 'short_15', ratio: '1:1', platforms: ['instagram_reels'], style: 'casual', tone: 'vivid', recommended: true },
+    { name: '릴스 카툰', icon: '📱', desc: '6컷 · 9:16', length: 'short_30', ratio: '9:16', platforms: ['instagram_reels','tiktok'], style: 'dynamic', tone: 'vivid' },
+    { name: '트위터/X', icon: '🐦', desc: '4컷 · 16:9', length: 'short_15', ratio: '16:9', platforms: ['blog'], style: 'casual', tone: 'vivid' },
+  ],
+  interview: [
+    { name: '유튜브 인터뷰', icon: '🖥️', desc: '15분 · 16:9', length: 'long_15m', ratio: '16:9', platforms: ['youtube'], style: 'business', tone: 'natural', recommended: true },
+    { name: '숏폼 하이라이트', icon: '📱', desc: '60초 · 9:16', length: 'short_60', ratio: '9:16', platforms: ['youtube_shorts','tiktok'], style: 'dynamic', tone: 'warm' },
+    { name: '팟캐스트형', icon: '🎧', desc: '10분 · 16:9', length: 'long_10m', ratio: '16:9', platforms: ['youtube'], style: 'minimal', tone: 'natural' },
   ],
 };
 
@@ -193,8 +228,11 @@ const PLATFORM_RATIO_LOCK = {
 const GENRE_LENGTH_WARN = {
   promotion: { max: 'mid_3m', msg: '홍보 영상은 3분 이내 숏폼이 효과적입니다' },
   education: { min: 'mid_3m', msg: '교육 콘텐츠는 3분 이상을 권장합니다' },
-  story: { min: 'mid_3m', msg: '드라마는 3분 이상을 권장합니다' },
+  story: { min: 'mid_3m', msg: '드라마·숏필름은 3분 이상을 권장합니다' },
   music: { min: 'mid_3m', max: 'mid_5m', msg: '뮤직비디오는 3~5분이 일반적입니다' },
+  interview: { min: 'mid_5m', msg: '인터뷰·토크는 5분 이상을 권장합니다' },
+  webtoon: { max: 'short_60', msg: '웹툰·숏툰은 숏폼에 최적화되어 있습니다' },
+  cartoon: { max: 'short_30', msg: '4컷·카툰은 짧은 포맷에 적합합니다' },
 };
 
 // 길이 순서 (비교용)
@@ -1356,7 +1394,9 @@ function smLocalAudienceRecommend(name, genre, msg) {
     news: '시사·트렌드에 관심 있는 성인',
     music: '음악과 영상미를 즐기는 10~30대',
     animation: '애니메이션·모션 그래픽에 관심 있는 크리에이터',
-    other: '해당 주제에 관심 있는 일반 대중',
+    webtoon: 'SNS 웹툰·숏툰을 즐기는 10~30대',
+    cartoon: 'SNS 밈·만화를 즐기는 10~30대',
+    interview: '해당 분야에 관심 있는 전문가 및 일반 시청자',
   };
   return genreAudience[genre] || '해당 콘텐츠에 관심 있는 타겟 오디언스';
 }
@@ -1537,7 +1577,8 @@ function smRenderPreview() {
 
   const genreMap = {
     promotion: '홍보 · 광고', education: '교육 · 튜토리얼', vlog: '브이로그', review: '리뷰',
-    story: '스토리텔링', news: '뉴스 · 시사', music: '뮤직비디오', animation: '애니메이션', other: '기타',
+    story: '드라마 · 숏필름', news: '뉴스 · 정보', music: '뮤직비디오', animation: '애니메이션 · 모션',
+    webtoon: '웹툰 · 숏툰', cartoon: '4컷 · 카툰', interview: '인터뷰 · 토크',
   };
 
   const lengthMap = {
