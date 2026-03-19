@@ -28,6 +28,14 @@ const SM = {
   selectedSources: ['topic'],
   // 분위기 태그 선택
   selectedMoodTags: [],
+  // 콘텐츠 유형 선택 ('drama_film' | 'webtoon')
+  selectedContentType: null,
+  // Step 1 장르톤 복수 선택
+  selectedGenreTones: [],
+  // Step 2 캐릭터 배열
+  characters: [],
+  // Step 2 로케이션 배열
+  locations: [],
 };
 
 // 영상 길이별 장면 수 범위 (비용 고려하여 상한 조정)
@@ -46,157 +54,23 @@ const SM_CREDIT_SCENARIO = 3;   // 시나리오 생성 비용
 const SM_CREDIT_PER_SCENE = 3;  // 장면당 이미지 생성 비용
 
 // ========================================
-// 장르별 전용 폼 정의
+// 콘텐츠 유형 및 포맷 프리셋
 // ========================================
-const GENRE_FORMS = {
-  promotion: {
-    title: '📢 홍보 · 광고 기획',
-    fields: [
-      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 신규 피트니스 센터 오픈 프로모션' },
-      { id: 'sm-core-message', type: 'textarea', label: '홍보 대상 · 핵심 메시지', required: true, placeholder: '어떤 브랜드/제품/서비스를 홍보하나요? 핵심 메시지는?' },
-      { id: 'sm-target-audience', type: 'text', label: '타겟 고객', placeholder: '예: 20~30대 직장인, 운동에 관심 있는 남녀' },
-      { id: 'sm-genre-mood', type: 'tags', label: '분위기', tags: ['트렌디','고급스러운','다이나믹','유쾌한','감성적인','프로페셔널','미니멀','따뜻한'] },
-    ],
-  },
-  education: {
-    title: '🎓 교육 · 튜토리얼 기획',
-    fields: [
-      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 초보자를 위한 영상 편집 기초 강좌' },
-      { id: 'sm-core-message', type: 'textarea', label: '학습 주제', required: true, placeholder: '어떤 내용을 가르치나요? 시청자가 배울 핵심은?' },
-      { id: 'sm-genre-extra-1', type: 'text', label: '학습 목표 (시청자가 얻는 것)', placeholder: '예: 컷 편집과 자막 삽입을 혼자 할 수 있다' },
-      { id: 'sm-genre-extra-2', type: 'choice', label: '난이도', choices: ['초급','중급','고급'] },
-      { id: 'sm-genre-extra-3', type: 'choice', label: '설명 방식', choices: ['실습형','강의형','비교형','Q&A형'] },
-    ],
-  },
-  vlog: {
-    title: '📹 브이로그 · 일상 기획',
-    fields: [
-      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 도쿄 3박 4일 맛집 투어 브이로그' },
-      { id: 'sm-core-message', type: 'textarea', label: '어떤 일상/이야기를 담나요?', required: true, placeholder: '장소, 상황, 하고 싶은 이야기를 자유롭게' },
-      { id: 'sm-genre-mood', type: 'tags', label: '분위기', tags: ['자연스러운','유쾌한','차분한','감성적인','트렌디','따뜻한'] },
-    ],
-  },
-  review: {
-    title: '🛍️ 리뷰 · 언박싱 기획',
-    fields: [
-      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 맥북 프로 M5 한 달 실사용 솔직 리뷰' },
-      { id: 'sm-core-message', type: 'text', label: '제품/서비스명', required: true, placeholder: '예: Apple MacBook Pro M5 16인치' },
-      { id: 'sm-genre-extra-1', type: 'tags', label: '리뷰 포인트', tags: ['디자인','성능','카메라','배터리','가성비','사용감','내구성'] },
-      { id: 'sm-genre-extra-2', type: 'text', label: '비교 대상 (선택)', placeholder: '예: 삼성 갤럭시북5 프로' },
-      { id: 'sm-genre-extra-3', type: 'choice', label: '리뷰 톤', choices: ['솔직한','긍정적','분석적','유머러스'] },
-    ],
-  },
-  story: {
-    title: '🎬 드라마 · 숏필름 기획',
-    fields: [
-      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 마지막 열차 - 우연히 만난 두 사람' },
-      { id: 'sm-core-message', type: 'textarea', label: '테마 · 줄거리', required: true, placeholder: '어떤 이야기인가요? 중심 테마와 간단한 줄거리' },
-      { id: 'sm-genre-extra-1', type: 'textarea', label: '등장인물 설정', placeholder: '예: 주인공(30대 회사원), 상대역(같은 열차 승객)' },
-      { id: 'sm-genre-extra-2', type: 'textarea', label: '갈등 · 전개 방향', placeholder: '예: 서로의 비밀을 알게 되면서 벌어지는 이야기' },
-      { id: 'sm-genre-extra-3', type: 'choice', label: '장르 톤', choices: ['로맨스','스릴러','코미디','감동·휴먼','호러','판타지','일상극'] },
-      { id: 'sm-genre-mood', type: 'tags', label: '영상 분위기', tags: ['시네마틱','드라마틱','감성적인','긴장감','레트로','몽환적','따뜻한','유쾌한'] },
-    ],
-  },
-  news: {
-    title: '📰 뉴스 · 정보 기획',
-    fields: [
-      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 2026 AI 트렌드 총정리 — 달라지는 것들' },
-      { id: 'sm-core-message', type: 'textarea', label: '다룰 주제 · 이슈', required: true, placeholder: '어떤 뉴스/정보를 전달하나요? 핵심 논점은?' },
-      { id: 'sm-genre-extra-1', type: 'choice', label: '전달 관점', choices: ['객관적 보도','분석·해설','의견·논평'] },
-      { id: 'sm-genre-extra-2', type: 'choice', label: '톤', choices: ['공식적','캐주얼','유머러스'] },
-    ],
-  },
-  music: {
-    title: '🎵 뮤직비디오 기획',
-    fields: [
-      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: "Midnight Run" 인디밴드 데뷔 MV' },
-      { id: 'sm-core-message', type: 'textarea', label: '곡 정보 · 가사 요약', required: true, placeholder: '곡 제목, 장르, 주요 가사 내용이나 분위기' },
-      { id: 'sm-genre-extra-1', type: 'textarea', label: '시각적 컨셉', placeholder: '예: 밤거리 네온사인 배경, 달리는 장면 위주' },
-      { id: 'sm-genre-mood', type: 'tags', label: '분위기', tags: ['시네마틱','다이나믹','레트로','감성적인','몽환적','미니멀','펑키'] },
-    ],
-  },
-  animation: {
-    title: '✨ 애니메이션 · 모션 기획',
-    fields: [
-      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: SaaS 온보딩 프로세스 모션그래픽' },
-      { id: 'sm-core-message', type: 'textarea', label: '전달할 핵심 내용', required: true, placeholder: '어떤 정보를 시각화하나요? 목적은?' },
-      { id: 'sm-genre-extra-1', type: 'choice', label: '스타일', choices: ['모션그래픽','인포그래픽','캐릭터 애니','화이트보드','3D'] },
-      { id: 'sm-genre-mood', type: 'tags', label: '분위기', tags: ['트렌디','미니멀','유쾌한','프로페셔널','귀여운','다이나믹','고급스러운'] },
-    ],
-  },
-  webtoon: {
-    title: '📖 웹툰 · 숏툰 기획',
-    fields: [
-      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 직장인 공감 일상툰 시리즈' },
-      { id: 'sm-core-message', type: 'textarea', label: '스토리 · 주제', required: true, placeholder: '어떤 이야기/주제? 1화 분량 or 단편?' },
-      { id: 'sm-genre-extra-1', type: 'choice', label: '형식', choices: ['세로 스크롤 웹툰','릴스/숏츠 슬라이드','인스타 캐러셀','카드형 만화'] },
-      { id: 'sm-genre-extra-2', type: 'textarea', label: '캐릭터 설정', placeholder: '예: 만년 대리 김과장, 무표정 인턴 등' },
-      { id: 'sm-genre-extra-3', type: 'choice', label: '그림체', choices: ['귀여운·SD','깔끔한·웹툰풍','리얼·극화체','심플·미니멀'] },
-      { id: 'sm-genre-mood', type: 'tags', label: '분위기', tags: ['유쾌한','감성적인','귀여운','개그','일상','로맨스','공포','판타지'] },
-    ],
-  },
-  cartoon: {
-    title: '🎴 4컷 · 카툰 기획',
-    fields: [
-      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 월요일 출근길 공감 4컷' },
-      { id: 'sm-core-message', type: 'textarea', label: '에피소드 주제', required: true, placeholder: '이번 화의 상황/개그 포인트는?' },
-      { id: 'sm-genre-extra-1', type: 'choice', label: '형식', choices: ['4컷 만화','6컷 만화','한 장 카툰','밈 카툰'] },
-      { id: 'sm-genre-extra-2', type: 'textarea', label: '캐릭터 설정', placeholder: '예: 고양이 사장님, 강아지 신입사원' },
-      { id: 'sm-genre-extra-3', type: 'choice', label: '그림체', choices: ['귀여운·SD','심플 라인','픽셀아트','손그림풍'] },
-      { id: 'sm-genre-mood', type: 'tags', label: '분위기', tags: ['개그','귀여운','블랙유머','일상','풍자','따뜻한','시사'] },
-    ],
-  },
+const CONTENT_TYPES = {
+  drama_film: { label: '드라마 · 영화', icon: '🎬', desc: '영화, 드라마, 숏필름, 뮤직비디오 등' },
+  webtoon: { label: '웹툰 · 숏툰', icon: '📖', desc: '웹툰, 4컷만화, 카드형 만화 등' },
 };
 
-// ========================================
-// 장르별 포맷 프리셋
-// ========================================
-const GENRE_PRESETS = {
-  promotion: [
-    { name: '릴스/숏츠', icon: '📱', desc: '30초 · 9:16', length: 'short_30', ratio: '9:16', platforms: ['instagram_reels','youtube_shorts'], style: 'cinematic', tone: 'warm', recommended: true },
-    { name: '틱톡', icon: '📱', desc: '60초 · 9:16', length: 'short_60', ratio: '9:16', platforms: ['tiktok'], style: 'dynamic', tone: 'vivid' },
-    { name: '유튜브', icon: '🖥️', desc: '3분 · 16:9', length: 'mid_3m', ratio: '16:9', platforms: ['youtube'], style: 'cinematic', tone: 'warm' },
-  ],
-  education: [
-    { name: '유튜브 강의', icon: '🖥️', desc: '10분 · 16:9', length: 'long_10m', ratio: '16:9', platforms: ['youtube'], style: 'minimal', tone: 'natural', recommended: true },
-    { name: '숏폼 팁', icon: '📱', desc: '60초 · 9:16', length: 'short_60', ratio: '9:16', platforms: ['youtube_shorts','tiktok'], style: 'minimal', tone: 'warm' },
-    { name: '블로그용', icon: '📝', desc: '5분 · 16:9', length: 'mid_5m', ratio: '16:9', platforms: ['blog'], style: 'business', tone: 'natural' },
-  ],
-  vlog: [
-    { name: '유튜브', icon: '🖥️', desc: '10분 · 16:9', length: 'long_10m', ratio: '16:9', platforms: ['youtube'], style: 'casual', tone: 'natural', recommended: true },
-    { name: '릴스/숏츠', icon: '📱', desc: '60초 · 9:16', length: 'short_60', ratio: '9:16', platforms: ['instagram_reels','youtube_shorts'], style: 'casual', tone: 'warm' },
-  ],
-  review: [
-    { name: '상세 리뷰', icon: '🖥️', desc: '10분 · 16:9', length: 'long_10m', ratio: '16:9', platforms: ['youtube'], style: 'minimal', tone: 'natural', recommended: true },
-    { name: '숏폼 리뷰', icon: '📱', desc: '60초 · 9:16', length: 'short_60', ratio: '9:16', platforms: ['youtube_shorts','tiktok'], style: 'dynamic', tone: 'vivid' },
-    { name: '하이라이트', icon: '📱', desc: '30초 · 9:16', length: 'short_30', ratio: '9:16', platforms: ['instagram_reels'], style: 'dynamic', tone: 'vivid' },
-  ],
-  story: [
-    { name: '에피소드', icon: '🖥️', desc: '15분 · 16:9', length: 'long_15m', ratio: '16:9', platforms: ['youtube'], style: 'cinematic', tone: 'warm', recommended: true },
-    { name: '숏드라마', icon: '📱', desc: '3분 · 9:16', length: 'mid_3m', ratio: '9:16', platforms: ['youtube_shorts','tiktok'], style: 'cinematic', tone: 'warm' },
-  ],
-  news: [
-    { name: '해설 영상', icon: '🖥️', desc: '5분 · 16:9', length: 'mid_5m', ratio: '16:9', platforms: ['youtube'], style: 'business', tone: 'natural', recommended: true },
-    { name: '숏뉴스', icon: '📱', desc: '60초 · 9:16', length: 'short_60', ratio: '9:16', platforms: ['youtube_shorts','instagram_reels'], style: 'minimal', tone: 'natural' },
-  ],
-  music: [
-    { name: '풀 MV', icon: '🖥️', desc: '3분 · 16:9', length: 'mid_3m', ratio: '16:9', platforms: ['youtube'], style: 'cinematic', tone: 'warm', recommended: true },
-    { name: '숏폼 MV', icon: '📱', desc: '30초 · 9:16', length: 'short_30', ratio: '9:16', platforms: ['instagram_reels','tiktok'], style: 'cinematic', tone: 'vivid' },
-  ],
-  animation: [
-    { name: '소개 영상', icon: '🖥️', desc: '3분 · 16:9', length: 'mid_3m', ratio: '16:9', platforms: ['youtube','blog'], style: 'dynamic', tone: 'vivid', recommended: true },
-    { name: '숏폼', icon: '📱', desc: '30초 · 9:16', length: 'short_30', ratio: '9:16', platforms: ['instagram_reels','tiktok'], style: 'dynamic', tone: 'vivid' },
-    { name: '정방형', icon: '⬜', desc: '30초 · 1:1', length: 'short_30', ratio: '1:1', platforms: ['instagram_reels'], style: 'dynamic', tone: 'vivid' },
+const FORMAT_PRESETS = {
+  drama_film: [
+    { name: '에피소드', icon: '🖥️', desc: '15분 · 16:9', length: 'long_15m', ratio: '16:9', platforms: ['youtube'], recommended: true },
+    { name: '숏드라마', icon: '📱', desc: '3분 · 9:16', length: 'mid_3m', ratio: '9:16', platforms: ['youtube_shorts','tiktok'] },
+    { name: '릴스/숏츠', icon: '📱', desc: '60초 · 9:16', length: 'short_60', ratio: '9:16', platforms: ['instagram_reels','tiktok'] },
   ],
   webtoon: [
-    { name: '세로 웹툰', icon: '📱', desc: '10컷 · 9:16', length: 'short_60', ratio: '9:16', platforms: ['instagram_reels','tiktok'], style: 'dynamic', tone: 'vivid', recommended: true },
-    { name: '인스타 캐러셀', icon: '📸', desc: '8컷 · 1:1', length: 'short_30', ratio: '1:1', platforms: ['instagram_reels'], style: 'casual', tone: 'warm' },
-    { name: '블로그 웹툰', icon: '📝', desc: '15컷 · 16:9', length: 'mid_3m', ratio: '16:9', platforms: ['blog'], style: 'casual', tone: 'natural' },
-  ],
-  cartoon: [
-    { name: '인스타 4컷', icon: '📸', desc: '4컷 · 1:1', length: 'short_15', ratio: '1:1', platforms: ['instagram_reels'], style: 'casual', tone: 'vivid', recommended: true },
-    { name: '릴스 카툰', icon: '📱', desc: '6컷 · 9:16', length: 'short_30', ratio: '9:16', platforms: ['instagram_reels','tiktok'], style: 'dynamic', tone: 'vivid' },
-    { name: '트위터/X', icon: '🐦', desc: '4컷 · 16:9', length: 'short_15', ratio: '16:9', platforms: ['blog'], style: 'casual', tone: 'vivid' },
+    { name: '세로 웹툰', icon: '📱', desc: '10컷 · 세로', cut_count: 10, size: 'vertical', platforms: ['instagram'], recommended: true },
+    { name: '인스타 캐러셀', icon: '📸', desc: '8컷 · 정방형', cut_count: 8, size: 'square', platforms: ['instagram'] },
+    { name: '4컷 만화', icon: '🎴', desc: '4컷 · 정방형', cut_count: 4, size: 'square', platforms: ['instagram','twitter'] },
   ],
 };
 
@@ -209,18 +83,14 @@ const PLATFORM_RATIO_LOCK = {
   blog: ['16:9','1:1'],
 };
 
-// 장르 ↔ 길이 연성 제약 (경고만)
+// 콘텐츠 유형 ↔ 길이 연성 제약 (경고만)
 const GENRE_LENGTH_WARN = {
-  promotion: { max: 'mid_3m', msg: '홍보 영상은 3분 이내 숏폼이 효과적입니다' },
-  education: { min: 'mid_3m', msg: '교육 콘텐츠는 3분 이상을 권장합니다' },
-  story: { min: 'mid_3m', msg: '드라마·숏필름은 3분 이상을 권장합니다' },
-  music: { min: 'mid_3m', max: 'mid_5m', msg: '뮤직비디오는 3~5분이 일반적입니다' },
+  drama_film: { min: 'mid_3m', msg: '드라마·영화는 3분 이상을 권장합니다' },
   webtoon: { max: 'short_60', msg: '웹툰·숏툰은 숏폼에 최적화되어 있습니다' },
-  cartoon: { max: 'short_30', msg: '4컷·카툰은 짧은 포맷에 적합합니다' },
 };
 
 // 비주얼 장르 판별
-const VISUAL_GENRES = ['webtoon', 'cartoon'];
+const VISUAL_GENRES = ['webtoon'];
 function smIsVisualGenre(genre) { return VISUAL_GENRES.includes(genre); }
 
 // 비주얼 장르별 컷 수 범위
@@ -256,28 +126,44 @@ const LENGTH_ORDER = ['short_15','short_30','short_60','mid_3m','mid_5m','long_1
 })();
 
 // ========================================
-// 장르 카드 선택
+// 콘텐츠 유형 카드 선택
 // ========================================
-function smSelectGenre(el) {
-  const genre = el.dataset.genre;
-  // 카드 UI 토글
-  document.querySelectorAll('.sm-genre-card').forEach(c => c.classList.remove('selected'));
+function smSelectContentType(el) {
+  const type = el.dataset.type;
+  SM.selectedContentType = type;
+  document.querySelectorAll('.sm-type-card').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
-  // 숨겨진 select 동기화
+  // 숨겨진 select 동기화 (하위호환)
   const sel = document.getElementById('sm-genre');
-  if (sel) sel.value = genre;
-  // 장르별 전용 폼 렌더링
-  smRenderGenreForm(genre);
-  // 포맷 프리셋 카드 렌더링
-  smRenderPresetCards(genre);
-  // 자동저장
+  if (sel) sel.value = type;
+  // 장르톤 카드 + 기본정보 폼 표시
+  const genreToneCard = document.getElementById('sm-genre-tone-card');
+  if (genreToneCard) genreToneCard.style.display = '';
+  const basicInfoCard = document.getElementById('sm-basic-info-card');
+  if (basicInfoCard) basicInfoCard.style.display = '';
+  // 프리셋 카드 렌더링
+  smRenderFormatPresets(type);
   SM.isDirty = true;
   smDebouncedSave();
 }
 
+// 하위호환: 기존 smSelectGenre 호출 시 smSelectContentType으로 위임
+function smSelectGenre(el) {
+  // 기존 genre 카드에서 호출 시 하위호환
+  const genre = el.dataset.genre || el.dataset.type;
+  if (genre) {
+    el.dataset.type = genre;
+    smSelectContentType(el);
+  }
+}
+
 function smSyncGenreCards(genre) {
+  // 하위호환: 기존 .sm-genre-card도 동기화
   document.querySelectorAll('.sm-genre-card').forEach(c => {
     c.classList.toggle('selected', c.dataset.genre === genre);
+  });
+  document.querySelectorAll('.sm-type-card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.type === genre);
   });
 }
 
@@ -396,84 +282,96 @@ function smSyncMoodTags() {
 }
 
 // ========================================
-// 장르별 전용 폼 렌더링
+// 사진 카드 렌더링 공통 함수
 // ========================================
-function smRenderGenreForm(genre) {
-  const card = document.getElementById('sm-genre-form-card');
-  const titleEl = document.getElementById('sm-genre-form-title');
-  const body = document.getElementById('sm-genre-form-body');
-  if (!card || !body) return;
 
-  const formDef = GENRE_FORMS[genre];
-  if (!formDef) { card.style.display = 'none'; return; }
+// 사진 카드 그리드 렌더링
+function smRenderPhotoCards(containerId, cards, options = {}) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const { multiSelect = false, maxSelect = 3, selectedIds = [], onSelect = 'smSelectCard' } = options;
 
-  card.style.display = '';
-  titleEl.innerHTML = '<i class="fas fa-edit" style="color:#7c3aed;"></i> ' + formDef.title;
+  container.innerHTML = (cards || []).map(card => {
+    const isSelected = selectedIds.includes(card.id);
+    return `<div class="sm-photo-card ${isSelected ? 'selected' : ''}"
+                 data-id="${card.id}"
+                 onclick="${onSelect}('${containerId}', '${card.id}', ${multiSelect}, ${maxSelect})">
+      ${card.img ? `<img src="${card.img}" alt="${card.label}" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><rect fill=%22%23f3f4f6%22 width=%2260%22 height=%2260%22/></svg>'">` : ''}
+      <div class="sm-photo-label">${card.label}</div>
+    </div>`;
+  }).join('');
+}
 
-  // 기존 데이터 가져오기
-  const d = SM.projectData.step1 || {};
+// 컬러 팔레트 카드 렌더링
+function smRenderColorCards(containerId, palettes, selectedId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
 
-  let html = '';
-  formDef.fields.forEach(f => {
-    const val = d[f.id.replace('sm-','')] || d[f.id.replace('sm-genre-','')] || '';
-    const req = f.required ? '<span class="required">*</span>' : '';
+  container.innerHTML = (palettes || []).map(p => {
+    const isSelected = selectedId === p.id;
+    const swatches = (p.colors || []).map(c => `<div style="background:${c};width:25%;height:100%;"></div>`).join('');
+    return `<div class="sm-photo-card sm-color-card ${isSelected ? 'selected' : ''}"
+                 data-id="${p.id}"
+                 onclick="smSelectCard('${containerId}', '${p.id}', false, 1)">
+      <div style="display:flex;height:60px;border-radius:8px 8px 0 0;overflow:hidden;">${swatches}</div>
+      <div class="sm-color-label">${p.label}</div>
+    </div>`;
+  }).join('');
+}
 
-    if (f.type === 'text') {
-      html += `<div class="sm-form-group">
-        <label class="sm-form-label">${f.label} ${req}</label>
-        <input type="text" class="sm-form-input" id="${f.id}" placeholder="${f.placeholder || ''}" value="${smEscHtml(val)}" maxlength="200">
-      </div>`;
-    } else if (f.type === 'textarea') {
-      html += `<div class="sm-form-group">
-        <label class="sm-form-label">${f.label} ${req}</label>
-        <textarea class="sm-form-textarea" id="${f.id}" placeholder="${f.placeholder || ''}" rows="3">${smEscHtml(val)}</textarea>
-      </div>`;
-    } else if (f.type === 'tags') {
-      const selectedTags = SM.selectedMoodTags || [];
-      html += `<div class="sm-form-group">
-        <label class="sm-form-label">${f.label}</label>
-        <div class="sm-mood-tags">
-          ${f.tags.map(t => `<span class="sm-mood-tag${selectedTags.includes(t) ? ' selected' : ''}" onclick="smToggleMoodTag(this)">${t}</span>`).join('')}
-        </div>
-        <div class="sm-mood-custom-row" style="margin-top:8px;">
-          <input type="text" class="sm-mood-custom-input" id="sm-mood-custom" placeholder="직접 입력..." onkeydown="if(event.key==='Enter'){event.preventDefault();smAddCustomMoodTag();}">
-          <button class="sm-mood-custom-btn" onclick="smAddCustomMoodTag()">+ 추가</button>
-        </div>
-      </div>`;
-    } else if (f.type === 'choice') {
-      const selectedChoice = d['genre_' + f.id.replace('sm-genre-extra-','')] || '';
-      html += `<div class="sm-form-group">
-        <label class="sm-form-label">${f.label}</label>
-        <div class="sm-mood-tags">
-          ${f.choices.map(c => `<span class="sm-mood-tag${selectedChoice === c ? ' selected' : ''}" onclick="smSelectChoice(this, '${f.id}')">${c}</span>`).join('')}
-        </div>
-      </div>`;
+// 카드 선택 핸들러
+function smSelectCard(containerId, cardId, multiSelect, maxSelect) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  if (multiSelect) {
+    const card = container.querySelector(`[data-id="${cardId}"]`);
+    if (!card) return;
+    if (card.classList.contains('selected')) {
+      card.classList.remove('selected');
+    } else {
+      const selected = container.querySelectorAll('.sm-photo-card.selected');
+      if (selected.length >= maxSelect) {
+        // 최대 선택 수 초과 시 가장 먼저 선택된 것 해제
+        selected[0].classList.remove('selected');
+      }
+      card.classList.add('selected');
     }
-  });
-
-  body.innerHTML = html;
-
-  // 기존 값 복원: project_name, core_message 등 hidden 필드 동기화
-  const pnEl = document.getElementById('sm-project-name');
-  if (pnEl && pnEl.tagName !== 'INPUT') return;
-  if (pnEl && d.project_name) pnEl.value = d.project_name;
-  const cmEl = document.getElementById('sm-core-message');
-  if (cmEl && d.core_message) cmEl.value = d.core_message;
-  const taEl = document.getElementById('sm-target-audience');
-  if (taEl && taEl.type !== 'hidden' && d.target_audience) taEl.value = d.target_audience;
-
-  // 장르별 확장 필드 복원
-  if (d.genre_fields) {
-    Object.entries(d.genre_fields).forEach(([k, v]) => {
-      const el = document.getElementById(k);
-      if (el) el.value = v;
-    });
+  } else {
+    container.querySelectorAll('.sm-photo-card').forEach(c => c.classList.remove('selected'));
+    const card = container.querySelector(`[data-id="${cardId}"]`);
+    if (card) card.classList.add('selected');
   }
 
-  // 자동저장 이벤트 재바인딩
-  body.querySelectorAll('input, textarea').forEach(el => {
-    el.addEventListener('input', () => { SM.isDirty = true; smDebouncedSave(); });
+  SM.isDirty = true;
+  smDebouncedSave();
+}
+
+// 선택된 카드 ID 가져오기
+function smGetSelectedCards(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return [];
+  return [...container.querySelectorAll('.sm-photo-card.selected')].map(c => c.dataset.id);
+}
+
+// ========================================
+// 장르톤 카드 렌더링
+// ========================================
+function smRenderGenreToneCards() {
+  smRenderPhotoCards('sm-genre-tone-grid', (typeof SM_CARDS !== 'undefined' && SM_CARDS.genreTone) || [], {
+    multiSelect: true,
+    maxSelect: 3,
+    selectedIds: SM.selectedGenreTones,
+    onSelect: 'smSelectCard',
   });
+}
+
+// 하위호환: 기존 smRenderGenreForm 호출 시 무시
+function smRenderGenreForm(genre) {
+  // 기존 호환 - 장르 폼은 더 이상 사용하지 않음
+  // 콘텐츠 유형 선택 시 장르톤 카드로 대체됨
+  const card = document.getElementById('sm-genre-form-card');
+  if (card) card.style.display = 'none';
 }
 
 // HTML 이스케이프 헬퍼
@@ -494,17 +392,17 @@ function smSelectChoice(el, fieldId) {
 // ========================================
 // 포맷 프리셋 카드 렌더링
 // ========================================
-function smRenderPresetCards(genre) {
-  const card = document.getElementById('sm-preset-card');
+function smRenderFormatPresets(type) {
+  const presetCard = document.getElementById('sm-preset-card');
   const grid = document.getElementById('sm-preset-grid');
-  if (!card || !grid) return;
+  if (!presetCard || !grid) return;
 
-  const presets = GENRE_PRESETS[genre];
-  if (!presets) { card.style.display = 'none'; return; }
+  const presets = FORMAT_PRESETS[type];
+  if (!presets) { presetCard.style.display = 'none'; return; }
 
-  card.style.display = '';
+  presetCard.style.display = '';
   grid.innerHTML = presets.map((p, i) => `
-    <div class="sm-source-card${SM.selectedPresetIdx === i ? ' selected' : ''}" data-preset="${i}" onclick="smSelectPreset('${genre}', ${i})">
+    <div class="sm-source-card ${p.recommended ? 'recommended' : ''}" onclick="smSelectPreset('${type}', ${i})">
       ${p.recommended ? '<div class="sm-preset-badge">추천</div>' : ''}
       <div class="sm-source-icon">${p.icon}</div>
       <div class="sm-source-name">${p.name}</div>
@@ -513,9 +411,14 @@ function smRenderPresetCards(genre) {
   `).join('');
 }
 
+// 하위호환: 기존 smRenderPresetCards 호출
+function smRenderPresetCards(genre) {
+  smRenderFormatPresets(genre);
+}
+
 // 프리셋 선택 → Step 2 자동 세팅
-function smSelectPreset(genre, idx) {
-  const presets = GENRE_PRESETS[genre];
+function smSelectPreset(type, idx) {
+  const presets = FORMAT_PRESETS[type];
   if (!presets || !presets[idx]) return;
   const p = presets[idx];
 
@@ -523,20 +426,29 @@ function smSelectPreset(genre, idx) {
 
   // Step 2 데이터 프리필
   SM.projectData.step2 = SM.projectData.step2 || {};
-  SM.projectData.step2.video_length = p.length;
-  SM.projectData.step2.aspect_ratio = p.ratio;
-  SM.projectData.step2.platforms = p.platforms.slice();
-  SM.projectData.step2.style = p.style || '';
-  SM.projectData.step2.color_tone = p.tone || '';
-  SM.projectData.step2.has_narration = true;
-  SM.projectData.step2.has_bgm = true;
-  // 장면 수 기본값
-  const sceneLimits = SCENE_LIMITS[p.length];
-  if (sceneLimits) SM.projectData.step2.scene_count = sceneLimits.default;
+
+  if (type === 'webtoon') {
+    // 웹툰 프리셋
+    SM.projectData.step2.format = {
+      visual_cut_count: p.cut_count || 10,
+      visual_size: p.size || 'vertical',
+      visual_platforms: (p.platforms || []).slice(),
+    };
+  } else {
+    // 드라마/영화 프리셋
+    SM.projectData.step2.video_length = p.length;
+    SM.projectData.step2.aspect_ratio = p.ratio;
+    SM.projectData.step2.platforms = (p.platforms || []).slice();
+    SM.projectData.step2.has_narration = true;
+    SM.projectData.step2.has_bgm = true;
+    // 장면 수 기본값
+    const sceneLimits = SCENE_LIMITS[p.length];
+    if (sceneLimits) SM.projectData.step2.scene_count = sceneLimits.default;
+  }
 
   // 프리셋 저장
   SM.projectData.step1 = SM.projectData.step1 || {};
-  SM.projectData.step1.selected_preset = { genre, idx };
+  SM.projectData.step1.selected_preset = { genre: type, idx };
 
   // 카드 UI 업데이트
   document.querySelectorAll('#sm-preset-grid .sm-source-card').forEach((c, i) => {
@@ -555,7 +467,8 @@ function smResetToPreset() {
   const s1 = SM.projectData.step1 || {};
   const preset = s1.selected_preset;
   if (preset) {
-    smSelectPreset(preset.genre, preset.idx);
+    const type = preset.genre || s1.content_type || s1.genre;
+    smSelectPreset(type, preset.idx);
     // Step 2 폼도 업데이트
     smFillStepForm(2);
   }
@@ -636,7 +549,7 @@ function smApplyRatioConstraints() {
 
 // 길이 변경 시 → 장르 경고 체크
 function smCheckLengthWarning() {
-  const genre = document.getElementById('sm-genre')?.value;
+  const genre = SM.selectedContentType || document.getElementById('sm-genre')?.value;
   const length = document.getElementById('sm-video-length')?.value;
   const warn = GENRE_LENGTH_WARN[genre];
   const warnEl = document.getElementById('sm-format-warning');
@@ -776,9 +689,15 @@ async function smSelectProject(id) {
     const data = await smApiCall('GET', `/api/storymaker/projects/${id}`);
     if (data.success && data.project) {
       SM.currentProjectId = id;
-      SM.projectData = data.project.project_data || {};
+      SM.projectData = smMigrateProjectData(data.project.project_data || {});
       SM.currentStep = data.project.current_step || 1;
       SM.isDirty = false;
+
+      // 캐릭터/로케이션 동기화
+      SM.characters = SM.projectData.step2?.characters || [];
+      SM.locations = SM.projectData.step2?.locations || [];
+      SM.selectedContentType = SM.projectData.step1?.content_type || SM.projectData.step1?.genre || '';
+      SM.selectedGenreTones = SM.projectData.step1?.genre_tones || [];
 
       // 참고 URL/파일 목록 동기화
       smSyncUrlsFromData();
@@ -848,7 +767,7 @@ async function smSaveProject() {
     const data = await smApiCall('PUT', `/api/storymaker/projects/${SM.currentProjectId}`, {
       project_data: SM.projectData,
       current_step: SM.currentStep,
-      name: SM.projectData.step1?.project_name || undefined,
+      name: SM.projectData.step1?.title || SM.projectData.step1?.project_name || undefined,
     });
 
     if (data.success) {
@@ -903,17 +822,18 @@ function smValidateStep(n) {
   const missing = [];
 
   if (n === 1) {
-    const name = document.getElementById('sm-project-name')?.value?.trim();
-    const genre = document.getElementById('sm-genre')?.value;
+    // 새 필드 우선, 하위호환 폴백
+    const name = document.getElementById('sm-title')?.value?.trim() || document.getElementById('sm-project-name')?.value?.trim();
+    const contentType = SM.selectedContentType || document.getElementById('sm-genre')?.value;
     const isTopic = SM.selectedSources.includes('topic');
 
-    if (!name) missing.push('sm-project-name');
-    if (!genre) missing.push('sm-genre');
+    if (!name) missing.push('sm-title');
+    if (!contentType) missing.push('sm-genre');
 
     if (isTopic) {
-      // 주제 기획: 핵심 메시지 필수
-      const msg = document.getElementById('sm-core-message')?.value?.trim();
-      if (!msg) missing.push('sm-core-message');
+      // 주제 기획: 시놉시스 필수
+      const msg = document.getElementById('sm-synopsis')?.value?.trim() || document.getElementById('sm-core-message')?.value?.trim();
+      if (!msg) missing.push('sm-synopsis');
     } else if (SM.selectedSources.includes('url')) {
       // 웹링크: URL 1개 이상 필수
       if (SM.referenceUrls.length === 0) {
@@ -928,21 +848,14 @@ function smValidateStep(n) {
       }
     }
   } else if (n === 2) {
-    const genre = SM.projectData.step1?.genre || '';
-    if (smIsVisualGenre(genre)) {
-      // 비주얼 트랙
-      const size = smGetSelectedRadio('sm-visual-size');
-      const platforms = smGetSelectedCheckboxes('sm-visual-platforms');
-      if (!size) missing.push('sm-visual-size');
-      if (!platforms || platforms.length === 0) missing.push('sm-visual-platforms');
-    } else {
-      // 영상 트랙
-      const length = document.getElementById('sm-video-length')?.value;
-      const ratio = smGetSelectedRadio('sm-aspect-ratio');
-      const platforms = smGetSelectedCheckboxes('sm-platforms');
-      if (!length) missing.push('sm-video-length');
-      if (!ratio) missing.push('sm-aspect-ratio');
-      if (!platforms || platforms.length === 0) missing.push('sm-platforms');
+    // 캐릭터 최소 1명, 로케이션 최소 1개
+    if (!SM.characters || SM.characters.length === 0) {
+      missing.push('sm-characters-list');
+      smShowToast('캐릭터를 최소 1명 추가해주세요');
+    }
+    if (!SM.locations || SM.locations.length === 0) {
+      missing.push('sm-locations-list');
+      smShowToast('장소를 최소 1개 추가해주세요');
     }
   }
 
@@ -956,7 +869,9 @@ function smValidateStep(n) {
         setTimeout(() => el.classList.remove('sm-field-error'), 3000);
       }
     });
-    smShowToast('필수 항목을 입력해주세요');
+    if (!missing.some(id => id === 'sm-characters-list' || id === 'sm-locations-list')) {
+      smShowToast('필수 항목을 입력해주세요');
+    }
     // 첫 번째 미입력 필드로 스크롤
     const firstEl = document.getElementById(missing[0]);
     if (firstEl) firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -972,20 +887,18 @@ function smIsStepCompleted(n) {
 
   if (n === 1) {
     const isTopic = !d.source_types || d.source_types.includes('topic');
+    const title = d.title || d.project_name;
+    const contentType = d.content_type || d.genre;
     if (isTopic) {
-      // 주제 기획: 프로젝트명 + 장르 + 핵심메시지 필수
-      return !!(d.project_name?.trim() && d.genre && d.core_message?.trim());
+      const synopsis = d.synopsis || d.core_message;
+      return !!(contentType && title?.trim() && synopsis?.trim());
     } else {
-      // 웹링크/파일: 프로젝트명 + 장르 + (URL 또는 파일 1개 이상) 필수
       const hasUrl = Array.isArray(d.reference_urls) && d.reference_urls.length > 0;
       const hasFile = Array.isArray(d.reference_files) && d.reference_files.length > 0;
-      return !!(d.project_name?.trim() && d.genre && (hasUrl || hasFile));
+      return !!(contentType && title?.trim() && (hasUrl || hasFile));
     }
   } else if (n === 2) {
-    if (d.track === 'visual') {
-      return !!(d.visual_size && d.visual_platforms?.length > 0);
-    }
-    return !!(d.video_length && d.aspect_ratio && d.platforms?.length > 0);
+    return !!(d.characters?.length > 0 && d.locations?.length > 0);
   }
   return false;
 }
@@ -1046,8 +959,8 @@ function smShowStepNav() {
 
 // Step 2 트랙 전환 (영상 vs 비주얼)
 function smSwitchStep2Track() {
-  const genre = SM.projectData.step1?.genre || '';
-  const isVisual = smIsVisualGenre(genre);
+  const type = SM.projectData.step1?.content_type || SM.projectData.step1?.genre || '';
+  const isVisual = (type === 'webtoon') || smIsVisualGenre(type);
   const videoTrack = document.getElementById('sm-step2-video-track');
   const visualTrack = document.getElementById('sm-step2-visual-track');
   if (videoTrack) videoTrack.style.display = isVisual ? 'none' : '';
@@ -1086,75 +999,58 @@ function smCollectStepData(n) {
     const moodHidden = document.getElementById('sm-mood-keywords');
     if (moodHidden) moodHidden.value = moodStr;
 
-    // 장르별 확장 필드 수집
-    const genreFields = {};
-    const formBody = document.getElementById('sm-genre-form-body');
-    if (formBody) {
-      formBody.querySelectorAll('input[id^="sm-genre-extra"], textarea[id^="sm-genre-extra"]').forEach(el => {
-        genreFields[el.id] = el.value || '';
-      });
-      // choice 필드 수집
-      formBody.querySelectorAll('.sm-form-group').forEach(group => {
-        const tags = group.querySelectorAll('.sm-mood-tag.selected');
-        const label = group.querySelector('.sm-form-label');
-        if (tags.length > 0 && label) {
-          // 일반 tags가 아닌 choice 선택 (단일 선택)
-          const fieldId = group.querySelector('[onclick*="smSelectChoice"]')?.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
-          if (fieldId) genreFields[fieldId] = tags[0].textContent.trim();
-        }
-      });
-    }
-
     SM.projectData.step1 = {
-      project_name: document.getElementById('sm-project-name')?.value || '',
-      genre: document.getElementById('sm-genre')?.value || '',
-      target_audience: document.getElementById('sm-target-audience')?.value || '',
-      core_message: document.getElementById('sm-core-message')?.value || '',
-      mood_keywords: moodStr,
+      content_type: SM.selectedContentType || '',
+      genre_tones: smGetSelectedCards('sm-genre-tone-grid'),
+      title: document.getElementById('sm-title')?.value || '',
+      synopsis: document.getElementById('sm-synopsis')?.value || '',
+      source_types: SM.selectedSources.slice(),
       reference_urls: SM.referenceUrls.slice(),
       reference_files: SM.referenceFiles.slice(),
-      additional_notes: document.getElementById('sm-additional-notes')?.value || '',
-      source_types: SM.selectedSources.slice(),
       url_direction: document.getElementById('sm-url-direction')?.value || '',
       file_direction: document.getElementById('sm-file-direction')?.value || '',
-      genre_fields: genreFields,
+      additional_notes: document.getElementById('sm-additional-notes')?.value || '',
       selected_preset: SM.projectData.step1?.selected_preset || null,
+      mood_keywords: moodStr,
+      // 하위호환 필드
+      genre: SM.selectedContentType || '',
+      project_name: document.getElementById('sm-title')?.value || document.getElementById('sm-project-name')?.value || '',
+      core_message: document.getElementById('sm-synopsis')?.value || document.getElementById('sm-core-message')?.value || '',
+      target_audience: document.getElementById('sm-target-audience')?.value || '',
     };
   } else if (n === 2) {
-    const genre = SM.projectData.step1?.genre || '';
-    if (smIsVisualGenre(genre)) {
-      // 비주얼 트랙 데이터 수집
-      const rawCutCount = document.getElementById('sm-visual-cut-count')?.value;
-      SM.projectData.step2 = {
-        track: 'visual',
-        visual_cut_count: rawCutCount ? parseInt(rawCutCount, 10) : 8,
+    const type = SM.projectData.step1?.content_type || SM.projectData.step1?.genre || 'drama_film';
+    const isVisual = (type === 'webtoon');
+
+    SM.projectData.step2 = {
+      characters: SM.characters.slice(),
+      locations: SM.locations.slice(),
+      visual_style: {
+        shooting_style: isVisual ? null : smGetSelectedCards('sm-shooting-style-grid')[0] || '',
+        art_style: isVisual ? smGetSelectedCards('sm-art-style-grid')[0] || '' : null,
+        color_palette: smGetSelectedCards('sm-color-palette-grid')[0] || '',
+      },
+      format: isVisual ? {
+        visual_cut_count: parseInt(document.getElementById('sm-visual-cut-count')?.value) || 10,
         visual_size: smGetSelectedRadio('sm-visual-size'),
         visual_platforms: smGetSelectedCheckboxes('sm-visual-platforms'),
-        visual_art_style: document.getElementById('sm-visual-art-style')?.value || '',
-        visual_color_tone: document.getElementById('sm-visual-color-tone')?.value || '',
-        visual_has_dialogue: document.getElementById('sm-visual-has-dialogue')?.checked ?? true,
-        visual_has_sfx: document.getElementById('sm-visual-has-sfx')?.checked ?? true,
-        // 영상 호환 필드 (Step 완료 판정용)
-        video_length: 'short_15',
-        aspect_ratio: smGetSelectedRadio('sm-visual-size') === 'vertical' ? '9:16' : smGetSelectedRadio('sm-visual-size') === 'square' ? '1:1' : '16:9',
-        platforms: smGetSelectedCheckboxes('sm-visual-platforms'),
-        scene_count: rawCutCount ? parseInt(rawCutCount, 10) : 8,
-      };
-    } else {
-      // 영상 트랙 데이터 수집
-      const rawSceneCount = document.getElementById('sm-scene-count')?.value;
-      SM.projectData.step2 = {
-        track: 'video',
+      } : {
         video_length: document.getElementById('sm-video-length')?.value || '',
-        scene_count: rawSceneCount ? parseInt(rawSceneCount, 10) : 0,
+        scene_count: parseInt(document.getElementById('sm-scene-count')?.value) || 0,
         aspect_ratio: smGetSelectedRadio('sm-aspect-ratio'),
         platforms: smGetSelectedCheckboxes('sm-platforms'),
-        style: document.getElementById('sm-style')?.value || '',
-        color_tone: document.getElementById('sm-color-tone')?.value || '',
         has_narration: document.getElementById('sm-has-narration')?.checked ?? true,
         has_bgm: document.getElementById('sm-has-bgm')?.checked ?? true,
-      };
-    }
+      },
+      // 하위호환 필드
+      track: isVisual ? 'visual' : 'video',
+      video_length: isVisual ? 'short_60' : (document.getElementById('sm-video-length')?.value || ''),
+      aspect_ratio: isVisual ? '9:16' : smGetSelectedRadio('sm-aspect-ratio'),
+      platforms: isVisual ? smGetSelectedCheckboxes('sm-visual-platforms') : smGetSelectedCheckboxes('sm-platforms'),
+      scene_count: isVisual
+        ? (parseInt(document.getElementById('sm-visual-cut-count')?.value) || 10)
+        : (parseInt(document.getElementById('sm-scene-count')?.value) || 0),
+    };
   }
 }
 
@@ -1162,22 +1058,22 @@ function smCollectStepData(n) {
 function smFillStepForm(n) {
   if (n === 1) {
     const d = SM.projectData.step1 || {};
-    smSetValue('sm-project-name', d.project_name || '');
-    smSetValue('sm-genre', d.genre || '');
-    smSetValue('sm-target-audience', d.target_audience || '');
-    smSetValue('sm-core-message', d.core_message || '');
-    smSetValue('sm-mood-keywords', d.mood_keywords || '');
-    smSetValue('sm-additional-notes', d.additional_notes || '');
-    smSetValue('sm-url-direction', d.url_direction || '');
-    smSetValue('sm-file-direction', d.file_direction || '');
 
-    // 장르 카드 선택 반영
-    smSyncGenreCards(d.genre || '');
+    // 콘텐츠 유형 복원
+    SM.selectedContentType = d.content_type || d.genre || '';
+    document.querySelectorAll('.sm-type-card').forEach(c => {
+      c.classList.toggle('selected', c.dataset.type === SM.selectedContentType);
+    });
+    // 하위호환: 기존 .sm-genre-card도 동기화
+    smSyncGenreCards(SM.selectedContentType);
 
-    // 장르별 전용 폼 렌더링
-    if (d.genre) {
-      smRenderGenreForm(d.genre);
-      smRenderPresetCards(d.genre);
+    // 유형 선택되면 관련 카드 표시
+    if (SM.selectedContentType) {
+      const genreToneCard = document.getElementById('sm-genre-tone-card');
+      if (genreToneCard) genreToneCard.style.display = '';
+      const basicInfoCard = document.getElementById('sm-basic-info-card');
+      if (basicInfoCard) basicInfoCard.style.display = '';
+      smRenderFormatPresets(SM.selectedContentType);
       // 프리셋 선택 복원
       if (d.selected_preset) {
         SM.selectedPresetIdx = d.selected_preset.idx;
@@ -1186,6 +1082,24 @@ function smFillStepForm(n) {
         });
       }
     }
+
+    // 장르톤 복원
+    SM.selectedGenreTones = d.genre_tones || [];
+    smRenderGenreToneCards();
+
+    // 기본정보 (새 필드 우선, 하위호환 폴백)
+    smSetValue('sm-title', d.title || d.project_name || '');
+    smSetValue('sm-synopsis', d.synopsis || d.core_message || '');
+    smSetValue('sm-additional-notes', d.additional_notes || '');
+    smSetValue('sm-url-direction', d.url_direction || '');
+    smSetValue('sm-file-direction', d.file_direction || '');
+
+    // 하위호환: 기존 필드에도 값 복원
+    smSetValue('sm-project-name', d.title || d.project_name || '');
+    smSetValue('sm-genre', d.content_type || d.genre || '');
+    smSetValue('sm-target-audience', d.target_audience || '');
+    smSetValue('sm-core-message', d.synopsis || d.core_message || '');
+    smSetValue('sm-mood-keywords', d.mood_keywords || '');
 
     // 소재 유형 카드 반영
     SM.selectedSources = d.source_types?.length ? d.source_types.slice() : ['topic'];
@@ -1218,44 +1132,73 @@ function smFillStepForm(n) {
       }
     }
   } else if (n === 2) {
+    const d = SM.projectData.step2 || {};
+    const type = SM.projectData.step1?.content_type || SM.projectData.step1?.genre || 'drama_film';
+    const isVisual = (type === 'webtoon');
+
     // 트랙 전환 (영상 vs 비주얼)
     smSwitchStep2Track();
 
-    const d = SM.projectData.step2 || {};
-    const genre = SM.projectData.step1?.genre || '';
+    // 캐릭터 복원
+    SM.characters = d.characters || [];
+    smRenderAllCharacters();
 
-    if (smIsVisualGenre(genre)) {
+    // 로케이션 복원
+    SM.locations = d.locations || [];
+    smRenderAllLocations();
+
+    // 비주얼 스타일 복원
+    if (typeof SM_CARDS !== 'undefined') {
+      if (isVisual) {
+        smRenderPhotoCards('sm-art-style-grid', SM_CARDS.artStyle || [], {
+          selectedIds: d.visual_style?.art_style ? [d.visual_style.art_style] : [],
+          onSelect: 'smSelectCard',
+        });
+      } else {
+        smRenderPhotoCards('sm-shooting-style-grid', SM_CARDS.shootingStyle || [], {
+          selectedIds: d.visual_style?.shooting_style ? [d.visual_style.shooting_style] : [],
+          onSelect: 'smSelectCard',
+        });
+      }
+      smRenderColorCards('sm-color-palette-grid', SM_CARDS.colorPalette || [], d.visual_style?.color_palette || '');
+    }
+
+    // 포맷 복원
+    const fmt = d.format || d;
+    if (isVisual) {
       // 비주얼 트랙 채우기
-      const limits = VISUAL_CUT_LIMITS[genre] || { min: 4, max: 20, default: 8 };
+      const limits = VISUAL_CUT_LIMITS[type] || VISUAL_CUT_LIMITS['webtoon'] || { min: 4, max: 20, default: 8 };
       const cutSlider = document.getElementById('sm-visual-cut-count');
       if (cutSlider) {
-        cutSlider.value = d.visual_cut_count || limits.default;
+        cutSlider.value = fmt.visual_cut_count || d.visual_cut_count || limits.default;
         smOnVisualCutChange(cutSlider.value);
       }
-      smSetSelectedRadio('sm-visual-size', d.visual_size || '');
-      smSetSelectedCheckboxes('sm-visual-platforms', d.visual_platforms || []);
+      smSetSelectedRadio('sm-visual-size', fmt.visual_size || d.visual_size || '');
+      smSetSelectedCheckboxes('sm-visual-platforms', fmt.visual_platforms || d.visual_platforms || []);
       smSetValue('sm-visual-art-style', d.visual_art_style || '');
       smSetValue('sm-visual-color-tone', d.visual_color_tone || '');
       smSetChecked('sm-visual-has-dialogue', d.visual_has_dialogue);
       smSetChecked('sm-visual-has-sfx', d.visual_has_sfx);
     } else {
       // 영상 트랙 채우기
-      const migratedLength = SCENE_KEY_MIGRATION[d.video_length] || d.video_length || '';
+      const videoLen = fmt.video_length || d.video_length || '';
+      const migratedLength = SCENE_KEY_MIGRATION[videoLen] || videoLen;
       smSetValue('sm-video-length', migratedLength);
       smSetValue('sm-style', d.style || '');
       smSetValue('sm-color-tone', d.color_tone || '');
-      smSetSelectedRadio('sm-aspect-ratio', d.aspect_ratio || '');
-      smSetSelectedCheckboxes('sm-platforms', d.platforms || []);
-      smSetChecked('sm-has-narration', d.has_narration);
-      smSetChecked('sm-has-bgm', d.has_bgm);
+      smSetSelectedRadio('sm-aspect-ratio', fmt.aspect_ratio || d.aspect_ratio || '');
+      smSetSelectedCheckboxes('sm-platforms', fmt.platforms || d.platforms || []);
+      smSetChecked('sm-has-narration', fmt.has_narration !== undefined ? fmt.has_narration : d.has_narration);
+      smSetChecked('sm-has-bgm', fmt.has_bgm !== undefined ? fmt.has_bgm : d.has_bgm);
 
       // 장면 수 슬라이더 업데이트
       smOnVideoLengthChange();
-      if (d.scene_count) {
+      const sc = fmt.scene_count || d.scene_count;
+      if (sc) {
         const slider = document.getElementById('sm-scene-count');
         if (slider) {
-          slider.value = d.scene_count;
-          smOnSceneSliderChange(d.scene_count);
+          slider.value = sc;
+          smOnSceneSliderChange(sc);
         }
       }
       // Step 2 진입 시 제약 적용
@@ -1712,10 +1655,12 @@ function smRenderPreview() {
   const s1 = SM.projectData.step1 || {};
   const s2 = SM.projectData.step2 || {};
 
+  const typeMap = { drama_film: '드라마 · 영화', webtoon: '웹툰 · 숏툰' };
+  // 하위호환 genreMap
   const genreMap = {
     promotion: '홍보 · 광고', education: '교육 · 튜토리얼', vlog: '브이로그', review: '리뷰',
     story: '드라마 · 숏필름', news: '뉴스 · 정보', music: '뮤직비디오', animation: '애니메이션 · 모션',
-    webtoon: '웹툰 · 숏툰', cartoon: '4컷 · 카툰',
+    webtoon: '웹툰 · 숏툰', cartoon: '4컷 · 카툰', drama_film: '드라마 · 영화',
   };
 
   const lengthMap = {
@@ -1741,16 +1686,32 @@ function smRenderPreview() {
   html += `<div class="sm-preview-section">
     <div class="sm-preview-section-title">📋 기획 정보</div>`;
 
-  if (s1.project_name) html += smPreviewRow('프로젝트명', s1.project_name);
-  if (s1.genre) html += smPreviewRow('장르', genreMap[s1.genre] || s1.genre);
+  const previewTitle = s1.title || s1.project_name;
+  const previewType = s1.content_type || s1.genre;
+  const previewSynopsis = s1.synopsis || s1.core_message;
+
+  if (previewTitle) html += smPreviewRow('프로젝트명', previewTitle);
+  if (previewType) html += smPreviewRow('콘텐츠 유형', typeMap[previewType] || genreMap[previewType] || previewType);
   if (s1.target_audience) html += smPreviewRow('타겟', s1.target_audience);
-  if (s1.core_message) html += smPreviewRow('핵심 메시지', smTruncate(s1.core_message, 60));
+  if (previewSynopsis) html += smPreviewRow('시놉시스', smTruncate(previewSynopsis, 60));
+
+  // 장르톤 태그 표시
+  const genreTones = s1.genre_tones || [];
+  if (genreTones.length > 0) {
+    html += `<div class="sm-preview-item">
+      <span class="sm-preview-item-label">장르톤</span>
+      <div class="sm-preview-tags">${genreTones.map(t => `<span class="sm-preview-tag">${smEscape(t)}</span>`).join('')}</div>
+    </div>`;
+  }
+
   if (s1.mood_keywords) {
     const tags = s1.mood_keywords.split(',').map(k => k.trim()).filter(Boolean);
-    html += `<div class="sm-preview-item">
-      <span class="sm-preview-item-label">분위기</span>
-      <div class="sm-preview-tags">${tags.map(t => `<span class="sm-preview-tag">${smEscape(t)}</span>`).join('')}</div>
-    </div>`;
+    if (tags.length > 0) {
+      html += `<div class="sm-preview-item">
+        <span class="sm-preview-item-label">분위기</span>
+        <div class="sm-preview-tags">${tags.map(t => `<span class="sm-preview-tag">${smEscape(t)}</span>`).join('')}</div>
+      </div>`;
+    }
   }
   // 참고 URL 개수 표시
   const urls = Array.isArray(s1.reference_urls) ? s1.reference_urls : [];
@@ -1765,43 +1726,85 @@ function smRenderPreview() {
   }
   html += '</div>';
 
-  // Step 2 요약
-  if (s2.track === 'visual') {
+  // Step 2 요약: 캐릭터
+  if (s2.characters && s2.characters.length > 0) {
+    html += `<div class="sm-preview-section">
+      <div class="sm-preview-section-title">🎭 캐릭터</div>`;
+    s2.characters.forEach(c => {
+      const info = [c.name, c.age_group, c.gender].filter(Boolean).join(' · ');
+      if (info) html += smPreviewRow('캐릭터', info);
+    });
+    html += '</div>';
+  }
+
+  // Step 2 요약: 로케이션
+  if (s2.locations && s2.locations.length > 0) {
+    html += `<div class="sm-preview-section">
+      <div class="sm-preview-section-title">📍 장소</div>`;
+    s2.locations.forEach(loc => {
+      const info = [loc.place, loc.time_of_day].filter(Boolean).join(' · ');
+      if (info) html += smPreviewRow('장소', info);
+    });
+    html += '</div>';
+  }
+
+  // Step 2 요약: 비주얼 스타일
+  if (s2.visual_style) {
+    const vs = s2.visual_style;
+    const hasStyle = vs.shooting_style || vs.art_style || vs.color_palette;
+    if (hasStyle) {
+      html += `<div class="sm-preview-section">
+        <div class="sm-preview-section-title">🎨 비주얼 스타일</div>`;
+      if (vs.shooting_style) html += smPreviewRow('촬영 스타일', vs.shooting_style);
+      if (vs.art_style) html += smPreviewRow('그림체', vs.art_style);
+      if (vs.color_palette) html += smPreviewRow('컬러 팔레트', vs.color_palette);
+      html += '</div>';
+    }
+  }
+
+  // Step 2 요약: 포맷 설정
+  if (s2.track === 'visual' || (s2.format && s2.format.visual_cut_count)) {
     // 비주얼 트랙
+    const fmt = s2.format || s2;
     html += `<div class="sm-preview-section">
       <div class="sm-preview-section-title">🖼️ 비주얼 설정</div>`;
-    if (s2.visual_cut_count) html += smPreviewRow('컷 수', s2.visual_cut_count + '컷');
+    if (fmt.visual_cut_count) html += smPreviewRow('컷 수', fmt.visual_cut_count + '컷');
     const sizeMap = { vertical: '세로 스크롤', square: '정방형 (1:1)', horizontal: '가로 (16:9)' };
-    if (s2.visual_size) html += smPreviewRow('사이즈', sizeMap[s2.visual_size] || s2.visual_size);
-    const artMap = { cute_sd: '귀여운·SD', webtoon_clean: '웹툰풍', realistic: '극화체', simple_minimal: '심플', pixel: '픽셀', handdrawn: '손그림' };
-    if (s2.visual_art_style) html += smPreviewRow('그림체', artMap[s2.visual_art_style] || s2.visual_art_style);
+    if (fmt.visual_size) html += smPreviewRow('사이즈', sizeMap[fmt.visual_size] || fmt.visual_size);
+    if (s2.visual_art_style) html += smPreviewRow('그림체', s2.visual_art_style);
     if (s2.visual_color_tone) html += smPreviewRow('컬러', toneMap[s2.visual_color_tone] || s2.visual_color_tone);
-    html += smPreviewRow('말풍선', s2.visual_has_dialogue !== false ? '✅' : '❌');
-    html += smPreviewRow('효과음', s2.visual_has_sfx !== false ? '✅' : '❌');
-    if (s2.visual_platforms && s2.visual_platforms.length > 0) {
+    const visPlatforms = fmt.visual_platforms || s2.visual_platforms || [];
+    if (visPlatforms.length > 0) {
       html += `<div class="sm-preview-item">
         <span class="sm-preview-item-label">플랫폼</span>
-        <div class="sm-preview-tags">${s2.visual_platforms.map(p => `<span class="sm-preview-tag">${smEscape(p)}</span>`).join('')}</div>
+        <div class="sm-preview-tags">${visPlatforms.map(p => `<span class="sm-preview-tag">${smEscape(p)}</span>`).join('')}</div>
       </div>`;
     }
     html += '</div>';
-  } else if (s2.video_length || s2.aspect_ratio || s2.style) {
+  } else if (s2.video_length || s2.aspect_ratio || s2.style || (s2.format && s2.format.video_length)) {
     // 영상 트랙
+    const fmt = s2.format || s2;
     html += `<div class="sm-preview-section">
       <div class="sm-preview-section-title">🎬 포맷 설정</div>`;
 
-    if (s2.video_length) html += smPreviewRow('영상 길이', lengthMap[s2.video_length] || s2.video_length);
-    if (s2.aspect_ratio) html += smPreviewRow('화면 비율', s2.aspect_ratio);
-    if (s2.scene_count) html += smPreviewRow('장면 수', s2.scene_count + '컷');
+    const vl = fmt.video_length || s2.video_length;
+    if (vl) html += smPreviewRow('영상 길이', lengthMap[vl] || vl);
+    const ar = fmt.aspect_ratio || s2.aspect_ratio;
+    if (ar) html += smPreviewRow('화면 비율', ar);
+    const sc = fmt.scene_count || s2.scene_count;
+    if (sc) html += smPreviewRow('장면 수', sc + '컷');
     if (s2.style) html += smPreviewRow('스타일', styleMap[s2.style] || s2.style);
     if (s2.color_tone) html += smPreviewRow('컬러 톤', toneMap[s2.color_tone] || s2.color_tone);
-    html += smPreviewRow('나레이션', s2.has_narration !== false ? '✅' : '❌');
-    html += smPreviewRow('배경 음악', s2.has_bgm !== false ? '✅' : '❌');
+    const hasNar = fmt.has_narration !== undefined ? fmt.has_narration : s2.has_narration;
+    const hasBgm = fmt.has_bgm !== undefined ? fmt.has_bgm : s2.has_bgm;
+    html += smPreviewRow('나레이션', hasNar !== false ? '✅' : '❌');
+    html += smPreviewRow('배경 음악', hasBgm !== false ? '✅' : '❌');
 
-    if (s2.platforms && s2.platforms.length > 0) {
+    const plats = fmt.platforms || s2.platforms || [];
+    if (plats.length > 0) {
       html += `<div class="sm-preview-item">
         <span class="sm-preview-item-label">플랫폼</span>
-        <div class="sm-preview-tags">${s2.platforms.map(p => `<span class="sm-preview-tag">${smEscape(p)}</span>`).join('')}</div>
+        <div class="sm-preview-tags">${plats.map(p => `<span class="sm-preview-tag">${smEscape(p)}</span>`).join('')}</div>
       </div>`;
     }
 
@@ -2216,6 +2219,207 @@ function smFormatFileSize(bytes) {
 }
 
 // ========================================
+// 캐릭터 CRUD
+// ========================================
+function smAddCharacter() {
+  SM.characters.push({ name: '', gender: '', age_group: '', costume: '', personality: [] });
+  smRenderAllCharacters();
+  SM.isDirty = true;
+  smDebouncedSave();
+}
+
+function smRemoveCharacter(idx) {
+  SM.characters.splice(idx, 1);
+  smRenderAllCharacters();
+  SM.isDirty = true;
+  smDebouncedSave();
+}
+
+function smRenderAllCharacters() {
+  const container = document.getElementById('sm-characters-list');
+  if (!container) return;
+
+  if (SM.characters.length === 0) {
+    container.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:20px;">캐릭터를 추가해주세요</div>';
+    return;
+  }
+
+  container.innerHTML = SM.characters.map((char, i) => `
+    <div class="sm-character-sheet" data-idx="${i}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <span style="font-weight:600;color:#374151;">캐릭터 ${i + 1}</span>
+        <button onclick="smRemoveCharacter(${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:13px;">
+          <i class="fas fa-trash"></i> 삭제
+        </button>
+      </div>
+      <div class="sm-form-group" style="margin-bottom:12px;">
+        <label class="sm-form-label">이름</label>
+        <input class="sm-form-input" id="sm-char-name-${i}" value="${smEscHtml(char.name || '')}" placeholder="캐릭터 이름" oninput="SM.characters[${i}].name=this.value;smMarkDirty();">
+      </div>
+      <div class="sm-form-group" style="margin-bottom:12px;">
+        <label class="sm-form-label">성별</label>
+        <div class="sm-photo-grid sm-photo-grid-small" id="sm-char-gender-${i}"></div>
+      </div>
+      <div class="sm-form-group" style="margin-bottom:12px;">
+        <label class="sm-form-label">나이대</label>
+        <div class="sm-photo-grid sm-photo-grid-small" id="sm-char-age-${i}"></div>
+      </div>
+      <div class="sm-form-group" style="margin-bottom:12px;">
+        <label class="sm-form-label">의상</label>
+        <div class="sm-photo-grid sm-photo-grid-small" id="sm-char-costume-${i}"></div>
+      </div>
+      <div class="sm-form-group">
+        <label class="sm-form-label">성격</label>
+        <div class="sm-tag-grid" id="sm-char-personality-${i}"></div>
+      </div>
+    </div>
+  `).join('');
+
+  // 각 캐릭터의 사진 카드 렌더링
+  SM.characters.forEach((char, i) => {
+    if (typeof SM_CARDS !== 'undefined') {
+      smRenderPhotoCards(`sm-char-gender-${i}`, SM_CARDS.gender || [], { selectedIds: char.gender ? [char.gender] : [], onSelect: 'smSelectCharCard' });
+      smRenderPhotoCards(`sm-char-age-${i}`, SM_CARDS.ageGroup || [], { selectedIds: char.age_group ? [char.age_group] : [], onSelect: 'smSelectCharCard' });
+      smRenderPhotoCards(`sm-char-costume-${i}`, SM_CARDS.costume || [], { selectedIds: char.costume ? [char.costume] : [], onSelect: 'smSelectCharCard' });
+      smRenderPersonalityTags(`sm-char-personality-${i}`, char.personality || []);
+    }
+  });
+}
+
+// 캐릭터 카드 선택 시 SM.characters에 즉시 반영
+function smSelectCharCard(containerId, cardId, multiSelect, maxSelect) {
+  smSelectCard(containerId, cardId, multiSelect, maxSelect);
+  // containerId에서 캐릭터 인덱스와 필드명 추출
+  const match = containerId.match(/sm-char-(\w+)-(\d+)/);
+  if (match) {
+    const field = match[1]; // gender, age, costume
+    const idx = parseInt(match[2]);
+    if (SM.characters[idx]) {
+      const fieldMap = { gender: 'gender', age: 'age_group', costume: 'costume' };
+      SM.characters[idx][fieldMap[field] || field] = cardId;
+    }
+  }
+}
+
+function smRenderPersonalityTags(containerId, selected) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const tags = (typeof SM_CARDS !== 'undefined' && SM_CARDS.personality) || [];
+  container.innerHTML = tags.map(tag => {
+    const isSelected = selected.includes(tag);
+    return `<span class="sm-mood-tag ${isSelected ? 'selected' : ''}" onclick="smToggleCharPersonality('${containerId}', this, '${tag}')">${tag}</span>`;
+  }).join('');
+}
+
+function smToggleCharPersonality(containerId, el, tag) {
+  el.classList.toggle('selected');
+  // containerId에서 인덱스 추출
+  const match = containerId.match(/sm-char-personality-(\d+)/);
+  if (match) {
+    const idx = parseInt(match[1]);
+    if (SM.characters[idx]) {
+      const p = SM.characters[idx].personality || [];
+      const ti = p.indexOf(tag);
+      if (ti >= 0) p.splice(ti, 1);
+      else p.push(tag);
+      SM.characters[idx].personality = p;
+    }
+  }
+  SM.isDirty = true;
+  smDebouncedSave();
+}
+
+// ========================================
+// 로케이션 CRUD
+// ========================================
+function smAddLocation() {
+  SM.locations.push({ place: '', time_of_day: '' });
+  smRenderAllLocations();
+  SM.isDirty = true;
+  smDebouncedSave();
+}
+
+function smRemoveLocation(idx) {
+  SM.locations.splice(idx, 1);
+  smRenderAllLocations();
+  SM.isDirty = true;
+  smDebouncedSave();
+}
+
+function smRenderAllLocations() {
+  const container = document.getElementById('sm-locations-list');
+  if (!container) return;
+
+  if (SM.locations.length === 0) {
+    container.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:20px;">장소를 추가해주세요</div>';
+    return;
+  }
+
+  container.innerHTML = SM.locations.map((loc, i) => `
+    <div class="sm-location-board" data-idx="${i}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <span style="font-weight:600;color:#374151;">장소 ${i + 1}</span>
+        <button onclick="smRemoveLocation(${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:13px;">
+          <i class="fas fa-trash"></i> 삭제
+        </button>
+      </div>
+      <div class="sm-form-group" style="margin-bottom:12px;">
+        <label class="sm-form-label">장소</label>
+        <div class="sm-photo-grid" id="sm-loc-place-${i}"></div>
+      </div>
+      <div class="sm-form-group">
+        <label class="sm-form-label">시간대</label>
+        <div class="sm-photo-grid sm-photo-grid-small" id="sm-loc-time-${i}"></div>
+      </div>
+    </div>
+  `).join('');
+
+  SM.locations.forEach((loc, i) => {
+    if (typeof SM_CARDS !== 'undefined') {
+      smRenderPhotoCards(`sm-loc-place-${i}`, SM_CARDS.location || [], { selectedIds: loc.place ? [loc.place] : [], onSelect: 'smSelectLocCard' });
+      smRenderPhotoCards(`sm-loc-time-${i}`, SM_CARDS.timeOfDay || [], { selectedIds: loc.time_of_day ? [loc.time_of_day] : [], onSelect: 'smSelectLocCard' });
+    }
+  });
+}
+
+function smSelectLocCard(containerId, cardId, multiSelect, maxSelect) {
+  smSelectCard(containerId, cardId, multiSelect, maxSelect);
+  const match = containerId.match(/sm-loc-(\w+)-(\d+)/);
+  if (match) {
+    const field = match[1]; // place, time
+    const idx = parseInt(match[2]);
+    if (SM.locations[idx]) {
+      const fieldMap = { place: 'place', time: 'time_of_day' };
+      SM.locations[idx][fieldMap[field] || field] = cardId;
+    }
+  }
+}
+
+// ========================================
+// 데이터 마이그레이션 (기존 프로젝트 호환)
+// ========================================
+function smMigrateProjectData(data) {
+  if (!data?.step1) return data;
+  const s1 = data.step1;
+  // 기존 genre → content_type
+  if (s1.genre && !s1.content_type) {
+    const visualGenres = ['webtoon', 'cartoon'];
+    s1.content_type = visualGenres.includes(s1.genre) ? 'webtoon' : 'drama_film';
+  }
+  if (s1.project_name && !s1.title) s1.title = s1.project_name;
+  if (s1.core_message && !s1.synopsis) s1.synopsis = s1.core_message;
+  if (!s1.genre_tones) s1.genre_tones = [];
+  // step2 마이그레이션
+  if (data.step2 && !data.step2.characters) {
+    data.step2.characters = [];
+    data.step2.locations = [];
+    data.step2.visual_style = {};
+    data.step2.format = { ...data.step2 };
+  }
+  return data;
+}
+
+// ========================================
 // 전역 함수 등록 (onclick 에서 호출)
 // ========================================
 window.smCreateProject = smCreateProject;
@@ -2239,3 +2443,20 @@ window.smAddCustomMoodTag = smAddCustomMoodTag;
 window.smSelectPreset = smSelectPreset;
 window.smResetToPreset = smResetToPreset;
 window.smSelectChoice = smSelectChoice;
+// 새 함수들
+window.smSelectContentType = smSelectContentType;
+window.smSelectCard = smSelectCard;
+window.smSelectCharCard = smSelectCharCard;
+window.smSelectLocCard = smSelectLocCard;
+window.smAddCharacter = smAddCharacter;
+window.smRemoveCharacter = smRemoveCharacter;
+window.smAddLocation = smAddLocation;
+window.smRemoveLocation = smRemoveLocation;
+window.smToggleCharPersonality = smToggleCharPersonality;
+window.smRenderPhotoCards = smRenderPhotoCards;
+window.smRenderColorCards = smRenderColorCards;
+window.smGetSelectedCards = smGetSelectedCards;
+window.smRenderGenreToneCards = smRenderGenreToneCards;
+window.smRenderFormatPresets = smRenderFormatPresets;
+window.smRenderAllCharacters = smRenderAllCharacters;
+window.smRenderAllLocations = smRenderAllLocations;
