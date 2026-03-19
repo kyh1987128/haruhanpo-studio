@@ -1437,17 +1437,10 @@ export function storymakerTemplate() {
           </div>
         </div>
 
-        <!-- 4) 기본 정보 -->
+        <!-- 4) 제목 -->
         <div class="sm-card" id="sm-basic-info-card" style="display:none;">
-          <div class="sm-card-title"><i class="fas fa-edit" style="color: #7c3aed;"></i> 기본 정보</div>
-          <div class="sm-form-group">
-            <label class="sm-form-label">제목 <span class="required">*</span></label>
-            <input class="sm-form-input" id="sm-title" placeholder="작품 제목을 입력하세요">
-          </div>
-          <div class="sm-form-group">
-            <label class="sm-form-label">시놉시스 <span class="required">*</span></label>
-            <textarea class="sm-form-textarea" id="sm-synopsis" placeholder="줄거리를 간략히 적어주세요" rows="4"></textarea>
-          </div>
+          <div class="sm-card-title"><i class="fas fa-edit" style="color: #7c3aed;"></i> 제목 <span class="required">*</span></div>
+          <input class="sm-form-input" id="sm-title" placeholder="작품 제목을 입력하세요">
         </div>
 
         <!-- 5) 소재 유형 -->
@@ -1478,12 +1471,13 @@ export function storymakerTemplate() {
         <input type="hidden" id="sm-project-name" value="">
         <input type="hidden" id="sm-core-message" value="">
         <input type="hidden" id="sm-target-audience" value="">
+        <input type="hidden" id="sm-additional-notes" value="">
 
         <!-- 소재별 동적 입력 -->
         <div class="sm-source-panel active" id="sm-source-panel-topic">
           <div class="sm-card">
-            <div class="sm-card-title"><i class="fas fa-lightbulb" style="color: #f59e0b;"></i> 추가 메모 <span class="hint">(선택)</span></div>
-            <textarea class="sm-form-textarea" id="sm-additional-notes" placeholder="특별히 참고할 사항이나 요구사항을 적어주세요." rows="3"></textarea>
+            <div class="sm-card-title"><i class="fas fa-lightbulb" style="color: #f59e0b;"></i> 줄거리 · 기획 의도</div>
+            <textarea class="sm-form-textarea" id="sm-synopsis" placeholder="어떤 이야기인가요? 줄거리, 컨셉, 전달하고 싶은 메시지 등을 자유롭게 적어주세요." rows="5"></textarea>
           </div>
         </div>
         <div class="sm-source-panel" id="sm-source-panel-url">
@@ -1495,8 +1489,8 @@ export function storymakerTemplate() {
               <button class="sm-url-add-btn" id="sm-url-add-btn" onclick="smAddUrl()"><i class="fas fa-plus"></i> 추가</button>
             </div>
             <div class="sm-form-group" style="margin-top:12px;">
-              <label class="sm-form-label">추가 방향 지시 <span class="hint">(선택)</span></label>
-              <textarea class="sm-form-textarea" id="sm-url-direction" placeholder="예: 이 글의 톤은 유지하되 영상용으로 변환해줘" rows="2"></textarea>
+              <label class="sm-form-label">기획 방향 <span class="hint">(선택)</span></label>
+              <textarea class="sm-form-textarea" id="sm-url-direction" placeholder="예: 이 링크의 스타일을 참고해서 만들어줘" rows="2"></textarea>
             </div>
           </div>
         </div>
@@ -1511,8 +1505,8 @@ export function storymakerTemplate() {
             </div>
             <div class="sm-file-grid" id="sm-file-grid"></div>
             <div class="sm-form-group" style="margin-top:12px;">
-              <label class="sm-form-label">추가 방향 지시 <span class="hint">(선택)</span></label>
-              <textarea class="sm-form-textarea" id="sm-file-direction" placeholder="예: 이 PPT 내용을 스토리보드로 변환해줘" rows="2"></textarea>
+              <label class="sm-form-label">기획 방향 <span class="hint">(선택)</span></label>
+              <textarea class="sm-form-textarea" id="sm-file-direction" placeholder="예: 이 자료를 기반으로 스토리보드를 만들어줘" rows="2"></textarea>
             </div>
           </div>
         </div>
