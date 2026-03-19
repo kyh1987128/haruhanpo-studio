@@ -24,6 +24,10 @@ const SM = {
   referenceUrls: [],
   // 참고 파일 목록 (배열, 메타데이터)
   referenceFiles: [],
+  // 소재 유형 선택 (복수 가능)
+  selectedSources: ['topic'],
+  // 분위기 태그 선택
+  selectedMoodTags: [],
 };
 
 // 영상 길이별 장면 수 범위 (비용 고려하여 상한 조정)
@@ -63,6 +67,129 @@ const SM_CREDIT_PER_SCENE = 3;  // 장면당 이미지 생성 비용
     }
   }, 100);
 })();
+
+// ========================================
+// 장르 카드 선택
+// ========================================
+function smSelectGenre(el) {
+  const genre = el.dataset.genre;
+  // 카드 UI 토글
+  document.querySelectorAll('.sm-genre-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  // 숨겨진 select 동기화
+  const sel = document.getElementById('sm-genre');
+  if (sel) sel.value = genre;
+  // 기존 장르 변경 핸들러 호출
+  smOnGenreChange();
+  smCheckRecommendBtnState();
+  // 자동저장
+  SM.isDirty = true;
+  smDebouncedSave();
+}
+
+function smSyncGenreCards(genre) {
+  document.querySelectorAll('.sm-genre-card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.genre === genre);
+  });
+}
+
+// ========================================
+// 소재 유형 카드 선택 (복수 선택)
+// ========================================
+function smSelectSource(el) {
+  const source = el.dataset.source;
+  const idx = SM.selectedSources.indexOf(source);
+  if (idx >= 0) {
+    // 최소 1개는 선택되어야 함
+    if (SM.selectedSources.length <= 1) return;
+    SM.selectedSources.splice(idx, 1);
+  } else {
+    SM.selectedSources.push(source);
+  }
+  smSyncSourceCards();
+  SM.isDirty = true;
+  smDebouncedSave();
+}
+
+function smSyncSourceCards() {
+  document.querySelectorAll('.sm-source-card').forEach(c => {
+    c.classList.toggle('selected', SM.selectedSources.includes(c.dataset.source));
+  });
+  // 소재별 패널 표시/숨김
+  ['topic', 'url', 'file'].forEach(s => {
+    const panel = document.getElementById('sm-source-panel-' + s);
+    if (panel) {
+      panel.classList.toggle('active', SM.selectedSources.includes(s));
+    }
+  });
+}
+
+// ========================================
+// 분위기 태그 선택
+// ========================================
+function smToggleMoodTag(el) {
+  const tag = el.textContent.trim();
+  const idx = SM.selectedMoodTags.indexOf(tag);
+  if (idx >= 0) {
+    SM.selectedMoodTags.splice(idx, 1);
+    el.classList.remove('selected');
+  } else {
+    SM.selectedMoodTags.push(tag);
+    el.classList.add('selected');
+  }
+  // 숨겨진 input 동기화
+  const hidden = document.getElementById('sm-mood-keywords');
+  if (hidden) hidden.value = SM.selectedMoodTags.join(', ');
+  SM.isDirty = true;
+  smDebouncedSave();
+}
+
+function smAddCustomMoodTag() {
+  const input = document.getElementById('sm-mood-custom');
+  if (!input) return;
+  const tag = input.value.trim();
+  if (!tag || SM.selectedMoodTags.includes(tag)) {
+    input.value = '';
+    return;
+  }
+  SM.selectedMoodTags.push(tag);
+  // 커스텀 태그를 마지막 카테고리(템포)에 추가
+  const tempoContainer = document.getElementById('sm-mood-tempo');
+  if (tempoContainer) {
+    const span = document.createElement('span');
+    span.className = 'sm-mood-tag selected';
+    span.textContent = tag;
+    span.onclick = function() { smToggleMoodTag(this); };
+    tempoContainer.appendChild(span);
+  }
+  input.value = '';
+  // 숨겨진 input 동기화
+  const hidden = document.getElementById('sm-mood-keywords');
+  if (hidden) hidden.value = SM.selectedMoodTags.join(', ');
+  SM.isDirty = true;
+  smDebouncedSave();
+}
+
+function smSyncMoodTags() {
+  // 모든 태그 초기화
+  document.querySelectorAll('.sm-mood-tag').forEach(el => {
+    el.classList.toggle('selected', SM.selectedMoodTags.includes(el.textContent.trim()));
+  });
+  // 커스텀 태그 (기존 프리셋에 없는 것) 추가
+  const presetTags = new Set();
+  document.querySelectorAll('.sm-mood-tag').forEach(el => presetTags.add(el.textContent.trim()));
+  const tempoContainer = document.getElementById('sm-mood-tempo');
+  SM.selectedMoodTags.forEach(tag => {
+    if (!presetTags.has(tag) && tempoContainer) {
+      const span = document.createElement('span');
+      span.className = 'sm-mood-tag selected';
+      span.textContent = tag;
+      span.onclick = function() { smToggleMoodTag(this); };
+      tempoContainer.appendChild(span);
+      presetTags.add(tag);
+    }
+  });
+}
 
 async function smInit() {
   if (SM.initialized) return;
@@ -408,15 +535,23 @@ function smShowStepNav() {
 // ========================================
 function smCollectStepData(n) {
   if (n === 1) {
+    // 분위기 태그 → 쉼표 구분 문자열로 저장 (하위 호환)
+    const moodStr = SM.selectedMoodTags.join(', ');
+    const moodHidden = document.getElementById('sm-mood-keywords');
+    if (moodHidden) moodHidden.value = moodStr;
+
     SM.projectData.step1 = {
       project_name: document.getElementById('sm-project-name')?.value || '',
       genre: document.getElementById('sm-genre')?.value || '',
       target_audience: document.getElementById('sm-target-audience')?.value || '',
       core_message: document.getElementById('sm-core-message')?.value || '',
-      mood_keywords: document.getElementById('sm-mood-keywords')?.value || '',
-      reference_urls: SM.referenceUrls.slice(), // 배열로 저장
-      reference_files: SM.referenceFiles.slice(), // 파일 메타데이터 배열
+      mood_keywords: moodStr,
+      reference_urls: SM.referenceUrls.slice(),
+      reference_files: SM.referenceFiles.slice(),
       additional_notes: document.getElementById('sm-additional-notes')?.value || '',
+      source_types: SM.selectedSources.slice(),
+      url_direction: document.getElementById('sm-url-direction')?.value || '',
+      file_direction: document.getElementById('sm-file-direction')?.value || '',
     };
   } else if (n === 2) {
     const rawSceneCount = document.getElementById('sm-scene-count')?.value;
@@ -443,6 +578,20 @@ function smFillStepForm(n) {
     smSetValue('sm-core-message', d.core_message || '');
     smSetValue('sm-mood-keywords', d.mood_keywords || '');
     smSetValue('sm-additional-notes', d.additional_notes || '');
+    smSetValue('sm-url-direction', d.url_direction || '');
+    smSetValue('sm-file-direction', d.file_direction || '');
+
+    // 장르 카드 선택 반영
+    smSyncGenreCards(d.genre || '');
+
+    // 소재 유형 카드 반영
+    SM.selectedSources = d.source_types?.length ? d.source_types.slice() : ['topic'];
+    smSyncSourceCards();
+
+    // 분위기 태그 반영
+    const moodStr = d.mood_keywords || '';
+    SM.selectedMoodTags = moodStr ? moodStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+    smSyncMoodTags();
 
     // 참고 URL 칩 렌더
     smRenderUrlList();

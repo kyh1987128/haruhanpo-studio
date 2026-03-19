@@ -785,6 +785,155 @@ export function storymakerTemplate() {
       display: none;
     }
 
+    /* ===== 장르 카드 그리드 ===== */
+    .sm-genre-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .sm-genre-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 8px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      background: #fff;
+      min-height: 100px;
+    }
+    .sm-genre-card:hover {
+      border-color: #7c3aed;
+      background: #faf5ff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(124,58,237,0.1);
+    }
+    .sm-genre-card.selected {
+      border-color: #7c3aed;
+      background: #ede9fe;
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
+    }
+    .sm-genre-card .sm-genre-icon {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+    .sm-genre-card .sm-genre-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1f2937;
+      line-height: 1.3;
+    }
+    .sm-genre-card .sm-genre-desc {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 4px;
+      line-height: 1.3;
+    }
+    .sm-genre-card.selected .sm-genre-name { color: #7c3aed; }
+    .sm-genre-card.selected .sm-genre-desc { color: #7c3aed; }
+
+    /* ===== 소재 유형 카드 ===== */
+    .sm-source-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .sm-source-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 12px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      background: #fff;
+    }
+    .sm-source-card:hover {
+      border-color: #7c3aed;
+      background: #faf5ff;
+    }
+    .sm-source-card.selected {
+      border-color: #7c3aed;
+      background: #ede9fe;
+      box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
+    }
+    .sm-source-card .sm-source-icon { font-size: 28px; margin-bottom: 8px; }
+    .sm-source-card .sm-source-name { font-size: 14px; font-weight: 700; color: #1f2937; }
+    .sm-source-card .sm-source-desc { font-size: 11px; color: #9ca3af; margin-top: 4px; line-height: 1.4; }
+    .sm-source-card.selected .sm-source-name,
+    .sm-source-card.selected .sm-source-desc { color: #7c3aed; }
+
+    /* 소재별 동적 영역 */
+    .sm-source-panel { display: none; }
+    .sm-source-panel.active { display: block; }
+
+    /* ===== 분위기 태그 선택 ===== */
+    .sm-mood-category { margin-bottom: 12px; }
+    .sm-mood-category-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #6b7280;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .sm-mood-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .sm-mood-tag {
+      padding: 6px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 20px;
+      font-size: 13px;
+      color: #4b5563;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: #fff;
+    }
+    .sm-mood-tag:hover {
+      border-color: #7c3aed;
+      background: #faf5ff;
+    }
+    .sm-mood-tag.selected {
+      border-color: #7c3aed;
+      background: #ede9fe;
+      color: #7c3aed;
+      font-weight: 600;
+    }
+    .sm-mood-custom-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .sm-mood-custom-input {
+      flex: 1;
+      padding: 6px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 20px;
+      font-size: 13px;
+      outline: none;
+    }
+    .sm-mood-custom-input:focus { border-color: #7c3aed; }
+    .sm-mood-custom-btn {
+      padding: 6px 14px;
+      border: 1px solid #7c3aed;
+      border-radius: 20px;
+      background: #faf5ff;
+      color: #7c3aed;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
     /* 토글 스위치 */
     .sm-toggle-wrap {
       display: flex;
@@ -1173,6 +1322,95 @@ export function storymakerTemplate() {
           <div class="sm-step-desc">프로젝트의 기본 정보와 핵심 아이디어를 입력하세요.</div>
         </div>
 
+        <!-- 1) 장르 카드 선택 -->
+        <div class="sm-card">
+          <div class="sm-card-title"><i class="fas fa-film" style="color: #7c3aed;"></i> 어떤 영상을 만드시나요? <span class="required">*</span></div>
+          <!-- 숨겨진 select (데이터 호환용) -->
+          <select class="sm-form-select" id="sm-genre" style="display:none;">
+            <option value="">선택하세요</option>
+            <option value="promotion">홍보 · 광고</option>
+            <option value="education">교육 · 튜토리얼</option>
+            <option value="vlog">브이로그 · 일상</option>
+            <option value="review">리뷰 · 언박싱</option>
+            <option value="story">스토리텔링 · 드라마</option>
+            <option value="news">뉴스 · 시사</option>
+            <option value="music">뮤직비디오</option>
+            <option value="animation">애니메이션 · 모션</option>
+            <option value="other">기타</option>
+          </select>
+          <div class="sm-genre-grid" id="sm-genre-grid">
+            <div class="sm-genre-card" data-genre="promotion" onclick="smSelectGenre(this)">
+              <div class="sm-genre-icon">📢</div>
+              <div class="sm-genre-name">홍보 · 광고</div>
+              <div class="sm-genre-desc">브랜드/서비스 인지도 향상</div>
+            </div>
+            <div class="sm-genre-card" data-genre="education" onclick="smSelectGenre(this)">
+              <div class="sm-genre-icon">🎓</div>
+              <div class="sm-genre-name">교육 · 튜토리얼</div>
+              <div class="sm-genre-desc">단계별 설명, 가이드</div>
+            </div>
+            <div class="sm-genre-card" data-genre="vlog" onclick="smSelectGenre(this)">
+              <div class="sm-genre-icon">📹</div>
+              <div class="sm-genre-name">브이로그 · 일상</div>
+              <div class="sm-genre-desc">일상 기록, 루틴 공유</div>
+            </div>
+            <div class="sm-genre-card" data-genre="review" onclick="smSelectGenre(this)">
+              <div class="sm-genre-icon">🛍️</div>
+              <div class="sm-genre-name">리뷰 · 언박싱</div>
+              <div class="sm-genre-desc">제품/서비스 리뷰</div>
+            </div>
+            <div class="sm-genre-card" data-genre="story" onclick="smSelectGenre(this)">
+              <div class="sm-genre-icon">🎬</div>
+              <div class="sm-genre-name">웹드라마 · 스토리</div>
+              <div class="sm-genre-desc">감성 스토리텔링, 드라마</div>
+            </div>
+            <div class="sm-genre-card" data-genre="news" onclick="smSelectGenre(this)">
+              <div class="sm-genre-icon">📰</div>
+              <div class="sm-genre-name">뉴스 · 정보</div>
+              <div class="sm-genre-desc">시사 해설, 트렌드 분석</div>
+            </div>
+            <div class="sm-genre-card" data-genre="music" onclick="smSelectGenre(this)">
+              <div class="sm-genre-icon">🎵</div>
+              <div class="sm-genre-name">뮤직비디오</div>
+              <div class="sm-genre-desc">음악 기반 시각 연출</div>
+            </div>
+            <div class="sm-genre-card" data-genre="animation" onclick="smSelectGenre(this)">
+              <div class="sm-genre-icon">✨</div>
+              <div class="sm-genre-name">애니메이션 · 모션</div>
+              <div class="sm-genre-desc">모션그래픽, 인포그래픽</div>
+            </div>
+            <div class="sm-genre-card" data-genre="other" onclick="smSelectGenre(this)">
+              <div class="sm-genre-icon">🎯</div>
+              <div class="sm-genre-name">기타</div>
+              <div class="sm-genre-desc">직접 설정</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2) 소재 유형 카드 선택 -->
+        <div class="sm-card">
+          <div class="sm-card-title"><i class="fas fa-pen-fancy" style="color: #7c3aed;"></i> 콘텐츠 소재를 어떻게 준비할까요?</div>
+          <div class="sm-source-grid" id="sm-source-grid">
+            <div class="sm-source-card selected" data-source="topic" onclick="smSelectSource(this)">
+              <div class="sm-source-icon">💡</div>
+              <div class="sm-source-name">주제로 기획</div>
+              <div class="sm-source-desc">키워드와 메시지만으로<br>AI가 자동 기획</div>
+            </div>
+            <div class="sm-source-card" data-source="url" onclick="smSelectSource(this)">
+              <div class="sm-source-icon">🔗</div>
+              <div class="sm-source-name">웹링크 참고</div>
+              <div class="sm-source-desc">참고 URL을 분석해서<br>콘텐츠 기획</div>
+            </div>
+            <div class="sm-source-card" data-source="file" onclick="smSelectSource(this)">
+              <div class="sm-source-icon">📎</div>
+              <div class="sm-source-name">파일 첨부</div>
+              <div class="sm-source-desc">PDF, 이미지, PPT 등을<br>분석해서 기획</div>
+            </div>
+          </div>
+          <div style="font-size:12px; color:#9ca3af; text-align:center;">※ 복수 선택 가능 (주제 + 웹링크 등)</div>
+        </div>
+
+        <!-- 3) 프로젝트명 + 핵심 메시지 (항상 표시) -->
         <div class="sm-card">
           <div class="sm-card-title"><i class="fas fa-info-circle" style="color: #7c3aed;"></i> 기본 정보</div>
 
@@ -1181,79 +1419,120 @@ export function storymakerTemplate() {
             <input type="text" class="sm-form-input" id="sm-project-name" placeholder="예: 봄맞이 신제품 홍보 영상" maxlength="100">
           </div>
 
-          <div class="sm-form-row">
-            <div class="sm-form-group">
-              <label class="sm-form-label">장르 / 유형</label>
-              <select class="sm-form-select" id="sm-genre">
-                <option value="">선택하세요</option>
-                <option value="promotion">홍보 · 광고</option>
-                <option value="education">교육 · 튜토리얼</option>
-                <option value="vlog">브이로그 · 일상</option>
-                <option value="review">리뷰 · 언박싱</option>
-                <option value="story">스토리텔링 · 드라마</option>
-                <option value="news">뉴스 · 시사</option>
-                <option value="music">뮤직비디오</option>
-                <option value="animation">애니메이션 · 모션</option>
-                <option value="other">기타</option>
-              </select>
-            </div>
-            <div class="sm-form-group" id="sm-target-audience-group">
-              <label class="sm-form-label">타겟 오디언스 <span class="hint">(AI 자동 추천)</span></label>
-              <div class="sm-ai-recommend-wrap">
-                <input type="text" class="sm-form-input" id="sm-target-audience" placeholder="AI가 추천합니다" readonly style="background:#f9fafb; cursor:default;">
-                <button class="sm-ai-recommend-btn" id="sm-recommend-audience-btn" onclick="smRecommendAudience()" disabled>
-                  <i class="fas fa-magic"></i> AI 추천 받기
-                </button>
-                <div class="sm-ai-recommend-result" id="sm-audience-result"></div>
-              </div>
+          <div class="sm-form-group">
+            <label class="sm-form-label">핵심 메시지 <span class="required">*</span> <span class="hint">(AI가 스토리 방향을 잡는 데 활용)</span></label>
+            <textarea class="sm-form-textarea" id="sm-core-message" placeholder="이 영상을 통해 전달하고 싶은 핵심 메시지를 자유롭게 적어주세요." rows="3"></textarea>
+          </div>
+
+          <!-- 타겟 오디언스 (장르에 따라 표시/숨김) -->
+          <div class="sm-form-group" id="sm-target-audience-group">
+            <label class="sm-form-label">타겟 오디언스 <span class="hint">(AI 자동 추천)</span></label>
+            <div class="sm-ai-recommend-wrap">
+              <input type="text" class="sm-form-input" id="sm-target-audience" placeholder="AI가 추천합니다" readonly style="background:#f9fafb; cursor:default;">
+              <button class="sm-ai-recommend-btn" id="sm-recommend-audience-btn" onclick="smRecommendAudience()" disabled>
+                <i class="fas fa-magic"></i> AI 추천 받기
+              </button>
+              <div class="sm-ai-recommend-result" id="sm-audience-result"></div>
             </div>
           </div>
         </div>
 
+        <!-- 4) 분위기 태그 선택 -->
         <div class="sm-card">
-          <div class="sm-card-title"><i class="fas fa-pen-fancy" style="color: #7c3aed;"></i> 콘텐츠 방향</div>
-
-          <div class="sm-form-group">
-            <label class="sm-form-label">핵심 메시지 <span class="hint">(AI가 스토리 방향을 잡는 데 활용)</span></label>
-            <textarea class="sm-form-textarea" id="sm-core-message" placeholder="이 영상을 통해 전달하고 싶은 핵심 메시지를 자유롭게 적어주세요." rows="3"></textarea>
-          </div>
-
-          <div class="sm-form-group">
-            <label class="sm-form-label">분위기 키워드 <span class="hint">(쉼표로 구분)</span></label>
-            <input type="text" class="sm-form-input" id="sm-mood-keywords" placeholder="예: 따뜻한, 감성적인, 밝은, 프로페셔널">
-          </div>
-
-          <div class="sm-form-group">
-            <label class="sm-form-label">참고 URL <span class="hint" id="sm-url-counter">(0/5)</span></label>
-            <div class="sm-url-list" id="sm-url-list">
-              <!-- JS로 렌더링 -->
+          <div class="sm-card-title"><i class="fas fa-palette" style="color: #7c3aed;"></i> 분위기 키워드</div>
+          <!-- 숨겨진 input (데이터 호환용) -->
+          <input type="hidden" id="sm-mood-keywords">
+          <div class="sm-mood-category">
+            <div class="sm-mood-category-label">😊 감정</div>
+            <div class="sm-mood-tags" id="sm-mood-emotion">
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">따뜻한</span>
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">감성적인</span>
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">유쾌한</span>
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">진지한</span>
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">신뢰감</span>
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">설렘</span>
             </div>
+          </div>
+          <div class="sm-mood-category">
+            <div class="sm-mood-category-label">🎨 색감 · 시즌</div>
+            <div class="sm-mood-tags" id="sm-mood-color">
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">봄</span>
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">여름</span>
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">가을</span>
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">겨울</span>
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">핑크</span>
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">블루</span>
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">골드</span>
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">모노톤</span>
+            </div>
+          </div>
+          <div class="sm-mood-category">
+            <div class="sm-mood-category-label">✨ 느낌 · 톤</div>
+            <div class="sm-mood-tags" id="sm-mood-tone">
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">고급스러운</span>
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">트렌디</span>
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">자연스러운</span>
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">레트로</span>
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">미니멀</span>
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">프로페셔널</span>
+            </div>
+          </div>
+          <div class="sm-mood-category">
+            <div class="sm-mood-category-label">🏃 템포</div>
+            <div class="sm-mood-tags" id="sm-mood-tempo">
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">빠른</span>
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">차분한</span>
+              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">드라마틱</span>
+            </div>
+          </div>
+          <div class="sm-mood-custom-row">
+            <input type="text" class="sm-mood-custom-input" id="sm-mood-custom" placeholder="직접 입력..." onkeydown="if(event.key==='Enter'){event.preventDefault();smAddCustomMoodTag();}">
+            <button class="sm-mood-custom-btn" onclick="smAddCustomMoodTag()">+ 추가</button>
+          </div>
+        </div>
+
+        <!-- 5) 소재별 동적 입력 (주제 / 웹링크 / 파일) -->
+        <!-- 주제 기획: 추가 메모만 -->
+        <div class="sm-source-panel active" id="sm-source-panel-topic">
+          <div class="sm-card">
+            <div class="sm-card-title"><i class="fas fa-lightbulb" style="color: #f59e0b;"></i> 추가 메모 <span class="hint">(선택)</span></div>
+            <textarea class="sm-form-textarea" id="sm-additional-notes" placeholder="특별히 참고할 사항이나 요구사항을 적어주세요." rows="3"></textarea>
+          </div>
+        </div>
+
+        <!-- 웹링크 참고 -->
+        <div class="sm-source-panel" id="sm-source-panel-url">
+          <div class="sm-card">
+            <div class="sm-card-title"><i class="fas fa-link" style="color: #3b82f6;"></i> 참고 URL <span class="hint" id="sm-url-counter">(0/5)</span></div>
+            <div class="sm-url-list" id="sm-url-list"></div>
             <div class="sm-url-add-row" id="sm-url-add-row">
               <input type="text" class="sm-url-add-input" id="sm-url-input" placeholder="https://..." onkeydown="if(event.key==='Enter'){event.preventDefault();smAddUrl();}">
               <button class="sm-url-add-btn" id="sm-url-add-btn" onclick="smAddUrl()">
                 <i class="fas fa-plus"></i> 추가
               </button>
             </div>
+            <div class="sm-form-group" style="margin-top:12px;">
+              <label class="sm-form-label">추가 방향 지시 <span class="hint">(선택)</span></label>
+              <textarea class="sm-form-textarea" id="sm-url-direction" placeholder="예: 이 글의 톤은 유지하되 영상용으로 변환해줘" rows="2"></textarea>
+            </div>
           </div>
+        </div>
 
-          <div class="sm-form-group">
-            <label class="sm-form-label">참고 파일 <span class="hint" id="sm-file-counter">(0/10, 0MB/50MB)</span></label>
+        <!-- 파일 첨부 -->
+        <div class="sm-source-panel" id="sm-source-panel-file">
+          <div class="sm-card">
+            <div class="sm-card-title"><i class="fas fa-paperclip" style="color: #10b981;"></i> 참고 파일 <span class="hint" id="sm-file-counter">(0/10, 0MB/50MB)</span></div>
             <div class="sm-file-dropzone" id="sm-file-dropzone">
               <input type="file" id="sm-file-input" multiple accept=".jpg,.jpeg,.png,.gif,.pdf,.ppt,.pptx,.doc,.docx" onchange="smOnFilesSelected(event)">
               <div class="sm-file-dropzone-icon"><i class="fas fa-cloud-upload-alt"></i></div>
-              <div class="sm-file-dropzone-text">
-                <strong>드래그하거나 클릭</strong>하여 업로드
-              </div>
+              <div class="sm-file-dropzone-text"><strong>드래그하거나 클릭</strong>하여 업로드</div>
               <div class="sm-file-dropzone-formats">PDF, 이미지(JPG/PNG/GIF), PPT, Word · 최대 10개, 총 50MB</div>
             </div>
-            <div class="sm-file-grid" id="sm-file-grid">
-              <!-- JS로 렌더링 -->
+            <div class="sm-file-grid" id="sm-file-grid"></div>
+            <div class="sm-form-group" style="margin-top:12px;">
+              <label class="sm-form-label">추가 방향 지시 <span class="hint">(선택)</span></label>
+              <textarea class="sm-form-textarea" id="sm-file-direction" placeholder="예: 이 PPT 내용을 영상 스토리보드로 변환해줘" rows="2"></textarea>
             </div>
-          </div>
-
-          <div class="sm-form-group">
-            <label class="sm-form-label">추가 메모</label>
-            <textarea class="sm-form-textarea" id="sm-additional-notes" placeholder="특별히 참고할 사항이나 요구사항을 적어주세요." rows="3"></textarea>
           </div>
         </div>
 
