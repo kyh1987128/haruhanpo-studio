@@ -305,6 +305,27 @@ function smSyncSourceCards() {
       panel.classList.toggle('active', SM.selectedSources.includes(s));
     }
   });
+
+  // 소재 유형에 따라 장르별 전용 폼 표시/숨김
+  // - "주제로 기획": 장르별 전용 폼 표시 (사용자가 직접 입력)
+  // - "웹링크 참고" / "파일 첨부": 전용 폼 숨김 (AI가 분석해서 채움)
+  const isTopic = SM.selectedSources.includes('topic');
+  const genreFormCard = document.getElementById('sm-genre-form-card');
+  if (genreFormCard && genreFormCard.style.display !== 'none') {
+    // 장르가 선택된 상태에서만 분기
+    const genreFormBody = document.getElementById('sm-genre-form-body');
+    if (genreFormBody) {
+      // 프로젝트명 필드는 항상 표시, 나머지는 주제 기획일 때만
+      genreFormBody.querySelectorAll('.sm-form-group').forEach(group => {
+        const input = group.querySelector('#sm-project-name');
+        if (input) {
+          group.style.display = ''; // 프로젝트명은 항상 표시
+        } else {
+          group.style.display = isTopic ? '' : 'none';
+        }
+      });
+    }
+  }
 }
 
 // ========================================
@@ -884,19 +905,45 @@ function smValidateStep(n) {
   if (n === 1) {
     const name = document.getElementById('sm-project-name')?.value?.trim();
     const genre = document.getElementById('sm-genre')?.value;
-    const msg = document.getElementById('sm-core-message')?.value?.trim();
+    const isTopic = SM.selectedSources.includes('topic');
 
     if (!name) missing.push('sm-project-name');
     if (!genre) missing.push('sm-genre');
-    if (!msg) missing.push('sm-core-message');
-  } else if (n === 2) {
-    const length = document.getElementById('sm-video-length')?.value;
-    const ratio = smGetSelectedRadio('sm-aspect-ratio');
-    const platforms = smGetSelectedCheckboxes('sm-platforms');
 
-    if (!length) missing.push('sm-video-length');
-    if (!ratio) missing.push('sm-aspect-ratio');
-    if (!platforms || platforms.length === 0) missing.push('sm-platforms');
+    if (isTopic) {
+      // 주제 기획: 핵심 메시지 필수
+      const msg = document.getElementById('sm-core-message')?.value?.trim();
+      if (!msg) missing.push('sm-core-message');
+    } else if (SM.selectedSources.includes('url')) {
+      // 웹링크: URL 1개 이상 필수
+      if (SM.referenceUrls.length === 0) {
+        missing.push('sm-url-input');
+        smShowToast('참고 URL을 최소 1개 추가해주세요');
+      }
+    } else if (SM.selectedSources.includes('file')) {
+      // 파일: 파일 1개 이상 필수
+      if (SM.referenceFiles.length === 0) {
+        missing.push('sm-file-dropzone');
+        smShowToast('참고 파일을 최소 1개 업로드해주세요');
+      }
+    }
+  } else if (n === 2) {
+    const genre = SM.projectData.step1?.genre || '';
+    if (smIsVisualGenre(genre)) {
+      // 비주얼 트랙
+      const size = smGetSelectedRadio('sm-visual-size');
+      const platforms = smGetSelectedCheckboxes('sm-visual-platforms');
+      if (!size) missing.push('sm-visual-size');
+      if (!platforms || platforms.length === 0) missing.push('sm-visual-platforms');
+    } else {
+      // 영상 트랙
+      const length = document.getElementById('sm-video-length')?.value;
+      const ratio = smGetSelectedRadio('sm-aspect-ratio');
+      const platforms = smGetSelectedCheckboxes('sm-platforms');
+      if (!length) missing.push('sm-video-length');
+      if (!ratio) missing.push('sm-aspect-ratio');
+      if (!platforms || platforms.length === 0) missing.push('sm-platforms');
+    }
   }
 
   if (missing.length > 0) {
@@ -924,7 +971,16 @@ function smIsStepCompleted(n) {
   if (!d) return false;
 
   if (n === 1) {
-    return !!(d.project_name?.trim() && d.genre && d.core_message?.trim());
+    const isTopic = !d.source_types || d.source_types.includes('topic');
+    if (isTopic) {
+      // 주제 기획: 프로젝트명 + 장르 + 핵심메시지 필수
+      return !!(d.project_name?.trim() && d.genre && d.core_message?.trim());
+    } else {
+      // 웹링크/파일: 프로젝트명 + 장르 + (URL 또는 파일 1개 이상) 필수
+      const hasUrl = Array.isArray(d.reference_urls) && d.reference_urls.length > 0;
+      const hasFile = Array.isArray(d.reference_files) && d.reference_files.length > 0;
+      return !!(d.project_name?.trim() && d.genre && (hasUrl || hasFile));
+    }
   } else if (n === 2) {
     if (d.track === 'visual') {
       return !!(d.visual_size && d.visual_platforms?.length > 0);
