@@ -1364,7 +1364,6 @@ export function storymakerTemplate() {
             <option value="animation">애니메이션 · 모션</option>
             <option value="webtoon">웹툰 · 숏툰</option>
             <option value="cartoon">4컷 · 카툰</option>
-            <option value="interview">인터뷰 · 토크</option>
           </select>
           <div style="margin-bottom:8px;font-size:13px;color:#6b7280;">🎬 영상</div>
           <div class="sm-genre-grid" id="sm-genre-grid">
@@ -1407,11 +1406,6 @@ export function storymakerTemplate() {
               <div class="sm-genre-icon">✨</div>
               <div class="sm-genre-name">애니메이션 · 모션</div>
               <div class="sm-genre-desc">모션그래픽, 인포그래픽</div>
-            </div>
-            <div class="sm-genre-card" data-genre="interview" onclick="smSelectGenre(this)">
-              <div class="sm-genre-icon">🎤</div>
-              <div class="sm-genre-name">인터뷰 · 토크</div>
-              <div class="sm-genre-desc">대담, 팟캐스트, Q&A</div>
             </div>
           </div>
           <div style="margin-top:16px;margin-bottom:8px;font-size:13px;color:#6b7280;">🖼️ 비주얼</div>
@@ -1466,7 +1460,7 @@ export function storymakerTemplate() {
               <div class="sm-source-desc">PDF, 이미지, PPT 등을<br>분석해서 기획</div>
             </div>
           </div>
-          <div style="font-size:12px; color:#9ca3af; text-align:center;">※ 복수 선택 가능 (주제 + 웹링크 등)</div>
+          <div style="font-size:12px; color:#9ca3af; text-align:center;">※ 하나를 선택하세요. 각 방식에 맞는 입력 폼이 표시됩니다.</div>
         </div>
 
         <!-- 숨겨진 필드 (데이터 호환용 - 장르별 폼에서 동적 생성되는 필드의 기본값) -->
@@ -1553,133 +1547,244 @@ export function storymakerTemplate() {
           </div>
         </div>
 
-        <div class="sm-card">
-          <div class="sm-card-title"><i class="fas fa-video" style="color: #7c3aed;"></i> 영상 포맷</div>
+        <!-- ===== 영상 트랙 (기본) ===== -->
+        <div id="sm-step2-video-track">
+          <div class="sm-card">
+            <div class="sm-card-title"><i class="fas fa-video" style="color: #7c3aed;"></i> 영상 포맷</div>
 
-          <div class="sm-form-row">
-            <div class="sm-form-group">
-              <label class="sm-form-label">영상 길이</label>
-              <select class="sm-form-select" id="sm-video-length">
-                <option value="">선택하세요</option>
-                <option value="short_15">숏폼 (15초)</option>
-                <option value="short_30">숏폼 (30초)</option>
-                <option value="short_60">숏폼 (60초)</option>
-                <option value="mid_3m">미드폼 (3분)</option>
-                <option value="mid_5m">미드폼 (5분)</option>
-                <option value="long_10m">롱폼 (10분)</option>
-                <option value="long_15m">롱폼 (15분+)</option>
-              </select>
-            </div>
-            <div class="sm-form-group">
-              <label class="sm-form-label">장면 수</label>
-              <div id="sm-scene-count-wrap">
-                <div class="sm-slider-empty" id="sm-scene-slider-empty">
-                  영상 길이를 먼저 선택하세요
-                </div>
-                <div class="sm-slider-wrap" id="sm-scene-slider-wrap" style="display:none;">
-                  <div class="sm-slider-info">
-                    <span id="sm-scene-range-label">2~4컷</span>
-                    <span class="sm-slider-value" id="sm-scene-value">3</span>
+            <div class="sm-form-row">
+              <div class="sm-form-group">
+                <label class="sm-form-label">영상 길이</label>
+                <select class="sm-form-select" id="sm-video-length">
+                  <option value="">선택하세요</option>
+                  <option value="short_15">숏폼 (15초)</option>
+                  <option value="short_30">숏폼 (30초)</option>
+                  <option value="short_60">숏폼 (60초)</option>
+                  <option value="mid_3m">미드폼 (3분)</option>
+                  <option value="mid_5m">미드폼 (5분)</option>
+                  <option value="long_10m">롱폼 (10분)</option>
+                  <option value="long_15m">롱폼 (15분+)</option>
+                </select>
+              </div>
+              <div class="sm-form-group">
+                <label class="sm-form-label">장면 수</label>
+                <div id="sm-scene-count-wrap">
+                  <div class="sm-slider-empty" id="sm-scene-slider-empty">
+                    영상 길이를 먼저 선택하세요
                   </div>
-                  <input type="range" class="sm-slider-range" id="sm-scene-count" min="2" max="4" value="3" oninput="smOnSceneSliderChange(this.value)">
+                  <div class="sm-slider-wrap" id="sm-scene-slider-wrap" style="display:none;">
+                    <div class="sm-slider-info">
+                      <span id="sm-scene-range-label">2~4컷</span>
+                      <span class="sm-slider-value" id="sm-scene-value">3</span>
+                    </div>
+                    <input type="range" class="sm-slider-range" id="sm-scene-count" min="2" max="4" value="3" oninput="smOnSceneSliderChange(this.value)">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="sm-form-group">
+              <label class="sm-form-label">화면 비율</label>
+              <div class="sm-option-group" id="sm-aspect-ratio">
+                <label class="sm-option-item" onclick="smSelectOption(this, 'sm-aspect-ratio')">
+                  <input type="radio" name="aspect_ratio" value="16:9">
+                  <i class="fas fa-tv"></i> 16:9 (가로)
+                </label>
+                <label class="sm-option-item" onclick="smSelectOption(this, 'sm-aspect-ratio')">
+                  <input type="radio" name="aspect_ratio" value="9:16">
+                  <i class="fas fa-mobile-alt"></i> 9:16 (세로)
+                </label>
+                <label class="sm-option-item" onclick="smSelectOption(this, 'sm-aspect-ratio')">
+                  <input type="radio" name="aspect_ratio" value="1:1">
+                  <i class="fas fa-square"></i> 1:1 (정방형)
+                </label>
+                <label class="sm-option-item" onclick="smSelectOption(this, 'sm-aspect-ratio')">
+                  <input type="radio" name="aspect_ratio" value="4:5">
+                  <i class="fas fa-portrait"></i> 4:5
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="sm-card">
+            <div class="sm-card-title"><i class="fas fa-share-alt" style="color: #7c3aed;"></i> 타겟 플랫폼</div>
+
+            <div class="sm-form-group">
+              <label class="sm-form-label">게시 플랫폼 <span class="hint">(복수 선택 가능)</span></label>
+              <div class="sm-option-group" id="sm-platforms">
+                <label class="sm-option-item" onclick="smToggleOption(this)">
+                  <input type="checkbox" name="platforms" value="youtube"> YouTube
+                </label>
+                <label class="sm-option-item" onclick="smToggleOption(this)">
+                  <input type="checkbox" name="platforms" value="instagram_reels"> 인스타 릴스
+                </label>
+                <label class="sm-option-item" onclick="smToggleOption(this)">
+                  <input type="checkbox" name="platforms" value="tiktok"> TikTok
+                </label>
+                <label class="sm-option-item" onclick="smToggleOption(this)">
+                  <input type="checkbox" name="platforms" value="shorts"> YouTube Shorts
+                </label>
+                <label class="sm-option-item" onclick="smToggleOption(this)">
+                  <input type="checkbox" name="platforms" value="blog"> 블로그 / 웹
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="sm-card">
+            <div class="sm-card-title"><i class="fas fa-palette" style="color: #7c3aed;"></i> 스타일 · 연출</div>
+
+            <div class="sm-form-row">
+              <div class="sm-form-group">
+                <label class="sm-form-label">영상 스타일</label>
+                <select class="sm-form-select" id="sm-style">
+                  <option value="">선택하세요</option>
+                  <option value="cinematic">시네마틱</option>
+                  <option value="minimal">미니멀 · 클린</option>
+                  <option value="dynamic">다이나믹 · 에너지</option>
+                  <option value="retro">레트로 · 빈티지</option>
+                  <option value="cute">귀여운 · 캐주얼</option>
+                  <option value="luxury">프리미엄 · 럭셔리</option>
+                  <option value="corporate">비즈니스 · 포멀</option>
+                </select>
+              </div>
+              <div class="sm-form-group">
+                <label class="sm-form-label">컬러 톤</label>
+                <select class="sm-form-select" id="sm-color-tone">
+                  <option value="">선택하세요</option>
+                  <option value="warm">따뜻한 톤 (Warm)</option>
+                  <option value="cool">차가운 톤 (Cool)</option>
+                  <option value="pastel">파스텔</option>
+                  <option value="vivid">비비드 · 선명</option>
+                  <option value="monochrome">모노크롬</option>
+                  <option value="natural">자연스러운</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="sm-form-group">
+              <div class="sm-toggle-wrap">
+                <span class="sm-toggle-label"><i class="fas fa-microphone" style="margin-right: 6px; color: #7c3aed;"></i> 나레이션 포함</span>
+                <label class="sm-toggle">
+                  <input type="checkbox" id="sm-has-narration" checked>
+                  <span class="sm-toggle-slider"></span>
+                </label>
+              </div>
+              <div class="sm-toggle-wrap">
+                <span class="sm-toggle-label"><i class="fas fa-music" style="margin-right: 6px; color: #7c3aed;"></i> 배경 음악 포함</span>
+                <label class="sm-toggle">
+                  <input type="checkbox" id="sm-has-bgm" checked>
+                  <span class="sm-toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 비주얼 트랙 (웹툰/4컷) ===== -->
+        <div id="sm-step2-visual-track" style="display:none;">
+          <div class="sm-card">
+            <div class="sm-card-title"><i class="fas fa-images" style="color: #7c3aed;"></i> 비주얼 포맷</div>
+
+            <div class="sm-form-row">
+              <div class="sm-form-group">
+                <label class="sm-form-label">컷 수</label>
+                <div class="sm-slider-wrap">
+                  <div class="sm-slider-info">
+                    <span id="sm-visual-cut-range-label">4~20컷</span>
+                    <span class="sm-slider-value" id="sm-visual-cut-value">8</span>
+                  </div>
+                  <input type="range" class="sm-slider-range" id="sm-visual-cut-count" min="4" max="20" value="8" oninput="smOnVisualCutChange(this.value)">
+                </div>
+              </div>
+              <div class="sm-form-group">
+                <label class="sm-form-label">사이즈</label>
+                <div class="sm-option-group" id="sm-visual-size">
+                  <label class="sm-option-item" onclick="smSelectOption(this, 'sm-visual-size')">
+                    <input type="radio" name="visual_size" value="vertical">
+                    <i class="fas fa-mobile-alt"></i> 세로 스크롤
+                  </label>
+                  <label class="sm-option-item" onclick="smSelectOption(this, 'sm-visual-size')">
+                    <input type="radio" name="visual_size" value="square">
+                    <i class="fas fa-square"></i> 정방형 (1:1)
+                  </label>
+                  <label class="sm-option-item" onclick="smSelectOption(this, 'sm-visual-size')">
+                    <input type="radio" name="visual_size" value="horizontal">
+                    <i class="fas fa-tv"></i> 가로 (16:9)
+                  </label>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="sm-form-group">
-            <label class="sm-form-label">화면 비율</label>
-            <div class="sm-option-group" id="sm-aspect-ratio">
-              <label class="sm-option-item" onclick="smSelectOption(this, 'sm-aspect-ratio')">
-                <input type="radio" name="aspect_ratio" value="16:9">
-                <i class="fas fa-tv"></i> 16:9 (가로)
-              </label>
-              <label class="sm-option-item" onclick="smSelectOption(this, 'sm-aspect-ratio')">
-                <input type="radio" name="aspect_ratio" value="9:16">
-                <i class="fas fa-mobile-alt"></i> 9:16 (세로)
-              </label>
-              <label class="sm-option-item" onclick="smSelectOption(this, 'sm-aspect-ratio')">
-                <input type="radio" name="aspect_ratio" value="1:1">
-                <i class="fas fa-square"></i> 1:1 (정방형)
-              </label>
-              <label class="sm-option-item" onclick="smSelectOption(this, 'sm-aspect-ratio')">
-                <input type="radio" name="aspect_ratio" value="4:5">
-                <i class="fas fa-portrait"></i> 4:5
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div class="sm-card">
-          <div class="sm-card-title"><i class="fas fa-share-alt" style="color: #7c3aed;"></i> 타겟 플랫폼</div>
-
-          <div class="sm-form-group">
-            <label class="sm-form-label">게시 플랫폼 <span class="hint">(복수 선택 가능)</span></label>
-            <div class="sm-option-group" id="sm-platforms">
-              <label class="sm-option-item" onclick="smToggleOption(this)">
-                <input type="checkbox" name="platforms" value="youtube"> YouTube
-              </label>
-              <label class="sm-option-item" onclick="smToggleOption(this)">
-                <input type="checkbox" name="platforms" value="instagram_reels"> 인스타 릴스
-              </label>
-              <label class="sm-option-item" onclick="smToggleOption(this)">
-                <input type="checkbox" name="platforms" value="tiktok"> TikTok
-              </label>
-              <label class="sm-option-item" onclick="smToggleOption(this)">
-                <input type="checkbox" name="platforms" value="shorts"> YouTube Shorts
-              </label>
-              <label class="sm-option-item" onclick="smToggleOption(this)">
-                <input type="checkbox" name="platforms" value="blog"> 블로그 / 웹
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div class="sm-card">
-          <div class="sm-card-title"><i class="fas fa-palette" style="color: #7c3aed;"></i> 스타일 · 연출</div>
-
-          <div class="sm-form-row">
+          <div class="sm-card">
+            <div class="sm-card-title"><i class="fas fa-share-alt" style="color: #7c3aed;"></i> 게시 플랫폼</div>
             <div class="sm-form-group">
-              <label class="sm-form-label">영상 스타일</label>
-              <select class="sm-form-select" id="sm-style">
-                <option value="">선택하세요</option>
-                <option value="cinematic">시네마틱</option>
-                <option value="minimal">미니멀 · 클린</option>
-                <option value="dynamic">다이나믹 · 에너지</option>
-                <option value="retro">레트로 · 빈티지</option>
-                <option value="cute">귀여운 · 캐주얼</option>
-                <option value="luxury">프리미엄 · 럭셔리</option>
-                <option value="corporate">비즈니스 · 포멀</option>
-              </select>
-            </div>
-            <div class="sm-form-group">
-              <label class="sm-form-label">컬러 톤</label>
-              <select class="sm-form-select" id="sm-color-tone">
-                <option value="">선택하세요</option>
-                <option value="warm">따뜻한 톤 (Warm)</option>
-                <option value="cool">차가운 톤 (Cool)</option>
-                <option value="pastel">파스텔</option>
-                <option value="vivid">비비드 · 선명</option>
-                <option value="monochrome">모노크롬</option>
-                <option value="natural">자연스러운</option>
-              </select>
+              <div class="sm-option-group" id="sm-visual-platforms">
+                <label class="sm-option-item" onclick="smToggleOption(this)">
+                  <input type="checkbox" name="visual_platforms" value="instagram"> 인스타그램
+                </label>
+                <label class="sm-option-item" onclick="smToggleOption(this)">
+                  <input type="checkbox" name="visual_platforms" value="naver_webtoon"> 네이버 웹툰
+                </label>
+                <label class="sm-option-item" onclick="smToggleOption(this)">
+                  <input type="checkbox" name="visual_platforms" value="kakao"> 카카오 웹툰
+                </label>
+                <label class="sm-option-item" onclick="smToggleOption(this)">
+                  <input type="checkbox" name="visual_platforms" value="twitter"> X (트위터)
+                </label>
+                <label class="sm-option-item" onclick="smToggleOption(this)">
+                  <input type="checkbox" name="visual_platforms" value="blog"> 블로그
+                </label>
+              </div>
             </div>
           </div>
 
-          <div class="sm-form-group">
-            <div class="sm-toggle-wrap">
-              <span class="sm-toggle-label"><i class="fas fa-microphone" style="margin-right: 6px; color: #7c3aed;"></i> 나레이션 포함</span>
-              <label class="sm-toggle">
-                <input type="checkbox" id="sm-has-narration" checked>
-                <span class="sm-toggle-slider"></span>
-              </label>
+          <div class="sm-card">
+            <div class="sm-card-title"><i class="fas fa-paint-brush" style="color: #7c3aed;"></i> 그림체 · 스타일</div>
+
+            <div class="sm-form-row">
+              <div class="sm-form-group">
+                <label class="sm-form-label">그림체</label>
+                <select class="sm-form-select" id="sm-visual-art-style">
+                  <option value="">선택하세요</option>
+                  <option value="cute_sd">귀여운 · SD</option>
+                  <option value="webtoon_clean">깔끔한 웹툰풍</option>
+                  <option value="realistic">리얼 · 극화체</option>
+                  <option value="simple_minimal">심플 · 미니멀</option>
+                  <option value="pixel">픽셀아트</option>
+                  <option value="handdrawn">손그림풍</option>
+                </select>
+              </div>
+              <div class="sm-form-group">
+                <label class="sm-form-label">컬러 톤</label>
+                <select class="sm-form-select" id="sm-visual-color-tone">
+                  <option value="">선택하세요</option>
+                  <option value="full_color">풀 컬러</option>
+                  <option value="pastel">파스텔</option>
+                  <option value="vivid">비비드</option>
+                  <option value="monochrome">흑백</option>
+                  <option value="warm">따뜻한 톤</option>
+                  <option value="cool">차가운 톤</option>
+                </select>
+              </div>
             </div>
-            <div class="sm-toggle-wrap">
-              <span class="sm-toggle-label"><i class="fas fa-music" style="margin-right: 6px; color: #7c3aed;"></i> 배경 음악 포함</span>
-              <label class="sm-toggle">
-                <input type="checkbox" id="sm-has-bgm" checked>
-                <span class="sm-toggle-slider"></span>
-              </label>
+
+            <div class="sm-form-group">
+              <div class="sm-toggle-wrap">
+                <span class="sm-toggle-label"><i class="fas fa-comment-dots" style="margin-right: 6px; color: #7c3aed;"></i> 말풍선 · 대사 포함</span>
+                <label class="sm-toggle">
+                  <input type="checkbox" id="sm-visual-has-dialogue" checked>
+                  <span class="sm-toggle-slider"></span>
+                </label>
+              </div>
+              <div class="sm-toggle-wrap">
+                <span class="sm-toggle-label"><i class="fas fa-star" style="margin-right: 6px; color: #7c3aed;"></i> 효과음 텍스트 포함</span>
+                <label class="sm-toggle">
+                  <input type="checkbox" id="sm-visual-has-sfx" checked>
+                  <span class="sm-toggle-slider"></span>
+                </label>
+              </div>
             </div>
           </div>
         </div>

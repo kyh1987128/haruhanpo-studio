@@ -146,16 +146,6 @@ const GENRE_FORMS = {
       { id: 'sm-genre-mood', type: 'tags', label: '분위기', tags: ['개그','귀여운','블랙유머','일상','풍자','따뜻한','시사'] },
     ],
   },
-  interview: {
-    title: '🎤 인터뷰 · 토크 기획',
-    fields: [
-      { id: 'sm-project-name', type: 'text', label: '프로젝트 이름', required: true, placeholder: '예: 스타트업 대표에게 듣는 창업 이야기' },
-      { id: 'sm-core-message', type: 'textarea', label: '인터뷰 주제 · 핵심 질문', required: true, placeholder: '누구와 어떤 이야기를? 핵심 질문 3~5개' },
-      { id: 'sm-genre-extra-1', type: 'text', label: '출연자 정보', placeholder: '예: 김OO 대표 (AI 스타트업 창업 3년차)' },
-      { id: 'sm-genre-extra-2', type: 'choice', label: '형식', choices: ['1:1 인터뷰','패널 토론','팟캐스트형','길거리 인터뷰','대담'] },
-      { id: 'sm-genre-extra-3', type: 'choice', label: '톤', choices: ['진지한','캐주얼','유머러스','전문적'] },
-    ],
-  },
 };
 
 // ========================================
@@ -208,11 +198,6 @@ const GENRE_PRESETS = {
     { name: '릴스 카툰', icon: '📱', desc: '6컷 · 9:16', length: 'short_30', ratio: '9:16', platforms: ['instagram_reels','tiktok'], style: 'dynamic', tone: 'vivid' },
     { name: '트위터/X', icon: '🐦', desc: '4컷 · 16:9', length: 'short_15', ratio: '16:9', platforms: ['blog'], style: 'casual', tone: 'vivid' },
   ],
-  interview: [
-    { name: '유튜브 인터뷰', icon: '🖥️', desc: '15분 · 16:9', length: 'long_15m', ratio: '16:9', platforms: ['youtube'], style: 'business', tone: 'natural', recommended: true },
-    { name: '숏폼 하이라이트', icon: '📱', desc: '60초 · 9:16', length: 'short_60', ratio: '9:16', platforms: ['youtube_shorts','tiktok'], style: 'dynamic', tone: 'warm' },
-    { name: '팟캐스트형', icon: '🎧', desc: '10분 · 16:9', length: 'long_10m', ratio: '16:9', platforms: ['youtube'], style: 'minimal', tone: 'natural' },
-  ],
 };
 
 // 플랫폼 ↔ 비율 경성 제약 (절대 불가)
@@ -230,9 +215,18 @@ const GENRE_LENGTH_WARN = {
   education: { min: 'mid_3m', msg: '교육 콘텐츠는 3분 이상을 권장합니다' },
   story: { min: 'mid_3m', msg: '드라마·숏필름은 3분 이상을 권장합니다' },
   music: { min: 'mid_3m', max: 'mid_5m', msg: '뮤직비디오는 3~5분이 일반적입니다' },
-  interview: { min: 'mid_5m', msg: '인터뷰·토크는 5분 이상을 권장합니다' },
   webtoon: { max: 'short_60', msg: '웹툰·숏툰은 숏폼에 최적화되어 있습니다' },
   cartoon: { max: 'short_30', msg: '4컷·카툰은 짧은 포맷에 적합합니다' },
+};
+
+// 비주얼 장르 판별
+const VISUAL_GENRES = ['webtoon', 'cartoon'];
+function smIsVisualGenre(genre) { return VISUAL_GENRES.includes(genre); }
+
+// 비주얼 장르별 컷 수 범위
+const VISUAL_CUT_LIMITS = {
+  webtoon: { min: 6, max: 20, default: 10 },
+  cartoon: { min: 4, max: 8, default: 4 },
 };
 
 // 길이 순서 (비교용)
@@ -292,14 +286,9 @@ function smSyncGenreCards(genre) {
 // ========================================
 function smSelectSource(el) {
   const source = el.dataset.source;
-  const idx = SM.selectedSources.indexOf(source);
-  if (idx >= 0) {
-    // 최소 1개는 선택되어야 함
-    if (SM.selectedSources.length <= 1) return;
-    SM.selectedSources.splice(idx, 1);
-  } else {
-    SM.selectedSources.push(source);
-  }
+  // 단일 선택: 이미 선택된 것을 다시 클릭하면 무시
+  if (SM.selectedSources.length === 1 && SM.selectedSources[0] === source) return;
+  SM.selectedSources = [source];
   smSyncSourceCards();
   SM.isDirty = true;
   smDebouncedSave();
@@ -937,6 +926,9 @@ function smIsStepCompleted(n) {
   if (n === 1) {
     return !!(d.project_name?.trim() && d.genre && d.core_message?.trim());
   } else if (n === 2) {
+    if (d.track === 'visual') {
+      return !!(d.visual_size && d.visual_platforms?.length > 0);
+    }
     return !!(d.video_length && d.aspect_ratio && d.platforms?.length > 0);
   }
   return false;
@@ -996,6 +988,38 @@ function smShowStepNav() {
   smRenderStepNav();
 }
 
+// Step 2 트랙 전환 (영상 vs 비주얼)
+function smSwitchStep2Track() {
+  const genre = SM.projectData.step1?.genre || '';
+  const isVisual = smIsVisualGenre(genre);
+  const videoTrack = document.getElementById('sm-step2-video-track');
+  const visualTrack = document.getElementById('sm-step2-visual-track');
+  if (videoTrack) videoTrack.style.display = isVisual ? 'none' : '';
+  if (visualTrack) visualTrack.style.display = isVisual ? '' : 'none';
+
+  // 비주얼 트랙: 장르별 컷 수 범위 설정
+  if (isVisual) {
+    const limits = VISUAL_CUT_LIMITS[genre] || { min: 4, max: 20, default: 8 };
+    const slider = document.getElementById('sm-visual-cut-count');
+    const rangeLabel = document.getElementById('sm-visual-cut-range-label');
+    if (slider) {
+      slider.min = limits.min;
+      slider.max = limits.max;
+      if (!SM.projectData.step2?.visual_cut_count) {
+        slider.value = limits.default;
+        smOnVisualCutChange(limits.default);
+      }
+    }
+    if (rangeLabel) rangeLabel.textContent = `${limits.min}~${limits.max}컷`;
+  }
+}
+
+// 비주얼 컷 수 슬라이더 변경
+function smOnVisualCutChange(val) {
+  const valEl = document.getElementById('sm-visual-cut-value');
+  if (valEl) valEl.textContent = val;
+}
+
 // ========================================
 // 데이터 수집 & 폼 채우기
 // ========================================
@@ -1041,17 +1065,40 @@ function smCollectStepData(n) {
       selected_preset: SM.projectData.step1?.selected_preset || null,
     };
   } else if (n === 2) {
-    const rawSceneCount = document.getElementById('sm-scene-count')?.value;
-    SM.projectData.step2 = {
-      video_length: document.getElementById('sm-video-length')?.value || '',
-      scene_count: rawSceneCount ? parseInt(rawSceneCount, 10) : 0,
-      aspect_ratio: smGetSelectedRadio('sm-aspect-ratio'),
-      platforms: smGetSelectedCheckboxes('sm-platforms'),
-      style: document.getElementById('sm-style')?.value || '',
-      color_tone: document.getElementById('sm-color-tone')?.value || '',
-      has_narration: document.getElementById('sm-has-narration')?.checked ?? true,
-      has_bgm: document.getElementById('sm-has-bgm')?.checked ?? true,
-    };
+    const genre = SM.projectData.step1?.genre || '';
+    if (smIsVisualGenre(genre)) {
+      // 비주얼 트랙 데이터 수집
+      const rawCutCount = document.getElementById('sm-visual-cut-count')?.value;
+      SM.projectData.step2 = {
+        track: 'visual',
+        visual_cut_count: rawCutCount ? parseInt(rawCutCount, 10) : 8,
+        visual_size: smGetSelectedRadio('sm-visual-size'),
+        visual_platforms: smGetSelectedCheckboxes('sm-visual-platforms'),
+        visual_art_style: document.getElementById('sm-visual-art-style')?.value || '',
+        visual_color_tone: document.getElementById('sm-visual-color-tone')?.value || '',
+        visual_has_dialogue: document.getElementById('sm-visual-has-dialogue')?.checked ?? true,
+        visual_has_sfx: document.getElementById('sm-visual-has-sfx')?.checked ?? true,
+        // 영상 호환 필드 (Step 완료 판정용)
+        video_length: 'short_15',
+        aspect_ratio: smGetSelectedRadio('sm-visual-size') === 'vertical' ? '9:16' : smGetSelectedRadio('sm-visual-size') === 'square' ? '1:1' : '16:9',
+        platforms: smGetSelectedCheckboxes('sm-visual-platforms'),
+        scene_count: rawCutCount ? parseInt(rawCutCount, 10) : 8,
+      };
+    } else {
+      // 영상 트랙 데이터 수집
+      const rawSceneCount = document.getElementById('sm-scene-count')?.value;
+      SM.projectData.step2 = {
+        track: 'video',
+        video_length: document.getElementById('sm-video-length')?.value || '',
+        scene_count: rawSceneCount ? parseInt(rawSceneCount, 10) : 0,
+        aspect_ratio: smGetSelectedRadio('sm-aspect-ratio'),
+        platforms: smGetSelectedCheckboxes('sm-platforms'),
+        style: document.getElementById('sm-style')?.value || '',
+        color_tone: document.getElementById('sm-color-tone')?.value || '',
+        has_narration: document.getElementById('sm-has-narration')?.checked ?? true,
+        has_bgm: document.getElementById('sm-has-bgm')?.checked ?? true,
+      };
+    }
   }
 }
 
@@ -1115,30 +1162,50 @@ function smFillStepForm(n) {
       }
     }
   } else if (n === 2) {
-    const d = SM.projectData.step2 || {};
-    // 구 키 호환: mid_3 → mid_3m 등
-    const migratedLength = SCENE_KEY_MIGRATION[d.video_length] || d.video_length || '';
-    smSetValue('sm-video-length', migratedLength);
-    smSetValue('sm-style', d.style || '');
-    smSetValue('sm-color-tone', d.color_tone || '');
-    smSetSelectedRadio('sm-aspect-ratio', d.aspect_ratio || '');
-    smSetSelectedCheckboxes('sm-platforms', d.platforms || []);
-    smSetChecked('sm-has-narration', d.has_narration);
-    smSetChecked('sm-has-bgm', d.has_bgm);
+    // 트랙 전환 (영상 vs 비주얼)
+    smSwitchStep2Track();
 
-    // 장면 수 슬라이더 업데이트
-    smOnVideoLengthChange();
-    // 저장된 scene_count 반영
-    if (d.scene_count) {
-      const slider = document.getElementById('sm-scene-count');
-      if (slider) {
-        slider.value = d.scene_count;
-        smOnSceneSliderChange(d.scene_count);
+    const d = SM.projectData.step2 || {};
+    const genre = SM.projectData.step1?.genre || '';
+
+    if (smIsVisualGenre(genre)) {
+      // 비주얼 트랙 채우기
+      const limits = VISUAL_CUT_LIMITS[genre] || { min: 4, max: 20, default: 8 };
+      const cutSlider = document.getElementById('sm-visual-cut-count');
+      if (cutSlider) {
+        cutSlider.value = d.visual_cut_count || limits.default;
+        smOnVisualCutChange(cutSlider.value);
       }
+      smSetSelectedRadio('sm-visual-size', d.visual_size || '');
+      smSetSelectedCheckboxes('sm-visual-platforms', d.visual_platforms || []);
+      smSetValue('sm-visual-art-style', d.visual_art_style || '');
+      smSetValue('sm-visual-color-tone', d.visual_color_tone || '');
+      smSetChecked('sm-visual-has-dialogue', d.visual_has_dialogue);
+      smSetChecked('sm-visual-has-sfx', d.visual_has_sfx);
+    } else {
+      // 영상 트랙 채우기
+      const migratedLength = SCENE_KEY_MIGRATION[d.video_length] || d.video_length || '';
+      smSetValue('sm-video-length', migratedLength);
+      smSetValue('sm-style', d.style || '');
+      smSetValue('sm-color-tone', d.color_tone || '');
+      smSetSelectedRadio('sm-aspect-ratio', d.aspect_ratio || '');
+      smSetSelectedCheckboxes('sm-platforms', d.platforms || []);
+      smSetChecked('sm-has-narration', d.has_narration);
+      smSetChecked('sm-has-bgm', d.has_bgm);
+
+      // 장면 수 슬라이더 업데이트
+      smOnVideoLengthChange();
+      if (d.scene_count) {
+        const slider = document.getElementById('sm-scene-count');
+        if (slider) {
+          slider.value = d.scene_count;
+          smOnSceneSliderChange(d.scene_count);
+        }
+      }
+      // Step 2 진입 시 제약 적용
+      smApplyPlatformConstraints();
+      smCheckLengthWarning();
     }
-    // Step 2 진입 시 제약 적용
-    smApplyPlatformConstraints();
-    smCheckLengthWarning();
   }
 }
 
@@ -1478,15 +1545,27 @@ function smSetSelectedCheckboxes(groupId, vals) {
 function smSelectOption(el, groupId) {
   const group = document.getElementById(groupId);
   if (!group) return;
+  // disabled 상태면 선택 불가
+  if (el.classList.contains('disabled')) return;
   group.querySelectorAll('.sm-option-item').forEach(item => item.classList.remove('selected'));
   el.classList.add('selected');
   const radio = el.querySelector('input[type="radio"]');
-  if (radio) radio.checked = true;
+  if (radio) {
+    radio.checked = true;
+    // change 이벤트 수동 발생 (제약 로직 트리거용)
+    radio.dispatchEvent(new Event('change', { bubbles: true }));
+  }
   smMarkDirty();
 }
 
 // 체크박스 옵션 토글 핸들러
 function smToggleOption(el) {
+  // disabled 상태면 토글 불가
+  if (el.classList.contains('disabled')) {
+    const cb = el.querySelector('input[type="checkbox"]');
+    if (cb) { cb.checked = false; el.classList.remove('selected'); }
+    return;
+  }
   const cb = el.querySelector('input[type="checkbox"]');
   if (cb) {
     setTimeout(() => {
@@ -1495,6 +1574,8 @@ function smToggleOption(el) {
       } else {
         el.classList.remove('selected');
       }
+      // change 이벤트 수동 발생 (제약 로직 트리거용)
+      cb.dispatchEvent(new Event('change', { bubbles: true }));
       smMarkDirty();
     }, 0);
   }
@@ -1578,7 +1659,7 @@ function smRenderPreview() {
   const genreMap = {
     promotion: '홍보 · 광고', education: '교육 · 튜토리얼', vlog: '브이로그', review: '리뷰',
     story: '드라마 · 숏필름', news: '뉴스 · 정보', music: '뮤직비디오', animation: '애니메이션 · 모션',
-    webtoon: '웹툰 · 숏툰', cartoon: '4컷 · 카툰', interview: '인터뷰 · 토크',
+    webtoon: '웹툰 · 숏툰', cartoon: '4컷 · 카툰',
   };
 
   const lengthMap = {
@@ -1629,7 +1710,27 @@ function smRenderPreview() {
   html += '</div>';
 
   // Step 2 요약
-  if (s2.video_length || s2.aspect_ratio || s2.style) {
+  if (s2.track === 'visual') {
+    // 비주얼 트랙
+    html += `<div class="sm-preview-section">
+      <div class="sm-preview-section-title">🖼️ 비주얼 설정</div>`;
+    if (s2.visual_cut_count) html += smPreviewRow('컷 수', s2.visual_cut_count + '컷');
+    const sizeMap = { vertical: '세로 스크롤', square: '정방형 (1:1)', horizontal: '가로 (16:9)' };
+    if (s2.visual_size) html += smPreviewRow('사이즈', sizeMap[s2.visual_size] || s2.visual_size);
+    const artMap = { cute_sd: '귀여운·SD', webtoon_clean: '웹툰풍', realistic: '극화체', simple_minimal: '심플', pixel: '픽셀', handdrawn: '손그림' };
+    if (s2.visual_art_style) html += smPreviewRow('그림체', artMap[s2.visual_art_style] || s2.visual_art_style);
+    if (s2.visual_color_tone) html += smPreviewRow('컬러', toneMap[s2.visual_color_tone] || s2.visual_color_tone);
+    html += smPreviewRow('말풍선', s2.visual_has_dialogue !== false ? '✅' : '❌');
+    html += smPreviewRow('효과음', s2.visual_has_sfx !== false ? '✅' : '❌');
+    if (s2.visual_platforms && s2.visual_platforms.length > 0) {
+      html += `<div class="sm-preview-item">
+        <span class="sm-preview-item-label">플랫폼</span>
+        <div class="sm-preview-tags">${s2.visual_platforms.map(p => `<span class="sm-preview-tag">${smEscape(p)}</span>`).join('')}</div>
+      </div>`;
+    }
+    html += '</div>';
+  } else if (s2.video_length || s2.aspect_ratio || s2.style) {
+    // 영상 트랙
     html += `<div class="sm-preview-section">
       <div class="sm-preview-section-title">🎬 포맷 설정</div>`;
 
