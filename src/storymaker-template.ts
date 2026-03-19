@@ -874,6 +874,32 @@ export function storymakerTemplate() {
     .sm-source-panel { display: none; }
     .sm-source-panel.active { display: block; }
 
+    /* 프리셋 카드 추천 배지 */
+    .sm-preset-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #7c3aed;
+      color: white;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+    .sm-source-card { position: relative; }
+
+    /* Step 2 비활성 옵션 */
+    .sm-option-item.disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .sm-option-item.disabled::after {
+      content: '🔒';
+      margin-left: 4px;
+      font-size: 11px;
+    }
+
     /* ===== 분위기 태그 선택 ===== */
     .sm-mood-category { margin-bottom: 12px; }
     .sm-mood-category-label {
@@ -1387,7 +1413,24 @@ export function storymakerTemplate() {
           </div>
         </div>
 
-        <!-- 2) 소재 유형 카드 선택 -->
+        <!-- 2) 장르별 전용 입력 폼 (JS로 동적 렌더링) -->
+        <div class="sm-card" id="sm-genre-form-card" style="display:none;">
+          <div class="sm-card-title" id="sm-genre-form-title"><i class="fas fa-edit" style="color: #7c3aed;"></i> 기본 정보</div>
+          <div id="sm-genre-form-body">
+            <!-- JS: smRenderGenreForm()이 채움 -->
+          </div>
+        </div>
+
+        <!-- 3) 포맷 프리셋 카드 (장르 기반 추천) -->
+        <div class="sm-card" id="sm-preset-card" style="display:none;">
+          <div class="sm-card-title"><i class="fas fa-magic" style="color: #7c3aed;"></i> 추천 영상 포맷</div>
+          <div class="sm-source-grid" id="sm-preset-grid">
+            <!-- JS: smRenderPresetCards()가 채움 -->
+          </div>
+          <div style="font-size:12px; color:#9ca3af; text-align:center; margin-top:8px;">선택하면 Step 2가 자동 세팅됩니다. Step 2에서 변경 가능.</div>
+        </div>
+
+        <!-- 4) 소재 유형 카드 선택 -->
         <div class="sm-card">
           <div class="sm-card-title"><i class="fas fa-pen-fancy" style="color: #7c3aed;"></i> 콘텐츠 소재를 어떻게 준비할까요?</div>
           <div class="sm-source-grid" id="sm-source-grid">
@@ -1410,86 +1453,12 @@ export function storymakerTemplate() {
           <div style="font-size:12px; color:#9ca3af; text-align:center;">※ 복수 선택 가능 (주제 + 웹링크 등)</div>
         </div>
 
-        <!-- 3) 프로젝트명 + 핵심 메시지 (항상 표시) -->
-        <div class="sm-card">
-          <div class="sm-card-title"><i class="fas fa-info-circle" style="color: #7c3aed;"></i> 기본 정보</div>
-
-          <div class="sm-form-group">
-            <label class="sm-form-label">프로젝트 이름 <span class="required">*</span></label>
-            <input type="text" class="sm-form-input" id="sm-project-name" placeholder="예: 봄맞이 신제품 홍보 영상" maxlength="100">
-          </div>
-
-          <div class="sm-form-group">
-            <label class="sm-form-label">핵심 메시지 <span class="required">*</span> <span class="hint">(AI가 스토리 방향을 잡는 데 활용)</span></label>
-            <textarea class="sm-form-textarea" id="sm-core-message" placeholder="이 영상을 통해 전달하고 싶은 핵심 메시지를 자유롭게 적어주세요." rows="3"></textarea>
-          </div>
-
-          <!-- 타겟 오디언스 (장르에 따라 표시/숨김) -->
-          <div class="sm-form-group" id="sm-target-audience-group">
-            <label class="sm-form-label">타겟 오디언스 <span class="hint">(AI 자동 추천)</span></label>
-            <div class="sm-ai-recommend-wrap">
-              <input type="text" class="sm-form-input" id="sm-target-audience" placeholder="AI가 추천합니다" readonly style="background:#f9fafb; cursor:default;">
-              <button class="sm-ai-recommend-btn" id="sm-recommend-audience-btn" onclick="smRecommendAudience()" disabled>
-                <i class="fas fa-magic"></i> AI 추천 받기
-              </button>
-              <div class="sm-ai-recommend-result" id="sm-audience-result"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 4) 분위기 태그 선택 -->
-        <div class="sm-card">
-          <div class="sm-card-title"><i class="fas fa-palette" style="color: #7c3aed;"></i> 분위기 키워드</div>
-          <!-- 숨겨진 input (데이터 호환용) -->
-          <input type="hidden" id="sm-mood-keywords">
-          <div class="sm-mood-category">
-            <div class="sm-mood-category-label">😊 감정</div>
-            <div class="sm-mood-tags" id="sm-mood-emotion">
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">따뜻한</span>
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">감성적인</span>
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">유쾌한</span>
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">진지한</span>
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">신뢰감</span>
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">설렘</span>
-            </div>
-          </div>
-          <div class="sm-mood-category">
-            <div class="sm-mood-category-label">🎨 색감 · 시즌</div>
-            <div class="sm-mood-tags" id="sm-mood-color">
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">봄</span>
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">여름</span>
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">가을</span>
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">겨울</span>
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">핑크</span>
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">블루</span>
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">골드</span>
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">모노톤</span>
-            </div>
-          </div>
-          <div class="sm-mood-category">
-            <div class="sm-mood-category-label">✨ 느낌 · 톤</div>
-            <div class="sm-mood-tags" id="sm-mood-tone">
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">고급스러운</span>
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">트렌디</span>
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">자연스러운</span>
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">레트로</span>
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">미니멀</span>
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">프로페셔널</span>
-            </div>
-          </div>
-          <div class="sm-mood-category">
-            <div class="sm-mood-category-label">🏃 템포</div>
-            <div class="sm-mood-tags" id="sm-mood-tempo">
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">빠른</span>
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">차분한</span>
-              <span class="sm-mood-tag" onclick="smToggleMoodTag(this)">드라마틱</span>
-            </div>
-          </div>
-          <div class="sm-mood-custom-row">
-            <input type="text" class="sm-mood-custom-input" id="sm-mood-custom" placeholder="직접 입력..." onkeydown="if(event.key==='Enter'){event.preventDefault();smAddCustomMoodTag();}">
-            <button class="sm-mood-custom-btn" onclick="smAddCustomMoodTag()">+ 추가</button>
-          </div>
-        </div>
+        <!-- 숨겨진 필드 (데이터 호환용 - 장르별 폼에서 동적 생성되는 필드의 기본값) -->
+        <input type="hidden" id="sm-mood-keywords">
+        <input type="hidden" id="sm-project-name" value="">
+        <input type="hidden" id="sm-core-message" value="">
+        <input type="hidden" id="sm-target-audience" value="">
+        <input type="hidden" id="sm-additional-notes" value="">
 
         <!-- 5) 소재별 동적 입력 (주제 / 웹링크 / 파일) -->
         <!-- 주제 기획: 추가 메모만 -->
@@ -1553,6 +1522,19 @@ export function storymakerTemplate() {
           <div class="sm-step-badge"><i class="fas fa-sliders-h"></i> Step 2</div>
           <div class="sm-step-title">포맷 설정</div>
           <div class="sm-step-desc">영상의 형식과 기술적 옵션을 설정하세요.</div>
+        </div>
+
+        <!-- 경고 배너 (장르↔포맷 불일치 시 표시) -->
+        <div class="sm-card" id="sm-format-warning" style="display:none; background:#fff7ed; border:1px solid #fed7aa;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <i class="fas fa-exclamation-triangle" style="color:#f59e0b; font-size:18px;"></i>
+            <div>
+              <div style="font-weight:600; color:#92400e; font-size:13px;" id="sm-format-warning-text"></div>
+              <button onclick="smResetToPreset()" style="margin-top:6px; padding:4px 12px; border:1px solid #f59e0b; border-radius:6px; background:#fff; color:#92400e; font-size:12px; cursor:pointer;">
+                <i class="fas fa-undo"></i> 추천으로 되돌리기
+              </button>
+            </div>
+          </div>
         </div>
 
         <div class="sm-card">
